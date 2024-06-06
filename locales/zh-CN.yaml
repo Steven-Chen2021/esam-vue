@@ -184,7 +184,9 @@ menus:
   dimercoQuotes: 报价工具
   dimercoTask: 任务管理
   dimercoCredit: 信用管理
-  dimercoReport: 报表
+  dimercoReport: 报表  
+  dimercoCustomer: 客戶管理
+  dimercoDeal: 交易管理
 status:
   pureLoad: 加载中...
   pureMessage: 消息

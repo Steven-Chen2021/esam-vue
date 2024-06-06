@@ -180,11 +180,14 @@ menus:
   pureMindMap: Mind Map
   pureMenuOverflow: Menu Overflow Show Tooltip Text
   pureChildMenuOverflow: Child Menu Overflow Show Tooltip Text
-  dimercoContact: Contact Management
-  dimercoQuotes: Quote Tool
-  dimercoTask: Task Management
-  dimercoCredit: Credit Management
-  dimercoReport: Reports
+  dimercoContact: Contact
+  dimercoQuotes: Quote
+  dimercoTask: Task
+  dimercoCredit: Credit
+  dimercoReport: Report
+  dimercoCustomer: Customer
+  dimercoDeal: Deal
+  
 status:
   pureLoad: Loading...
   pureMessage: Message

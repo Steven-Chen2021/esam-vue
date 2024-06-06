@@ -29,28 +29,14 @@ const currentValues = ref<string[]>([]);
 const multiTags = computed(() => {
   return useMultiTagsStoreHook()?.multiTags;
 });
-
-function onCloseTags() {
-  if (currentValues.value.length === 0) return;
-  currentValues.value.forEach(uniqueId => {
-    const currentPath =
-      getNodeByUniqueId(treeData.value, uniqueId).redirect ??
-      getNodeByUniqueId(treeData.value, uniqueId).path;
-    useMultiTagsStoreHook().handleTags("splice", currentPath);
-    if (currentPath === "/tabs/index")
-      router.push({
-        path: multiTags.value[(multiTags as any).value.length - 1].path
-      });
-  });
-}
 </script>
 
 <template>
   <el-card shadow="never">
-    <div class="flex flex-wrap items-center">
-      <el-button @click="toDetail({ id: 0 }, 'params')">
-        Create Quote
-      </el-button>
+    <div class="flex flex-row">
+      <div class="basis-1/4">01</div>
+      <div class="basis-1/4">02</div>
+      <div class="basis-1/2">03</div>
     </div>
   </el-card>
 </template>
