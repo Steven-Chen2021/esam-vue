@@ -23,34 +23,15 @@ export function useDetail() {
         parameter[param] = parameter[param].toString();
       }
     });
-    if (model === "query") {
-      // 保存信息到标签页
-      useMultiTagsStoreHook().handleTags("push", {
-        path: `/tabs/query-detail`,
-        name: "TabQueryDetail",
-        query: parameter,
-        meta: {
-          title: {
-            zh: `No.${parameter.id} - 详情信息`,
-            en: `No.${parameter.id} - DetailInfo`
-          },
-          // 如果使用的是非国际化精简版title可以像下面这么写
-          // title: `No.${index} - 详情信息`,
-          // 最大打开标签数
-          dynamicLevel: 3
-        }
-      });
-      // 路由跳转
-      router.push({ name: "TabQueryDetail", query: parameter });
-    } else if (model === "params") {
+    if (model === "params") {
       useMultiTagsStoreHook().handleTags("push", {
         path: `/quotes/detail/:id`,
         name: "CreateQuote",
         params: parameter,
         meta: {
           title: {
-            zh: `${parameter.id === 0 ? "Create Quote" : "Quote# " + parameter.id}`,
-            en: `${parameter.id === 0 ? "Create Quote" : "Quote# " + parameter.id}`
+            zh: `${parameter.id === "0" ? "Create Quote" : "Quote# " + parameter.id}`,
+            en: `${parameter.id === "0" ? "Create Quote" : "Quote# " + parameter.id}`
           }
           // 如果使用的是非国际化精简版title可以像下面这么写
           // title: `No.${index} - 详情信息`,
