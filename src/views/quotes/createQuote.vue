@@ -5,7 +5,7 @@ import {
   appendFieldByUniqueId
 } from "@/utils/tree";
 import { useDetail } from "./hooks";
-import { ref, computed } from "vue";
+import { h, ref, computed, onMounted } from "vue";
 import { clone } from "@pureadmin/utils";
 import { transformI18n } from "@/plugins/i18n";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
@@ -16,8 +16,40 @@ import {
   PlusForm
 } from "plus-pro-components";
 
+import { HotTable } from "@handsontable/vue3";
+import { registerAllModules } from "handsontable/registry";
+import "handsontable/dist/handsontable.full.css";
+import { DropdownMenu } from "handsontable/plugins";
+
+interface RestaurantItem {
+  value: string;
+  hqid: number;
+}
+let restaurants = ref<RestaurantItem[]>([]);
+const createFilter = (queryString: string) => {
+  return (restaurant: RestaurantItem) => {
+    return (
+      restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0
+    );
+  };
+};
+const loadAll = () => {
+  return [
+    { value: "MICROSOFT TAIWAN", hqid: 46394 },
+    { value: "ASUS TW", hqid: 46395 },
+    { value: "Apple Inc.", hqid: 46798 },
+    { value: "LENOVO", hqid: 48415 }
+  ];
+};
+
 const state = ref<FieldValues>({
+  ShippingTerm: "DD",
+  TradeTerm: "CIF",
+  CreditTerm: "EOM15",
+  CustomerLead: 46798,
+  AttentionTo: "A9370",
   status: "0",
+  PL: 6,
   name: "",
   rate: 4,
   progress: 100,
@@ -41,42 +73,79 @@ const rules = {
   ]
 };
 
-const columns: PlusColumn[] = [
+const quoteDetailColumns: PlusColumn[] = [
   {
-    label: "名称",
+    label: "Client",
     width: 120,
-    prop: "name",
-    valueType: "copy",
-    tooltip: "名称最多显示6个字符",
-    colProps: {
-      span: 8
+    prop: "CustomerLead",
+    valueType: "autocomplete",
+    // tooltip: '自动补全输入框',
+    fieldProps: {
+      fetchSuggestions: (queryString: string, cb: any) => {
+        const results = queryString
+          ? restaurants.value.filter(createFilter(queryString))
+          : restaurants.value;
+        // call callback function to return suggestions
+        cb(results);
+      }
     }
   },
+  // {
+  //   label: "Client",
+  //   width: 120,
+  //   prop: "CustomerLead",
+  //   valueType: "select",
+  //   options: [
+  //     {
+  //       label: "MICROSOFT TAIWAN",
+  //       value: 46394
+  //     },
+  //     {
+  //       label: "ASUS TW",
+  //       value: 46395
+  //     },
+  //     {
+  //       label: "LENOVO",
+  //       value: 48415
+  //     },
+  //     {
+  //       label: "Apple Inc.",
+  //       value: 46798
+  //     }
+  //   ],
+  //   colProps: {
+  //     span: 8
+  //   }
+  // },
   {
-    label: "状态",
-    width: 120,
-    prop: "status",
+    label: "Product Line",
+    width: 360,
+    prop: "PL",
     valueType: "select",
     options: [
       {
-        label: "未解决",
-        value: "0",
-        color: "red"
+        label: "Air",
+        value: 2
       },
       {
-        label: "已解决",
-        value: "1",
-        color: "blue"
+        label: "Sea",
+        value: 6
       },
       {
-        label: "解决中",
-        value: "2",
-        color: "yellow"
+        label: "Truck",
+        value: 7
       },
       {
-        label: "失败",
-        value: "3",
-        color: "red"
+        label: "Rail",
+        value: 14
+      },
+      {
+        label: "Warehouse",
+        value: 10
+      },
+      {
+        label: "Domestic",
+        value: 4
       }
     ],
     colProps: {
@@ -84,7 +153,30 @@ const columns: PlusColumn[] = [
     }
   },
   {
-    label: "标签",
+    label: "Attention To",
+    width: 360,
+    prop: "AttentionTo",
+    valueType: "select",
+    options: [
+      {
+        label: "Wilson Huang",
+        value: "A9773"
+      },
+      {
+        label: "Amy Chen",
+        value: "A4220"
+      },
+      {
+        label: "Jane Hong",
+        value: "A9370"
+      }
+    ],
+    colProps: {
+      span: 8
+    }
+  },
+  {
+    label: "Tel",
     width: 120,
     prop: "tag",
     colProps: {
@@ -92,185 +184,406 @@ const columns: PlusColumn[] = [
     }
   },
   {
-    label: "执行进度",
-    width: 200,
-    prop: "progress",
+    label: "Email",
+    width: 460,
+    prop: "tag",
     colProps: {
-      span: 12
+      span: 16
     }
   },
   {
-    label: "评分",
-    width: 200,
-    prop: "rate",
-    valueType: "rate",
+    label: "Address",
+    width: 120,
+    prop: "tag",
     colProps: {
-      span: 12
+      span: 24
     }
   },
   {
-    label: "是否显示",
-    width: 100,
-    prop: "switch",
-    valueType: "switch",
-    colProps: {
-      span: 12
-    }
-  },
-  {
-    label: "图片",
-    prop: "img",
-    width: 100,
-    valueType: "img",
-    colProps: {
-      span: 12
-    }
-  },
-  {
-    label: "时间",
-    prop: "time",
-    valueType: "date-picker",
-    colProps: {
-      span: 12
-    }
-  },
-  {
-    label: "数量",
-    prop: "number",
-    valueType: "input-number",
-    fieldProps: { precision: 2, step: 2 },
-    colProps: {
-      span: 12
-    }
-  },
-  {
-    label: "城市",
-    prop: "city",
-    valueType: "cascader",
-    options: [
-      {
-        value: "0",
-        label: "陕西",
-        children: [
-          {
-            value: "0-0",
-            label: "西安",
-            children: [
-              {
-                value: "0-0-0",
-                label: "新城区"
-              },
-              {
-                value: "0-0-1",
-                label: "高新区"
-              },
-              {
-                value: "0-0-2",
-                label: "灞桥区"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        value: "1",
-        label: "山西",
-        children: [
-          {
-            value: "1-0",
-            label: "太原",
-            children: [
-              {
-                value: "1-0-0",
-                label: "小店区"
-              },
-              {
-                value: "1-0-1",
-                label: "古交市"
-              },
-              {
-                value: "1-0-2",
-                label: "万柏林区"
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    label: "地区",
-    prop: "place",
-    tooltip: "请精确到门牌号",
-    fieldProps: {
-      placeholder: "请精确到门牌号"
-    }
-  },
-  {
-    label: "要求",
-    prop: "demand",
-    valueType: "checkbox",
-    options: [
-      {
-        label: "四六级",
-        value: "0"
-      },
-      {
-        label: "计算机二级证书",
-        value: "1"
-      },
-      {
-        label: "普通话证书",
-        value: "2"
-      }
-    ]
-  },
-  {
-    label: "梦想",
+    label: "Quotation Language",
     prop: "gift",
     valueType: "radio",
     options: [
       {
-        label: "诗",
-        value: "0"
+        label: "English",
+        value: "en"
       },
       {
-        label: "远方",
-        value: "1"
+        label: "Traditional Chinese",
+        value: "tw"
       },
       {
-        label: "美食",
-        value: "2"
+        label: "Simplified Chinese",
+        value: "cn"
       }
     ],
     colProps: {
-      span: 12
+      span: 24
+    }
+  }
+];
+
+const termsDetailColumns: PlusColumn[] = [
+  {
+    label: "Shipping Term",
+    width: 120,
+    prop: "ShippingTerm",
+    valueType: "select",
+    options: [
+      {
+        label: "DD",
+        value: "DD"
+      },
+      {
+        label: "DP",
+        value: "DP"
+      },
+      {
+        label: "PP",
+        value: "PP"
+      },
+      {
+        label: "PD",
+        value: "PD"
+      }
+    ],
+    colProps: {
+      span: 8
     }
   },
   {
-    label: "到期时间",
+    label: "Trade Term",
+    width: 120,
+    prop: "TradeTerm",
+    valueType: "select",
+    options: [
+      {
+        label: "CIF",
+        value: "CIF"
+      },
+      {
+        label: "CIP",
+        value: "CIP"
+      },
+      {
+        label: "CPT",
+        value: "CPT"
+      },
+      {
+        label: "DDP",
+        value: "DDP"
+      },
+      {
+        label: "DDU",
+        value: "DDU"
+      },
+      {
+        label: "EXW",
+        value: "EXW"
+      },
+      {
+        label: "FAS",
+        value: "FAS"
+      },
+      {
+        label: "FCA",
+        value: "FCA"
+      },
+      {
+        label: "FOB",
+        value: "FOB"
+      },
+      {
+        label: "CFR",
+        value: "CFR"
+      },
+      {
+        label: "DAP",
+        value: "DAP"
+      },
+      {
+        label: "DPU",
+        value: "DPU"
+      }
+    ],
+    colProps: {
+      span: 8
+    }
+  },
+  {
+    label: "Credit Term",
+    width: 120,
+    prop: "CreditTerm",
+    valueType: "select",
+    options: [
+      {
+        label: "EOM15",
+        value: "EOM15"
+      },
+      {
+        label: "EOM20",
+        value: "EOM20"
+      },
+      {
+        label: "EOM25",
+        value: "EOM25"
+      },
+      {
+        label: "EOM30",
+        value: "EOM30"
+      },
+      {
+        label: "EOM45",
+        value: "EOM45"
+      },
+      {
+        label: "EOM60",
+        value: "EOM60"
+      },
+      {
+        label: "EOM75",
+        value: "EOM75"
+      },
+      {
+        label: "EOM90",
+        value: "EOM90"
+      },
+      {
+        label: "NET07",
+        value: "NET07"
+      },
+      {
+        label: "NET15",
+        value: "NET15"
+      },
+      {
+        label: "NET21",
+        value: "NET21"
+      },
+      {
+        label: "NET30",
+        value: "NET30"
+      },
+      {
+        label: "NET45",
+        value: "NET45"
+      },
+      {
+        label: "NET50",
+        value: "NET50"
+      },
+      {
+        label: "NET55",
+        value: "NET55"
+      },
+      {
+        label: "NET60",
+        value: "NET60"
+      },
+      {
+        label: "NET80",
+        value: "NET80"
+      },
+      {
+        label: "NET90",
+        value: "NET90"
+      }
+    ],
+    colProps: {
+      span: 8
+    }
+  },
+  // {
+  //   label: "Effective - Expired",
+  //   prop: "time",
+  //   valueType: "date-picker"
+  // },
+  {
+    label: "Effective - Expired",
     prop: "endTime",
     valueType: "date-picker",
     fieldProps: {
       type: "datetimerange",
-      startPlaceholder: "请选择开始时间",
-      endPlaceholder: "请选择结束时间"
+      startPlaceholder: "Effective",
+      endPlaceholder: "Expired"
     },
     colProps: {
-      span: 12
+      span: 16
     }
   },
   {
-    label: "说明",
-    prop: "desc",
-    valueType: "textarea",
-    fieldProps: {
-      maxlength: 10,
-      showWordLimit: true,
-      autosize: { minRows: 2, maxRows: 4 }
+    label: "Type",
+    prop: "gift",
+    valueType: "radio",
+    options: [
+      {
+        label: "All Year Round",
+        value: "en"
+      },
+      {
+        label: "One Time Only",
+        value: "cn"
+      }
+    ],
+    colProps: {
+      span: 24
     }
   }
 ];
+
+const hotSettings = {
+  data: [
+    {
+      ID: 0,
+      POR: "Mercedes A 160",
+      POL: 2017,
+      PODischarge: 7000,
+      PODelivery: 7000,
+      CBM: 0,
+      Cost: 0,
+      TT: "01/14/2021"
+    },
+    {
+      ID: 1,
+      POR: "Mercedes A 160",
+      POL: 2017,
+      PODischarge: 7000,
+      PODelivery: 7000,
+      CBM: 0,
+      Cost: 0,
+      TT: "01/14/2021"
+    },
+    {
+      ID: 2,
+      POR: "Mercedes A 160",
+      POL: 2017,
+      PODischarge: 7000,
+      PODelivery: 7000,
+      CBM: 0,
+      Cost: 0,
+      TT: "01/14/2021"
+    },
+    {
+      ID: 3,
+      POR: "Mercedes A 160",
+      POL: 2017,
+      PODischarge: 7000,
+      PODelivery: 7000,
+      CBM: 0,
+      Cost: 0,
+      TT: "01/14/2021"
+    }
+  ],
+  colHeaders: true,
+  rowHeaders: false,
+  dropdownMenu: true,
+  width: "100%",
+  height: "auto",
+  nestedHeaders: [
+    [
+      "",
+      { label: "Shipping Route Details", colspan: 4 },
+      { label: "Cost and Pricing", colspan: 2 }
+    ],
+    [
+      "",
+      "Place of Receipt",
+      "Port of loading",
+      "Port of discharge",
+      "Place of delivery",
+      "Type the CBM",
+      "Cost",
+      "Transit time"
+    ]
+  ],
+  columns: [
+    {
+      data: "ID",
+      type: "checkbox"
+    },
+    {
+      data: "POR",
+      type: "dropdown",
+      source: [
+        "yellow",
+        "red",
+        "orange",
+        "green",
+        "blue",
+        "gray",
+        "black",
+        "white"
+      ]
+    },
+    {
+      data: "POL",
+      type: "dropdown",
+      source: [
+        "yellow",
+        "red",
+        "orange",
+        "green",
+        "blue",
+        "gray",
+        "black",
+        "white"
+      ]
+    },
+    {
+      data: "PODischarge",
+      type: "dropdown",
+      source: [
+        "yellow",
+        "red",
+        "orange",
+        "green",
+        "blue",
+        "gray",
+        "black",
+        "white"
+      ]
+    },
+    {
+      data: "PODelivery",
+      type: "dropdown",
+      source: [
+        "yellow",
+        "red",
+        "orange",
+        "green",
+        "blue",
+        "gray",
+        "black",
+        "white"
+      ]
+    },
+    {
+      data: "CBM",
+      type: "numeric"
+    },
+    {
+      data: "Cost",
+      type: "numeric"
+    },
+    {
+      data: "TT",
+      type: "date",
+      dateFormat: "MM/DD/YYYY",
+      correctFormat: true,
+      defaultDate: "01/01/1900",
+      datePickerConfig: {
+        firstDay: 0,
+        showWeekNumber: true,
+        disableDayFn(date) {
+          return date.getDay() === 0 || date.getDay() === 6;
+        }
+      }
+    }
+  ],
+  autoWrapRow: true,
+  autoWrapCol: true,
+  licenseKey: "non-commercial-and-evaluation" // 使用您的 licenseKey
+};
 
 const handleChange = (values: FieldValues) => {
   console.log(values, "change");
@@ -289,6 +602,8 @@ defineOptions({
   name: "CreateQuote"
 });
 
+registerAllModules();
+
 const { toDetail, router } = useDetail();
 const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
 
@@ -303,35 +618,60 @@ const currentValues = ref<string[]>([]);
 const multiTags = computed(() => {
   return useMultiTagsStoreHook()?.multiTags;
 });
+
+onMounted(() => {
+  restaurants.value = loadAll();
+});
 </script>
 
 <template>
   <el-card shadow="never" class="relative h-96 overflow-hidden">
     <!-- Top Section -->
     <div class="absolute top-0 left-0 right-0 bg-gray-300 text-white p-4">
-      Top Content
+      <el-tag size="small" effect="dark" round>Air</el-tag>
+      Control Panel Back|Delete|Preview|Download|Save as Draft|Submit|
     </div>
 
     <!-- Content Section -->
     <el-scrollbar max-height="1000" class="pt-14 h-full overflow-y-auto">
       <div class="p-4">
-        <PlusForm
-          v-model="state"
-          :columns="columns"
-          :rules="rules"
-          :row-props="{ gutter: 20 }"
-          @change="handleChange"
-          @submit="handleSubmit"
-          @submit-error="handleSubmitError"
-          @reset="handleReset"
-        />
+        <el-collapse class="mb-2">
+          <el-collapse-item title="QUOTE DETAIL" name="1">
+            <PlusForm
+              v-model="state"
+              :columns="quoteDetailColumns"
+              :rules="rules"
+              :row-props="{ gutter: 20 }"
+              label-width="auto"
+              :hasFooter="false"
+            />
+          </el-collapse-item>
+          <el-collapse-item title="TERMS INFO" name="2">
+            <PlusForm
+              v-model="state"
+              :columns="termsDetailColumns"
+              :rules="rules"
+              :row-props="{ gutter: 20 }"
+              label-width="auto"
+              :hasFooter="false"
+            />
+          </el-collapse-item>
+          <el-collapse-item title="FREIGHT CHARGE" name="3">
+            <div id="handsontable-container">
+              <HotTable :settings="hotSettings" />
+            </div>
+          </el-collapse-item>
+          <el-collapse-item title="REMARK " name="4" />
+          <el-collapse-item title="TERMS AND CONDITIONS " name="5" />
+          <el-collapse-item title="SALES INFO " name="6" />
+        </el-collapse>
       </div>
     </el-scrollbar>
 
     <!-- Footer Section -->
-    <div class="absolute bottom-0 left-0 right-0 bg-gray-300 text-white p-4">
+    <!-- <div class="absolute bottom-0 left-0 right-0 bg-gray-300 text-white p-4">
       Footer Content
-    </div>
+    </div> -->
   </el-card>
 </template>
 
@@ -339,5 +679,9 @@ const multiTags = computed(() => {
 .el-card {
   position: relative;
   height: 100%;
+}
+
+.el-form-item__label {
+  width: auto !important;
 }
 </style>
