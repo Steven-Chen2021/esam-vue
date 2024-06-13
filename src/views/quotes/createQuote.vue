@@ -20,6 +20,7 @@ import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
 import "handsontable/dist/handsontable.full.css";
 import { DropdownMenu } from "handsontable/plugins";
+import { key } from "localforage";
 
 interface RestaurantItem {
   value: string;
@@ -42,7 +43,7 @@ const loadAll = () => {
   ];
 };
 
-const state = ref<FieldValues>({
+const result = ref<FieldValues>({
   ShippingTerm: "DD",
   TradeTerm: "CIF",
   CreditTerm: "EOM15",
@@ -51,12 +52,19 @@ const state = ref<FieldValues>({
   status: "0",
   PL: 6,
   name: "",
-  rate: 4,
-  progress: 100,
-  switch: true,
-  time: new Date().toString(),
-  img: "https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg"
+  remark: "",
+  TermsAndConditions: "tw",
+  salesName: "Wilson Huang",
+  saleseMail: "wilson_w_huang@dimerco.com",
+  saleseTel: "886-2-2796-6666#1234",
+  salesMobile: "886-932-123456"
 });
+
+const TermsAndConditions = [
+  { label: "English", value: "en", key: 1 },
+  { label: "Traditional Chinese", value: "tw", key: 2 },
+  { label: "Simplified Chinese", value: "cn", key: 3 }
+];
 
 const rules = {
   name: [
@@ -90,33 +98,6 @@ const quoteDetailColumns: PlusColumn[] = [
       }
     }
   },
-  // {
-  //   label: "Client",
-  //   width: 120,
-  //   prop: "CustomerLead",
-  //   valueType: "select",
-  //   options: [
-  //     {
-  //       label: "MICROSOFT TAIWAN",
-  //       value: 46394
-  //     },
-  //     {
-  //       label: "ASUS TW",
-  //       value: 46395
-  //     },
-  //     {
-  //       label: "LENOVO",
-  //       value: 48415
-  //     },
-  //     {
-  //       label: "Apple Inc.",
-  //       value: 46798
-  //     }
-  //   ],
-  //   colProps: {
-  //     span: 8
-  //   }
-  // },
   {
     label: "Product Line",
     width: 360,
@@ -638,7 +619,7 @@ onMounted(() => {
         <el-collapse class="mb-2">
           <el-collapse-item title="QUOTE DETAIL" name="1">
             <PlusForm
-              v-model="state"
+              v-model="result"
               :columns="quoteDetailColumns"
               :rules="rules"
               :row-props="{ gutter: 20 }"
@@ -648,7 +629,7 @@ onMounted(() => {
           </el-collapse-item>
           <el-collapse-item title="TERMS INFO" name="2">
             <PlusForm
-              v-model="state"
+              v-model="result"
               :columns="termsDetailColumns"
               :rules="rules"
               :row-props="{ gutter: 20 }"
@@ -661,9 +642,40 @@ onMounted(() => {
               <HotTable :settings="hotSettings" />
             </div>
           </el-collapse-item>
-          <el-collapse-item title="REMARK " name="4" />
-          <el-collapse-item title="TERMS AND CONDITIONS " name="5" />
-          <el-collapse-item title="SALES INFO " name="6" />
+          <el-collapse-item title="REMARK " name="4">
+            <el-input
+              v-model="result.remark"
+              style="width: 440px"
+              placeholder="Please input"
+              clearable
+              maxlength="30"
+              show-word-limit
+              type="textarea"
+            />
+          </el-collapse-item>
+          <el-collapse-item title="TERMS AND CONDITIONS " name="5">
+            <el-select
+              v-model="result.TermsAndConditions"
+              clearable
+              placeholder="Select"
+              style="width: 240px"
+            >
+              <el-option
+                v-for="item in TermsAndConditions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-collapse-item>
+          <el-collapse-item title="SALES INFO " name="6">
+            <div class="flex flex-col ...">
+              <div>Name : {{ result.salesName }}</div>
+              <div>EMAIL : {{ result.saleseMail }}</div>
+              <div>Mobile : {{ result.salesMobile }}</div>
+              <div>Tel : {{ result.saleseTel }}</div>
+            </div>
+          </el-collapse-item>
         </el-collapse>
       </div>
     </el-scrollbar>
