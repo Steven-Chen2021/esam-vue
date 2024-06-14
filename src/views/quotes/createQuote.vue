@@ -21,6 +21,8 @@ import { registerAllModules } from "handsontable/registry";
 import "handsontable/dist/handsontable.full.css";
 import { DropdownMenu } from "handsontable/plugins";
 import { key } from "localforage";
+import { useRenderIcon } from "@/components/ReIcon/src/hooks";
+import { addDialog } from "@/components/ReDialog";
 
 interface RestaurantItem {
   value: string;
@@ -57,8 +59,14 @@ const result = ref<FieldValues>({
   salesName: "Wilson Huang",
   saleseMail: "wilson_w_huang@dimerco.com",
   saleseTel: "886-2-2796-6666#1234",
-  salesMobile: "886-932-123456"
+  salesMobile: "886-932-123456",
+  currency: "usd"
 });
+
+const currencyOptions = [
+  { label: "USD", value: "usd", key: 1 },
+  { label: "TWD", value: "twd", key: 2 }
+];
 
 const TermsAndConditions = [
   { label: "English", value: "en", key: 1 },
@@ -415,57 +423,79 @@ const termsDetailColumns: PlusColumn[] = [
 const hotSettings = {
   data: [
     {
-      ID: 0,
-      POR: "Mercedes A 160",
-      POL: 2017,
-      PODischarge: 7000,
-      PODelivery: 7000,
-      CBM: 0,
-      Cost: 0,
-      TT: "01/14/2021"
+      ID: null,
+      POR: null,
+      POL: null,
+      PODischarge: null,
+      PODelivery: null,
+      CBM: null,
+      CBMUOM: null,
+      Cost: null,
+      TT: null
     },
     {
-      ID: 1,
-      POR: "Mercedes A 160",
-      POL: 2017,
-      PODischarge: 7000,
-      PODelivery: 7000,
-      CBM: 0,
-      Cost: 0,
-      TT: "01/14/2021"
+      ID: null,
+      POR: null,
+      POL: null,
+      PODischarge: null,
+      PODelivery: null,
+      CBM: null,
+      CBMUOM: null,
+      Cost: null,
+      TT: null
     },
     {
-      ID: 2,
-      POR: "Mercedes A 160",
-      POL: 2017,
-      PODischarge: 7000,
-      PODelivery: 7000,
-      CBM: 0,
-      Cost: 0,
-      TT: "01/14/2021"
+      ID: null,
+      POR: null,
+      POL: null,
+      PODischarge: null,
+      PODelivery: null,
+      CBM: null,
+      CBMUOM: null,
+      Cost: null,
+      TT: null
     },
     {
-      ID: 3,
-      POR: "Mercedes A 160",
-      POL: 2017,
-      PODischarge: 7000,
-      PODelivery: 7000,
-      CBM: 0,
-      Cost: 0,
-      TT: "01/14/2021"
+      ID: null,
+      POR: null,
+      POL: null,
+      PODischarge: null,
+      PODelivery: null,
+      CBM: null,
+      CBMUOM: null,
+      Cost: null,
+      TT: null
+    },
+    {
+      ID: null,
+      POR: null,
+      POL: null,
+      PODischarge: null,
+      PODelivery: null,
+      CBM: null,
+      CBMUOM: null,
+      Cost: null,
+      TT: null
+    },
+    {
+      ID: null,
+      POR: null,
+      POL: null,
+      PODischarge: null,
+      PODelivery: null,
+      CBM: null,
+      CBMUOM: null,
+      Cost: null,
+      TT: null
     }
   ],
   colHeaders: true,
   rowHeaders: false,
   dropdownMenu: true,
+  contextMenu: true,
   width: "100%",
   height: "auto",
   nestedHeaders: [
-    [
-      "",
-      { label: "Shipping Route Details", colspan: 4 },
-      { label: "Cost and Pricing", colspan: 2 }
-    ],
     [
       "",
       "Place of Receipt",
@@ -473,6 +503,7 @@ const hotSettings = {
       "Port of discharge",
       "Place of delivery",
       "Type the CBM",
+      "CBM UOM",
       "Cost",
       "Transit time"
     ]
@@ -486,61 +517,40 @@ const hotSettings = {
       data: "POR",
       type: "dropdown",
       source: [
-        "yellow",
-        "red",
-        "orange",
-        "green",
-        "blue",
-        "gray",
-        "black",
-        "white"
+        "TWKHH - (Kaohsiung)",
+        "USLAX - (Los Angeles)",
+        "CNSHA - (Shanghai)",
+        "CNSZX - (Shenzhen)"
       ]
     },
     {
       data: "POL",
       type: "dropdown",
-      source: [
-        "yellow",
-        "red",
-        "orange",
-        "green",
-        "blue",
-        "gray",
-        "black",
-        "white"
-      ]
+      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
     },
     {
       data: "PODischarge",
       type: "dropdown",
-      source: [
-        "yellow",
-        "red",
-        "orange",
-        "green",
-        "blue",
-        "gray",
-        "black",
-        "white"
-      ]
+      source: ["YVR - VANCOUVER", "LAX - LOS ANGELES"]
     },
     {
       data: "PODelivery",
       type: "dropdown",
-      source: [
-        "yellow",
-        "red",
-        "orange",
-        "green",
-        "blue",
-        "gray",
-        "black",
-        "white"
-      ]
+      source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
     },
     {
       data: "CBM",
       type: "numeric"
+    },
+    {
+      data: "CBMUOM",
+      type: "dropdown",
+      source: ["KG", "LB"]
+    },
+    {
+      data: "PODelivery",
+      type: "dropdown",
+      source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
     },
     {
       data: "Cost",
@@ -564,6 +574,24 @@ const hotSettings = {
   autoWrapRow: true,
   autoWrapCol: true,
   licenseKey: "non-commercial-and-evaluation" // 使用您的 licenseKey
+};
+const baseRadio = ref("default");
+const size = ref("disabled");
+const dynamicSize = ref();
+const buttonList = [
+  {
+    type: "",
+    text: "Back",
+    icon: "ep:back"
+  }
+];
+
+const saveData = () => {
+  size.value = "default";
+  setTimeout(() => {
+    size.value = "disabled";
+  }, 3000);
+  console.log("saveData");
 };
 
 const handleChange = (values: FieldValues) => {
@@ -607,14 +635,64 @@ onMounted(() => {
 
 <template>
   <el-card shadow="never" class="relative h-96 overflow-hidden">
-    <!-- Top Section -->
-    <div class="absolute top-0 left-0 right-0 bg-gray-300 text-white p-4">
-      <el-tag size="small" effect="dark" round>Air</el-tag>
-      Control Panel Back|Delete|Preview|Download|Save as Draft|Submit|
+    <div class="flex ...">
+      <div class="grow h-8 ...">
+        <el-button :icon="useRenderIcon(buttonList[0].icon)">
+          <template v-if="baseRadio !== 'circle'" #default>
+            <p>{{ buttonList[0].text }}</p>
+          </template>
+        </el-button>
+      </div>
+      <div class="grow-0 h-8 ...">
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ep:delete')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Delete" : "Processing" }}
+        </el-button>
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ep:view')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Preview" : "Processing" }}
+        </el-button>
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ep:edit')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Save as Draft" : "Processing" }}
+        </el-button>
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ri:save-line')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Save" : "Processing" }}
+        </el-button>
+      </div>
     </div>
 
     <!-- Content Section -->
-    <el-scrollbar max-height="1000" class="pt-14 h-full overflow-y-auto">
+    <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
       <div class="p-4">
         <el-collapse class="mb-2">
           <el-collapse-item title="QUOTE DETAIL" name="1">
@@ -638,9 +716,35 @@ onMounted(() => {
             />
           </el-collapse-item>
           <el-collapse-item title="FREIGHT CHARGE" name="3">
-            <div id="handsontable-container">
-              <HotTable :settings="hotSettings" />
-            </div>
+            <el-tabs
+              tab-position="left"
+              style="height: 200px"
+              class="demo-tabs"
+            >
+              <el-tab-pane label="FREIGHT CHARGE">
+                <!-- <el-button @click="onBaseClick"> 基础用法 </el-button> -->
+                <el-select
+                  v-model="result.currency"
+                  clearable
+                  placeholder="Select"
+                  style="width: 240px"
+                >
+                  <el-option
+                    v-for="item in currencyOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+                <HotTable :settings="hotSettings" />
+              </el-tab-pane>
+              <el-tab-pane label="LOCAL CHARGE(FCL)">
+                <HotTable :settings="hotSettings" />
+              </el-tab-pane>
+              <el-tab-pane label="LOCAL CHARGE(LCL)">
+                <HotTable :settings="hotSettings" />
+              </el-tab-pane>
+            </el-tabs>
           </el-collapse-item>
           <el-collapse-item title="REMARK " name="4">
             <el-input
@@ -695,5 +799,17 @@ onMounted(() => {
 
 .el-form-item__label {
   width: auto !important;
+}
+
+.demo-tabs > .el-tabs__content {
+  padding: 32px;
+  font-size: 32px;
+  font-weight: 600;
+  color: #6b778c;
+}
+
+.el-tabs--right .el-tabs__content,
+.el-tabs--left .el-tabs__content {
+  height: 100%;
 }
 </style>
