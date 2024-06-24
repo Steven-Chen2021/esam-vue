@@ -46,6 +46,36 @@ const tableData = [
   }
 ];
 
+const leadTableData = [
+  {
+    leadstatus: "Quotation Accepted",
+    company: "MICROSOFT TAIWAN",
+    pl: "Air",
+    owner: "",
+    ownerstation: "DIMORD",
+    createdby: "Daniel Mroz",
+    leadsource: ""
+  },
+  {
+    leadstatus: "Approaching",
+    company: "ASUS TW",
+    pl: "Sea",
+    owner: "Adrianne Bauman",
+    ownerstation: "DIMBOS",
+    createdby: "Adrianne Bauman",
+    leadsource: ""
+  },
+  {
+    leadstatus: "Quoting",
+    company: "SCHOENFELD INTERNATIONAL",
+    pl: "Sea",
+    owner: "Veronica Soong	",
+    ownerstation: "DIMORD",
+    createdby: "Ernest Valencia",
+    leadsource: "Dimerco Sales"
+  }
+];
+
 const cloneData = clone(tableData, true);
 
 const tableDataMore = cloneData.map(item =>
@@ -293,5 +323,6 @@ export {
   tableDataMore,
   tableDataImage,
   tableDataExpand,
-  tableDataSortable
+  tableDataSortable,
+  leadTableData
 };
