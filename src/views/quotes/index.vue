@@ -1,31 +1,19 @@
 <script setup lang="tsx">
-import {
-  deleteChildren,
-  getNodeByUniqueId,
-  appendFieldByUniqueId
-} from "@/utils/tree";
+import { ref } from "vue";
 import { useDetail } from "./hooks";
-import { ref, computed } from "vue";
 import { clone } from "@pureadmin/utils";
-import { transformI18n } from "@/plugins/i18n";
-import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { leadTableData } from "./../table/base/data";
-import { addDialog } from "@/components/ReDialog";
-import { message } from "@/utils/message";
+import {
+  type PlusColumn,
+  type FieldValues,
+  PlusDrawerForm
+} from "plus-pro-components";
 
 defineOptions({
-  name: "Tabs"
+  name: "Leads"
 });
-const buttonList = [
-  {
-    type: "",
-    text: "Back",
-    icon: "ep:back"
-  }
-];
-const tableRef = ref();
 const filterHandler = (value, row, column) => {
   const property = column["property"];
   return row[property] === value;
@@ -33,7 +21,6 @@ const filterHandler = (value, row, column) => {
 const filterTag = (value, row) => {
   return row.tag === value;
 };
-const baseRadio = ref("default");
 const dynamicSize = ref();
 const size = ref("disabled");
 const { toDetail, router } = useDetail();
@@ -47,49 +34,9 @@ const saveData = () => {
 };
 
 function onCloseCallBackClick() {
-  addDialog({
-    title: "关闭后的回调",
-    closeCallBack: ({ options, index, args }) => {
-      console.log(options, index, args);
-      let text = "";
-      if (args?.command === "cancel") {
-        text = "您点击了取消按钮";
-      } else if (args?.command === "sure") {
-        text = "您点击了确定按钮";
-      } else {
-        text = "您点击了右上角关闭按钮或空白页或按下了esc键";
-      }
-      message(text);
-    },
-    contentRenderer: () => <p>弹框内容-关闭后的回调</p>
-  });
+  visible.value = true;
 }
 
-const treeData = computed(() => {
-  return appendFieldByUniqueId(deleteChildren(menusTree), 0, {
-    disabled: true
-  });
-});
-
-const currentValues = ref<string[]>([]);
-
-const multiTags = computed(() => {
-  return useMultiTagsStoreHook()?.multiTags;
-});
-
-function onCloseTags() {
-  if (currentValues.value.length === 0) return;
-  currentValues.value.forEach(uniqueId => {
-    const currentPath =
-      getNodeByUniqueId(treeData.value, uniqueId).redirect ??
-      getNodeByUniqueId(treeData.value, uniqueId).path;
-    useMultiTagsStoreHook().handleTags("splice", currentPath);
-    if (currentPath === "/tabs/index")
-      router.push({
-        path: multiTags.value[(multiTags as any).value.length - 1].path
-      });
-  });
-}
 const tableRowClassName = ({ rowIndex }: { rowIndex: number }) => {
   if (rowIndex === 1 || rowIndex === 5) {
     return "pure-warning-row";
@@ -142,6 +89,203 @@ const columns: TableColumnList = [
     prop: "leadsource"
   }
 ];
+
+// DrawerForm Begin
+const customizedFilter: PlusColumn[] = [
+  {
+    label: "名称",
+    width: 120,
+    prop: "name",
+    valueType: "copy",
+    tooltip: "名称最多显示6个字符"
+  },
+  {
+    label: "状态",
+    width: 120,
+    prop: "status",
+    valueType: "select",
+    options: [
+      {
+        label: "未解决",
+        value: "0",
+        color: "red"
+      },
+      {
+        label: "已解决",
+        value: "1",
+        color: "blue"
+      },
+      {
+        label: "解决中",
+        value: "2",
+        color: "yellow"
+      },
+      {
+        label: "失败",
+        value: "3",
+        color: "red"
+      }
+    ]
+  },
+  {
+    label: "是否显示",
+    width: 100,
+    prop: "switch",
+    valueType: "switch"
+  },
+
+  {
+    label: "时间",
+    prop: "time",
+    valueType: "date-picker"
+  },
+  {
+    label: "数量",
+    prop: "number",
+    valueType: "input-number",
+    fieldProps: { precision: 2, step: 2 }
+  },
+  {
+    label: "城市",
+    prop: "city",
+    valueType: "cascader",
+    options: [
+      {
+        value: "0",
+        label: "陕西",
+        children: [
+          {
+            value: "0-0",
+            label: "西安",
+            children: [
+              {
+                value: "0-0-0",
+                label: "新城区"
+              },
+              {
+                value: "0-0-1",
+                label: "高新区"
+              },
+              {
+                value: "0-0-2",
+                label: "灞桥区"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        value: "1",
+        label: "山西",
+        children: [
+          {
+            value: "1-0",
+            label: "太原",
+            children: [
+              {
+                value: "1-0-0",
+                label: "小店区"
+              },
+              {
+                value: "1-0-1",
+                label: "古交市"
+              },
+              {
+                value: "1-0-2",
+                label: "万柏林区"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    label: "地区",
+    prop: "place",
+    tooltip: "请精确到门牌号",
+    fieldProps: {
+      placeholder: "请精确到门牌号"
+    }
+  },
+  {
+    label: "要求",
+    prop: "demand",
+    valueType: "checkbox",
+    options: [
+      {
+        label: "四六级",
+        value: "0"
+      },
+      {
+        label: "计算机二级证书",
+        value: "1"
+      },
+      {
+        label: "普通话证书",
+        value: "2"
+      }
+    ]
+  },
+  {
+    label: "梦想",
+    prop: "gift",
+    valueType: "radio",
+    options: [
+      {
+        label: "诗",
+        value: "0"
+      },
+      {
+        label: "远方",
+        value: "1"
+      },
+      {
+        label: "美食",
+        value: "2"
+      }
+    ]
+  },
+  {
+    label: "到期时间",
+    prop: "endTime",
+    valueType: "date-picker",
+    fieldProps: {
+      type: "datetimerange",
+      startPlaceholder: "请选择开始时间",
+      endPlaceholder: "请选择结束时间"
+    }
+  },
+  {
+    label: "说明",
+    prop: "desc",
+    valueType: "textarea",
+    fieldProps: {
+      maxlength: 10,
+      showWordLimit: true,
+      autosize: { minRows: 2, maxRows: 4 }
+    }
+  }
+];
+const visible = ref(false);
+const values = ref<FieldValues>({});
+const handleConfirm = (values: FieldValues) => {
+  visible.value = false;
+};
+const rules = {
+  name: [
+    {
+      required: true,
+      message: "请输入名称"
+    }
+  ],
+  tag: [
+    {
+      required: true,
+      message: "请输入标签"
+    }
+  ]
+};
 </script>
 
 <template>
@@ -157,7 +301,7 @@ const columns: TableColumnList = [
           :icon="useRenderIcon('ep:filter')"
           @click="onCloseCallBackClick"
         >
-          {{ size === "disabled" ? "Preview" : "Processing" }}
+          {{ "Filter Setting" }}
         </el-button>
       </div>
       <div class="grow-0 h-8 ...">
@@ -180,6 +324,20 @@ const columns: TableColumnList = [
     height="360"
     :row-class-name="tableRowClassName"
   />
+  <PlusDrawerForm
+    v-model:visible="visible"
+    v-model="values"
+    :form="{ customizedFilter, rules }"
+    @confirm="handleConfirm"
+  >
+    <template #plus-label-name="{ label }">
+      <span style="color: red">{{ label }}</span>
+    </template>
+
+    <template #plus-label-status="{ label }">
+      <span style="color: green">{{ label }}</span>
+    </template>
+  </PlusDrawerForm>
 </template>
 <style>
 /* 此处样式会在全局都生效，上面 tableRowClassName 函数返回的值也就是类名必须在全局中唯一，避免样式突出 */

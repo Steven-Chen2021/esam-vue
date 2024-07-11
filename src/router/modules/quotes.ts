@@ -12,7 +12,7 @@ export default {
   children: [
     {
       path: "/quotes/index",
-      name: "Quotes",
+      name: "Leads",
       component: () => import("@/views/quotes/index.vue"),
       meta: {
         title: $t("menus.dimercoQuotes")
