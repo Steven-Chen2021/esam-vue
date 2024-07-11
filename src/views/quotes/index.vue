@@ -1,57 +1,21 @@
-<script setup lang="tsx">
+<script setup lang="ts">
+import { ref } from "vue";
+import "plus-pro-components/es/components/drawer-form/style/css";
 import {
-  deleteChildren,
-  getNodeByUniqueId,
-  appendFieldByUniqueId
-} from "@/utils/tree";
-import { useDetail } from "./hooks";
-import { ref, computed } from "vue";
-import { clone } from "@pureadmin/utils";
-import { transformI18n } from "@/plugins/i18n";
-import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+  type PlusColumn,
+  type FieldValues,
+  PlusDrawerForm
+} from "plus-pro-components";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
+//Sample data
 import { leadTableData } from "./../table/base/data";
-import { addDialog } from "@/components/ReDialog";
-import { message } from "@/utils/message";
 
+//Page Setting
 defineOptions({
-  name: "Tabs"
+  name: "Leads"
 });
-const buttonList = [
-  {
-    type: "",
-    text: "Default",
-    icon: "ep:search"
-  },
-  {
-    type: "primary",
-    text: "Primary",
-    icon: "ep:edit"
-  },
-  {
-    type: "success",
-    text: "Success",
-    icon: "ep:check"
-  },
-  {
-    type: "info",
-    text: "Info",
-    icon: "ep:message"
-  },
-  {
-    type: "warning",
-    text: "Warning",
-    icon: "ep:star"
-  },
-  {
-    type: "danger",
-    text: "Danger",
-    icon: "ep:delete"
-  }
-];
 
-const tableRef = ref();
+//Grid Setting Begin
 const filterHandler = (value, row, column) => {
   const property = column["property"];
   return row[property] === value;
@@ -59,72 +23,7 @@ const filterHandler = (value, row, column) => {
 const filterTag = (value, row) => {
   return row.tag === value;
 };
-const baseRadio = ref("default");
-const dynamicSize = ref();
-const size = ref("disabled");
-const { toDetail, router, pagination } = useDetail();
-const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
-const saveData = () => {
-  size.value = "default";
-  setTimeout(() => {
-    size.value = "disabled";
-  }, 3000);
-  console.log("saveData");
-};
-
-function onCloseCallBackClick() {
-  addDialog({
-    title: "关闭后的回调",
-    closeCallBack: ({ options, index, args }) => {
-      console.log(options, index, args);
-      let text = "";
-      if (args?.command === "cancel") {
-        text = "您点击了取消按钮";
-      } else if (args?.command === "sure") {
-        text = "您点击了确定按钮";
-      } else {
-        text = "您点击了右上角关闭按钮或空白页或按下了esc键";
-      }
-      message(text);
-    },
-    contentRenderer: () => <p>弹框内容-关闭后的回调</p>
-  });
-}
-
-const treeData = computed(() => {
-  return appendFieldByUniqueId(deleteChildren(menusTree), 0, {
-    disabled: true
-  });
-});
-
-const currentValues = ref<string[]>([]);
-
-const multiTags = computed(() => {
-  return useMultiTagsStoreHook()?.multiTags;
-});
-
-function onCloseTags() {
-  if (currentValues.value.length === 0) return;
-  currentValues.value.forEach(uniqueId => {
-    const currentPath =
-      getNodeByUniqueId(treeData.value, uniqueId).redirect ??
-      getNodeByUniqueId(treeData.value, uniqueId).path;
-    useMultiTagsStoreHook().handleTags("splice", currentPath);
-    if (currentPath === "/tabs/index")
-      router.push({
-        path: multiTags.value[(multiTags as any).value.length - 1].path
-      });
-  });
-}
-const tableRowClassName = ({ rowIndex }: { rowIndex: number }) => {
-  if (rowIndex === 1 || rowIndex === 5) {
-    return "pure-warning-row";
-  } else if (rowIndex === 3 || rowIndex === 7) {
-    return "pure-success-row";
-  }
-  return "";
-};
-const columns: TableColumnList = [
+const leadColumns: TableColumnList = [
   {
     label: "Status",
     prop: "leadstatus",
@@ -167,6 +66,68 @@ const columns: TableColumnList = [
     prop: "leadsource"
   }
 ];
+
+// Customized Filter Begin
+const columns: PlusColumn[] = [
+  {
+    label: "Name",
+    width: 120,
+    prop: "name",
+    valueType: "copy",
+    tooltip: "maxlength in 6 characters"
+  },
+  {
+    label: "Company",
+    width: 120,
+    prop: "company",
+    valueType: "copy"
+  },
+  {
+    label: "Status",
+    width: 120,
+    prop: "leadstatus",
+    valueType: "select",
+    options: [
+      {
+        label: "Quotation Accepted",
+        value: "Quotation Accepted"
+      },
+      {
+        label: "Approaching",
+        value: "Approaching"
+      },
+      {
+        label: "Quoting",
+        value: "Quoting"
+      }
+    ]
+  },
+  {
+    label: "Product Line",
+    width: 120,
+    prop: "pl",
+    valueType: "select",
+    options: [
+      {
+        label: "Air",
+        value: "Air"
+      },
+      {
+        label: "Sea",
+        value: "Sea"
+      }
+    ]
+  }
+];
+const visible = ref(false);
+const values = ref<FieldValues>({});
+const handleOpen = () => {
+  visible.value = true;
+};
+const handleConfirm = (values: FieldValues) => {
+  console.log(values);
+  visible.value = false;
+};
 </script>
 
 <template>
@@ -176,56 +137,48 @@ const columns: TableColumnList = [
         <el-button
           type="primary"
           plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
           :icon="useRenderIcon('ep:filter')"
-          @click="onCloseCallBackClick"
+          @click="handleOpen"
         >
-          {{ "Quick Filter Setting" }}
+          {{ "Filter Setting" }}
         </el-button>
       </div>
-      <div class="grow-0 h-8 ...">
-        <el-button
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:plus')"
-          @click="toDetail({ id: 0 }, 'params')"
-        >
-          Create Quote
-        </el-button>
+      <div class="grow h-8 ...">
+        <el-button :icon="useRenderIcon('ep:plus')"> Create Quote </el-button>
       </div>
     </div>
-    <br />
-    <el-space wrap>
-      <el-button
-        v-for="(button, index) in buttonList"
-        :key="index"
-        :type="button.type"
-        :icon="useRenderIcon(button.icon)"
-      >
-        <template v-if="baseRadio !== 'circle'" #default>
-          <p>{{ button.text }}</p>
-        </template>
-      </el-button>
-    </el-space>
   </el-card>
   <pure-table
     :data="leadTableData.concat(leadTableData).concat(leadTableData)"
-    :columns="columns"
-    height="360"
-    :row-class-name="tableRowClassName"
-    :pagination="pagination"
+    :columns="leadColumns"
+    stripe
   />
-</template>
-<style>
-/* 此处样式会在全局都生效，上面 tableRowClassName 函数返回的值也就是类名必须在全局中唯一，避免样式突出 */
-.pure-warning-row {
-  --el-table-tr-bg-color: var(--el-color-warning-light-9);
-}
+  <div>
+    <PlusDrawerForm
+      v-model:visible="visible"
+      v-model="values"
+      :form="{ columns }"
+      size="50%"
+      @confirm="handleConfirm"
+    >
+      <template #plus-label-name="{ label }">
+        <span style="color: red">{{ label }}</span>
+      </template>
 
-.pure-success-row {
-  --el-table-tr-bg-color: var(--el-color-success-light-9);
+      <template #plus-label-company="{ label }">
+        <span style="color: green">{{ label }}</span>
+      </template>
+      <template #plus-label-leadstatus="{ label }">
+        <span style="color: green">{{ label }}</span>
+      </template>
+      <template #plus-label-pl="{ label }">
+        <span style="color: green">{{ label }}</span>
+      </template>
+    </PlusDrawerForm>
+  </div>
+</template>
+<style scoped>
+.el-form-item__label {
+  width: 220px;
 }
 </style>

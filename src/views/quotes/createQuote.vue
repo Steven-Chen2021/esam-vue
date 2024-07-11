@@ -1,28 +1,35 @@
 <script setup lang="ts">
+import { h, ref, computed, onMounted } from "vue";
+
 import {
   deleteChildren,
   getNodeByUniqueId,
   appendFieldByUniqueId
 } from "@/utils/tree";
 import { useDetail } from "./hooks";
-import { h, ref, computed, onMounted, defineComponent } from "vue";
 import { clone } from "@pureadmin/utils";
 import { transformI18n } from "@/plugins/i18n";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
+import "plus-pro-components/es/components/drawer-form/style/css";
 import {
   type PlusColumn,
   type FieldValues,
-  PlusForm
+  PlusForm,
+  PlusDrawerForm
 } from "plus-pro-components";
 
+/*handsontable*/
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
 import "handsontable/dist/handsontable.full.css";
 import { DropdownMenu } from "handsontable/plugins";
+registerAllModules();
+
 import { key } from "localforage";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { addDialog } from "@/components/ReDialog";
+import multipleSelectTable from "./columns/index.vue";
 
 interface RestaurantItem {
   value: string;
@@ -44,6 +51,56 @@ const loadAll = () => {
     { value: "LENOVO", hqid: 48415 }
   ];
 };
+const handleOpen = () => {
+  visible.value = true;
+};
+const values = ref<FieldValues>({});
+const visible = ref(false);
+const columns: PlusColumn[] = [
+  {
+    label: "新增欄位",
+    prop: "demand",
+    valueType: "checkbox",
+    options: [
+      {
+        label: "Minimum",
+        value: "min"
+      },
+      {
+        label: "Flat",
+        value: "flat"
+      },
+      {
+        label: "-45",
+        value: "less45"
+      },
+      {
+        label: "+45",
+        value: "over45"
+      },
+      {
+        label: "+100",
+        value: "over100"
+      },
+      {
+        label: "+300",
+        value: "over300"
+      },
+      {
+        label: "+500",
+        value: "over500"
+      },
+      {
+        label: "+1000",
+        value: "over1000"
+      },
+      {
+        label: "+3000",
+        value: "over3000"
+      }
+    ]
+  }
+];
 
 const result = ref<FieldValues>({
   ShippingTerm: "DD",
@@ -489,11 +546,6 @@ const hotSettings = {
       TT: null
     }
   ],
-  rowHeaders: true,
-  dropdownMenu: true,
-  contextMenu: true,
-  width: "100%",
-  height: "500",
   colHeaders: [
     "",
     "Place of Receipt",
@@ -505,6 +557,10 @@ const hotSettings = {
     "Cost",
     "Transit time"
   ],
+  rowHeaders: false,
+  dropdownMenu: true,
+  width: "100%",
+  height: "auto",
   columns: [
     {
       data: "ID",
@@ -545,11 +601,6 @@ const hotSettings = {
       source: ["KG", "LB"]
     },
     {
-      data: "PODelivery",
-      type: "dropdown",
-      source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
-    },
-    {
       data: "Cost",
       type: "numeric"
     },
@@ -569,8 +620,39 @@ const hotSettings = {
     }
   ],
   autoWrapRow: true,
-  autoWrapCol: false,
-  licenseKey: "non-commercial-and-evaluation" // 使用您的 licenseKey
+  autoWrapCol: true,
+  allowInsertColumn: true,
+  allowInsertRow: false,
+  licenseKey: "non-commercial-and-evaluation", // 使用您的 licenseKey
+  contextMenu: {
+    callback(key, selection, clickEvent) {
+      // Common callback for all options
+      console.log(key, selection, clickEvent);
+    },
+    items: {
+      col_left: {
+        name: "Insert column on the left"
+      },
+      about: {
+        // Own custom option
+        name() {
+          // `name` can be a string or a function
+          return "<b>Custom option</b>"; // Name can contain HTML
+        },
+        hidden() {
+          // `hidden` can be a boolean or a function
+          // Hide the option when the first column was clicked
+          return this.getSelectedLast()[1] == 0; // `this` === hot
+        },
+        callback(key, selection, clickEvent) {
+          // Callback for specific option
+          setTimeout(() => {
+            alert("Hello world!"); // Fire alert after menu close (with timeout)
+          }, 0);
+        }
+      }
+    }
+  }
 };
 const baseRadio = ref("default");
 const size = ref("disabled");
@@ -595,7 +677,11 @@ const handleChange = (values: FieldValues) => {
   console.log(values, "change");
 };
 const handleSubmit = (values: FieldValues) => {
-  console.log(values, "Submit");
+  console.log(values.demand, "Submit");
+  // const hotInstance = HotTable.value.hotInstance;
+  console.log(HotTable, "hotInstance.getData()");
+  HotTable.props.allowInsertColumn = true;
+  visible.value = false;
 };
 const handleSubmitError = (err: any) => {
   console.log(err, "err");
@@ -607,8 +693,6 @@ const handleReset = () => {
 defineOptions({
   name: "CreateQuote"
 });
-
-registerAllModules();
 
 const { toDetail, router } = useDetail();
 const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
@@ -713,37 +797,39 @@ onMounted(() => {
             />
           </el-collapse-item>
           <el-collapse-item title="FREIGHT CHARGE" name="3">
-            <el-tabs
-              tab-position="left"
-              style="height: 200px"
-              class="demo-tabs"
-            >
-              <el-tab-pane label="FREIGHT CHARGE">
-                <!-- <el-button @click="onBaseClick"> 基础用法 </el-button> -->
-                <el-select
-                  v-model="result.currency"
-                  clearable
-                  placeholder="Select"
-                  style="width: 240px"
-                >
-                  <el-option
-                    v-for="item in currencyOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  />
-                </el-select>
-                <HotTable :settings="hotSettings" />
-              </el-tab-pane>
-              <el-tab-pane label="LOCAL CHARGE(FCL)">
-                <HotTable :settings="hotSettings" />
-              </el-tab-pane>
-              <el-tab-pane label="LOCAL CHARGE(LCL)">
-                <HotTable :settings="hotSettings" />
-              </el-tab-pane>
-            </el-tabs>
+            <el-button
+              class="mb-1"
+              :icon="useRenderIcon('ep:setting')"
+              size="small"
+              circle
+              @click="handleOpen"
+            />
+            <PlusDrawerForm
+              v-model:visible="visible"
+              v-model="values"
+              :form="{ columns }"
+              @confirm="handleSubmit"
+            />
+            <!-- <HotTable :settings="hotSettings" /> -->
+            <hot-table :settings="hotSettings" />
           </el-collapse-item>
-          <el-collapse-item title="REMARK " name="4">
+          <el-collapse-item title="LOCAL CHARGE(FCL)" name="4">
+            <el-button
+              :icon="useRenderIcon('ep:setting')"
+              size="small"
+              circle
+            />
+            <HotTable :settings="hotSettings" />
+          </el-collapse-item>
+          <el-collapse-item title="LOCAL CHARGE(LCL)" name="5">
+            <el-button
+              :icon="useRenderIcon('ep:setting')"
+              size="small"
+              circle
+            />
+            <HotTable :settings="hotSettings" />
+          </el-collapse-item>
+          <el-collapse-item title="REMARK " name="6">
             <el-input
               v-model="result.remark"
               style="width: 440px"
@@ -754,7 +840,7 @@ onMounted(() => {
               type="textarea"
             />
           </el-collapse-item>
-          <el-collapse-item title="TERMS AND CONDITIONS " name="5">
+          <el-collapse-item title="TERMS AND CONDITIONS " name="7">
             <el-select
               v-model="result.TermsAndConditions"
               clearable
@@ -769,7 +855,7 @@ onMounted(() => {
               />
             </el-select>
           </el-collapse-item>
-          <el-collapse-item title="SALES INFO " name="6">
+          <el-collapse-item title="SALES INFO " name="8">
             <div class="flex flex-col ...">
               <div>Name : {{ result.salesName }}</div>
               <div>EMAIL : {{ result.saleseMail }}</div>
