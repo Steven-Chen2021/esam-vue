@@ -9,11 +9,13 @@ import {
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 //Sample data
 import { leadTableData } from "./../table/base/data";
+import { useDetail } from "./hooks";
 
 //Page Setting
 defineOptions({
   name: "Leads"
 });
+const { toDetail, router } = useDetail();
 
 //Grid Setting Begin
 const filterHandler = (value, row, column) => {
@@ -68,6 +70,7 @@ const leadColumns: TableColumnList = [
 ];
 
 // Customized Filter Begin
+const customizedFilterButtonList = ref([]);
 const columns: PlusColumn[] = [
   {
     label: "Name",
@@ -117,6 +120,30 @@ const columns: PlusColumn[] = [
         value: "Sea"
       }
     ]
+  },
+  {
+    label: "Owner",
+    width: 120,
+    prop: "owner",
+    valueType: "copy"
+  },
+  {
+    label: "Owner Station",
+    width: 120,
+    prop: "ownerstation",
+    valueType: "copy"
+  },
+  {
+    label: "Created By",
+    width: 120,
+    prop: "createdby",
+    valueType: "copy"
+  },
+  {
+    label: "Lead Source",
+    width: 120,
+    prop: "leadsource",
+    valueType: "copy"
   }
 ];
 const visible = ref(false);
@@ -126,59 +153,58 @@ const handleOpen = () => {
 };
 const handleConfirm = (values: FieldValues) => {
   console.log(values);
+  customizedFilterButtonList.value.push({
+    type: "",
+    text: values.name
+  });
   visible.value = false;
+  console.log(customizedFilterButtonList);
 };
 </script>
 
 <template>
-  <el-card shadow="never">
-    <div class="flex ...">
-      <div class="grow h-8 ...">
-        <el-button
-          type="primary"
-          plain
-          :icon="useRenderIcon('ep:filter')"
-          @click="handleOpen"
-        >
-          {{ "Filter Setting" }}
-        </el-button>
-      </div>
-      <div class="grow h-8 ...">
-        <el-button :icon="useRenderIcon('ep:plus')"> Create Quote </el-button>
-      </div>
-    </div>
-  </el-card>
-  <pure-table
-    :data="leadTableData.concat(leadTableData).concat(leadTableData)"
-    :columns="leadColumns"
-    stripe
-  />
   <div>
-    <PlusDrawerForm
-      v-model:visible="visible"
-      v-model="values"
-      :form="{ columns }"
-      size="50%"
-      @confirm="handleConfirm"
-    >
-      <template #plus-label-name="{ label }">
-        <span style="color: red">{{ label }}</span>
-      </template>
-
-      <template #plus-label-company="{ label }">
-        <span style="color: green">{{ label }}</span>
-      </template>
-      <template #plus-label-leadstatus="{ label }">
-        <span style="color: green">{{ label }}</span>
-      </template>
-      <template #plus-label-pl="{ label }">
-        <span style="color: green">{{ label }}</span>
-      </template>
-    </PlusDrawerForm>
+    <el-card shadow="never">
+      <div class="flex flex-row">
+        <div class="basis-4/5">
+          <el-button
+            type="primary"
+            circle
+            :icon="useRenderIcon('ep:setting')"
+            @click="handleOpen"
+          />
+          <el-space wrap>
+            <el-button
+              v-for="(button, index) in customizedFilterButtonList"
+              :key="index"
+            >
+              {{ button.text }}
+            </el-button>
+          </el-space>
+        </div>
+        <div class="basis-1/5">
+          <el-button
+            :icon="useRenderIcon('ep:plus')"
+            @click="toDetail({ id: 0 }, 'params')"
+          >
+            Create Quote
+          </el-button>
+        </div>
+      </div>
+    </el-card>
+    <pure-table
+      :data="leadTableData.concat(leadTableData).concat(leadTableData)"
+      :columns="leadColumns"
+      stripe
+    />
+    <div>
+      <PlusDrawerForm
+        v-model:visible="visible"
+        v-model="values"
+        :form="{ columns }"
+        size="50%"
+        @confirm="handleConfirm"
+      />
+    </div>
   </div>
 </template>
-<style scoped>
-.el-form-item__label {
-  width: 220px;
-}
-</style>

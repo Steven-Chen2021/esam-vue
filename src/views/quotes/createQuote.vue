@@ -117,7 +117,8 @@ const result = ref<FieldValues>({
   saleseMail: "wilson_w_huang@dimerco.com",
   saleseTel: "886-2-2796-6666#1234",
   salesMobile: "886-932-123456",
-  currency: "usd"
+  currency: "usd",
+  shipmentMode: "FCL"
 });
 
 const currencyOptions = [
@@ -261,6 +262,24 @@ const quoteDetailColumns: PlusColumn[] = [
       {
         label: "Simplified Chinese",
         value: "cn"
+      }
+    ],
+    colProps: {
+      span: 24
+    }
+  },
+  {
+    label: "Mode",
+    prop: "shipmentMode",
+    valueType: "radio",
+    options: [
+      {
+        label: "FCL",
+        value: "FCL"
+      },
+      {
+        label: "LCL",
+        value: "LCL"
       }
     ],
     colProps: {
@@ -547,7 +566,6 @@ const hotSettings = {
     }
   ],
   colHeaders: [
-    "",
     "Place of Receipt",
     "Port of loading",
     "Port of discharge",
@@ -562,10 +580,6 @@ const hotSettings = {
   width: "100%",
   height: "auto",
   columns: [
-    {
-      data: "ID",
-      type: "checkbox"
-    },
     {
       data: "POR",
       type: "dropdown",
@@ -622,38 +636,183 @@ const hotSettings = {
   autoWrapRow: true,
   autoWrapCol: true,
   allowInsertColumn: true,
-  allowInsertRow: false,
+  allowInsertRow: true,
   licenseKey: "non-commercial-and-evaluation", // 使用您的 licenseKey
-  contextMenu: {
-    callback(key, selection, clickEvent) {
-      // Common callback for all options
-      console.log(key, selection, clickEvent);
-    },
-    items: {
-      col_left: {
-        name: "Insert column on the left"
-      },
-      about: {
-        // Own custom option
-        name() {
-          // `name` can be a string or a function
-          return "<b>Custom option</b>"; // Name can contain HTML
-        },
-        hidden() {
-          // `hidden` can be a boolean or a function
-          // Hide the option when the first column was clicked
-          return this.getSelectedLast()[1] == 0; // `this` === hot
-        },
-        callback(key, selection, clickEvent) {
-          // Callback for specific option
-          setTimeout(() => {
-            alert("Hello world!"); // Fire alert after menu close (with timeout)
-          }, 0);
-        }
-      }
-    }
-  }
+  contextMenu: true
 };
+const localChargeExport = {
+  data: [
+    {
+      City: "TWKHH - (Kaohsiung)",
+      Currency: "usd",
+      ChargeItem: 1,
+      Min: 0,
+      Flat: 0,
+      SetFiling: 0,
+      CBM: 0,
+      UOM: "",
+      TON: 0,
+      TwentyCNT: 0,
+      FortyCNT: 0,
+      FortyHQ: 0,
+      FuelSurcharge: 0,
+      Remark: ""
+    }
+  ],
+  colHeaders: [
+    "City",
+    "Currency",
+    "Charge Item",
+    "Min",
+    "Flat",
+    "Set Filing",
+    "CBM",
+    "UOM",
+    "TON",
+    "20CNT",
+    "40CNT",
+    "40HQ",
+    "Fuel Surcharge",
+    "Remark"
+  ],
+  columns: [
+    {
+      data: "City",
+      type: "dropdown",
+      source: [
+        "TWKHH - (Kaohsiung)",
+        "USLAX - (Los Angeles)",
+        "CNSHA - (Shanghai)",
+        "CNSZX - (Shenzhen)"
+      ]
+    },
+    {
+      data: "Currency",
+      type: "dropdown",
+      source: ["TWD", "USD", "EUR", "CNY", "SDG"]
+    },
+    {
+      data: "ChargeItem",
+      type: "dropdown",
+      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
+    },
+    {
+      data: "Min",
+      type: "numeric"
+    },
+    {
+      data: "Flat",
+      type: "numeric"
+    },
+    {
+      data: "SetFiling",
+      type: "numeric"
+    },
+    {
+      data: "CBM",
+      type: "numeric"
+    },
+    {
+      data: "UOM",
+      type: "numeric"
+    },
+    {
+      data: "TON",
+      type: "numeric"
+    },
+    {
+      data: "TwentyCNT",
+      type: "numeric"
+    },
+    {
+      data: "FortyCNT",
+      type: "numeric"
+    },
+    {
+      data: "FortyHQ",
+      type: "numeric"
+    },
+    {
+      data: "FuelSurcharge",
+      type: "numeric"
+    },
+    {
+      data: "Remark",
+      type: "text"
+    }
+  ],
+  rowHeaders: false,
+  dropdownMenu: true,
+  width: "100%",
+  height: "auto",
+  autoWrapRow: true,
+  autoWrapCol: true,
+  allowInsertColumn: true,
+  allowInsertRow: true,
+  licenseKey: "non-commercial-and-evaluation",
+  contextMenu: true
+};
+const localChargeImport = {
+  data: [
+    {
+      City: "TWKHH - (Kaohsiung)",
+      Currency: "TWD",
+      ChargeItem: "Other Charges",
+      ChargeFee: 0,
+      Remark: ""
+    }
+  ],
+  colHeaders: ["City", "Currency", "Charge Item", "Charge Fee", "Remark"],
+  columns: [
+    {
+      data: "City",
+      type: "autocomplete",
+      source: [
+        "TWKHH - (Kaohsiung)",
+        "USLAX - (Los Angeles)",
+        "CNSHA - (Shanghai)",
+        "CNSZX - (Shenzhen)"
+      ],
+      strict: false,
+      visibleRows: 4
+    },
+    {
+      data: "Currency",
+      type: "dropdown",
+      source: ["TWD", "USD", "EUR", "CNY", "SDG"]
+    },
+    {
+      data: "ChargeItem",
+      type: "dropdown",
+      source: [
+        "Valuation Fee",
+        "Breakbulk Fee",
+        "DSTN/PORT/CTF - Clean Truck Fee",
+        "ORG/INSURANCE/QC - Quality Certificate",
+        "Other Charges"
+      ]
+    },
+    {
+      data: "ChargeFee",
+      type: "number"
+    },
+    {
+      data: "Remark",
+      type: "text"
+    }
+  ],
+  rowHeaders: false,
+  dropdownMenu: true,
+  width: "100%",
+  height: "auto",
+  autoWrapRow: true,
+  autoWrapCol: true,
+  allowInsertColumn: true,
+  allowInsertRow: true,
+  licenseKey: "non-commercial-and-evaluation",
+  contextMenu: true
+};
+
 const baseRadio = ref("default");
 const size = ref("disabled");
 const dynamicSize = ref();
@@ -715,163 +874,155 @@ onMounted(() => {
 </script>
 
 <template>
-  <el-card shadow="never" class="relative h-96 overflow-hidden">
-    <div class="flex ...">
-      <div class="grow h-8 ...">
-        <el-button :icon="useRenderIcon(buttonList[0].icon)">
-          <template v-if="baseRadio !== 'circle'" #default>
-            <p>{{ buttonList[0].text }}</p>
-          </template>
-        </el-button>
+  <div>
+    <el-card shadow="never" class="relative h-96 overflow-hidden">
+      <div class="flex ...">
+        <div class="grow h-8 ...">
+          <el-button :icon="useRenderIcon(buttonList[0].icon)">
+            <template v-if="baseRadio !== 'circle'" #default>
+              <p>{{ buttonList[0].text }}</p>
+            </template>
+          </el-button>
+        </div>
+        <div class="grow-0 h-8 ...">
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ep:delete')"
+            @click="saveData"
+          >
+            {{ size === "disabled" ? "Delete" : "Processing" }}
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ep:view')"
+            @click="saveData"
+          >
+            {{ size === "disabled" ? "Preview" : "Processing" }}
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ep:edit')"
+            @click="saveData"
+          >
+            {{ size === "disabled" ? "Save as Draft" : "Processing" }}
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ri:save-line')"
+            @click="saveData"
+          >
+            {{ size === "disabled" ? "Save" : "Processing" }}
+          </el-button>
+        </div>
       </div>
-      <div class="grow-0 h-8 ...">
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:delete')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Delete" : "Processing" }}
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:view')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Preview" : "Processing" }}
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:edit')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Save as Draft" : "Processing" }}
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ri:save-line')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Save" : "Processing" }}
-        </el-button>
-      </div>
-    </div>
 
-    <!-- Content Section -->
-    <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
-      <div class="p-4">
-        <el-collapse class="mb-2">
-          <el-collapse-item title="QUOTE DETAIL" name="1">
-            <PlusForm
-              v-model="result"
-              :columns="quoteDetailColumns"
-              :rules="rules"
-              :row-props="{ gutter: 20 }"
-              label-width="auto"
-              :hasFooter="false"
-            />
-          </el-collapse-item>
-          <el-collapse-item title="TERMS INFO" name="2">
-            <PlusForm
-              v-model="result"
-              :columns="termsDetailColumns"
-              :rules="rules"
-              :row-props="{ gutter: 20 }"
-              label-width="auto"
-              :hasFooter="false"
-            />
-          </el-collapse-item>
-          <el-collapse-item title="FREIGHT CHARGE" name="3">
-            <el-button
-              class="mb-1"
-              :icon="useRenderIcon('ep:setting')"
-              size="small"
-              circle
-              @click="handleOpen"
-            />
-            <PlusDrawerForm
-              v-model:visible="visible"
-              v-model="values"
-              :form="{ columns }"
-              @confirm="handleSubmit"
-            />
-            <!-- <HotTable :settings="hotSettings" /> -->
-            <hot-table :settings="hotSettings" />
-          </el-collapse-item>
-          <el-collapse-item title="LOCAL CHARGE(FCL)" name="4">
-            <el-button
-              :icon="useRenderIcon('ep:setting')"
-              size="small"
-              circle
-            />
-            <HotTable :settings="hotSettings" />
-          </el-collapse-item>
-          <el-collapse-item title="LOCAL CHARGE(LCL)" name="5">
-            <el-button
-              :icon="useRenderIcon('ep:setting')"
-              size="small"
-              circle
-            />
-            <HotTable :settings="hotSettings" />
-          </el-collapse-item>
-          <el-collapse-item title="REMARK " name="6">
-            <el-input
-              v-model="result.remark"
-              style="width: 440px"
-              placeholder="Please input"
-              clearable
-              maxlength="30"
-              show-word-limit
-              type="textarea"
-            />
-          </el-collapse-item>
-          <el-collapse-item title="TERMS AND CONDITIONS " name="7">
-            <el-select
-              v-model="result.TermsAndConditions"
-              clearable
-              placeholder="Select"
-              style="width: 240px"
-            >
-              <el-option
-                v-for="item in TermsAndConditions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+      <!-- Content Section -->
+      <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
+        <div class="p-4">
+          <el-collapse class="mb-2">
+            <el-collapse-item title="QUOTE DETAIL" name="1">
+              <PlusForm
+                v-model="result"
+                :columns="quoteDetailColumns"
+                :rules="rules"
+                :row-props="{ gutter: 20 }"
+                label-width="auto"
+                :hasFooter="false"
               />
-            </el-select>
-          </el-collapse-item>
-          <el-collapse-item title="SALES INFO " name="8">
-            <div class="flex flex-col ...">
-              <div>Name : {{ result.salesName }}</div>
-              <div>EMAIL : {{ result.saleseMail }}</div>
-              <div>Mobile : {{ result.salesMobile }}</div>
-              <div>Tel : {{ result.saleseTel }}</div>
-            </div>
-          </el-collapse-item>
-        </el-collapse>
-      </div>
-    </el-scrollbar>
+            </el-collapse-item>
+            <el-collapse-item title="TERMS INFO" name="2">
+              <PlusForm
+                v-model="result"
+                :columns="termsDetailColumns"
+                :rules="rules"
+                :row-props="{ gutter: 20 }"
+                label-width="auto"
+                :hasFooter="false"
+              />
+            </el-collapse-item>
+            <el-collapse-item title="FREIGHT CHARGE" name="3">
+              <el-button
+                class="mb-1"
+                :icon="useRenderIcon('ep:setting')"
+                size="small"
+                circle
+                @click="handleOpen"
+              />
+              <PlusDrawerForm
+                v-model:visible="visible"
+                v-model="values"
+                :form="{ columns }"
+                @confirm="handleSubmit"
+              />
+              <!-- <HotTable :settings="hotSettings" /> -->
+              <hot-table :settings="hotSettings" />
+            </el-collapse-item>
+            <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
+              <HotTable :settings="localChargeExport" />
+            </el-collapse-item>
+            <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
+              <HotTable :settings="localChargeImport" />
+            </el-collapse-item>
+            <el-collapse-item title="REMARK " name="6">
+              <el-input
+                v-model="result.remark"
+                style="width: 440px"
+                placeholder="Please input"
+                clearable
+                maxlength="30"
+                show-word-limit
+                type="textarea"
+              />
+            </el-collapse-item>
+            <el-collapse-item title="TERMS AND CONDITIONS " name="7">
+              <el-select
+                v-model="result.TermsAndConditions"
+                clearable
+                placeholder="Select"
+                style="width: 240px"
+              >
+                <el-option
+                  v-for="item in TermsAndConditions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-collapse-item>
+            <el-collapse-item title="SALES INFO " name="8">
+              <div class="flex flex-col ...">
+                <div>Name : {{ result.salesName }}</div>
+                <div>EMAIL : {{ result.saleseMail }}</div>
+                <div>Mobile : {{ result.salesMobile }}</div>
+                <div>Tel : {{ result.saleseTel }}</div>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+      </el-scrollbar>
 
-    <!-- Footer Section -->
-    <!-- <div class="absolute bottom-0 left-0 right-0 bg-gray-300 text-white p-4">
+      <!-- Footer Section -->
+      <!-- <div class="absolute bottom-0 left-0 right-0 bg-gray-300 text-white p-4">
       Footer Content
     </div> -->
-  </el-card>
+    </el-card>
+  </div>
 </template>
 
 <style scoped>
