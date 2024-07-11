@@ -5,7 +5,7 @@ import {
   appendFieldByUniqueId
 } from "@/utils/tree";
 import { useDetail } from "./hooks";
-import { h, ref, computed, onMounted } from "vue";
+import { h, ref, computed, onMounted, defineComponent } from "vue";
 import { clone } from "@pureadmin/utils";
 import { transformI18n } from "@/plugins/i18n";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
@@ -489,24 +489,21 @@ const hotSettings = {
       TT: null
     }
   ],
-  colHeaders: true,
-  rowHeaders: false,
+  rowHeaders: true,
   dropdownMenu: true,
   contextMenu: true,
   width: "100%",
-  height: "auto",
-  nestedHeaders: [
-    [
-      "",
-      "Place of Receipt",
-      "Port of loading",
-      "Port of discharge",
-      "Place of delivery",
-      "Type the CBM",
-      "CBM UOM",
-      "Cost",
-      "Transit time"
-    ]
+  height: "500",
+  colHeaders: [
+    "",
+    "Place of Receipt",
+    "Port of loading",
+    "Port of discharge",
+    "Place of delivery",
+    "Type the CBM",
+    "CBM UOM",
+    "Cost",
+    "Transit time"
   ],
   columns: [
     {
@@ -572,7 +569,7 @@ const hotSettings = {
     }
   ],
   autoWrapRow: true,
-  autoWrapCol: true,
+  autoWrapCol: false,
   licenseKey: "non-commercial-and-evaluation" // 使用您的 licenseKey
 };
 const baseRadio = ref("default");

@@ -6,6 +6,8 @@ import {
   type LocationQueryRaw,
   type RouteParamsRaw
 } from "vue-router";
+import { reactive } from "vue";
+import type { PaginationProps } from "@pureadmin/table";
 
 export function useDetail() {
   const route = useRoute();
@@ -46,5 +48,15 @@ export function useDetail() {
     if (getParameter) toDetail(getParameter, model);
   };
 
-  return { toDetail, initToDetail, getParameter, router };
+  const pagination = reactive<PaginationProps>({
+    pageSize: 10,
+    currentPage: 1,
+    pageSizes: [10, 15, 20],
+    total: 0,
+    align: "right",
+    background: true,
+    small: false
+  });
+
+  return { toDetail, initToDetail, getParameter, router, pagination };
 }

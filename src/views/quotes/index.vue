@@ -21,10 +21,36 @@ defineOptions({
 const buttonList = [
   {
     type: "",
-    text: "Back",
-    icon: "ep:back"
+    text: "Default",
+    icon: "ep:search"
+  },
+  {
+    type: "primary",
+    text: "Primary",
+    icon: "ep:edit"
+  },
+  {
+    type: "success",
+    text: "Success",
+    icon: "ep:check"
+  },
+  {
+    type: "info",
+    text: "Info",
+    icon: "ep:message"
+  },
+  {
+    type: "warning",
+    text: "Warning",
+    icon: "ep:star"
+  },
+  {
+    type: "danger",
+    text: "Danger",
+    icon: "ep:delete"
   }
 ];
+
 const tableRef = ref();
 const filterHandler = (value, row, column) => {
   const property = column["property"];
@@ -36,7 +62,7 @@ const filterTag = (value, row) => {
 const baseRadio = ref("default");
 const dynamicSize = ref();
 const size = ref("disabled");
-const { toDetail, router } = useDetail();
+const { toDetail, router, pagination } = useDetail();
 const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
 const saveData = () => {
   size.value = "default";
@@ -117,13 +143,12 @@ const columns: TableColumnList = [
   {
     label: "Product Line",
     prop: "pl",
+    sortable: true,
     filters: [
       { text: "Air", value: "Air" },
       { text: "Sea", value: "Sea" }
     ],
-    filterMethod: filterTag,
-    filterPlacement: "bottom-end",
-    slot: "pl"
+    filterMethod: filterHandler
   },
   {
     label: "Owner",
@@ -157,7 +182,7 @@ const columns: TableColumnList = [
           :icon="useRenderIcon('ep:filter')"
           @click="onCloseCallBackClick"
         >
-          {{ size === "disabled" ? "Preview" : "Processing" }}
+          {{ "Quick Filter Setting" }}
         </el-button>
       </div>
       <div class="grow-0 h-8 ...">
@@ -172,13 +197,26 @@ const columns: TableColumnList = [
         </el-button>
       </div>
     </div>
-    <div class="flex flex-wrap items-center" />
+    <br />
+    <el-space wrap>
+      <el-button
+        v-for="(button, index) in buttonList"
+        :key="index"
+        :type="button.type"
+        :icon="useRenderIcon(button.icon)"
+      >
+        <template v-if="baseRadio !== 'circle'" #default>
+          <p>{{ button.text }}</p>
+        </template>
+      </el-button>
+    </el-space>
   </el-card>
   <pure-table
     :data="leadTableData.concat(leadTableData).concat(leadTableData)"
     :columns="columns"
     height="360"
     :row-class-name="tableRowClassName"
+    :pagination="pagination"
   />
 </template>
 <style>
