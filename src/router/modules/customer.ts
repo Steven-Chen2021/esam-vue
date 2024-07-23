@@ -12,8 +12,8 @@ export default {
   children: [
     {
       path: "/customer/index",
-      name: "customer",
-      component: () => import("@/views/contact/index.vue"),
+      name: "CustomerList",
+      component: () => import("@/views/customer/index.vue"),
       meta: {
         title: $t("menus.dimercoCustomer")
       }

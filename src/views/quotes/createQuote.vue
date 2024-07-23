@@ -106,7 +106,7 @@ const result = ref<FieldValues>({
   ShippingTerm: "DD",
   TradeTerm: "CIF",
   CreditTerm: "EOM15",
-  CustomerLead: 46798,
+  CustomerLead: "MICROSOFT TAIWAN",
   AttentionTo: "A9370",
   status: "0",
   PL: 6,
@@ -148,22 +148,20 @@ const rules = {
 };
 
 const quoteDetailColumns: PlusColumn[] = [
-  {
-    label: "Client",
-    width: 120,
-    prop: "CustomerLead",
-    valueType: "autocomplete",
-    // tooltip: '自动补全输入框',
-    fieldProps: {
-      fetchSuggestions: (queryString: string, cb: any) => {
-        const results = queryString
-          ? restaurants.value.filter(createFilter(queryString))
-          : restaurants.value;
-        // call callback function to return suggestions
-        cb(results);
-      }
-    }
-  },
+  // {
+  //   label: "Company Name",
+  //   width: 120,
+  //   prop: "CustomerLead",
+  //   valueType: "autocomplete",
+  //   fieldProps: {
+  //     fetchSuggestions: (queryString: string, cb: any) => {
+  //       const results = queryString
+  //         ? restaurants.value.filter(createFilter(queryString))
+  //         : restaurants.value;
+  //       cb(results);
+  //     }
+  //   }
+  // },
   {
     label: "Product Line",
     width: 360,
@@ -749,15 +747,16 @@ const localChargeExport = {
   autoWrapCol: true,
   allowInsertColumn: true,
   allowInsertRow: true,
-  licenseKey: "non-commercial-and-evaluation",
+  licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true
 };
+
 const localChargeImport = {
   data: [
     {
       City: "TWKHH - (Kaohsiung)",
-      Currency: "TWD",
-      ChargeItem: "Other Charges",
+      Currency: "usd",
+      ChargeItem: 1,
       ChargeFee: 0,
       Remark: ""
     }
@@ -766,15 +765,13 @@ const localChargeImport = {
   columns: [
     {
       data: "City",
-      type: "autocomplete",
+      type: "dropdown",
       source: [
         "TWKHH - (Kaohsiung)",
         "USLAX - (Los Angeles)",
         "CNSHA - (Shanghai)",
         "CNSZX - (Shenzhen)"
-      ],
-      strict: false,
-      visibleRows: 4
+      ]
     },
     {
       data: "Currency",
@@ -784,17 +781,11 @@ const localChargeImport = {
     {
       data: "ChargeItem",
       type: "dropdown",
-      source: [
-        "Valuation Fee",
-        "Breakbulk Fee",
-        "DSTN/PORT/CTF - Clean Truck Fee",
-        "ORG/INSURANCE/QC - Quality Certificate",
-        "Other Charges"
-      ]
+      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
     },
     {
       data: "ChargeFee",
-      type: "number"
+      type: "numeric"
     },
     {
       data: "Remark",
@@ -809,10 +800,11 @@ const localChargeImport = {
   autoWrapCol: true,
   allowInsertColumn: true,
   allowInsertRow: true,
-  licenseKey: "non-commercial-and-evaluation",
+  licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true
 };
 
+const activeName = ref("1");
 const baseRadio = ref("default");
 const size = ref("disabled");
 const dynamicSize = ref();
@@ -935,8 +927,11 @@ onMounted(() => {
       <!-- Content Section -->
       <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
         <div class="p-4">
-          <el-collapse class="mb-2">
+          <el-collapse v-model="activeName" class="mb-2">
             <el-collapse-item title="QUOTE DETAIL" name="1">
+              <template #title>
+                <span class="text-orange-500">QUOTE DETAIL</span>
+              </template>
               <PlusForm
                 v-model="result"
                 :columns="quoteDetailColumns"

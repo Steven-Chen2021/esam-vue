@@ -8,12 +8,12 @@ import {
 } from "plus-pro-components";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 //Sample data
-import { quoteTableData } from "./../table/base/data";
+import { leadTableData } from "./../table/base/data";
 import { useDetail } from "./hooks";
 
 //Page Setting
 defineOptions({
-  name: "Leads"
+  name: "CustomerList"
 });
 const { toDetail, router } = useDetail();
 
@@ -25,52 +25,47 @@ const filterHandler = (value, row, column) => {
 const filterTag = (value, row) => {
   return row.tag === value;
 };
-const GridColumns: TableColumnList = [
-  {
-    label: "Company",
-    prop: "companyname",
-    sortable: true
-  },
-  {
-    label: "Quote",
-    prop: "quoteno",
-    sortable: true
-  },
-  {
-    label: "Lane Segment",
-    prop: "lanesegment"
-  },
-  {
-    label: "Trade Term",
-    prop: "tradeterm",
-    sortable: true
-  },
-  {
-    label: "Shipping Term",
-    prop: "shippingterm",
-    sortable: true
-  },
+const leadColumns: TableColumnList = [
   {
     label: "Status",
-    prop: "status",
+    prop: "leadstatus",
     sortable: true,
     filters: [
-      { text: "Draft", value: "0" },
-      { text: "Wait for Approve", value: "1" },
-      { text: "Approved", value: "2" },
-      { text: "Accepted", value: "3" },
-      { text: "Rejected", value: "4" }
+      { text: "Quotation Accepted", value: "Quotation Accepted" },
+      { text: "Approaching", value: "Approaching" },
+      { text: "Quoting", value: "Quoting" }
     ],
     filterMethod: filterHandler
   },
   {
-    label: "Issue Date",
-    prop: "issuedate",
-    sortable: true
+    label: "Company",
+    prop: "company"
   },
   {
-    label: "Effective - Expired",
-    prop: "EtoE"
+    label: "Product Line",
+    prop: "pl",
+    sortable: true,
+    filters: [
+      { text: "Air", value: "Air" },
+      { text: "Sea", value: "Sea" }
+    ],
+    filterMethod: filterHandler
+  },
+  {
+    label: "Owner",
+    prop: "owner"
+  },
+  {
+    label: "Owner Station",
+    prop: "ownerstation"
+  },
+  {
+    label: "Created By",
+    prop: "createdby"
+  },
+  {
+    label: "Lead Source",
+    prop: "leadsource"
   }
 ];
 
@@ -187,19 +182,19 @@ const handleConfirm = (values: FieldValues) => {
             </el-button>
           </el-space>
         </div>
-        <div class="basis-1/5">
+        <!-- <div class="basis-1/5">
           <el-button
             :icon="useRenderIcon('ep:plus')"
             @click="toDetail({ id: 0 }, 'params')"
           >
             Create Quote
           </el-button>
-        </div>
+        </div> -->
       </div>
     </el-card>
     <pure-table
-      :data="quoteTableData.concat(quoteTableData).concat(quoteTableData)"
-      :columns="GridColumns"
+      :data="leadTableData.concat(leadTableData).concat(leadTableData)"
+      :columns="leadColumns"
       stripe
     />
     <div>

@@ -76,6 +76,57 @@ const leadTableData = [
   }
 ];
 
+const quoteTableData = [
+  {
+    companyname: "DELTA ELECTRONICS INT'L (SINGAPORE) PTE. LTD.",
+    quoteno: "QS0170007726",
+    lanesegment: "USNYC - NYC - HKG - HKHKG",
+    tradeterm: "EXW",
+    shippingterm: "EOM45",
+    status: "0",
+    issuedate: "Jul 17 24",
+    EtoE: "Jun 01 24 - Jul 31 24",
+    shippingtype: "FCL",
+    nra: "X"
+  },
+  {
+    companyname: "DELTA ELECTRONICS INT'L (SINGAPORE) PTE. LTD.",
+    quoteno: "QS0170007726",
+    lanesegment: "USNYC - NYC - HKG - HKHKG",
+    tradeterm: "EXW",
+    shippingterm: "EOM45",
+    status: "0",
+    issuedate: "Jul 17 24",
+    EtoE: "Jun 01 24 - Jul 31 24",
+    shippingtype: "FCL",
+    nra: "X"
+  },
+  {
+    companyname: "DELTA ELECTRONICS INT'L (SINGAPORE) PTE. LTD.",
+    quoteno: "QS0170007726",
+    lanesegment: "USNYC - NYC - HKG - HKHKG",
+    tradeterm: "EXW",
+    shippingterm: "EOM45",
+    status: "0",
+    issuedate: "Jul 17 24",
+    EtoE: "Jun 01 24 - Jul 31 24",
+    shippingtype: "FCL",
+    nra: "X"
+  },
+  {
+    companyname: "DELTA ELECTRONICS INT'L (SINGAPORE) PTE. LTD.",
+    quoteno: "QS0170007726",
+    lanesegment: "USNYC - NYC - HKG - HKHKG",
+    tradeterm: "EXW",
+    shippingterm: "EOM45",
+    status: "0",
+    issuedate: "Jul 17 24",
+    EtoE: "Jun 01 24 - Jul 31 24",
+    shippingtype: "FCL",
+    nra: "X"
+  }
+];
+
 const cloneData = clone(tableData, true);
 
 const tableDataMore = cloneData.map(item =>
@@ -324,5 +375,6 @@ export {
   tableDataImage,
   tableDataExpand,
   tableDataSortable,
-  leadTableData
+  leadTableData,
+  quoteTableData
 };
