@@ -148,20 +148,20 @@ const rules = {
 };
 
 const quoteDetailColumns: PlusColumn[] = [
-  // {
-  //   label: "Company Name",
-  //   width: 120,
-  //   prop: "CustomerLead",
-  //   valueType: "autocomplete",
-  //   fieldProps: {
-  //     fetchSuggestions: (queryString: string, cb: any) => {
-  //       const results = queryString
-  //         ? restaurants.value.filter(createFilter(queryString))
-  //         : restaurants.value;
-  //       cb(results);
-  //     }
-  //   }
-  // },
+  {
+    label: "Company Name",
+    width: 120,
+    prop: "CustomerLead",
+    valueType: "autocomplete",
+    fieldProps: {
+      fetchSuggestions: (queryString: string, cb: any) => {
+        const results = queryString
+          ? restaurants.value.filter(createFilter(queryString))
+          : restaurants.value;
+        cb(results);
+      }
+    }
+  },
   {
     label: "Product Line",
     width: 360,
@@ -198,6 +198,64 @@ const quoteDetailColumns: PlusColumn[] = [
     }
   },
   {
+    label: "Effective - Expired",
+    prop: "endTime",
+    valueType: "date-picker",
+    fieldProps: {
+      type: "datetimerange",
+      startPlaceholder: "Effective",
+      endPlaceholder: "Expired"
+    },
+    colProps: {
+      span: 16
+    }
+  },
+  {
+    label: "Shipping Term",
+    width: 120,
+    prop: "ShippingTerm",
+    valueType: "select",
+    options: [
+      {
+        label: "DD",
+        value: "DD"
+      },
+      {
+        label: "DP",
+        value: "DP"
+      },
+      {
+        label: "PP",
+        value: "PP"
+      },
+      {
+        label: "PD",
+        value: "PD"
+      }
+    ],
+    colProps: {
+      span: 8
+    }
+  },
+  {
+    label: "Type",
+    prop: "gift",
+    valueType: "radio",
+    options: [
+      {
+        label: "All Year Round",
+        value: "en"
+      },
+      {
+        label: "One Time Only",
+        value: "cn"
+      }
+    ],
+    colProps: {
+      span: 16
+    }
+  },
+  {
     label: "Attention To",
     width: 360,
     prop: "AttentionTo",
@@ -220,30 +278,30 @@ const quoteDetailColumns: PlusColumn[] = [
       span: 8
     }
   },
-  {
-    label: "Tel",
-    width: 120,
-    prop: "tag",
-    colProps: {
-      span: 8
-    }
-  },
-  {
-    label: "Email",
-    width: 460,
-    prop: "tag",
-    colProps: {
-      span: 16
-    }
-  },
-  {
-    label: "Address",
-    width: 120,
-    prop: "tag",
-    colProps: {
-      span: 24
-    }
-  },
+  // {
+  //   label: "Tel",
+  //   width: 120,
+  //   prop: "tag",
+  //   colProps: {
+  //     span: 8
+  //   }
+  // },
+  // {
+  //   label: "Email",
+  //   width: 460,
+  //   prop: "tag",
+  //   colProps: {
+  //     span: 16
+  //   }
+  // },
+  // {
+  //   label: "Address",
+  //   width: 120,
+  //   prop: "tag",
+  //   colProps: {
+  //     span: 24
+  //   }
+  // },
   {
     label: "Quotation Language",
     prop: "gift",
@@ -282,6 +340,148 @@ const quoteDetailColumns: PlusColumn[] = [
     ],
     colProps: {
       span: 24
+    }
+  },
+  {
+    label: "Trade Term",
+    width: 120,
+    prop: "TradeTerm",
+    valueType: "select",
+    options: [
+      {
+        label: "CIF",
+        value: "CIF"
+      },
+      {
+        label: "CIP",
+        value: "CIP"
+      },
+      {
+        label: "CPT",
+        value: "CPT"
+      },
+      {
+        label: "DDP",
+        value: "DDP"
+      },
+      {
+        label: "DDU",
+        value: "DDU"
+      },
+      {
+        label: "EXW",
+        value: "EXW"
+      },
+      {
+        label: "FAS",
+        value: "FAS"
+      },
+      {
+        label: "FCA",
+        value: "FCA"
+      },
+      {
+        label: "FOB",
+        value: "FOB"
+      },
+      {
+        label: "CFR",
+        value: "CFR"
+      },
+      {
+        label: "DAP",
+        value: "DAP"
+      },
+      {
+        label: "DPU",
+        value: "DPU"
+      }
+    ],
+    colProps: {
+      span: 8
+    }
+  },
+  {
+    label: "Credit Term",
+    width: 120,
+    prop: "CreditTerm",
+    valueType: "select",
+    options: [
+      {
+        label: "EOM15",
+        value: "EOM15"
+      },
+      {
+        label: "EOM20",
+        value: "EOM20"
+      },
+      {
+        label: "EOM25",
+        value: "EOM25"
+      },
+      {
+        label: "EOM30",
+        value: "EOM30"
+      },
+      {
+        label: "EOM45",
+        value: "EOM45"
+      },
+      {
+        label: "EOM60",
+        value: "EOM60"
+      },
+      {
+        label: "EOM75",
+        value: "EOM75"
+      },
+      {
+        label: "EOM90",
+        value: "EOM90"
+      },
+      {
+        label: "NET07",
+        value: "NET07"
+      },
+      {
+        label: "NET15",
+        value: "NET15"
+      },
+      {
+        label: "NET21",
+        value: "NET21"
+      },
+      {
+        label: "NET30",
+        value: "NET30"
+      },
+      {
+        label: "NET45",
+        value: "NET45"
+      },
+      {
+        label: "NET50",
+        value: "NET50"
+      },
+      {
+        label: "NET55",
+        value: "NET55"
+      },
+      {
+        label: "NET60",
+        value: "NET60"
+      },
+      {
+        label: "NET80",
+        value: "NET80"
+      },
+      {
+        label: "NET90",
+        value: "NET90"
+      }
+    ],
+    colProps: {
+      span: 8
     }
   }
 ];
@@ -456,11 +656,6 @@ const termsDetailColumns: PlusColumn[] = [
       span: 8
     }
   },
-  // {
-  //   label: "Effective - Expired",
-  //   prop: "time",
-  //   valueType: "date-picker"
-  // },
   {
     label: "Effective - Expired",
     prop: "endTime",
@@ -941,7 +1136,10 @@ onMounted(() => {
                 :hasFooter="false"
               />
             </el-collapse-item>
-            <el-collapse-item title="TERMS INFO" name="2">
+            <!-- <el-collapse-item title="TERMS INFO" name="2">
+              <template #title>
+                <span class="text-orange-500">TERMS INFO</span>
+              </template>
               <PlusForm
                 v-model="result"
                 :columns="termsDetailColumns"
@@ -950,15 +1148,25 @@ onMounted(() => {
                 label-width="auto"
                 :hasFooter="false"
               />
-            </el-collapse-item>
+            </el-collapse-item> -->
             <el-collapse-item title="FREIGHT CHARGE" name="3">
-              <el-button
-                class="mb-1"
-                :icon="useRenderIcon('ep:setting')"
-                size="small"
-                circle
-                @click="handleOpen"
-              />
+              <template #title>
+                <span class="text-orange-500">FREIGHT CHARGE</span>
+              </template>
+              <el-tooltip
+                class="box-item"
+                effect="dark"
+                content="Bottom Center prompts info"
+                placement="bottom"
+              >
+                <el-button
+                  class="mb-1"
+                  :icon="useRenderIcon('ep:setting')"
+                  size="small"
+                  circle
+                  @click="handleOpen"
+                />
+              </el-tooltip>
               <PlusDrawerForm
                 v-model:visible="visible"
                 v-model="values"
@@ -969,12 +1177,21 @@ onMounted(() => {
               <hot-table :settings="hotSettings" />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
+              <template #title>
+                <span class="text-orange-500">LOCAL CHARGE(Export)</span>
+              </template>
               <HotTable :settings="localChargeExport" />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
+              <template #title>
+                <span class="text-orange-500">LOCAL CHARGE(Import)</span>
+              </template>
               <HotTable :settings="localChargeImport" />
             </el-collapse-item>
             <el-collapse-item title="REMARK " name="6">
+              <template #title>
+                <span class="text-orange-500">REMARK</span>
+              </template>
               <el-input
                 v-model="result.remark"
                 style="width: 440px"
@@ -986,6 +1203,9 @@ onMounted(() => {
               />
             </el-collapse-item>
             <el-collapse-item title="TERMS AND CONDITIONS " name="7">
+              <template #title>
+                <span class="text-orange-500">TERMS AND CONDITIONS</span>
+              </template>
               <el-select
                 v-model="result.TermsAndConditions"
                 clearable
@@ -1000,7 +1220,10 @@ onMounted(() => {
                 />
               </el-select>
             </el-collapse-item>
-            <el-collapse-item title="SALES INFO " name="8">
+            <el-collapse-item title="SALES INFO" name="8">
+              <template #title>
+                <span class="text-orange-500">SALES INFO</span>
+              </template>
               <div class="flex flex-col ...">
                 <div>Name : {{ result.salesName }}</div>
                 <div>EMAIL : {{ result.saleseMail }}</div>
