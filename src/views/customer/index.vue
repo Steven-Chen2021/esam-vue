@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import "plus-pro-components/es/components/drawer-form/style/css";
+import { ref, reactive } from "vue";
 import {
   type PlusColumn,
   type FieldValues,
@@ -9,21 +8,18 @@ import {
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 //Sample data
 import { leadTableData } from "./../table/base/data";
-import { useDetail } from "./hooks";
+import { useColumns } from "../customer/column/columns";
+const { customerColumns, columnsDrag } = useColumns();
 
 //Page Setting
 defineOptions({
   name: "CustomerList"
 });
-const { toDetail, router } = useDetail();
 
 //Grid Setting Begin
 const filterHandler = (value, row, column) => {
   const property = column["property"];
   return row[property] === value;
-};
-const filterTag = (value, row) => {
-  return row.tag === value;
 };
 const leadColumns: TableColumnList = [
   {
@@ -53,22 +49,25 @@ const leadColumns: TableColumnList = [
   },
   {
     label: "Owner",
-    prop: "owner"
+    prop: "owner",
+    sortable: true
   },
   {
     label: "Owner Station",
-    prop: "ownerstation"
+    prop: "ownerstation",
+    sortable: true
   },
   {
     label: "Created By",
-    prop: "createdby"
+    prop: "createdby",
+    sortable: true
   },
   {
     label: "Lead Source",
-    prop: "leadsource"
+    prop: "leadsource",
+    sortable: true
   }
 ];
-
 // Customized Filter Begin
 const customizedFilterButtonList = ref([]);
 const columns: PlusColumn[] = [
@@ -152,7 +151,6 @@ const handleOpen = () => {
   visible.value = true;
 };
 const handleConfirm = (values: FieldValues) => {
-  console.log(values);
   customizedFilterButtonList.value.push({
     type: "",
     text: values.name
@@ -160,6 +158,12 @@ const handleConfirm = (values: FieldValues) => {
   visible.value = false;
   console.log(customizedFilterButtonList);
 };
+const searchForm = reactive({
+  hqidValue: 0,
+  companyName: "",
+  productLine: 0,
+  customerStatus: ""
+});
 </script>
 
 <template>
@@ -182,19 +186,23 @@ const handleConfirm = (values: FieldValues) => {
             </el-button>
           </el-space>
         </div>
-        <!-- <div class="basis-1/5">
-          <el-button
-            :icon="useRenderIcon('ep:plus')"
-            @click="toDetail({ id: 0 }, 'params')"
-          >
-            Create Quote
-          </el-button>
-        </div> -->
       </div>
     </el-card>
+    <el-form ref="formRef" :inline="true" :model="searchForm">
+      <el-form-item prop="searchDate">
+        <el-date-picker
+          v-model="searchForm.productLine"
+          class="!w-[150px]"
+          type="date"
+          placeholder="请选择日期"
+          format="YYYY/MM/DD"
+          value-format="YYYY-MM-D"
+        />
+      </el-form-item>
+    </el-form>
     <pure-table
       :data="leadTableData.concat(leadTableData).concat(leadTableData)"
-      :columns="leadColumns"
+      :columns="customerColumns"
       stripe
     />
     <div>
