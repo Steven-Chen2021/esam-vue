@@ -75,12 +75,14 @@ export function useColumns() {
   const customerColumns = ref<TableColumnList>([
     {
       label: "HQID",
-      prop: index => columnsDrag.value[index].prop as string,
+      // prop: index => columnsDrag.value[index].prop as string,
+      prop: "hqid",
       sortable: true
     },
     {
       label: "Status",
-      prop: index => columnsDrag.value[index].prop as string,
+      // prop: index => columnsDrag.value[index].prop as string,
+      prop: "leadstatus",
       sortable: true,
       filters: [
         { text: "Quotation Accepted", value: "Quotation Accepted" },
@@ -91,32 +93,38 @@ export function useColumns() {
     },
     {
       label: "Company",
-      prop: index => columnsDrag.value[index].prop as string,
+      // prop: index => columnsDrag.value[index].prop as string,
+      prop: "company",
       sortable: true
     },
     {
       label: "Product Line",
-      prop: index => columnsDrag.value[index].prop as string,
+      // prop: index => columnsDrag.value[index].prop as string,
+      prop: "pl",
       sortable: true
     },
     {
       label: "Owner",
-      prop: index => columnsDrag.value[index].prop as string,
+      // prop: index => columnsDrag.value[index].prop as string,
+      prop: "owner",
       sortable: true
     },
     {
       label: "Owner Station",
-      prop: index => columnsDrag.value[index].prop as string,
+      // prop: index => columnsDrag.value[index].prop as string,
+      prop: "ownerstation",
       sortable: true
     },
     {
       label: "Created By",
-      prop: index => columnsDrag.value[index].prop as string,
+      // prop: index => columnsDrag.value[index].prop as string,
+      prop: "createdby",
       sortable: true
     },
     {
       label: "Lead Source",
-      prop: index => columnsDrag.value[index].prop as string,
+      // prop: index => columnsDrag.value[index].prop as string,
+      prop: "leadsource",
       sortable: true
     },
     {

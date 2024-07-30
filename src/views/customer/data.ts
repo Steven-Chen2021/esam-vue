@@ -4,7 +4,7 @@ import { clone } from "@pureadmin/utils";
 const date = dayjs(new Date()).format("YYYY-MM-DD");
 const gridResultData = [
   {
-    hqid: 1,
+    hqid: 35251,
     leadstatus: "Quotation Accepted",
     company: "MICROSOFT TAIWAN",
     pl: "Air",
@@ -14,7 +14,7 @@ const gridResultData = [
     leadsource: ""
   },
   {
-    hqid: 2,
+    hqid: 26242,
     leadstatus: "Approaching",
     company: "ASUS TW",
     pl: "Sea",
@@ -24,7 +24,7 @@ const gridResultData = [
     leadsource: ""
   },
   {
-    hqid: 3,
+    hqid: 322754,
     leadstatus: "Quoting",
     company: "SCHOENFELD INTERNATIONAL",
     pl: "Sea",

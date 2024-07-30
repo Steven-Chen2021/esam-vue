@@ -27,8 +27,18 @@ const filterTag = (value, row) => {
 };
 const GridColumns: TableColumnList = [
   {
+    label: "Customer HQID",
+    prop: "hqid",
+    sortable: true
+  },
+  {
     label: "Company",
     prop: "companyname",
+    sortable: true
+  },
+  {
+    label: "Product Line",
+    prop: "pl",
     sortable: true
   },
   {
@@ -46,7 +56,7 @@ const GridColumns: TableColumnList = [
     sortable: true
   },
   {
-    label: "Shipping Term",
+    label: "Credit Term",
     prop: "shippingterm",
     sortable: true
   },
@@ -55,11 +65,13 @@ const GridColumns: TableColumnList = [
     prop: "status",
     sortable: true,
     filters: [
-      { text: "Draft", value: "0" },
-      { text: "Wait for Approve", value: "1" },
-      { text: "Approved", value: "2" },
-      { text: "Accepted", value: "3" },
-      { text: "Rejected", value: "4" }
+      { text: "Draft", value: "Q1" },
+      { text: "Wait for Approve", value: "Q2" },
+      { text: "Approved", value: "Q3" },
+      { text: "Rejected", value: "Q4" },
+      { text: "Accepted", value: "Q5" },
+      { text: "Expired", value: "Q6" },
+      { text: "Inactive", value: "Q7" }
     ],
     filterMethod: filterHandler
   },
@@ -93,20 +105,36 @@ const columns: PlusColumn[] = [
   {
     label: "Status",
     width: 120,
-    prop: "leadstatus",
+    prop: "status",
     valueType: "select",
     options: [
       {
-        label: "Quotation Accepted",
-        value: "Quotation Accepted"
+        label: "Draft",
+        value: "Q1"
       },
       {
-        label: "Approaching",
-        value: "Approaching"
+        label: "Wait for Approval",
+        value: "Q2"
       },
       {
-        label: "Quoting",
-        value: "Quoting"
+        label: "Approved",
+        value: "Q3"
+      },
+      {
+        label: "Rejected",
+        value: "Q4"
+      },
+      {
+        label: "Accepted",
+        value: "Q5"
+      },
+      {
+        label: "Expired",
+        value: "Q6"
+      },
+      {
+        label: "Inactive",
+        value: "Q7"
       }
     ]
   },
