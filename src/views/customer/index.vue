@@ -7,9 +7,20 @@ import {
 } from "plus-pro-components";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 //Sample data
-import { leadTableData } from "./../table/base/data";
+import { gridResultData } from "./data";
 import { useColumns } from "../customer/column/columns";
-const { customerColumns, columnsDrag } = useColumns();
+// const { customerColumns, columnsDrag } = useColumns();
+const {
+  customerColumns,
+  select,
+  hideVal,
+  tableSize,
+  pagination,
+  paginationSmall,
+  onChange,
+  onSizeChange,
+  onCurrentChange
+} = useColumns();
 
 //Page Setting
 defineOptions({
@@ -21,53 +32,6 @@ const filterHandler = (value, row, column) => {
   const property = column["property"];
   return row[property] === value;
 };
-const leadColumns: TableColumnList = [
-  {
-    label: "Status",
-    prop: "leadstatus",
-    sortable: true,
-    filters: [
-      { text: "Quotation Accepted", value: "Quotation Accepted" },
-      { text: "Approaching", value: "Approaching" },
-      { text: "Quoting", value: "Quoting" }
-    ],
-    filterMethod: filterHandler
-  },
-  {
-    label: "Company",
-    prop: "company"
-  },
-  {
-    label: "Product Line",
-    prop: "pl",
-    sortable: true,
-    filters: [
-      { text: "Air", value: "Air" },
-      { text: "Sea", value: "Sea" }
-    ],
-    filterMethod: filterHandler
-  },
-  {
-    label: "Owner",
-    prop: "owner",
-    sortable: true
-  },
-  {
-    label: "Owner Station",
-    prop: "ownerstation",
-    sortable: true
-  },
-  {
-    label: "Created By",
-    prop: "createdby",
-    sortable: true
-  },
-  {
-    label: "Lead Source",
-    prop: "leadsource",
-    sortable: true
-  }
-];
 // Customized Filter Begin
 const customizedFilterButtonList = ref([]);
 const columns: PlusColumn[] = [
@@ -147,8 +111,11 @@ const columns: PlusColumn[] = [
 ];
 const visible = ref(false);
 const values = ref<FieldValues>({});
-const handleOpen = () => {
+const handleQuickFilterOpen = () => {
   visible.value = true;
+};
+const handleOpen = () => {
+  console.log("wilson");
 };
 const handleConfirm = (values: FieldValues) => {
   customizedFilterButtonList.value.push({
@@ -159,24 +126,19 @@ const handleConfirm = (values: FieldValues) => {
   console.log(customizedFilterButtonList);
 };
 const searchForm = reactive({
-  hqidValue: 0,
-  companyName: "",
-  productLine: 0,
-  customerStatus: ""
+  hqidValue: null,
+  companyName: null,
+  productLine: null,
+  customerStatus: null
 });
 </script>
 
 <template>
-  <div>
-    <el-card shadow="never">
+  <div id="wilson">
+    <el-card shadow="never" class="max-h-12 p-0">
       <div class="flex flex-row">
         <div class="basis-4/5">
-          <el-button
-            type="primary"
-            circle
-            :icon="useRenderIcon('ep:setting')"
-            @click="handleOpen"
-          />
+          <el-button @click="handleQuickFilterOpen">Add Filter</el-button>
           <el-space wrap>
             <el-button
               v-for="(button, index) in customizedFilterButtonList"
@@ -188,22 +150,57 @@ const searchForm = reactive({
         </div>
       </div>
     </el-card>
-    <el-form ref="formRef" :inline="true" :model="searchForm">
-      <el-form-item prop="searchDate">
-        <el-date-picker
-          v-model="searchForm.productLine"
-          class="!w-[150px]"
-          type="date"
-          placeholder="请选择日期"
-          format="YYYY/MM/DD"
-          value-format="YYYY-MM-D"
+    <el-divider />
+    <el-form
+      ref="formRef"
+      :inline="true"
+      :model="searchForm"
+      class="demo-form-inline"
+    >
+      <el-form-item label="HQID">
+        <el-input v-model="searchForm.hqidValue" />
+      </el-form-item>
+      <el-form-item label="company Name">
+        <el-input v-model="searchForm.companyName" />
+      </el-form-item>
+      <el-form-item label="product Line">
+        <el-select v-model="searchForm.productLine">
+          <el-option label="Air" value="2" />
+          <el-option label="Sea" value="6" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="Status">
+        <el-select v-model="searchForm.customerStatus">
+          <el-option label="Quotation Accepted" value="2" />
+          <el-option label="Approaching" value="6" />
+          <el-option label="Quoting" value="6" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button
+          circle
+          :icon="useRenderIcon('ep:setting')"
+          @click="handleOpen"
         />
       </el-form-item>
     </el-form>
     <pure-table
-      :data="leadTableData.concat(leadTableData).concat(leadTableData)"
+      :data="
+        gridResultData
+          .concat(gridResultData)
+          .concat(gridResultData)
+          .concat(gridResultData)
+          .concat(gridResultData)
+          .concat(gridResultData)
+          .concat(gridResultData)
+          .concat(gridResultData)
+          .concat(gridResultData)
+      "
       :columns="customerColumns"
       stripe
+      :pagination="pagination"
+      @page-size-change="onSizeChange"
+      @page-current-change="onCurrentChange"
     />
     <div>
       <PlusDrawerForm
@@ -216,3 +213,24 @@ const searchForm = reactive({
     </div>
   </div>
 </template>
+<style scoped>
+:deep(.el-card__body) {
+  padding: 6px;
+}
+
+:deep(.el-divider) {
+  margin: 5px;
+}
+
+:deep(.el-table__cell) {
+  padding: 1.5px;
+}
+
+.demo-form-inline .el-input {
+  --el-input-width: 220px;
+}
+
+.demo-form-inline .el-select {
+  --el-select-width: 220px;
+}
+</style>
