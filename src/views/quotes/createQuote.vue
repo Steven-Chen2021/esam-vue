@@ -99,22 +99,22 @@ const localcolumns: PlusColumn[] = [
 ];
 
 const result = ref<FieldValues>({
-  ShippingTerm: "DD",
-  TradeTerm: "CIF",
-  CreditTerm: "EOM15",
-  CustomerLead: "MICROSOFT TAIWAN",
-  AttentionTo: "259",
-  status: "0",
-  PL: 6,
-  name: "",
-  remark: "",
-  TermsAndConditions: "tw",
-  salesName: "Wilson Huang",
-  saleseMail: "wilson_w_huang@dimerco.com",
-  saleseTel: "886-2-2796-6666#1234",
-  salesMobile: "886-932-123456",
-  currency: "usd",
-  shipmentMode: "FCL"
+  ShippingTerm: null,
+  TradeTerm: null,
+  CreditTerm: null,
+  CustomerLead: null,
+  AttentionTo: null,
+  status: null,
+  PL: null,
+  name: null,
+  remark: null,
+  TermsAndConditions: null,
+  salesName: null,
+  saleseMail: null,
+  saleseTel: null,
+  salesMobile: null,
+  currency: null,
+  shipmentMode: null
 });
 
 const currencyOptions = [
@@ -270,52 +270,6 @@ const quoteDetailColumns: PlusColumn[] = [
       span: 8
     }
   },
-  // {
-  //   label: "Tel",
-  //   width: 120,
-  //   prop: "tag",
-  //   colProps: {
-  //     span: 8
-  //   }
-  // },
-  // {
-  //   label: "Email",
-  //   width: 460,
-  //   prop: "tag",
-  //   colProps: {
-  //     span: 16
-  //   }
-  // },
-  // {
-  //   label: "Address",
-  //   width: 120,
-  //   prop: "tag",
-  //   colProps: {
-  //     span: 24
-  //   }
-  // },
-  // {
-  //   label: "Quotation Language",
-  //   prop: "gift",
-  //   valueType: "radio",
-  //   options: [
-  //     {
-  //       label: "English",
-  //       value: "en"
-  //     },
-  //     {
-  //       label: "Traditional Chinese",
-  //       value: "tw"
-  //     },
-  //     {
-  //       label: "Simplified Chinese",
-  //       value: "cn"
-  //     }
-  //   ],
-  //   colProps: {
-  //     span: 24
-  //   }
-  // },
   {
     label: "Mode",
     prop: "shipmentMode",
@@ -331,7 +285,7 @@ const quoteDetailColumns: PlusColumn[] = [
       }
     ],
     colProps: {
-      span: 24
+      span: 16
     },
     fieldProps: {
       onChange: () => {
@@ -694,14 +648,15 @@ const flcFreightChargeSettings = {
       POL: null,
       PODischarge: null,
       PODelivery: null,
-      CBM: null,
-      CBMUOM: null,
-      Cost: null,
       TT: null,
       twentyFeetCNT: null,
       fortyFeetCNT: null,
       fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
+      fortyFiveFeetCNT: null,
+      twentyFeetCNTCost: null,
+      fortyFeetCNTCost: null,
+      fortyFeetHighCubicCost: null,
+      fortyFiveFeetCNTCost: null
     },
     {
       ID: null,
@@ -716,7 +671,11 @@ const flcFreightChargeSettings = {
       twentyFeetCNT: null,
       fortyFeetCNT: null,
       fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
+      fortyFiveFeetCNT: null,
+      twentyFeetCNTCost: null,
+      fortyFeetCNTCost: null,
+      fortyFeetHighCubicCost: null,
+      fortyFiveFeetCNTCost: null
     },
     {
       ID: null,
@@ -731,7 +690,11 @@ const flcFreightChargeSettings = {
       twentyFeetCNT: null,
       fortyFeetCNT: null,
       fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
+      fortyFiveFeetCNT: null,
+      twentyFeetCNTCost: null,
+      fortyFeetCNTCost: null,
+      fortyFeetHighCubicCost: null,
+      fortyFiveFeetCNTCost: null
     },
     {
       ID: null,
@@ -746,7 +709,11 @@ const flcFreightChargeSettings = {
       twentyFeetCNT: null,
       fortyFeetCNT: null,
       fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
+      fortyFiveFeetCNT: null,
+      twentyFeetCNTCost: null,
+      fortyFeetCNTCost: null,
+      fortyFeetHighCubicCost: null,
+      fortyFiveFeetCNTCost: null
     },
     {
       ID: null,
@@ -761,7 +728,11 @@ const flcFreightChargeSettings = {
       twentyFeetCNT: null,
       fortyFeetCNT: null,
       fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
+      fortyFiveFeetCNT: null,
+      twentyFeetCNTCost: null,
+      fortyFeetCNTCost: null,
+      fortyFeetHighCubicCost: null,
+      fortyFiveFeetCNTCost: null
     },
     {
       ID: null,
@@ -776,7 +747,11 @@ const flcFreightChargeSettings = {
       twentyFeetCNT: null,
       fortyFeetCNT: null,
       fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
+      fortyFiveFeetCNT: null,
+      twentyFeetCNTCost: null,
+      fortyFeetCNTCost: null,
+      fortyFeetHighCubicCost: null,
+      fortyFiveFeetCNTCost: null
     },
     {
       ID: null,
@@ -791,7 +766,11 @@ const flcFreightChargeSettings = {
       twentyFeetCNT: null,
       fortyFeetCNT: null,
       fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
+      fortyFiveFeetCNT: null,
+      twentyFeetCNTCost: null,
+      fortyFeetCNTCost: null,
+      fortyFeetHighCubicCost: null,
+      fortyFiveFeetCNTCost: null
     }
   ],
   colHeaders: [
@@ -799,14 +778,15 @@ const flcFreightChargeSettings = {
     "Port of loading",
     "Port of discharge",
     "Place of delivery",
-    "Type the CBM",
-    "CBM UOM",
-    "Cost",
-    "Transit time",
     "20CNT",
+    "20CNT Cost",
     "40CNT",
+    "40CNT Cost",
     "40HQ",
-    "45CNT"
+    "40HQ Cost",
+    "45CNT",
+    "45CNT Cost",
+    "Transit time"
   ],
   rowHeaders: false,
   dropdownMenu: true,
@@ -839,34 +819,11 @@ const flcFreightChargeSettings = {
       source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
     },
     {
-      data: "CBM",
-      type: "numeric"
-    },
-    {
-      data: "CBMUOM",
-      type: "dropdown",
-      source: ["KG", "LB"]
-    },
-    {
-      data: "Cost",
-      type: "numeric"
-    },
-    {
-      data: "TT",
-      type: "date",
-      dateFormat: "MM/DD/YYYY",
-      correctFormat: true,
-      defaultDate: "01/01/1900",
-      datePickerConfig: {
-        firstDay: 0,
-        showWeekNumber: true,
-        disableDayFn(date) {
-          return date.getDay() === 0 || date.getDay() === 6;
-        }
-      }
-    },
-    {
       data: "twentyFeetCNT",
+      type: "numeric"
+    },
+    {
+      data: "twentyFeetCNTCost",
       type: "numeric"
     },
     {
@@ -874,11 +831,27 @@ const flcFreightChargeSettings = {
       type: "numeric"
     },
     {
+      data: "fortyFeetCNTCost",
+      type: "numeric"
+    },
+    {
       data: "fortyFeetHighCubic",
       type: "numeric"
     },
     {
+      data: "fortyFeetHighCubicCost",
+      type: "numeric"
+    },
+    {
       data: "fortyFiveFeetCNT",
+      type: "numeric"
+    },
+    {
+      data: "fortyFiveFeetCNTCost",
+      type: "numeric"
+    },
+    {
+      data: "TT",
       type: "numeric"
     }
   ],
@@ -898,13 +871,13 @@ const lclFreightChargeSettings = {
       POL: null,
       PODischarge: null,
       PODelivery: null,
+      min: null,
       CBM: null,
       CBMUOM: null,
-      Cost: null,
-      TT: null,
-      min: null,
-      preCBM: null,
-      preTON: null
+      CBMCost: null,
+      preTON: null,
+      TONCost: null,
+      TT: null
     },
     {
       ID: null,
@@ -912,13 +885,13 @@ const lclFreightChargeSettings = {
       POL: null,
       PODischarge: null,
       PODelivery: null,
+      min: null,
       CBM: null,
       CBMUOM: null,
-      Cost: null,
-      TT: null,
-      min: null,
-      preCBM: null,
-      preTON: null
+      CBMCost: null,
+      preTON: null,
+      TONCost: null,
+      TT: null
     },
     {
       ID: null,
@@ -926,13 +899,13 @@ const lclFreightChargeSettings = {
       POL: null,
       PODischarge: null,
       PODelivery: null,
+      min: null,
       CBM: null,
       CBMUOM: null,
-      Cost: null,
-      TT: null,
-      min: null,
-      preCBM: null,
-      preTON: null
+      CBMCost: null,
+      preTON: null,
+      TONCost: null,
+      TT: null
     },
     {
       ID: null,
@@ -940,13 +913,13 @@ const lclFreightChargeSettings = {
       POL: null,
       PODischarge: null,
       PODelivery: null,
+      min: null,
       CBM: null,
       CBMUOM: null,
-      Cost: null,
-      TT: null,
-      min: null,
-      preCBM: null,
-      preTON: null
+      CBMCost: null,
+      preTON: null,
+      TONCost: null,
+      TT: null
     },
     {
       ID: null,
@@ -954,27 +927,13 @@ const lclFreightChargeSettings = {
       POL: null,
       PODischarge: null,
       PODelivery: null,
+      min: null,
       CBM: null,
       CBMUOM: null,
-      Cost: null,
-      TT: null,
-      min: null,
-      preCBM: null,
-      preTON: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      CBM: null,
-      CBMUOM: null,
-      Cost: null,
-      TT: null,
-      min: null,
-      preCBM: null,
-      preTON: null
+      CBMCost: null,
+      preTON: null,
+      TONCost: null,
+      TT: null
     }
   ],
   colHeaders: [
@@ -982,13 +941,13 @@ const lclFreightChargeSettings = {
     "Port of loading",
     "Port of discharge",
     "Place of delivery",
-    "Type the CBM",
-    "CBM UOM",
-    "Cost",
-    "Transit time",
     "Minimun",
-    "Per CBM",
-    "Per TON"
+    "Pre CBM",
+    "CBM UOM",
+    "CBM Cost",
+    "Per TON",
+    "TON Cost",
+    "Transit time"
   ],
   rowHeaders: false,
   dropdownMenu: true,
@@ -1021,6 +980,10 @@ const lclFreightChargeSettings = {
       source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
     },
     {
+      data: "min",
+      type: "numeric"
+    },
+    {
       data: "CBM",
       type: "numeric"
     },
@@ -1030,33 +993,19 @@ const lclFreightChargeSettings = {
       source: ["KG", "LB"]
     },
     {
-      data: "Cost",
-      type: "numeric"
-    },
-    {
-      data: "TT",
-      type: "date",
-      dateFormat: "MM/DD/YYYY",
-      correctFormat: true,
-      defaultDate: "01/01/1900",
-      datePickerConfig: {
-        firstDay: 0,
-        showWeekNumber: true,
-        disableDayFn(date) {
-          return date.getDay() === 0 || date.getDay() === 6;
-        }
-      }
-    },
-    {
-      data: "min",
-      type: "numeric"
-    },
-    {
-      data: "preCBM",
+      data: "CBMCost",
       type: "numeric"
     },
     {
       data: "preTON",
+      type: "numeric"
+    },
+    {
+      data: "TONCost",
+      type: "numeric"
+    },
+    {
+      data: "TT",
       type: "numeric"
     }
   ],
@@ -1397,17 +1346,6 @@ const saveData = () => {
   }, 3000);
   console.log("saveData");
 };
-
-const handleChange = (values: FieldValues) => {
-  console.log(values, "change");
-};
-const handleSubmit = (values: FieldValues) => {
-  console.log(values.demand, "Submit");
-  // const hotInstance = HotTable.value.hotInstance;
-  console.log(HotTable, "hotInstance.getData()");
-  HotTable.props.allowInsertColumn = true;
-  visible.value = false;
-};
 const handleSubmitError = (err: any) => {
   console.log(err, "err");
 };
@@ -1683,5 +1621,9 @@ onMounted(() => {
 .el-tabs--right .el-tabs__content,
 .el-tabs--left .el-tabs__content {
   height: 100%;
+}
+
+:deep(.el-col) {
+  max-height: 38px !important;
 }
 </style>

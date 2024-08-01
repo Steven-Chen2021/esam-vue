@@ -175,6 +175,16 @@ const values = ref<FieldValues>({});
 const handleQuickFilterOpen = () => {
   visible.value = true;
 };
+const handleQuickFilterDisable = reactive({
+  showHQID: ColumnAdvancedSettingsOption[0].showFilter,
+  showCompanyName: ColumnAdvancedSettingsOption[1].showFilter,
+  showProductLine: ColumnAdvancedSettingsOption[2].showFilter,
+  showCustomerStatus: ColumnAdvancedSettingsOption[3].showFilter,
+  showOwner: ColumnAdvancedSettingsOption[4].showFilter,
+  showOwnerStation: ColumnAdvancedSettingsOption[5].showFilter,
+  showCreatedBy: ColumnAdvancedSettingsOption[6].showFilter,
+  showLeadSource: ColumnAdvancedSettingsOption[7].showFilter
+});
 const handleAdvancedSettings = () => {
   showAdvancedSettings.value = true;
 };
@@ -207,6 +217,49 @@ const handleListEnable = obj => {
 const handleFilterEnable = obj => {
   console.log(obj);
 };
+
+const handleClick = () => {
+  console.log("click");
+};
+
+const tableData = [
+  {
+    date: "2016-05-03",
+    name: "Tom",
+    state: "California",
+    city: "Los Angeles",
+    address: "No. 189, Grove St, Los Angeles",
+    zip: "CA 90036",
+    tag: "Home"
+  },
+  {
+    date: "2016-05-02",
+    name: "Tom",
+    state: "California",
+    city: "Los Angeles",
+    address: "No. 189, Grove St, Los Angeles",
+    zip: "CA 90036",
+    tag: "Office"
+  },
+  {
+    date: "2016-05-04",
+    name: "Tom",
+    state: "California",
+    city: "Los Angeles",
+    address: "No. 189, Grove St, Los Angeles",
+    zip: "CA 90036",
+    tag: "Home"
+  },
+  {
+    date: "2016-05-01",
+    name: "Tom",
+    state: "California",
+    city: "Los Angeles",
+    address: "No. 189, Grove St, Los Angeles",
+    zip: "CA 90036",
+    tag: "Office"
+  }
+];
 </script>
 
 <template>
@@ -233,35 +286,59 @@ const handleFilterEnable = obj => {
       :model="searchForm"
       class="demo-form-inline"
     >
-      <el-form-item label="HQID">
+      <el-form-item
+        v-if="ColumnAdvancedSettingsOption[0].showFilter"
+        label="HQID"
+      >
         <el-input v-model="searchForm.hqidValue" />
       </el-form-item>
-      <el-form-item label="Status">
+      <el-form-item
+        v-if="ColumnAdvancedSettingsOption[1].showFilter"
+        label="Status"
+      >
         <el-select v-model="searchForm.customerStatus">
           <el-option label="Quotation Accepted" value="2" />
           <el-option label="Approaching" value="6" />
           <el-option label="Quoting" value="6" />
         </el-select>
       </el-form-item>
-      <el-form-item label="Company">
+      <el-form-item
+        v-if="ColumnAdvancedSettingsOption[2].showFilter"
+        label="Company"
+      >
         <el-input v-model="searchForm.companyName" />
       </el-form-item>
-      <el-form-item label="product Line">
+      <el-form-item
+        v-if="ColumnAdvancedSettingsOption[3].showFilter"
+        label="product Line"
+      >
         <el-select v-model="searchForm.productLine">
           <el-option label="Air" value="2" />
           <el-option label="Sea" value="6" />
         </el-select>
       </el-form-item>
-      <el-form-item label="Owner">
+      <el-form-item
+        v-if="ColumnAdvancedSettingsOption[4].showFilter"
+        label="Owner"
+      >
         <el-input v-model="searchForm.ownerValue" />
       </el-form-item>
-      <el-form-item label="Owner Station">
+      <el-form-item
+        v-if="ColumnAdvancedSettingsOption[5].showFilter"
+        label="Owner Station"
+      >
         <el-input v-model="searchForm.ownerStationValue" />
       </el-form-item>
-      <el-form-item label="Created By">
+      <el-form-item
+        v-if="ColumnAdvancedSettingsOption[6].showFilter"
+        label="Created By"
+      >
         <el-input v-model="searchForm.createdByValue" />
       </el-form-item>
-      <el-form-item label="Lead Source">
+      <el-form-item
+        v-if="ColumnAdvancedSettingsOption[7].showFilter"
+        label="Lead Source"
+      >
         <el-input v-model="searchForm.leadSourceValue" />
       </el-form-item>
       <el-form-item>
@@ -273,6 +350,7 @@ const handleFilterEnable = obj => {
       </el-form-item>
     </el-form>
     <pure-table
+      style="width: 100%"
       :data="
         gridResultData
           .concat(gridResultData)
@@ -290,6 +368,22 @@ const handleFilterEnable = obj => {
       @page-size-change="onSizeChange"
       @page-current-change="onCurrentChange"
     />
+    <el-table :data="tableData" style="width: 100%">
+      <el-table-column fixed prop="date" label="Date" width="150" />
+      <el-table-column prop="name" label="Name" width="120" />
+      <el-table-column prop="state" label="State" width="120" />
+      <el-table-column prop="city" label="City" width="120" />
+      <el-table-column prop="address" label="Address" width="600" />
+      <el-table-column prop="zip" label="Zip" width="120" />
+      <el-table-column fixed="right" label="Operations" min-width="120">
+        <template #default>
+          <el-button link type="primary" size="small" @click="handleClick">
+            Detail
+          </el-button>
+          <el-button link type="primary" size="small">Edit</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
     <div>
       <PlusDrawerForm
         v-model:visible="visible"

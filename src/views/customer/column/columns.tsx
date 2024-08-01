@@ -77,7 +77,9 @@ export function useColumns() {
       label: "HQID",
       // prop: index => columnsDrag.value[index].prop as string,
       prop: "hqid",
-      sortable: true
+      sortable: true,
+      width: 90,
+      fixed: true
     },
     {
       label: "Status",
@@ -89,7 +91,8 @@ export function useColumns() {
         { text: "Approaching", value: "Approaching" },
         { text: "Quoting", value: "Quoting" }
       ],
-      filterMethod: filterHandler
+      filterMethod: filterHandler,
+      width: 160
     },
     {
       label: "Company",
@@ -101,7 +104,8 @@ export function useColumns() {
       label: "Product Line",
       // prop: index => columnsDrag.value[index].prop as string,
       prop: "pl",
-      sortable: true
+      sortable: true,
+      width: 140
     },
     {
       label: "Owner",
@@ -113,7 +117,8 @@ export function useColumns() {
       label: "Owner Station",
       // prop: index => columnsDrag.value[index].prop as string,
       prop: "ownerstation",
-      sortable: true
+      sortable: true,
+      width: 150
     },
     {
       label: "Created By",
@@ -125,9 +130,11 @@ export function useColumns() {
       label: "Lead Source",
       // prop: index => columnsDrag.value[index].prop as string,
       prop: "leadsource",
-      sortable: true
+      sortable: true,
+      width: 150
     },
     {
+      fixed: "right",
       align: "right",
       // 自定义表头，tsx用法
       headerRenderer: () => (
@@ -141,14 +148,7 @@ export function useColumns() {
       cellRenderer: ({ index, row }) => (
         <>
           <el-button size="small" onClick={() => handleEdit(index + 1, row)}>
-            Edit
-          </el-button>
-          <el-button
-            size="small"
-            type="danger"
-            onClick={() => handleDelete(index + 1, row)}
-          >
-            Delete
+            Inactive
           </el-button>
         </>
       )
@@ -205,13 +205,9 @@ export function useColumns() {
   });
 
   const handleEdit = (index: number, row) => {
-    message(`您修改了第 ${index} 行，数据为：${JSON.stringify(row)}`, {
+    message(`Select Row ${index} ，Data：${JSON.stringify(row)}`, {
       type: "success"
     });
-  };
-
-  const handleDelete = (index: number, row) => {
-    message(`您删除了第 ${index} 行，数据为：${JSON.stringify(row)}`);
   };
 
   const columnDrop = (event: { preventDefault: () => void }) => {

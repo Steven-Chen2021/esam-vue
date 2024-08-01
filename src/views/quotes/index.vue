@@ -193,6 +193,10 @@ const handleConfirm = (values: FieldValues) => {
   visible.value = false;
   console.log(customizedFilterButtonList);
 };
+
+const CreateQuote = () => {
+  router.push({ name: "CreateQuote" });
+};
 </script>
 
 <template>
@@ -216,12 +220,31 @@ const handleConfirm = (values: FieldValues) => {
           </el-space>
         </div>
         <div class="basis-1/5">
-          <el-button
+          <!-- <el-button
             :icon="useRenderIcon('ep:plus')"
             @click="toDetail({ id: 0 }, 'params')"
           >
             Create Quote
-          </el-button>
+          </el-button> -->
+          <el-dropdown trigger="click">
+            <!-- <span class="el-dropdown-link">
+              Create Quote
+              <el-icon class="el-icon--right"><caret-bottom /></el-icon>
+            </span> -->
+            <el-button :icon="useRenderIcon('ep:plus')">
+              Create Quote
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item class="clearfix" @click="CreateQuote">
+                  Air
+                </el-dropdown-item>
+                <el-dropdown-item class="clearfix" @click="CreateQuote">
+                  Sea
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
     </el-card>
