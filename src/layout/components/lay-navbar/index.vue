@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useNav } from "@/layout/hooks/useNav";
 import LaySearch from "../lay-search/index.vue";
+import LayTour from "../lay-tour/index.vue";
 import LayNotice from "../lay-notice/index.vue";
 import LayNavMix from "../lay-sidebar/NavMix.vue";
 import { useTranslationLang } from "@/layout/hooks/useTranslationLang";
@@ -51,6 +52,7 @@ const { t, locale, translationCh, translationEn } = useTranslationLang();
     <div v-if="layout === 'vertical'" class="vertical-header-right">
       <!-- 菜单搜索 -->
       <LaySearch id="header-search" />
+      <LayTour id="header-tour" />
       <!-- 国际化 -->
       <el-dropdown id="header-translation" trigger="click">
         <GlobalizationIcon

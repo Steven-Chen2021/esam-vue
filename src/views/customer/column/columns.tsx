@@ -75,16 +75,16 @@ export function useColumns() {
   const customerColumns = ref<TableColumnList>([
     {
       label: "HQID",
-      // prop: index => columnsDrag.value[index].prop as string,
-      prop: "hqid",
+      prop: index => columnsDrag.value[index].prop as string,
+      // prop: "hqid",
       sortable: true,
       width: 90,
       fixed: true
     },
     {
       label: "Status",
-      // prop: index => columnsDrag.value[index].prop as string,
-      prop: "leadstatus",
+      prop: index => columnsDrag.value[index].prop as string,
+      // prop: "leadstatus",
       sortable: true,
       filters: [
         { text: "Quotation Accepted", value: "Quotation Accepted" },
@@ -96,40 +96,42 @@ export function useColumns() {
     },
     {
       label: "Company",
-      // prop: index => columnsDrag.value[index].prop as string,
-      prop: "company",
-      sortable: true
+      prop: index => columnsDrag.value[index].prop as string,
+      // prop: "company",
+      sortable: true,
+      fixed: true
     },
     {
       label: "Product Line",
-      // prop: index => columnsDrag.value[index].prop as string,
-      prop: "pl",
+      prop: index => columnsDrag.value[index].prop as string,
+      // prop: "pl",
       sortable: true,
       width: 140
     },
     {
       label: "Owner",
-      // prop: index => columnsDrag.value[index].prop as string,
-      prop: "owner",
-      sortable: true
+      prop: index => columnsDrag.value[index].prop as string,
+      // prop: "owner",
+      sortable: true,
+      fixed: true
     },
     {
       label: "Owner Station",
-      // prop: index => columnsDrag.value[index].prop as string,
-      prop: "ownerstation",
+      prop: index => columnsDrag.value[index].prop as string,
+      // prop: "ownerstation",
       sortable: true,
       width: 150
     },
     {
       label: "Created By",
-      // prop: index => columnsDrag.value[index].prop as string,
-      prop: "createdby",
+      prop: index => columnsDrag.value[index].prop as string,
+      // prop: "createdby",
       sortable: true
     },
     {
       label: "Lead Source",
-      // prop: index => columnsDrag.value[index].prop as string,
-      prop: "leadsource",
+      prop: index => columnsDrag.value[index].prop as string,
+      // prop: "leadsource",
       sortable: true,
       width: 150
     },
@@ -210,8 +212,7 @@ export function useColumns() {
     });
   };
 
-  const columnDrop = (event: { preventDefault: () => void }) => {
-    event.preventDefault();
+  const columnDrop = () => {
     nextTick(() => {
       const wrapper: HTMLElement = document.querySelector(
         ".el-table__header-wrapper tr"
@@ -223,14 +224,22 @@ export function useColumns() {
           const oldItem = columnsDrag.value[oldIndex];
           columnsDrag.value.splice(oldIndex, 1);
           columnsDrag.value.splice(newIndex, 0, oldItem);
+          if (oldIndex !== newIndex) {
+            customerColumns.value = customerColumns.value.map(column => {
+              const { ...rest } = column;
+              return {
+                ...rest,
+                fixed: false
+              };
+            });
+          }
         }
       });
     });
   };
-
   onMounted(() => {
     nextTick(() => {
-      columnDrop(event);
+      columnDrop();
     });
     delay(600).then(() => {
       const newList = [];

@@ -238,3 +238,62 @@ login:
   purePassWordSureReg: Please enter confirm password
   purePassWordDifferentReg: The two passwords do not match!
   purePassWordUpdateReg: Password has been updated
+customer:
+  quickfilter:
+    HQID: HQID
+    Status: Status
+    createdDT: Create Date
+    customer: Customer
+    testStatus: Test Status
+    CustomerName: Customer Name
+    LocalName: Local Name
+    MainAddress: Main Address
+    Phone: Phone
+    Fax: Fax
+    LeadSource: Lead Source
+    EstablishedDate: Established Date
+    CapitalAmount: Capital Amount
+    Commodity: Commodity
+    WebSite: WebSite
+    Industry: Industry
+    ICPScore: ICPScore
+    BusinessRegistrationNumber: Business Registration Number
+    CombatTeam: CombatTeam
+    LastBusinessDay: Last Business Day
+    ValidQuoteCount: Valid Quote Count
+    OwnerSales: Owner Sales
+    CombatTeamPL: Combat Team PL
+  list:
+    quickFilter:
+      addFilterbtn: Add Filter
+      filterName: Filter Name
+      title: Quick Filter Setting
+      resetText: Reset
+      confirmText: Confirm
+      cancelText: Cancel
+      holderKeyinText: Please keyin
+      holderSelectText: Please Select
+      filterNameAlert: Please keyin Filter Name
+      delBtnText: Delete
+      editBtnText: Edit
+      dateSeparator: To
+      startDateHolderText: Start Date
+      endDateHolderText: End Date
+      tourStep1Title: Quick Filter
+      tourStep1Text: Click to create a quick query and boost your work efficiency.
+      tourStep2Title: Advance Filter
+      tourStep2Text: Click to set filter criteria and customize the content displayed in the results.
+      alertTitle: Info
+      addSucText: Add Successfully.
+      updateSucText: Update Successfully.
+      addFailSucText: Add failed.
+      updateFailSucText: Update failed.
+      delSucText: Delete Successfully.
+      delFailText: Delete failed.
+      delWarnText: Are you sure?
+      warnTitle: Warning
+    advancedSetting:
+      title: Advanced Setting
+      columnName: Column Name
+      showOnFilter: Show as Filter
+      showOnList: Show on List
