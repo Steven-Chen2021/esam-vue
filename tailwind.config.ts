@@ -13,6 +13,10 @@ export default {
         primary: "var(--el-color-primary)",
         text_color_primary: "var(--el-text-color-primary)",
         text_color_regular: "var(--el-text-color-regular)"
+      },
+      maxWidth: {
+        ac: "220px", // AutoComplete宽度
+        dt: "150px" // AutoComplete宽度
       }
     }
   }

@@ -1,4 +1,5 @@
-// import CustomerQuickFilterService from "@/services/CustomerQuickFilterService";
+import CustomerSearchService from "@/services/customer/CustomerSearchService";
+import type { TableColumnCtx } from "element-plus";
 // import Sortable from "sortablejs";
 // import { gridResultData } from "./data";
 // import { clone, delay } from "@pureadmin/utils";
@@ -13,8 +14,19 @@
 // } from "vue";
 // import type { PaginationProps, LoadingConfig, Align } from "@pureadmin/table";
 // import { message } from "@/utils/message";
+
+import { reactive, ref } from "vue";
+
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
-export interface QuickFilterDetail {
+export interface ColumnDetailVM {
+  label: string;
+  value: string;
+  width: number;
+  fixed: boolean;
+  sortable: boolean;
+  showColumn: boolean;
+  showFilter: boolean;
+  disable: boolean;
   filterKey: string;
   filterType: string;
   filterSourceType: string;
@@ -24,53 +36,180 @@ export interface QuickFilterDetail {
   langethKey: string;
   ValueBegin: string;
   ValueEnd: string;
-}
-export interface QuickFilter {
-  filterName: string;
-  ID: number;
-  clicked: boolean;
-  filters: QuickFilterDetail[];
+  filters: any[];
 }
 export function listCTL() {
-  const tableData = [
+  const columnList = reactive<ColumnDetailVM[]>([
     {
-      date: "2016-05-03",
-      name: "Tom",
-      state: "California",
-      city: "Los Angeles",
-      address: "No. 189, Grove St, Los Angeles",
-      zip: "CA 90036",
-      tag: "Home"
+      filterKey: "HQID",
+      filterType: "input",
+      filterSourceType: "keyin",
+      filterSource: null,
+      Value: "",
+      langethKey: "customer.quickfilter.HQID",
+      dateValue: [],
+      ValueBegin: "",
+      ValueEnd: "",
+      label: "",
+      value: "",
+      showColumn: true,
+      showFilter: true,
+      disable: true,
+      width: 150,
+      fixed: false,
+      sortable: true,
+      filters: [
+        { text: "123", value: "123" },
+        { text: "1234", value: "1234" }
+      ]
     },
     {
-      date: "2016-05-02",
-      name: "Tom",
-      state: "California",
-      city: "Los Angeles",
-      address: "No. 189, Grove St, Los Angeles",
-      zip: "CA 90036",
-      tag: "Office"
+      filterKey: "Status",
+      filterType: "select",
+      filterSourceType: "DataSource",
+      filterSource: [
+        { text: "Option Text1", value: "Option Value1" },
+        { text: "Option Text2", value: "Option Value2" },
+        { text: "Option Text3", value: "Option Value3" },
+        { text: "Option Text4", value: "Option Value4" },
+        { text: "Option Text5", value: "Option Value5" }
+      ],
+      Value: "",
+      langethKey: "customer.quickfilter.Status",
+      dateValue: [],
+      ValueBegin: "",
+      ValueEnd: "",
+      label: "",
+      value: "",
+      showColumn: true,
+      showFilter: true,
+      disable: false,
+      width: 100,
+      fixed: false,
+      sortable: false,
+      filters: []
     },
     {
-      date: "2016-05-04",
-      name: "Tom",
-      state: "California",
-      city: "Los Angeles",
-      address: "No. 189, Grove St, Los Angeles",
-      zip: "CA 90036",
-      tag: "Home"
+      filterKey: "createdDT",
+      filterType: "daterange",
+      filterSourceType: "Keyin",
+      filterSource: null,
+      Value: "2024-09-03 11:22:33",
+      dateValue: [],
+      langethKey: "customer.quickfilter.createdDT",
+      ValueBegin: "",
+      ValueEnd: "",
+      label: "",
+      value: "",
+      showColumn: true,
+      showFilter: true,
+      disable: false,
+      width: 120,
+      fixed: false,
+      sortable: false,
+      filters: []
     },
     {
-      date: "2016-05-01",
-      name: "Tom",
-      state: "California",
-      city: "Los Angeles",
-      address: "No. 189, Grove St, Los Angeles",
-      zip: "CA 90036",
-      tag: "Office"
+      filterKey: "customerName",
+      filterType: "autocomplete",
+      filterSourceType: "API",
+      filterSource:
+        "https://apifoxmock.com/m1/4954054-4611880-default/CustomerLeadSearch/QuickFilter/OptionsList?type=customer",
+      Value: "",
+      langethKey: "customer.quickfilter.testStatus",
+      dateValue: [],
+      ValueBegin: "",
+      ValueEnd: "",
+      label: "",
+      value: "",
+      showColumn: true,
+      showFilter: true,
+      disable: false,
+      width: 180,
+      fixed: false,
+      sortable: false,
+      filters: []
     }
-  ];
+  ]);
+  const currentPage = ref(1);
+  const pageSize = ref(20);
+  const total = ref(0);
+  const sortField = ref("HQID");
+  const sortOrder = ref("asc");
+  const tableData = ref([]);
+  const fetchData = async () => {
+    CustomerSearchService.getCustomerList(searchParams)
+      .then(data => {
+        // console.log("getCustomerList params", searchParams);
+        // console.log("getCustomerList result", data);
+        tableData.value = data;
+        if (data) total.value = data.length;
+      })
+      .catch(err => {
+        console.log("getCustomerList error", err);
+      });
+  };
+  const searchParams = reactive({
+    size: pageSize,
+    page: currentPage,
+    sort: sortField,
+    order: sortOrder
+  });
+  const handleSortChange = ({ prop, order }) => {
+    sortField.value = prop;
+    sortOrder.value = order === "ascending" ? "asc" : "desc";
+    fetchData(); // 重新获取排序后的数据
+  };
+
+  const handlePageChange = page => {
+    currentPage.value = page;
+    fetchData(); // 重新获取当前页数据
+  };
+
+  const handleSizeChange = size => {
+    pageSize.value = size;
+    fetchData(); // 重新获取数据，可能会包含更多项
+  };
+  const tableRowClassName = ({
+    row,
+    rowIndex
+  }: {
+    row: any;
+    rowIndex: number;
+  }) => {
+    // console.log("tableRowClassName rowIndex", rowIndex);
+    if (rowIndex === 1) {
+      return "warning-row";
+    } else if (rowIndex === 3) {
+      return "success-row";
+    }
+    console.log("tableRowClassName row", row);
+    return "";
+  };
+  const columnfilterHandler = (
+    value: string,
+    row: any,
+    column: TableColumnCtx<any>
+  ) => {
+    const property = column["property"];
+    // console.log("columnfilterHandler property", property);
+    // console.log("columnfilterHandler value", value);
+    // searchParams[property] = value;
+    // fetchData();
+    return row[property].toString().indexOf(value) !== -1;
+  };
+  // 初始加载数据
+  fetchData();
   return {
-    tableData
+    tableData,
+    tableRowClassName,
+    columnfilterHandler,
+    columnList,
+    currentPage,
+    pageSize,
+    total,
+    handleSortChange,
+    handlePageChange,
+    handleSizeChange
   };
 }

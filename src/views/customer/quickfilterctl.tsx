@@ -1,10 +1,11 @@
-import CustomerQuickFilterService from "@/services/CustomerQuickFilterService";
+import CustomerQuickFilterService from "@/services/customer/CustomerQuickFilterService";
 import axios from "axios";
 // import Sortable from "sortablejs";
 // import { clone, delay } from "@pureadmin/utils";
-import { ref, onMounted, reactive, watch } from "vue";
+import { ref, onMounted, reactive, watch, nextTick, computed } from "vue";
 // import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
+import Sortable from "sortablejs";
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;
@@ -16,6 +17,11 @@ export interface QuickFilterDetail {
   langethKey: string;
   ValueBegin: string;
   ValueEnd: string;
+  showOnGrid: boolean;
+  showOnFilter: boolean;
+  allowSorting: boolean;
+  allowGridHeaderFilter: boolean;
+  width: number;
 }
 export interface QuickFilter {
   filterName: string;
@@ -41,6 +47,14 @@ export function quickFilterCTL() {
     filterID: 0,
     filterAppliedPage: 0
   };
+  let advancedFilterForm = reactive<QuickFilter>({
+    filterName: "",
+    id: 0,
+    clicked: false,
+    filters: [],
+    filterID: 0,
+    filterAppliedPage: 0
+  });
   const quickFilterForm = reactive<QuickFilter>({
     filterName: "",
     id: 0,
@@ -54,7 +68,10 @@ export function quickFilterCTL() {
   const quickFilterList = ref<QuickFilter[]>([]);
   onMounted(() => {
     fetchData();
-    // fetchOptions(quickFilterFormInitData.filters);
+    fetchAdvancedFilterData();
+    nextTick(() => {
+      columnDrop();
+    });
   });
   // TODO: API
   //取得下拉选单列表,统一存入filterOptions
@@ -143,37 +160,44 @@ export function quickFilterCTL() {
       cb([]);
     }
   };
-  const resetQuickFilterForm = (formEl: FormInstance | undefined) => {
-    if (!formEl) return;
-    // formEl.resetFields();
-    initQuickFilter();
-  };
-  // TODO: init Quick Filter
-  const initQuickFilter = () => {
-    quickFilterForm.filterName = quickFilterFormInitData.filterName;
-    quickFilterForm.id = quickFilterFormInitData.id;
-    quickFilterForm.clicked = quickFilterFormInitData.clicked;
-    quickFilterForm.filters = quickFilterFormInitData.filters.map(filter => ({
-      filterKey: filter.filterKey,
-      filterType: filter.filterType,
-      filterSourceType: filter.filterSourceType,
-      filterSource: filter.filterSource,
-      value: filter.value,
-      selectValue: filter.selectValue,
-      dateValue: filter.dateValue,
-      langethKey: filter.langethKey,
-      ValueBegin: filter.ValueBegin || "",
-      ValueEnd: filter.ValueEnd || ""
-    }));
-  };
+  // const resetQuickFilterForm = (formEl: FormInstance | undefined) => {
+  //   if (!formEl) return;
+  //   // formEl.resetFields();
+  //   initQuickFilter();
+  // };
+  // // TODO: init Quick Filter
+  // const initQuickFilter = () => {
+  //   quickFilterForm.filterName = quickFilterFormInitData.filterName;
+  //   quickFilterForm.id = quickFilterFormInitData.id;
+  //   quickFilterForm.clicked = quickFilterFormInitData.clicked;
+  //   quickFilterForm.filters = quickFilterFormInitData.filters.map(filter => ({
+  //     filterKey: filter.filterKey,
+  //     filterType: filter.filterType,
+  //     filterSourceType: filter.filterSourceType,
+  //     filterSource: filter.filterSource,
+  //     value: filter.value,
+  //     selectValue: filter.selectValue,
+  //     dateValue: filter.dateValue,
+  //     langethKey: filter.langethKey,
+  //     ValueBegin: filter.ValueBegin || "",
+  //     ValueEnd: filter.ValueEnd || "",
+  //     showOnGrid: filter.showOnGrid,
+  //     showOnFilter: filter.showOnFilter,
+  //     allowSorting: filter.allowSorting,
+  //     allowGridHeaderFilter: filter.allowGridHeaderFilter
+  //   }));
+  // };
   // TODO: API clcik quick filter to search
   const handleQuickFilterClick = (item: QuickFilter) => {
     console.log(`Clicked button ${item.filterName}`);
     quickFilterList.value.forEach(a => {
       a.clicked = false;
     });
-    item.clicked = true;
+    if (quickFilterList.value.length > 1) {
+      item.clicked = true;
+    }
     console.log("handleQuickFilterClick quickFilterList:", quickFilterList);
+    initBasicFilter();
   };
   const getOptions = (jsonString: string) => {
     try {
@@ -187,6 +211,26 @@ export function quickFilterCTL() {
     try {
       if (values && values !== "" && Array.isArray(values) && values.length > 0)
         return values[0];
+      else return "";
+    } catch (e) {
+      console.error("Invalid option value", e);
+      return "";
+    }
+  };
+  const getDateBeginValue = (values: any) => {
+    try {
+      if (values && values !== "" && Array.isArray(values) && values.length > 0)
+        return values[0];
+      else return "";
+    } catch (e) {
+      console.error("Invalid option value", e);
+      return "";
+    }
+  };
+  const getDateEndValue = (values: any) => {
+    try {
+      if (values && values !== "" && Array.isArray(values) && values.length > 1)
+        return values[1];
       else return "";
     } catch (e) {
       console.error("Invalid option value", e);
@@ -235,43 +279,66 @@ export function quickFilterCTL() {
   }
   async function fetchData() {
     try {
-      // let newQuickFilterList = JSON.parse(JSON.stringify(quickFilterList));
-      const [result1, result2] = await Promise.all([
+      const [result1, result2, result3] = await Promise.all([
         axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
-        axios.get("/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2")
+        axios.get(
+          "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2"
+        ),
+        axios.get("/api/Common/ColumnSetting?APIRequestType=3")
       ]);
 
       quickFilterFormInitData.filters = deepClone(result1.data.returnValue);
+      quickFilterFormInitData.filters.forEach(a => {
+        a.showOnGrid = true;
+        a.showOnFilter = true;
+        a.allowSorting = true;
+        a.allowGridHeaderFilter = true;
+        a.value = "";
+        a.selectValue = "";
+        a.ValueBegin = "";
+        a.ValueEnd = "";
+      });
+      if (
+        result3.data &&
+        result3.data.returnValue &&
+        Array.isArray(result3.data.returnValue) &&
+        result3.data.returnValue.length ===
+          quickFilterFormInitData.filters.length
+      ) {
+        advancedFilterForm.filters = deepClone(result3.data.returnValue);
+      } else {
+        advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
+      }
+      advancedFilterForm.filters.forEach(a => {
+        // a.showOnGrid = true;
+        // a.showOnFilter = true;
+        // a.allowSorting = true;
+        // a.allowGridHeaderFilter = true;
+        if (a.width && a.width === 70) {
+          a.width = 140;
+        }
+      });
+      // advancedFilterForm.filters = deepClone(result1.data.returnValue);
+      // // TODO: API
+      // advancedFilterForm.filters.forEach(a => {
+      //   a.showOnGrid = true;
+      //   a.showOnFilter = true;
+      //   a.allowSorting = true;
+      //   a.allowGridHeaderFilter = true;
+      // });
+      // console.log("advancedFilterForm", advancedFilterForm);
+      // console.log(
+      //   "advancedFilterForm length",
+      //   advancedFilterForm.filters.length % 2
+      // );
       const filterColumns = result1.data.returnValue;
       console.log("quickFilterFormInitData", quickFilterFormInitData);
       fetchOptions(quickFilterFormInitData.filters);
 
       const customizedFilters = result2.data.returnValue;
-      console.log("filterColumns", filterColumns);
-      console.log("filters", customizedFilters);
+      // console.log("filterColumns", filterColumns);
+      // console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {
-        // filterSetting.filters.forEach(filter => {
-        //   const matchedColumn = filterColumns.find(
-        //     column => column.filterKey === filter.filterKey
-        //   );
-        //   if (matchedColumn) {
-        //     // filter.filterType = matchedColumn.filterType;
-        //     // filter.filterSourceType = matchedColumn.filterSourceType;
-        //     // filter.filterSource = matchedColumn.filterSource;
-        //     // filter.langethKey = matchedColumn.langethKey;
-        //     // filter.width = matchedColumn.width;
-        //     matchedColumn.value = filter.value;
-        //   }
-        // });
-        // filterColumns.forEach(filter => {
-        //   if (filter.filterType === "dropdown") {
-        //     filter.selectValue = getDropDownValue(filter.value);
-        //   }
-        // });
-        // console.log("fetchData filterColumns", filterColumns);
-        // filterSetting.filters = deepClone(filterColumns);
-        // const newFilterMain = JSON.parse(JSON.stringify(filterSetting));
-        // const newFilterSon = JSON.parse(JSON.stringify(filterColumns));
         const filterColumnsClone = deepClone(filterColumns);
         filterColumnsClone.forEach(filter => {
           const matchedMainFilter = filterSetting.filters.find(
@@ -281,21 +348,167 @@ export function quickFilterCTL() {
             filter.value = matchedMainFilter.value;
             if (filter.filterType === "dropdown") {
               filter.selectValue = getDropDownValue(filter.value);
+            } else if (filter.filterType === "daterange") {
+              filter.ValueBegin = getDateBeginValue(filter.value);
+              filter.ValueEnd = getDateEndValue(filter.value);
             }
           }
         });
         filterSetting.filters = filterColumnsClone;
-        // newQuickFilterList.value.push(newFilterMain);
-        // quickFilterList.value.filter(a => a.id === filterSetting.id)[0] =
-        //   filterSetting;
       });
 
       quickFilterList.value = customizedFilters;
-      // console.log("quickFilterList", quickFilterList);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   }
+  const fetchAdvancedFilterData = () => {
+    CustomerQuickFilterService.getAdvancedFilterSetting()
+      .then(data => {
+        if (
+          data &&
+          data.returnValue &&
+          Array.isArray(data.returnValue) &&
+          data.returnValue.length === quickFilterFormInitData.filters.length
+        ) {
+          advancedFilterForm.filters = deepClone(data.returnValue);
+        } else {
+          advancedFilterForm.filters = deepClone(
+            quickFilterFormInitData.filters
+          );
+        }
+        advancedFilterForm.filters.forEach(a => {
+          // a.showOnGrid = true;
+          // a.showOnFilter = true;
+          // a.allowSorting = true;
+          // a.allowGridHeaderFilter = true;
+          if (a.width && a.width === 70) {
+            a.width = 140;
+          }
+        });
+      })
+      .catch(err => {
+        console.log("getAdvancedFilterSetting error", err);
+      });
+  };
+  const initAdvancedFilter = () => {
+    console.log("initAdvancedFilter");
+    console.log(
+      "quickFilterFormInitData.filters",
+      quickFilterFormInitData.filters
+    );
+    advancedFilterForm.filters.forEach((filter, index) => {
+      Object.assign(filter, quickFilterFormInitData.filters[index]);
+    });
+  };
+  const initBasicFilter = () => {
+    console.log("initBasicFilter");
+    advancedFilterForm.filters.forEach(filter => {
+      filter.value = "";
+      filter.selectValue = "";
+      filter.ValueBegin = "";
+      filter.ValueEnd = "";
+    });
+  };
+  const columnDrop = () => {
+    nextTick(() => {
+      const wrapper: HTMLElement = document.querySelector(
+        ".el-table__header-wrapper tr"
+      );
+      Sortable.create(wrapper, {
+        animation: 300,
+        delay: 0,
+        onEnd: ({ newIndex, oldIndex }) => {
+          const oldItem = advancedFilterForm.filters[oldIndex];
+          advancedFilterForm.filters.splice(oldIndex, 1);
+          advancedFilterForm.filters.splice(newIndex, 0, oldItem);
+          if (oldIndex !== newIndex) {
+            advancedFilterForm.filters = advancedFilterForm.filters.map(
+              column => {
+                const { ...rest } = column;
+                return {
+                  ...rest,
+                  fixed: false
+                };
+              }
+            );
+          }
+        }
+      });
+    });
+  };
+  const handleAdvancedReset = () => {
+    initBasicFilter();
+    // console.log(
+    //   "handleAdvancedReset showBasicFilterTopForm",
+    //   showBasicFilterTopForm.value
+    // );
+    // console.log(
+    //   "handleAdvancedReset showBasicFilterForm",
+    //   showBasicFilterForm.value
+    // );
+    // if (!showBasicFilterTopForm) showBasicFilterForm.value = true;
+  };
+  const formattedDateRange = item => {
+    if (item.ValueBegin && !item.ValueEnd) {
+      return `> ${item.ValueBegin}`;
+    } else if (item.ValueEnd && !item.ValueBegin) {
+      return `< ${item.ValueEnd}`;
+    } else if (item.ValueBegin && item.ValueEnd) {
+      return `${item.ValueBegin} - ${item.ValueEnd}`;
+    } else {
+      return "";
+    }
+  };
+  const handleBasicFilterBtnClick = item => {
+    console.log("handleBasicFilterBtnClick", item);
+    item.value = "";
+    item.selectValue = "";
+    item.ValueBegin = "";
+    item.ValueEnd = "";
+  };
+  const basicFilterTopForm = computed(() => {
+    return advancedFilterForm.filters.filter(
+      a =>
+        (a.value && a.value !== "") ||
+        (a.selectValue && a.selectValue !== "") ||
+        (a.ValueBegin && a.ValueBegin !== "") ||
+        (a.ValueEnd && a.ValueEnd !== "")
+    );
+  });
+  const showBasicFilterTopForm = computed(() => {
+    const c = advancedFilterForm.filters.filter(
+      a =>
+        (a.value && a.value !== "") ||
+        (a.selectValue && a.selectValue !== "") ||
+        (a.ValueBegin && a.ValueBegin !== "") ||
+        (a.ValueEnd && a.ValueEnd !== "")
+    );
+    if (c && c.length > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+  const showBasicFilterForm = ref(true);
+  watch(showBasicFilterTopForm, newVal => {
+    if (!newVal) {
+      // showBasicFilterForm.value = true;
+      activePanelNames.value.push("BasicFilterForm");
+    }
+  });
+  const handleCustomerSearch = () => {
+    // const c = advancedFilterForm.filters.filter(
+    //   a =>
+    //     (a.value && a.value !== "") ||
+    //     (a.selectValue && a.selectValue !== "") ||
+    //     (a.ValueBegin && a.ValueBegin !== "") ||
+    //     (a.ValueEnd && a.ValueEnd !== "")
+    // );
+    // showBasicFilterForm.value = false;
+    activePanelNames.value = [];
+  };
+  const activePanelNames = ref(["BasicFilterForm"]);
   return {
     getOptions,
     convertDropDownValue,
@@ -305,9 +518,19 @@ export function quickFilterCTL() {
     quickFilterFormInitData,
     quickFilterList,
     querySearchAsync,
-    resetQuickFilterForm,
     handleQuickFilterClick,
     updateQuickFilter,
-    fetchData
+    fetchData,
+    advancedFilterForm,
+    basicFilterTopForm,
+    initAdvancedFilter,
+    initBasicFilter,
+    handleAdvancedReset,
+    showBasicFilterTopForm,
+    showBasicFilterForm,
+    handleCustomerSearch,
+    formattedDateRange,
+    handleBasicFilterBtnClick,
+    activePanelNames
   };
 }

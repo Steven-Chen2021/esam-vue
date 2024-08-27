@@ -1,17 +1,10 @@
-import API from "./interceptor";
+import API from "../interceptor";
 
-class CustomerQuickFilterService {
-  async getStatusList(url) {
+class CustomerSearchService {
+  async getCustomerList(params) {
     try {
-      const response = await API.get(url);
-      return response;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-  async getAutoCompleteList(params) {
-    try {
-      const url = "/api/Common/OptionsResource";
+      const url =
+        "https://apifoxmock.com/m1/4954054-4611880-default/CustomerLeadSearch/Search";
       const queryString = new URLSearchParams(params).toString();
       const fullUrl = `${url}?${queryString}`;
       const response = await API.get(fullUrl);
@@ -56,4 +49,4 @@ class CustomerQuickFilterService {
   }
 }
 
-export default new CustomerQuickFilterService();
+export default new CustomerSearchService();

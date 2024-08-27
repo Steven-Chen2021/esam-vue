@@ -257,12 +257,19 @@ customer:
     WebSite: WebSite
     Industry: Industry
     ICPScore: ICPScore
-    BusinessRegistrationNumber: Business Registration Number
+    BusinessRegistrationNumber: Biz Registration#
     CombatTeam: CombatTeam
-    LastBusinessDay: Last Business Day
+    LastBusinessDay: Last Biz Day
     ValidQuoteCount: Valid Quote Count
     OwnerSales: Owner Sales
     CombatTeamPL: Combat Team PL
+  tour:
+      tourQF1Title: Quick Filter
+      tourQF1Text: Click to create a quick query and boost your work efficiency.
+      tourQF2Title: Quick Filter
+      tourQF2ext: Click to try.
+      tourBF1Title: Advance Filter
+      tourBF1ext: Click to set filter criteria and customize the content displayed in the results.
   list:
     quickFilter:
       addFilterbtn: Add Filter
@@ -279,10 +286,6 @@ customer:
       dateSeparator: To
       startDateHolderText: Start Date
       endDateHolderText: End Date
-      tourStep1Title: Quick Filter
-      tourStep1Text: Click to create a quick query and boost your work efficiency.
-      tourStep2Title: Advance Filter
-      tourStep2Text: Click to set filter criteria and customize the content displayed in the results.
       alertTitle: Info
       addSucText: Add Successfully.
       updateSucText: Update Successfully.
@@ -297,3 +300,9 @@ customer:
       columnName: Column Name
       showOnFilter: Show as Filter
       showOnList: Show on List
+      settingBtn: Setting
+      searchBtn: Search
+      clearBtn: Clear
+      showFilterBtn: Show Filters
+      hideFilterBtn: Hide Filters
+      basicFilterTitle: Basic Filters
