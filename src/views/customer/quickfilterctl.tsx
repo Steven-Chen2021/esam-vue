@@ -6,8 +6,6 @@ import { ref, onMounted, reactive, watch, nextTick, computed } from "vue";
 // import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 import Sortable from "sortablejs";
-import { listCTL } from "../customer/listctl";
-const { handleConditionalSearch, searchParams } = listCTL();
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;
@@ -499,19 +497,6 @@ export function quickFilterCTL() {
       activePanelNames.value.push("BasicFilterForm");
     }
   });
-  const handleCustomerSearch = () => {
-    searchParams.ConditionalSettings = advancedFilterForm.filters;
-    handleConditionalSearch();
-    // const c = advancedFilterForm.filters.filter(
-    //   a =>
-    //     (a.value && a.value !== "") ||
-    //     (a.selectValue && a.selectValue !== "") ||
-    //     (a.ValueBegin && a.ValueBegin !== "") ||
-    //     (a.ValueEnd && a.ValueEnd !== "")
-    // );
-    // showBasicFilterForm.value = false;
-    activePanelNames.value = [];
-  };
   const activePanelNames = ref(["BasicFilterForm"]);
   return {
     getOptions,
@@ -532,7 +517,7 @@ export function quickFilterCTL() {
     handleAdvancedReset,
     showBasicFilterTopForm,
     showBasicFilterForm,
-    handleCustomerSearch,
+    // handleCustomerSearch,
     formattedDateRange,
     handleBasicFilterBtnClick,
     activePanelNames

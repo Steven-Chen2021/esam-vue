@@ -47,7 +47,6 @@ const {
   handleAdvancedReset,
   showBasicFilterTopForm,
   showBasicFilterForm,
-  handleCustomerSearch,
   formattedDateRange,
   handleBasicFilterBtnClick,
   activePanelNames
@@ -62,7 +61,8 @@ const {
   total,
   handleSortChange,
   handlePageChange,
-  handleSizeChange
+  handleSizeChange,
+  handleConditionalSearch
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -554,7 +554,7 @@ const submitAdvancedFilterForm = () => {
                     ref="refBtnBasicFilterSearch"
                     type="primary"
                     :icon="useRenderIcon('ri:search-line')"
-                    @click="handleCustomerSearch"
+                    @click="handleConditionalSearch(advancedFilterForm)"
                     >{{
                       $t("customer.list.advancedSetting.searchBtn")
                     }}</el-button

@@ -174,8 +174,9 @@ export function listCTL() {
     fetchData(); // 重新获取数据，可能会包含更多项
   };
 
-  const handleConditionalSearch = () => {
-    console.log("searchParams", searchParams);
+  const handleConditionalSearch = filterForm => {
+    console.log("ss", filterForm);
+    searchParams.ConditionalSettings = filterForm.filters;
     currentPage.value = 1;
     fetchData(); // 重新获取排序后的数据
   };
