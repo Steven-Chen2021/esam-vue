@@ -174,11 +174,11 @@ export function listCTL() {
     fetchData(); // 重新获取数据，可能会包含更多项
   };
 
-  // const handleConditionalSearch = ({ prop, order }) => {
-  //   sortField.value = prop;
-  //   sortOrder.value = order === "ascending" ? "asc" : "desc";
-  //   fetchData(); // 重新获取排序后的数据
-  // };
+  const handleConditionalSearch = () => {
+    console.log("searchParams", searchParams);
+    currentPage.value = 1;
+    fetchData(); // 重新获取排序后的数据
+  };
 
   const tableRowClassName = ({
     row,
@@ -220,7 +220,8 @@ export function listCTL() {
     total,
     handleSortChange,
     handlePageChange,
-    handleSizeChange
-    // handleConditionalSearch
+    handleSizeChange,
+    handleConditionalSearch,
+    searchParams
   };
 }

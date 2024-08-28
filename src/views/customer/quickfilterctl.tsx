@@ -6,6 +6,8 @@ import { ref, onMounted, reactive, watch, nextTick, computed } from "vue";
 // import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 import Sortable from "sortablejs";
+import { listCTL } from "../customer/listctl";
+const { handleConditionalSearch, searchParams } = listCTL();
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;
@@ -498,6 +500,8 @@ export function quickFilterCTL() {
     }
   });
   const handleCustomerSearch = () => {
+    searchParams.ConditionalSettings = advancedFilterForm.filters;
+    handleConditionalSearch();
     // const c = advancedFilterForm.filters.filter(
     //   a =>
     //     (a.value && a.value !== "") ||
