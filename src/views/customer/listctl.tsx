@@ -142,16 +142,19 @@ export function listCTL() {
       .then(data => {
         // console.log("getCustomerList params", searchParams);
         // console.log("getCustomerList result", data);
-        tableData.value = data;
-        if (data) total.value = data.length;
+        tableData.value = data.returnValue.results;
+        if (data) total.value = data.returnValue.totalRecord;
       })
       .catch(err => {
         console.log("getCustomerList error", err);
       });
   };
   const searchParams = reactive({
-    size: pageSize,
-    page: currentPage,
+    APIRequestType: 4,
+    ConditionalSettings: null,
+    pageSize: pageSize,
+    pageIndex: currentPage,
+    paginator: true,
     sort: sortField,
     order: sortOrder
   });
@@ -170,6 +173,13 @@ export function listCTL() {
     pageSize.value = size;
     fetchData(); // 重新获取数据，可能会包含更多项
   };
+
+  // const handleConditionalSearch = ({ prop, order }) => {
+  //   sortField.value = prop;
+  //   sortOrder.value = order === "ascending" ? "asc" : "desc";
+  //   fetchData(); // 重新获取排序后的数据
+  // };
+
   const tableRowClassName = ({
     row,
     rowIndex
@@ -211,5 +221,6 @@ export function listCTL() {
     handleSortChange,
     handlePageChange,
     handleSizeChange
+    // handleConditionalSearch
   };
 }

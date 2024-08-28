@@ -3,16 +3,22 @@ import API from "../interceptor";
 class CustomerSearchService {
   async getCustomerList(params) {
     try {
-      const url =
-        "https://apifoxmock.com/m1/4954054-4611880-default/CustomerLeadSearch/Search";
-      const queryString = new URLSearchParams(params).toString();
-      const fullUrl = `${url}?${queryString}`;
-      const response = await API.get(fullUrl);
-      return response.returnValue;
+      const response = await API.post("/api/Customer/CustomerResult", params);
+      return response;
     } catch (error) {
       console.error(error);
-      return [];
     }
+    // try {
+    //   const url =
+    //     "https://apifoxmock.com/m1/4954054-4611880-default/CustomerLeadSearch/Search";
+    //   const queryString = new URLSearchParams(params).toString();
+    //   const fullUrl = `${url}?${queryString}`;
+    //   const response = await API.get(fullUrl);
+    //   return response.returnValue;
+    // } catch (error) {
+    //   console.error(error);
+    //   return [];
+    // }
   }
   async updateQuickFilter(params) {
     try {
