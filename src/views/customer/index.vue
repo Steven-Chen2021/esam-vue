@@ -572,35 +572,31 @@ onMounted(() => {
                     style="width: 110px"
                   />
                 </el-form-item>
-                <el-form-item>
-                  <el-button
-                    ref="refBtnBasicFilterSearch"
-                    type="primary"
-                    :icon="useRenderIcon('ri:search-line')"
-                    @click="handleConditionalSearch(advancedFilterForm)"
-                    >{{
-                      $t("customer.list.advancedSetting.searchBtn")
-                    }}</el-button
-                  >
-                  <el-button
-                    ref="refBtnBasicFilterReset"
-                    :icon="useRenderIcon('tdesign:filter-clear')"
-                    @click="handleResetConditionalSearch"
-                    >{{
-                      $t("customer.list.advancedSetting.clearBtn")
-                    }}</el-button
-                  >
-                  <el-button
-                    ref="refBtnAdvancedFilterSetting"
-                    :icon="useRenderIcon('ep:setting')"
-                    @click="handleAdvancedSettings"
-                    >{{
-                      $t("customer.list.advancedSetting.settingBtn")
-                    }}</el-button
-                  >
-                </el-form-item>
               </div>
             </el-form>
+          </div>
+          <div class="flex flex-row-reverse h-3 ...">
+            <div>
+              <el-button
+                ref="refBtnBasicFilterSearch"
+                type="primary"
+                :icon="useRenderIcon('ri:search-line')"
+                @click="handleConditionalSearch(advancedFilterForm)"
+                >{{ $t("customer.list.advancedSetting.searchBtn") }}</el-button
+              >
+              <el-button
+                ref="refBtnBasicFilterReset"
+                :icon="useRenderIcon('tdesign:filter-clear')"
+                @click="handleResetConditionalSearch"
+                >{{ $t("customer.list.advancedSetting.clearBtn") }}</el-button
+              >
+              <el-button
+                ref="refBtnAdvancedFilterSetting"
+                :icon="useRenderIcon('ep:setting')"
+                @click="handleAdvancedSettings"
+                >{{ $t("customer.list.advancedSetting.settingBtn") }}</el-button
+              >
+            </div>
           </div>
         </el-collapse-item>
       </el-collapse>

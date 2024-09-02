@@ -263,6 +263,7 @@ customer:
     validQuoteCount: Valid Quote Count
     ownerSales: Owner Sales
     combatTeamPL: Combat Team PL
+    productLineName: Product Line
   tour:
       tourQF1Title: Quick Filter
       tourQF1Text: Click to create a quick query and boost your work efficiency.
