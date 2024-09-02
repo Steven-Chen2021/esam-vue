@@ -240,29 +240,29 @@ login:
   purePassWordUpdateReg: Password has been updated
 customer:
   quickfilter:
-    HQID: HQID
-    Status: Status
+    hqid: HQID
+    status: Status
     createdDT: Create Date
     customer: Customer
     testStatus: Test Status
-    CustomerName: Customer Name
-    LocalName: Local Name
-    MainAddress: Main Address
-    Phone: Phone
-    Fax: Fax
-    LeadSource: Lead Source
-    EstablishedDate: Established Date
-    CapitalAmount: Capital Amount
-    Commodity: Commodity
-    WebSite: WebSite
-    Industry: Industry
-    ICPScore: ICPScore
-    BusinessRegistrationNumber: Biz Registration#
-    CombatTeam: CombatTeam
-    LastBusinessDay: Last Biz Day
-    ValidQuoteCount: Valid Quote Count
-    OwnerSales: Owner Sales
-    CombatTeamPL: Combat Team PL
+    customerName: Customer Name
+    localName: Local Name
+    mainAddress: Main Address
+    phone: Phone
+    fax: Fax
+    leadSource: Lead Source
+    establishedDate: Established Date
+    capitalAmount: Capital Amount
+    commodity: Commodity
+    webSite: WebSite
+    industry: Industry
+    icpScore: ICPScore
+    businessRegistrationNumber: Biz Registration#
+    combatTeam: CombatTeam
+    lastBusinessDay: Last Biz Day
+    validQuoteCount: Valid Quote Count
+    ownerSales: Owner Sales
+    combatTeamPL: Combat Team PL
   tour:
       tourQF1Title: Quick Filter
       tourQF1Text: Click to create a quick query and boost your work efficiency.

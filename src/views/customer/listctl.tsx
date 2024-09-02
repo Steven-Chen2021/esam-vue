@@ -16,7 +16,7 @@ import type { TableColumnCtx } from "element-plus";
 // import { message } from "@/utils/message";
 
 import { reactive, ref } from "vue";
-
+import { quickFilterCTL } from "../customer/quickfilterctl";
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 export interface ColumnDetailVM {
   label: string;
@@ -39,6 +39,8 @@ export interface ColumnDetailVM {
   filters: any[];
 }
 export function listCTL() {
+  const { handleAdvancedReset } = quickFilterCTL();
+
   const columnList = reactive<ColumnDetailVM[]>([
     {
       filterKey: "HQID",
@@ -142,16 +144,19 @@ export function listCTL() {
       .then(data => {
         // console.log("getCustomerList params", searchParams);
         // console.log("getCustomerList result", data);
-        tableData.value = data;
-        if (data) total.value = data.length;
+        tableData.value = data.returnValue.results;
+        if (data) total.value = data.returnValue.totalRecord;
       })
       .catch(err => {
         console.log("getCustomerList error", err);
       });
   };
   const searchParams = reactive({
-    size: pageSize,
-    page: currentPage,
+    APIRequestType: 4,
+    ConditionalSettings: null,
+    pageSize: pageSize,
+    pageIndex: currentPage,
+    paginator: true,
     sort: sortField,
     order: sortOrder
   });
@@ -170,6 +175,20 @@ export function listCTL() {
     pageSize.value = size;
     fetchData(); // 重新获取数据，可能会包含更多项
   };
+
+  const handleConditionalSearch = filterForm => {
+    searchParams.ConditionalSettings = filterForm.filters;
+    currentPage.value = 1;
+    fetchData(); // 重新获取排序后的数据
+  };
+
+  const handleResetConditionalSearch = () => {
+    searchParams.ConditionalSettings = null;
+    currentPage.value = 1;
+    fetchData(); // 重新获取排序后的数据
+    handleAdvancedReset();
+  };
+
   const tableRowClassName = ({
     row,
     rowIndex
@@ -210,6 +229,9 @@ export function listCTL() {
     total,
     handleSortChange,
     handlePageChange,
-    handleSizeChange
+    handleSizeChange,
+    handleConditionalSearch,
+    searchParams,
+    handleResetConditionalSearch
   };
 }
