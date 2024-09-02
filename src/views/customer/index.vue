@@ -62,7 +62,8 @@ const {
   handleSortChange,
   handlePageChange,
   handleSizeChange,
-  handleConditionalSearch
+  handleConditionalSearch,
+  handleResetConditionalSearch
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -325,6 +326,28 @@ const submitAdvancedFilterForm = () => {
     });
 };
 // #endregion
+
+const calculateMaxHeight = () => {
+  const windowHeight = window.innerHeight;
+  let newMaxHeight;
+
+  // 根据窗口高度计算最大高度，可以自定义计算逻辑
+  if (windowHeight > 768) {
+    newMaxHeight = windowHeight * 0.7; // 窗口高度的70%
+  } else {
+    newMaxHeight = windowHeight * 0.8; // 窗口高度的80%
+  }
+
+  // 更新 maxHeight 的值
+  maxHeight.value = newMaxHeight;
+};
+
+const maxHeight = ref(null);
+
+onMounted(() => {
+  calculateMaxHeight();
+  window.addEventListener("resize", calculateMaxHeight);
+});
 </script>
 
 <template>
@@ -562,7 +585,7 @@ const submitAdvancedFilterForm = () => {
                   <el-button
                     ref="refBtnBasicFilterReset"
                     :icon="useRenderIcon('tdesign:filter-clear')"
-                    @click="handleAdvancedReset"
+                    @click="handleResetConditionalSearch"
                     >{{
                       $t("customer.list.advancedSetting.clearBtn")
                     }}</el-button
@@ -587,6 +610,7 @@ const submitAdvancedFilterForm = () => {
       :data="tableData"
       style="width: 100%"
       :row-class-name="tableRowClassName"
+      :max-height="maxHeight"
       @sort-change="handleSortChange"
     >
       <el-table-column
@@ -598,11 +622,16 @@ const submitAdvancedFilterForm = () => {
         :label="t(col.langethKey)"
         :width="col.width ?? 140"
         :sortable="col.allowSorting ? 'custom' : false"
+        :fixed="
+          col.filterKey === 'hqid' || col.filterKey === 'customerName'
+            ? true
+            : false
+        "
       />
       <el-table-column fixed="right" label="Operations" min-width="120">
         <template #default>
           <el-button link type="primary" size="small" @click="handleClick">
-            Detail
+            View
           </el-button>
           <el-button link type="primary" size="small">Edit</el-button>
         </template>

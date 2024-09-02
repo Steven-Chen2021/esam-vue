@@ -332,7 +332,7 @@ export function quickFilterCTL() {
       //   advancedFilterForm.filters.length % 2
       // );
       const filterColumns = result1.data.returnValue;
-      console.log("quickFilterFormInitData", quickFilterFormInitData);
+      // console.log("quickFilterFormInitData", quickFilterFormInitData);
       fetchOptions(quickFilterFormInitData.filters);
 
       const customizedFilters = result2.data.returnValue;
@@ -402,7 +402,7 @@ export function quickFilterCTL() {
     });
   };
   const initBasicFilter = () => {
-    console.log("initBasicFilter");
+    // console.log("initBasicFilter");
     advancedFilterForm.filters.forEach(filter => {
       filter.value = "";
       filter.selectValue = "";
@@ -439,6 +439,7 @@ export function quickFilterCTL() {
   };
   const handleAdvancedReset = () => {
     initBasicFilter();
+    console.log("advancedFilterForm", advancedFilterForm.filters);
     // console.log(
     //   "handleAdvancedReset showBasicFilterTopForm",
     //   showBasicFilterTopForm.value

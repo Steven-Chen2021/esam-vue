@@ -16,7 +16,7 @@ import type { TableColumnCtx } from "element-plus";
 // import { message } from "@/utils/message";
 
 import { reactive, ref } from "vue";
-
+import { quickFilterCTL } from "../customer/quickfilterctl";
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 export interface ColumnDetailVM {
   label: string;
@@ -39,6 +39,8 @@ export interface ColumnDetailVM {
   filters: any[];
 }
 export function listCTL() {
+  const { handleAdvancedReset } = quickFilterCTL();
+
   const columnList = reactive<ColumnDetailVM[]>([
     {
       filterKey: "HQID",
@@ -175,10 +177,16 @@ export function listCTL() {
   };
 
   const handleConditionalSearch = filterForm => {
-    console.log("ss", filterForm);
     searchParams.ConditionalSettings = filterForm.filters;
     currentPage.value = 1;
     fetchData(); // 重新获取排序后的数据
+  };
+
+  const handleResetConditionalSearch = () => {
+    searchParams.ConditionalSettings = null;
+    currentPage.value = 1;
+    fetchData(); // 重新获取排序后的数据
+    handleAdvancedReset();
   };
 
   const tableRowClassName = ({
@@ -223,6 +231,7 @@ export function listCTL() {
     handlePageChange,
     handleSizeChange,
     handleConditionalSearch,
-    searchParams
+    searchParams,
+    handleResetConditionalSearch
   };
 }
