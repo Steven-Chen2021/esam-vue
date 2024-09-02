@@ -191,6 +191,10 @@ const values = ref<FieldValues>({});
 const handleOpen = () => {
   visible.value = true;
 };
+const handleConfirm = (values: FieldValues) => {
+  console.log(values);
+  visible.value = false;
+};
 </script>
 
 <template>
@@ -200,6 +204,7 @@ const handleOpen = () => {
       v-model:visible="visible"
       v-model="values"
       :form="{ columns }"
+      @confirm="handleConfirm"
     />
   </div>
 </template>

@@ -180,6 +180,14 @@ menus:
   pureMindMap: Mind Map
   pureMenuOverflow: Menu Overflow Show Tooltip Text
   pureChildMenuOverflow: Child Menu Overflow Show Tooltip Text
+  dimercoContact: Contact
+  dimercoQuotes: Quote
+  dimercoTask: Task
+  dimercoCredit: Credit
+  dimercoReport: Report
+  dimercoCustomer: Customer
+  dimercoDeal: Deal
+  
 status:
   pureLoad: Loading...
   pureMessage: Message
@@ -230,3 +238,71 @@ login:
   purePassWordSureReg: Please enter confirm password
   purePassWordDifferentReg: The two passwords do not match!
   purePassWordUpdateReg: Password has been updated
+customer:
+  quickfilter:
+    hqid: HQID
+    status: Status
+    createdDT: Create Date
+    customer: Customer
+    testStatus: Test Status
+    customerName: Customer Name
+    localName: Local Name
+    mainAddress: Main Address
+    phone: Phone
+    fax: Fax
+    leadSource: Lead Source
+    establishedDate: Established Date
+    capitalAmount: Capital Amount
+    commodity: Commodity
+    webSite: WebSite
+    industry: Industry
+    icpScore: ICPScore
+    businessRegistrationNumber: Biz Registration#
+    combatTeam: CombatTeam
+    lastBusinessDay: Last Biz Day
+    validQuoteCount: Valid Quote Count
+    ownerSales: Owner Sales
+    combatTeamPL: Combat Team PL
+  tour:
+      tourQF1Title: Quick Filter
+      tourQF1Text: Click to create a quick query and boost your work efficiency.
+      tourQF2Title: Quick Filter
+      tourQF2ext: Click to try.
+      tourBF1Title: Advance Filter
+      tourBF1ext: Click to set filter criteria and customize the content displayed in the results.
+  list:
+    quickFilter:
+      addFilterbtn: Add Filter
+      filterName: Filter Name
+      title: Quick Filter Setting
+      resetText: Reset
+      confirmText: Confirm
+      cancelText: Cancel
+      holderKeyinText: Please keyin
+      holderSelectText: Please Select
+      filterNameAlert: Please keyin Filter Name
+      delBtnText: Delete
+      editBtnText: Edit
+      dateSeparator: To
+      startDateHolderText: Start Date
+      endDateHolderText: End Date
+      alertTitle: Info
+      addSucText: Add Successfully.
+      updateSucText: Update Successfully.
+      addFailSucText: Add failed.
+      updateFailSucText: Update failed.
+      delSucText: Delete Successfully.
+      delFailText: Delete failed.
+      delWarnText: Are you sure?
+      warnTitle: Warning
+    advancedSetting:
+      title: Advanced Setting
+      columnName: Column Name
+      showOnFilter: Show as Filter
+      showOnList: Show on List
+      settingBtn: Setting
+      searchBtn: Search
+      clearBtn: Clear
+      showFilterBtn: Show Filters
+      hideFilterBtn: Hide Filters
+      basicFilterTitle: Basic Filters

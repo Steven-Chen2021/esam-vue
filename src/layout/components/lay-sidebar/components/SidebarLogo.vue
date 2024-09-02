@@ -30,7 +30,7 @@ const { title, getLogo } = useNav();
         :to="getTopMenu()?.path ?? '/'"
       >
         <img :src="getLogo()" alt="logo" />
-        <span class="sidebar-title">{{ title }}</span>
+        <!-- <span class="sidebar-title">{{ title }}</span> -->
       </router-link>
     </transition>
   </div>

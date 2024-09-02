@@ -46,6 +46,95 @@ const tableData = [
   }
 ];
 
+const leadTableData = [
+  {
+    leadstatus: "Quotation Accepted",
+    company: "MICROSOFT TAIWAN",
+    pl: "Air",
+    owner: "",
+    ownerstation: "DIMORD",
+    createdby: "Daniel Mroz",
+    leadsource: ""
+  },
+  {
+    leadstatus: "Approaching",
+    company: "ASUS TW",
+    pl: "Sea",
+    owner: "Adrianne Bauman",
+    ownerstation: "DIMBOS",
+    createdby: "Adrianne Bauman",
+    leadsource: ""
+  },
+  {
+    leadstatus: "Quoting",
+    company: "SCHOENFELD INTERNATIONAL",
+    pl: "Sea",
+    owner: "Veronica Soong	",
+    ownerstation: "DIMORD",
+    createdby: "Ernest Valencia",
+    leadsource: "Dimerco Sales"
+  }
+];
+
+const quoteTableData = [
+  {
+    hqid: 15252,
+    pl: "Sea",
+    companyname: "DELTA ELECTRONICS INT'L (SINGAPORE) PTE. LTD.",
+    quoteno: "QS0170007726",
+    lanesegment: "USNYC - NYC - HKG - HKHKG",
+    tradeterm: "EXW",
+    shippingterm: "EOM45",
+    status: "Draft",
+    issuedate: "Jul 17 24",
+    EtoE: "Jun 01 24 - Jul 31 24",
+    shippingtype: "FCL",
+    nra: "X"
+  },
+  {
+    hqid: 15252,
+    pl: "Air",
+    companyname: "DELTA ELECTRONICS INT'L (SINGAPORE) PTE. LTD.",
+    quoteno: "QA0170007726",
+    lanesegment: "USNYC - NYC - HKG - HKHKG",
+    tradeterm: "EXW",
+    shippingterm: "EOM45",
+    status: "Wait for Approve",
+    issuedate: "Jul 17 24",
+    EtoE: "Jun 01 24 - Jul 31 24",
+    shippingtype: "FCL",
+    nra: "X"
+  },
+  {
+    hqid: 15252,
+    pl: "Sea",
+    companyname: "DELTA ELECTRONICS INT'L (SINGAPORE) PTE. LTD.",
+    quoteno: "QS0170007726",
+    lanesegment: "USNYC - NYC - HKG - HKHKG",
+    tradeterm: "EXW",
+    shippingterm: "EOM45",
+    status: "Approved",
+    issuedate: "Jul 17 24",
+    EtoE: "Jun 01 24 - Jul 31 24",
+    shippingtype: "FCL",
+    nra: "X"
+  },
+  {
+    hqid: 15252,
+    pl: "Air",
+    companyname: "DELTA ELECTRONICS INT'L (SINGAPORE) PTE. LTD.",
+    quoteno: "QA0170007726",
+    lanesegment: "USNYC - NYC - HKG - HKHKG",
+    tradeterm: "EXW",
+    shippingterm: "EOM45",
+    status: "Rejected",
+    issuedate: "Jul 17 24",
+    EtoE: "Jun 01 24 - Jul 31 24",
+    shippingtype: "FCL",
+    nra: "X"
+  }
+];
+
 const cloneData = clone(tableData, true);
 
 const tableDataMore = cloneData.map(item =>
@@ -293,5 +382,7 @@ export {
   tableDataMore,
   tableDataImage,
   tableDataExpand,
-  tableDataSortable
+  tableDataSortable,
+  leadTableData,
+  quoteTableData
 };

@@ -180,6 +180,13 @@ menus:
   pureMindMap: 思维导图
   pureMenuOverflow: 目录超出显示 Tooltip 文字提示
   pureChildMenuOverflow: 菜单超出显示 Tooltip 文字提示
+  dimercoContact: 联络人管理
+  dimercoQuotes: 报价工具
+  dimercoTask: 任务管理
+  dimercoCredit: 信用管理
+  dimercoReport: 报表  
+  dimercoCustomer: 客戶管理
+  dimercoDeal: 交易管理
 status:
   pureLoad: 加载中...
   pureMessage: 消息
@@ -230,3 +237,36 @@ login:
   purePassWordSureReg: 请输入确认密码
   purePassWordDifferentReg: 两次密码不一致!
   purePassWordUpdateReg: 修改密码成功
+customer:
+  quickfilter:
+    HQID: HQID
+    Status: Status
+    createdDT: Create Date
+    customer: Customer
+    testStatus: Test Status
+    CustomerName: Customer Name
+  list:
+    quickFilter:
+      addFilterbtn: Add Filter
+      filterName: Filter Name
+      title: Quick Filter Setting
+      resetText: Reset
+      confirmText: Confirm
+      cancelText: Cancel
+      holderKeyinText: Please keyin
+      holderSelectText: Please Select
+      filterNameAlert: Please keyin Filter Name
+      delBtnText: Delete
+      editBtnText: Edit
+      dateSeparator: To
+      startDateHolderText: Start Date
+      endDateHolderText: End Date
+      tourStep1Title: Quick Filter
+      tourStep1Text: Click to create a quick query and boost your work efficiency.
+      tourStep2Title: Advance Filter
+      tourStep2Text: Click to set filter criteria and customize the content displayed in the results.
+    advancedSetting:
+      title: Advanced Setting
+      columnName: Column Name
+      showOnFilter: Show as Filter
+      showOnList: Show on List
