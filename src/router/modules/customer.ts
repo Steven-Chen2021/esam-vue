@@ -17,6 +17,15 @@ export default {
       meta: {
         title: $t("menus.dimercoCustomer")
       }
+    },
+    {
+      path: "/customer/detail",
+      name: "CustomerDetail",
+      component: () => import("@/views/customer/profile/detail.vue"),
+      meta: {
+        title: $t("menus.dimercoQuotes"),
+        showLink: false
+      }
     }
   ]
 } satisfies RouteConfigsTable;

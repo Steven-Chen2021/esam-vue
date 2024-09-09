@@ -4,8 +4,10 @@ import axios from "axios";
 // import { clone, delay } from "@pureadmin/utils";
 import { ref, onMounted, reactive, watch, computed } from "vue";
 // import { message } from "@/utils/message";
-import type { FormInstance } from "element-plus/es/components/form/index.mjs";
-// import Sortable from "sortablejs";
+import type {
+  FormInstance,
+  FormRules
+} from "element-plus/es/components/form/index.mjs";
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;
@@ -31,7 +33,141 @@ export interface QuickFilter {
   clicked: boolean;
   filters: QuickFilterDetail[];
 }
-export function quickFilterCTL() {
+export function customerProfileCTL() {
+  let profileFormDataInit = [];
+  const profileFormData = ref([]);
+  const profileData = ref({ columns: [] });
+  // TODO: 补全所有栏位
+  async function fetchProfileData(HQID, basicRole, advRole, warnMsg) {
+    try {
+      const [result1, result2] = await Promise.all([
+        axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
+        axios.get("/api/Customer/CustomerProfileResult?hqid=" + HQID)
+      ]);
+      console.log("result1", result1.data.returnValue);
+      console.log("result2", result2.data.returnValue);
+      profileFormDataInit = deepClone(result1.data.returnValue);
+      profileFormData.value = deepClone(result1.data.returnValue);
+      profileData.value = deepClone(result2.data.returnValue);
+      profileFormData.value.forEach(column => {
+        column.value = result2.data.returnValue[column.filterKey];
+        if (column.visibilityLevel === 1) {
+          if (basicRole === "NA") {
+            column.value = warnMsg;
+            profileData.value[column.filterKey] = warnMsg;
+          }
+        } else if (column.visibilityLevel === 2) {
+          if (advRole === "NA") {
+            column.value = warnMsg;
+            profileData.value[column.filterKey] = warnMsg;
+          }
+        }
+      });
+      console.log("profileFormData", profileFormData);
+      console.log("profileData", profileData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+  interface profileRuleForm {
+    customerName: string;
+    localName: string;
+  }
+  const rules = reactive<FormRules<profileRuleForm>>({
+    customerName: [
+      {
+        required: true,
+        message: "Please input Activity name",
+        trigger: "blur"
+      }
+    ],
+    localName: [
+      {
+        required: true,
+        message: "Please input Activity name",
+        trigger: "blur"
+      }
+    ]
+  });
+  const currentUser = ref("Andy Kang"); // 当前登录用户
+  const newMessage = ref(""); // 新的留言
+  const editIndex = ref(-1); // 当前编辑的索引
+  const messages = ref([
+    {
+      user: "Andy Kang",
+      content:
+        "Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!",
+      likes: 0,
+      timestamp: new Date().toLocaleString()
+    },
+    {
+      user: "Steven Chen",
+      content: "Hi everyone!",
+      likes: 0,
+      timestamp: new Date().toLocaleString()
+    }
+  ]);
+
+  // 判断是否是当前用户
+  const isCurrentUser = user => user === currentUser.value;
+
+  // 新增留言
+  const postMessage = () => {
+    if (newMessage.value.trim()) {
+      messages.value.unshift({
+        user: currentUser.value,
+        content: newMessage.value.trim(),
+        likes: 0,
+        timestamp: new Date().toLocaleString()
+      });
+      newMessage.value = "";
+    }
+  };
+
+  // 点赞
+  const likeMessage = index => {
+    messages.value[index].likes++;
+  };
+
+  // 编辑留言
+  const editMessage = index => {
+    editIndex.value = index;
+  };
+
+  // 保存编辑
+  const saveEdit = index => {
+    editIndex.value = -1;
+    messages.value[index].timestamp = new Date().toLocaleString();
+  };
+  const formatTimestamp = timestamp => {
+    const date = new Date(timestamp);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  };
+  // 删除留言
+  const deleteMessage = index => {
+    messages.value.splice(index, 1);
+  };
+  // watch(
+  //   () => profileFormData,
+  //   newVal => {
+  //     const newRules = {};
+  //     newVal.value.forEach(item => {
+  //       if (item.filterKey) {
+  //         newRules[item.filterKey] = [
+  //           {
+  //             required: true,
+  //             message: `${item.filterKey} is required`,
+  //             trigger: "blur"
+  //           }
+  //         ];
+  //         // Add more validation rules as needed
+  //       }
+  //     });
+  //     rules.value = newRules;
+  //     console.log("rules", rules);
+  //   },
+  //   { deep: true }
+  // );
   const quickFilterFormRef = ref<FormInstance>();
   // const quickFilterFormInitData: QuickFilter = {
   //   filterName: "",
@@ -68,7 +204,6 @@ export function quickFilterCTL() {
   const quickFilterList = ref<QuickFilter[]>([]);
   onMounted(() => {
     fetchData();
-    fetchAdvancedFilterData();
     // nextTick(() => {
     //   columnDrop();
     // });
@@ -350,19 +485,6 @@ export function quickFilterCTL() {
           a.width = 140;
         }
       });
-      // advancedFilterForm.filters = deepClone(result1.data.returnValue);
-      // // TODO: API
-      // advancedFilterForm.filters.forEach(a => {
-      //   a.showOnGrid = true;
-      //   a.showOnFilter = true;
-      //   a.allowSorting = true;
-      //   a.allowGridHeaderFilter = true;
-      // });
-      // console.log("advancedFilterForm", advancedFilterForm);
-      // console.log(
-      //   "advancedFilterForm length",
-      //   advancedFilterForm.filters.length % 2
-      // );
       const filterColumns = result1.data.returnValue;
       fetchOptions(quickFilterFormInitData.filters);
       fetchOptionsNeedParam(quickFilterFormInitData.filters);
@@ -394,35 +516,6 @@ export function quickFilterCTL() {
       console.error("Error fetching data:", error);
     }
   }
-  const fetchAdvancedFilterData = () => {
-    CustomerQuickFilterService.getAdvancedFilterSetting()
-      .then(data => {
-        if (
-          data &&
-          data.returnValue &&
-          Array.isArray(data.returnValue) &&
-          data.returnValue.length === quickFilterFormInitData.filters.length
-        ) {
-          advancedFilterForm.filters = deepClone(data.returnValue);
-        } else {
-          advancedFilterForm.filters = deepClone(
-            quickFilterFormInitData.filters
-          );
-        }
-        advancedFilterForm.filters.forEach(a => {
-          // a.showOnGrid = true;
-          // a.showOnFilter = true;
-          // a.allowSorting = true;
-          // a.allowGridHeaderFilter = true;
-          if (a.width && a.width === 70) {
-            a.width = 140;
-          }
-        });
-      })
-      .catch(err => {
-        console.log("getAdvancedFilterSetting error", err);
-      });
-  };
   const initAdvancedFilter = () => {
     console.log("initAdvancedFilter");
     console.log(
@@ -442,33 +535,6 @@ export function quickFilterCTL() {
       filter.ValueEnd = "";
     });
   };
-  // const columnDrop = () => {
-  //   nextTick(() => {
-  //     const wrapper: HTMLElement = document.querySelector(
-  //       ".el-table__header-wrapper tr"
-  //     );
-  //     Sortable.create(wrapper, {
-  //       animation: 300,
-  //       delay: 0,
-  //       onEnd: ({ newIndex, oldIndex }) => {
-  //         const oldItem = advancedFilterForm.filters[oldIndex];
-  //         advancedFilterForm.filters.splice(oldIndex, 1);
-  //         advancedFilterForm.filters.splice(newIndex, 0, oldItem);
-  //         if (oldIndex !== newIndex) {
-  //           advancedFilterForm.filters = advancedFilterForm.filters.map(
-  //             column => {
-  //               const { ...rest } = column;
-  //               return {
-  //                 ...rest,
-  //                 fixed: false
-  //               };
-  //             }
-  //           );
-  //         }
-  //       }
-  //     });
-  //   });
-  // };
   const handleAdvancedReset = () => {
     initBasicFilter();
     console.log("advancedFilterForm", advancedFilterForm.filters);
@@ -532,6 +598,22 @@ export function quickFilterCTL() {
   });
   const activePanelNames = ref(["BasicFilterForm"]);
   return {
+    profileFormDataInit,
+    profileFormData,
+    profileData,
+    rules,
+    currentUser,
+    newMessage,
+    editIndex,
+    messages,
+    isCurrentUser,
+    postMessage,
+    likeMessage,
+    editMessage,
+    saveEdit,
+    deleteMessage,
+    formatTimestamp,
+    fetchProfileData,
     getOptions,
     convertDropDownValue,
     filterOptions,
