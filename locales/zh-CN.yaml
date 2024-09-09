@@ -245,6 +245,24 @@ customer:
     customer: Customer
     testStatus: Test Status
     CustomerName: Customer Name
+    localName: Local Name
+    mainAddress: Main Address
+    phone: Phone
+    fax: Fax
+    leadSource: Lead Source
+    establishedDate: Established Date
+    capitalAmount: Capital Amount
+    commodity: Commodity
+    webSite: WebSite
+    industry: Industry
+    icpScore: ICPScore
+    businessRegistrationNumber: Biz Registration#
+    combatTeam: CombatTeam
+    lastBusinessDay: Last Biz Day
+    validQuoteCount: Valid Quote Count
+    ownerSales: Owner Sales
+    combatTeamPL: Combat Team PL
+    productLineName: Product Line
   list:
     quickFilter:
       addFilterbtn: Add Filter
