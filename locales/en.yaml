@@ -307,3 +307,29 @@ customer:
       showFilterBtn: Show Filters
       hideFilterBtn: Hide Filters
       basicFilterTitle: Basic Filters
+quote:     
+  quickFilter:
+      productLineName: Product Line
+      quoteNo: Quote#
+      attentionTo: Attention To
+      effectiveDate: Effective Date
+      expiredDate: Expired Date
+      issueDate: Issue Date
+      issueBy: Issue By
+      status: Status
+      tradeTerm: Trade Term
+      shppingTerm: Shpping Term
+      creditTerm: Credit Term
+      reference: Reference
+      laneSegment: Lane Segment
+      carrier: Carrier
+      serviceLevel: Service Level
+      sellingRate: Selling Rate
+      natureOfGoods: Nature Of Goods
+      estimatedTonnage: Est. Tonnage
+      estimatedRevenue: Est. Revenus
+      estimatedGP: Est. dGP
+      shipmentQualityType: Shipment Quality Type
+      shipper: Shipper
+      consignee: Consignee
+      remark: Remark

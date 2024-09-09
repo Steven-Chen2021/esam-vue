@@ -12,19 +12,10 @@ export default {
   children: [
     {
       path: "/quotes/index",
-      name: "Leads",
+      name: "quoteSearch",
       component: () => import("@/views/quotes/index.vue"),
       meta: {
         title: $t("menus.dimercoQuotes")
-      }
-    },
-    {
-      path: "/quotes/detail",
-      name: "CreateQuote",
-      component: () => import("@/views/quotes/createQuote.vue"),
-      meta: {
-        title: $t("menus.dimercoQuotes"),
-        showLink: false
       }
     }
   ]

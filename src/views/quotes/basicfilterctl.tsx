@@ -201,10 +201,6 @@ export function quickFilterCTL() {
     }
   };
   const updateQuickFilter = (formData: QuickFilter) => {
-    // const response =
-    //   await CustomerQuickFilterService.updateQuickFilter(formData);
-    // console.log("updateQuickFilter", response);
-
     CustomerQuickFilterService.updateQuickFilter(formData)
       .then(data => {
         console.log("updateQuickFilter data", data);
@@ -232,7 +228,6 @@ export function quickFilterCTL() {
   }
   async function fetchData() {
     try {
-      // let newQuickFilterList = JSON.parse(JSON.stringify(quickFilterList));
       const [result1, result2] = await Promise.all([
         axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
         axios.get("/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2")
@@ -247,28 +242,6 @@ export function quickFilterCTL() {
       console.log("filterColumns", filterColumns);
       console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {
-        // filterSetting.filters.forEach(filter => {
-        //   const matchedColumn = filterColumns.find(
-        //     column => column.filterKey === filter.filterKey
-        //   );
-        //   if (matchedColumn) {
-        //     // filter.filterType = matchedColumn.filterType;
-        //     // filter.filterSourceType = matchedColumn.filterSourceType;
-        //     // filter.filterSource = matchedColumn.filterSource;
-        //     // filter.langethKey = matchedColumn.langethKey;
-        //     // filter.width = matchedColumn.width;
-        //     matchedColumn.value = filter.value;
-        //   }
-        // });
-        // filterColumns.forEach(filter => {
-        //   if (filter.filterType === "dropdown") {
-        //     filter.selectValue = getDropDownValue(filter.value);
-        //   }
-        // });
-        // console.log("fetchData filterColumns", filterColumns);
-        // filterSetting.filters = deepClone(filterColumns);
-        // const newFilterMain = JSON.parse(JSON.stringify(filterSetting));
-        // const newFilterSon = JSON.parse(JSON.stringify(filterColumns));
         const filterColumnsClone = deepClone(filterColumns);
         filterColumnsClone.forEach(filter => {
           const matchedMainFilter = filterSetting.filters.find(
@@ -282,13 +255,9 @@ export function quickFilterCTL() {
           }
         });
         filterSetting.filters = filterColumnsClone;
-        // newQuickFilterList.value.push(newFilterMain);
-        // quickFilterList.value.filter(a => a.id === filterSetting.id)[0] =
-        //   filterSetting;
       });
 
       quickFilterList.value = customizedFilters;
-      // console.log("quickFilterList", quickFilterList);
     } catch (error) {
       console.error("Error fetching data:", error);
     }

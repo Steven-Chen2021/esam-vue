@@ -26,7 +26,7 @@ import {
   FormInstance,
   FormRules
 } from "element-plus";
-import CustomerQuickFilterService from "@/services/customer/CustomerQuickFilterService";
+import CustomerQuickFilterService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
 import { useUserStoreHook } from "@/store/modules/user";
 const quickFilterShow = ref(false);

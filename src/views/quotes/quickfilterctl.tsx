@@ -1,9 +1,6 @@
-import CustomerQuickFilterService from "@/services/commonService";
+import CommonQuickFilterService from "@/services/commonService";
 import axios from "axios";
-// import Sortable from "sortablejs";
-// import { clone, delay } from "@pureadmin/utils";
 import { ref, onMounted, reactive, watch, nextTick, computed } from "vue";
-// import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 import Sortable from "sortablejs";
 export interface QuickFilterDetail {
@@ -33,12 +30,6 @@ export interface QuickFilter {
 }
 export function quickFilterCTL() {
   const quickFilterFormRef = ref<FormInstance>();
-  // const quickFilterFormInitData: QuickFilter = {
-  //   filterName: "",
-  //   id: 0,
-  //   clicked: false,
-  //   filters: []
-  // };
   const quickFilterFormInitData: QuickFilter = {
     filterName: "",
     id: 0,
@@ -63,8 +54,6 @@ export function quickFilterCTL() {
     filterID: 0,
     filterAppliedPage: 0
   });
-  // TODO: API get quick filter list,转变日期格式
-  // let quickFilterList = reactive<QuickFilter[]>([]);
   const quickFilterList = ref<QuickFilter[]>([]);
   onMounted(() => {
     fetchData();
@@ -73,8 +62,6 @@ export function quickFilterCTL() {
       columnDrop();
     });
   });
-  // TODO: API
-  //取得下拉选单列表,统一存入filterOptions
   const filterOptions = ref({});
   const fetchOptions = async (filterItems: QuickFilterDetail[]) => {
     try {
@@ -84,9 +71,8 @@ export function quickFilterCTL() {
           a.filterSourceType === "API" &&
           a.filterSource
       );
-      // console.log("selectFilterList", selectFilterList);
       selectFilterList.forEach(async item => {
-        const response = await CustomerQuickFilterService.getStatusList(
+        const response = await CommonQuickFilterService.getStatusList(
           item.filterSource
         );
         console.log(`fetchStatusList ${item.filterKey}`, response);
@@ -100,15 +86,13 @@ export function quickFilterCTL() {
       return [];
     }
   };
-  // 监听 filters 的变化
   watch(
     () => quickFilterForm.filters,
     newFilters => {
       fetchOptions(newFilters);
     },
-    { deep: true } // 深度监听 filters 的变化
+    { deep: true }
   );
-  //autocomplete
   interface AutoCompleteItem {
     value: string;
     text: string;
@@ -137,57 +121,21 @@ export function quickFilterCTL() {
       Paginator: true
     };
     try {
-      // 发送请求并获取响应
       const response =
-        await CustomerQuickFilterService.getAutoCompleteList(params);
-
-      // 根据 queryString 过滤响应结果
+        await CommonQuickFilterService.getAutoCompleteList(params);
       const results = queryString
         ? response.filter(createFilter(queryString))
         : response;
-
-      // 判断 results 是否为数组
       if (!Array.isArray(results)) {
-        // 如果不是数组，则传递空数组给 cb
         cb([]);
       } else {
-        // 如果是数组，则传递结果给 cb
         cb(results);
       }
     } catch (error) {
-      // 处理请求错误
       console.error("Error fetching data:", error);
       cb([]);
     }
   };
-  // const resetQuickFilterForm = (formEl: FormInstance | undefined) => {
-  //   if (!formEl) return;
-  //   // formEl.resetFields();
-  //   initQuickFilter();
-  // };
-  // // TODO: init Quick Filter
-  // const initQuickFilter = () => {
-  //   quickFilterForm.filterName = quickFilterFormInitData.filterName;
-  //   quickFilterForm.id = quickFilterFormInitData.id;
-  //   quickFilterForm.clicked = quickFilterFormInitData.clicked;
-  //   quickFilterForm.filters = quickFilterFormInitData.filters.map(filter => ({
-  //     filterKey: filter.filterKey,
-  //     filterType: filter.filterType,
-  //     filterSourceType: filter.filterSourceType,
-  //     filterSource: filter.filterSource,
-  //     value: filter.value,
-  //     selectValue: filter.selectValue,
-  //     dateValue: filter.dateValue,
-  //     langethKey: filter.langethKey,
-  //     ValueBegin: filter.ValueBegin || "",
-  //     ValueEnd: filter.ValueEnd || "",
-  //     showOnGrid: filter.showOnGrid,
-  //     showOnFilter: filter.showOnFilter,
-  //     allowSorting: filter.allowSorting,
-  //     allowGridHeaderFilter: filter.allowGridHeaderFilter
-  //   }));
-  // };
-  // TODO: API clcik quick filter to search
   const handleQuickFilterClick = (item: QuickFilter) => {
     console.log(`Clicked button ${item.filterName}`);
     quickFilterList.value.forEach(a => {
@@ -200,6 +148,14 @@ export function quickFilterCTL() {
     initBasicFilter();
   };
   const getOptions = (jsonString: string) => {
+    try {
+      return JSON.parse(jsonString);
+    } catch (e) {
+      console.error("Invalid JSON string", e);
+      return [];
+    }
+  };
+  const getOptionsViaAPI = (jsonString: string) => {
     try {
       return JSON.parse(jsonString);
     } catch (e) {
@@ -248,11 +204,7 @@ export function quickFilterCTL() {
     }
   };
   const updateQuickFilter = (formData: QuickFilter) => {
-    // const response =
-    //   await CustomerQuickFilterService.updateQuickFilter(formData);
-    // console.log("updateQuickFilter", response);
-
-    CustomerQuickFilterService.updateQuickFilter(formData)
+    CommonQuickFilterService.updateQuickFilter(formData)
       .then(data => {
         console.log("updateQuickFilter data", data);
       })
@@ -280,11 +232,11 @@ export function quickFilterCTL() {
   async function fetchData() {
     try {
       const [result1, result2, result3] = await Promise.all([
-        axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
+        axios.get("/api/Common/QuickFilterColumnList?requestType=5"),
         axios.get(
-          "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2"
+          "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=6"
         ),
-        axios.get("/api/Common/ColumnSetting?APIRequestType=3")
+        axios.get("/api/Common/ColumnSetting?APIRequestType=7")
       ]);
 
       quickFilterFormInitData.filters = deepClone(result1.data.returnValue);
@@ -310,34 +262,13 @@ export function quickFilterCTL() {
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
       advancedFilterForm.filters.forEach(a => {
-        // a.showOnGrid = true;
-        // a.showOnFilter = true;
-        // a.allowSorting = true;
-        // a.allowGridHeaderFilter = true;
         if (a.width && a.width === 70) {
           a.width = 140;
         }
       });
-      // advancedFilterForm.filters = deepClone(result1.data.returnValue);
-      // // TODO: API
-      // advancedFilterForm.filters.forEach(a => {
-      //   a.showOnGrid = true;
-      //   a.showOnFilter = true;
-      //   a.allowSorting = true;
-      //   a.allowGridHeaderFilter = true;
-      // });
-      // console.log("advancedFilterForm", advancedFilterForm);
-      // console.log(
-      //   "advancedFilterForm length",
-      //   advancedFilterForm.filters.length % 2
-      // );
       const filterColumns = result1.data.returnValue;
-      // console.log("quickFilterFormInitData", quickFilterFormInitData);
       fetchOptions(quickFilterFormInitData.filters);
-
       const customizedFilters = result2.data.returnValue;
-      // console.log("filterColumns", filterColumns);
-      // console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {
         const filterColumnsClone = deepClone(filterColumns);
         filterColumnsClone.forEach(filter => {
@@ -363,7 +294,7 @@ export function quickFilterCTL() {
     }
   }
   const fetchAdvancedFilterData = () => {
-    CustomerQuickFilterService.getAdvancedFilterSetting()
+    CommonQuickFilterService.getAdvancedFilterSetting()
       .then(data => {
         if (
           data &&
@@ -378,10 +309,6 @@ export function quickFilterCTL() {
           );
         }
         advancedFilterForm.filters.forEach(a => {
-          // a.showOnGrid = true;
-          // a.showOnFilter = true;
-          // a.allowSorting = true;
-          // a.allowGridHeaderFilter = true;
           if (a.width && a.width === 70) {
             a.width = 140;
           }
@@ -402,7 +329,6 @@ export function quickFilterCTL() {
     });
   };
   const initBasicFilter = () => {
-    // console.log("initBasicFilter");
     advancedFilterForm.filters.forEach(filter => {
       filter.value = "";
       filter.selectValue = "";
@@ -440,15 +366,6 @@ export function quickFilterCTL() {
   const handleAdvancedReset = () => {
     initBasicFilter();
     console.log("advancedFilterForm", advancedFilterForm.filters);
-    // console.log(
-    //   "handleAdvancedReset showBasicFilterTopForm",
-    //   showBasicFilterTopForm.value
-    // );
-    // console.log(
-    //   "handleAdvancedReset showBasicFilterForm",
-    //   showBasicFilterForm.value
-    // );
-    // if (!showBasicFilterTopForm) showBasicFilterForm.value = true;
   };
   const formattedDateRange = item => {
     if (item.ValueBegin && !item.ValueEnd) {
@@ -478,6 +395,8 @@ export function quickFilterCTL() {
     );
   });
   const showBasicFilterTopForm = computed(() => {
+    console.clear();
+    console.log(advancedFilterForm);
     const c = advancedFilterForm.filters.filter(
       a =>
         (a.value && a.value !== "") ||
@@ -494,13 +413,13 @@ export function quickFilterCTL() {
   const showBasicFilterForm = ref(true);
   watch(showBasicFilterTopForm, newVal => {
     if (!newVal) {
-      // showBasicFilterForm.value = true;
       activePanelNames.value.push("BasicFilterForm");
     }
   });
   const activePanelNames = ref(["BasicFilterForm"]);
   return {
     getOptions,
+    getOptionsViaAPI,
     convertDropDownValue,
     filterOptions,
     quickFilterForm,
@@ -518,7 +437,6 @@ export function quickFilterCTL() {
     handleAdvancedReset,
     showBasicFilterTopForm,
     showBasicFilterForm,
-    // handleCustomerSearch,
     formattedDateRange,
     handleBasicFilterBtnClick,
     activePanelNames
