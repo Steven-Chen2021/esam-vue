@@ -9,6 +9,18 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
+  async getOptionListNeedParam(url, params) {
+    try {
+      const queryString = new URLSearchParams(params).toString();
+      const fullUrl = `${url}?${queryString}`;
+      const response = await API.get(fullUrl);
+      console.log("getOptionListNeedParam url", fullUrl);
+      console.log("getOptionListNeedParam response", response);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
   async getAutoCompleteList(params) {
     try {
       const url = "/api/Common/OptionsResource";

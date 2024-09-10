@@ -263,7 +263,14 @@ customer:
     validQuoteCount: Valid Quote Count
     ownerSales: Owner Sales
     combatTeamPL: Combat Team PL
-    productLineName: Product Line
+    productLineName: PL Name
+    customerAnnualRevenue: Annual Revenue
+    customerYTDRevenue: YTD Revenue
+    customerContribution: Contribution
+    customerEstRevenue: Est Revenue
+    customerYTDGP: YTD GP
+    customerExpense: Expense
+    remark: Remark
   tour:
       tourQF1Title: Quick Filter
       tourQF1Text: Click to create a quick query and boost your work efficiency.
@@ -307,6 +314,14 @@ customer:
       showFilterBtn: Show Filters
       hideFilterBtn: Hide Filters
       basicFilterTitle: Basic Filters
+  profile:
+    general: 
+      title: General Information
+      unauthorized: No permission to view
+    comments:
+      title: Comments
+      postPlaceholder: Write a message
+      editPlaceholder: Edit your message
 quote:     
   quickfilter:
       productLineName: Product Line
