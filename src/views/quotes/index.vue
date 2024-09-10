@@ -19,6 +19,7 @@ import { useTourStoreHook } from "@/store/modules/tour";
 const quickFilterShow = ref(false);
 const {
   getOptions,
+  getOptionsViaAPI,
   convertDropDownValue,
   filterOptions,
   quickFilterFormInitData,
@@ -667,7 +668,7 @@ onMounted(() => {
                 :placeholder="t('customer.list.quickFilter.holderSelectText')"
               >
                 <el-option
-                  v-for="option in getOptions(filterItem.filterSource)"
+                  v-for="option in getOptionsViaAPI(filterItem.filterSource)"
                   :key="option.value"
                   :label="option.text"
                   :placeholder="t('customer.list.quickFilter.holderKeyinText')"

@@ -308,7 +308,7 @@ customer:
       hideFilterBtn: Hide Filters
       basicFilterTitle: Basic Filters
 quote:     
-  quickFilter:
+  quickfilter:
       productLineName: Product Line
       quoteNo: Quote#
       attentionTo: Attention To

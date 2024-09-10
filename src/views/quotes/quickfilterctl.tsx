@@ -1,4 +1,4 @@
-import CommonQuickFilterService from "@/services/commonService";
+import CommonService from "@/services/commonService";
 import axios from "axios";
 import { ref, onMounted, reactive, watch, nextTick, computed } from "vue";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
@@ -72,9 +72,7 @@ export function quickFilterCTL() {
           a.filterSource
       );
       selectFilterList.forEach(async item => {
-        const response = await CommonQuickFilterService.getStatusList(
-          item.filterSource
-        );
+        const response = await CommonService.getStatusList(item.filterSource);
         console.log(`fetchStatusList ${item.filterKey}`, response);
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
@@ -121,8 +119,7 @@ export function quickFilterCTL() {
       Paginator: true
     };
     try {
-      const response =
-        await CommonQuickFilterService.getAutoCompleteList(params);
+      const response = await CommonService.getAutoCompleteList(params);
       const results = queryString
         ? response.filter(createFilter(queryString))
         : response;
@@ -149,15 +146,17 @@ export function quickFilterCTL() {
   };
   const getOptions = (jsonString: string) => {
     try {
+      console.log("getOptions", JSON.parse(jsonString));
       return JSON.parse(jsonString);
     } catch (e) {
       console.error("Invalid JSON string", e);
       return [];
     }
   };
-  const getOptionsViaAPI = (jsonString: string) => {
+  const getOptionsViaAPI = (url: string) => {
     try {
-      return JSON.parse(jsonString);
+      const response = CommonService.getResult(url);
+      return response.returnValue;
     } catch (e) {
       console.error("Invalid JSON string", e);
       return [];
@@ -204,7 +203,7 @@ export function quickFilterCTL() {
     }
   };
   const updateQuickFilter = (formData: QuickFilter) => {
-    CommonQuickFilterService.updateQuickFilter(formData)
+    CommonService.updateQuickFilter(formData)
       .then(data => {
         console.log("updateQuickFilter data", data);
       })
@@ -294,7 +293,7 @@ export function quickFilterCTL() {
     }
   }
   const fetchAdvancedFilterData = () => {
-    CommonQuickFilterService.getAdvancedFilterSetting()
+    CommonService.getAdvancedFilterSetting()
       .then(data => {
         if (
           data &&

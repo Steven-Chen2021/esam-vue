@@ -288,8 +288,14 @@ customer:
       columnName: Column Name
       showOnFilter: Show as Filter
       showOnList: Show on List
+      settingBtn: Setting
+      searchBtn: Search
+      clearBtn: Clear
+      showFilterBtn: Show Filters
+      hideFilterBtn: Hide Filters
+      basicFilterTitle: Basic Filters
 quote:     
-  quickFilter:
+  quickfilter:
       productLineName: Product Line
       quoteNo: Quote#
       attentionTo: Attention To
