@@ -2,24 +2,38 @@
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 import Close from "@iconify-icons/ep/close";
-import { ref, reactive, onMounted, computed, nextTick } from "vue";
+import {
+  ref,
+  reactive,
+  onMounted,
+  watch,
+  provide,
+  computed,
+  nextTick
+} from "vue";
+import { useDetail } from "./hooks";
+const { toDetail, router } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { QuickFilter, quickFilterCTL } from "./quickfilterctl";
 import { listCTL } from "./listctl";
+import { key } from "localforage";
+import { message, closeAllMessage } from "@/utils/message";
 import { useTourStore } from "@/store/modules/tour";
 import {
   ElNotification,
   ButtonInstance,
+  DropdownInstance,
   ElDropdown,
+  ElMessageBox,
   FormInstance,
   FormRules
 } from "element-plus";
 import CustomerQuickFilterService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
+import { useUserStoreHook } from "@/store/modules/user";
 const quickFilterShow = ref(false);
 const {
   getOptions,
-  getOptionsViaAPI,
   convertDropDownValue,
   filterOptions,
   quickFilterFormInitData,
@@ -34,6 +48,7 @@ const {
   initAdvancedFilter,
   handleAdvancedReset,
   showBasicFilterTopForm,
+  showBasicFilterForm,
   formattedDateRange,
   handleBasicFilterBtnClick,
   activePanelNames
@@ -41,6 +56,7 @@ const {
 const {
   tableData,
   tableRowClassName,
+  columnfilterHandler,
   currentPage,
   pageSize,
   total,
@@ -48,11 +64,12 @@ const {
   handlePageChange,
   handleSizeChange,
   handleConditionalSearch,
-  handleResetConditionalSearch
+  handleResetConditionalSearch,
+  loading
 } = listCTL();
 //Page Setting
 defineOptions({
-  name: "quoteSearch"
+  name: "CustomerList"
 });
 const showAdvancedSettings = ref(false);
 const handleAdvancedSettings = () => {
@@ -61,16 +78,50 @@ const handleAdvancedSettings = () => {
 const handleListEnable = (obj: {
   value: string | ((index: number) => string);
   showOnGrid: any;
-}) => {};
+}) => {
+  // customerColumns.value.forEach(column => {
+  //   const prop = column.prop;
+  //   if (prop === obj.value) {
+  //     column.hide = !obj.showColumn;
+  //   }
+  // });
+};
 const handleFilterEnable = (obj: any) => {
   submitAdvancedFilterForm();
 };
-
-const handleClick = () => {
-  console.log("click");
+import { useRouter } from "vue-router";
+const Router = useRouter();
+const handleViewClick = row => {
+  console.log("handleViewClick row", row);
+  Router.push({
+    path: "/customer/detail",
+    query: { LID: row.hqid, basicRole: "read" }
+  });
 };
-
 // #region Quick Filter
+const handleFilterClick = filter => {
+  filter.filters.forEach(a => {
+    if (
+      (a.filterType === "dropdown" ||
+        a.filterType === "input" ||
+        a.filterType === "autocomplete") &&
+      a.value &&
+      a.value !== "" &&
+      Array.isArray(a.value) &&
+      a.value.length > 0
+    )
+      a.value = a.value[0];
+  });
+  console.log("handleFilterClick filter", filter);
+  const filters = filter.filters.filter(
+    a =>
+      a.value &&
+      (a.value !== "" || (Array.isArray(a.value) && a.value.length > 0))
+  );
+  console.log("handleFilterClick filtered", filters);
+  handleConditionalSearch({ filters: filters });
+  handleQuickFilterClick(filter);
+};
 const quickFilterRules = reactive<FormRules<QuickFilter>>({
   filterName: [
     {
@@ -88,7 +139,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 6;
+      quickFilterForm.filterAppliedPage = 2;
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -123,6 +174,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
 
       console.log("submit! quickFilterForm", quickFilterForm);
       if (quickFilterForm.id === 0) {
+        // const res = updateQuickFilter(quickFilterForm);
         CustomerQuickFilterService.addQuickFilter(quickFilterForm)
           .then(data => {
             console.log("addQuickFilter data", data);
@@ -302,6 +354,18 @@ const submitAdvancedFilterForm = () => {
       console.log("getAdvancedFilterSetting error", err);
     });
 };
+const handleSearch = filterForm => {
+  activePanelNames.value = [];
+  handleConditionalSearch(filterForm);
+};
+const handleResetSearch = () => {
+  handleResetConditionalSearch();
+  handleAdvancedReset();
+};
+const handleFilterBtnClick = item => {
+  handleBasicFilterBtnClick(item);
+  handleConditionalSearch(advancedFilterForm);
+};
 // #endregion
 
 const calculateMaxHeight = () => {
@@ -322,13 +386,13 @@ const calculateMaxHeight = () => {
 const maxHeight = ref(null);
 
 onMounted(() => {
-  calculateMaxHeight();
-  window.addEventListener("resize", calculateMaxHeight);
+  // calculateMaxHeight();
+  // window.addEventListener("resize", calculateMaxHeight);
 });
 </script>
 
 <template>
-  <div>
+  <div class="containerC">
     <el-card shadow="never" class="max-h-12 p-0">
       <div class="flex flex-row">
         <div class="basis-4/5">
@@ -344,7 +408,7 @@ onMounted(() => {
             :plain="!item.clicked"
             :type="item.clicked ? 'primary' : ''"
             style="margin-left: 10px"
-            @click="handleQuickFilterClick(item)"
+            @click="handleFilterClick(item)"
           >
             {{ item.filterName }}
             <template #dropdown>
@@ -375,7 +439,7 @@ onMounted(() => {
           v-for="filterItem in basicFilterTopForm"
           :key="filterItem.filterKey"
         >
-          <el-button @click="handleBasicFilterBtnClick(filterItem)"
+          <el-button @click="handleFilterBtnClick(filterItem)"
             ><div style="display: flex; align-items: center">
               <span>{{ t(filterItem.langethKey) }}:</span
               ><span
@@ -404,9 +468,17 @@ onMounted(() => {
           <el-button
             ref="refBtnBasicFilterClear"
             :icon="useRenderIcon('tdesign:filter-clear')"
-            @click="handleAdvancedReset"
+            @click="handleResetSearch"
             >{{ $t("customer.list.advancedSetting.clearBtn") }}</el-button
           >
+          <!-- <div style="display: flex; align-items: center">
+            <el-switch
+              v-model="showBasicFilterForm"
+              style="margin-left: 12px"
+              :active-text="t('customer.list.advancedSetting.showFilterBtn')"
+              :inactive-text="t('customer.list.advancedSetting.hideFilterBtn')"
+            />
+          </div> -->
         </el-form-item>
       </el-form>
       <el-collapse v-model="activePanelNames">
@@ -458,7 +530,7 @@ onMounted(() => {
                     />
                   </el-select>
                   <el-select
-                    v-if="
+                    v-else-if="
                       filterOptions[filterItem.filterKey] &&
                       filterItem.filterType === 'select' &&
                       filterItem.filterSourceType === 'API'
@@ -473,14 +545,30 @@ onMounted(() => {
                       v-for="option in filterOptions[filterItem.filterKey].list"
                       :key="option.value"
                       :label="option.text"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderKeyinText')
-                      "
+                      :value="option.value"
+                    />
+                  </el-select>
+                  <el-select
+                    v-else-if="
+                      filterOptions[filterItem.filterKey] &&
+                      filterItem.filterType === 'dropdown' &&
+                      filterItem.filterSourceType === 'api'
+                    "
+                    v-model="filterItem.value"
+                    :placeholder="
+                      t('customer.list.quickFilter.holderSelectText')
+                    "
+                    style="width: 338px"
+                  >
+                    <el-option
+                      v-for="option in filterOptions[filterItem.filterKey].list"
+                      :key="option.value"
+                      :label="option.text"
                       :value="option.value"
                     />
                   </el-select>
                   <el-autocomplete
-                    v-if="
+                    v-else-if="
                       filterItem.filterType === 'autocomplete' &&
                       filterItem.filterSourceType === 'api'
                     "
@@ -541,37 +629,43 @@ onMounted(() => {
                     style="width: 110px"
                   />
                 </el-form-item>
+                <el-form-item>
+                  <el-button
+                    ref="refBtnBasicFilterSearch"
+                    type="primary"
+                    :icon="useRenderIcon('ri:search-line')"
+                    @click="handleSearch(advancedFilterForm)"
+                    >{{
+                      $t("customer.list.advancedSetting.searchBtn")
+                    }}</el-button
+                  >
+                  <el-button
+                    ref="refBtnBasicFilterReset"
+                    :icon="useRenderIcon('tdesign:filter-clear')"
+                    @click="handleResetSearch"
+                    >{{
+                      $t("customer.list.advancedSetting.clearBtn")
+                    }}</el-button
+                  >
+                  <el-button
+                    ref="refBtnAdvancedFilterSetting"
+                    :icon="useRenderIcon('ep:setting')"
+                    @click="handleAdvancedSettings"
+                    >{{
+                      $t("customer.list.advancedSetting.settingBtn")
+                    }}</el-button
+                  >
+                </el-form-item>
               </div>
             </el-form>
-          </div>
-          <div class="flex flex-row-reverse h-3 ...">
-            <div>
-              <el-button
-                ref="refBtnBasicFilterSearch"
-                type="primary"
-                :icon="useRenderIcon('ri:search-line')"
-                @click="handleConditionalSearch(advancedFilterForm)"
-                >{{ $t("customer.list.advancedSetting.searchBtn") }}</el-button
-              >
-              <el-button
-                ref="refBtnBasicFilterReset"
-                :icon="useRenderIcon('tdesign:filter-clear')"
-                @click="handleResetConditionalSearch"
-                >{{ $t("customer.list.advancedSetting.clearBtn") }}</el-button
-              >
-              <el-button
-                ref="refBtnAdvancedFilterSetting"
-                :icon="useRenderIcon('ep:setting')"
-                @click="handleAdvancedSettings"
-                >{{ $t("customer.list.advancedSetting.settingBtn") }}</el-button
-              >
-            </div>
           </div>
         </el-collapse-item>
       </el-collapse>
     </div>
     <el-table
+      v-loading="loading"
       border
+      class="flex-table"
       :data="tableData"
       style="width: 100%"
       :row-class-name="tableRowClassName"
@@ -592,10 +686,43 @@ onMounted(() => {
             ? true
             : false
         "
-      />
+      >
+        <template #default="scope">
+          <span v-if="col.filterKey !== 'combatTeamPL'">{{
+            scope.row[col.filterKey]
+          }}</span>
+          <div
+            v-else-if="
+              scope.row[col.filterKey] &&
+              Array.isArray(scope.row[col.filterKey])
+            "
+            style="display: flex"
+          >
+            <div
+              v-for="ava in scope.row[col.filterKey]"
+              :key="ava.CombatTeamUserID"
+              style="margin-right: 0.3rem"
+            >
+              <el-tooltip
+                class="box-item"
+                effect="dark"
+                :content="ava.combatTeamUserName"
+                placement="top-start"
+              >
+                <el-avatar size="large" :src="ava.combatTeamAvatar" />
+              </el-tooltip>
+            </div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column fixed="right" label="Operations" min-width="120">
-        <template #default>
-          <el-button link type="primary" size="small" @click="handleClick">
+        <template #default="scope">
+          <el-button
+            link
+            type="primary"
+            size="small"
+            @click="handleViewClick(scope.row)"
+          >
             View
           </el-button>
           <el-button link type="primary" size="small">Edit</el-button>
@@ -603,6 +730,7 @@ onMounted(() => {
       </el-table-column>
     </el-table>
     <el-pagination
+      style="margin: 0.5rem"
       :current-page="currentPage"
       :page-size="pageSize"
       :total="total"
@@ -661,22 +789,6 @@ onMounted(() => {
               </el-select>
               <el-select
                 v-if="
-                  filterItem.filterType === 'dropdown' &&
-                  filterItem.filterSourceType === 'api'
-                "
-                v-model="filterItem.selectValue"
-                :placeholder="t('customer.list.quickFilter.holderSelectText')"
-              >
-                <el-option
-                  v-for="option in getOptionsViaAPI(filterItem.filterSource)"
-                  :key="option.value"
-                  :label="option.text"
-                  :placeholder="t('customer.list.quickFilter.holderKeyinText')"
-                  :value="option.value"
-                />
-              </el-select>
-              <el-select
-                v-if="
                   filterOptions[filterItem.filterKey] &&
                   filterItem.filterType === 'select' &&
                   filterItem.filterSourceType === 'API'
@@ -709,6 +821,21 @@ onMounted(() => {
                 v-model="filterItem.value"
                 :placeholder="t('customer.list.quickFilter.holderKeyinText')"
               />
+              <!-- <el-date-picker
+                v-else-if="filterItem.filterType === 'daterange'"
+                v-model="filterItem.value"
+                type="daterange"
+                :range-separator="$t('customer.list.quickFilter.dateSeparator')"
+                :start-placeholder="
+                  $t('customer.list.quickFilter.startDateHolderText')
+                "
+                :end-placeholder="
+                  $t('customer.list.quickFilter.endDateHolderText')
+                "
+                format="MMM DD, YYYY"
+                value-format="YYYY-MM-DD"
+                style="width: 100%"
+              /> -->
               <el-row
                 v-else-if="filterItem.filterType === 'daterange'"
                 :gutter="20"
@@ -772,103 +899,103 @@ onMounted(() => {
         </template>
       </el-drawer>
     </div>
-  </div>
-  <el-drawer
-    v-model="showAdvancedSettings"
-    :title="t('customer.list.advancedSetting.title')"
-  >
-    <table class="AdvancedSettings">
-      <thead>
-        <tr>
-          <th>{{ t("customer.list.advancedSetting.columnName") }}</th>
-          <th>{{ t("customer.list.advancedSetting.showOnList") }}</th>
-          <th>{{ t("customer.list.advancedSetting.showOnFilter") }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="settingItem in advancedFilterForm.filters.filter(
-            c => c.filterType !== 'cascadingdropdown'
-          )"
-          v-bind:key="settingItem.filterKey"
-        >
-          <td>{{ t(settingItem.langethKey) }}</td>
-          <td>
-            <el-switch
-              v-model="settingItem.showOnGrid"
-              class="ml-2"
-              style="
+    <el-drawer
+      v-model="showAdvancedSettings"
+      :title="t('customer.list.advancedSetting.title')"
+    >
+      <table class="AdvancedSettings">
+        <thead>
+          <tr>
+            <th>{{ t("customer.list.advancedSetting.columnName") }}</th>
+            <th>{{ t("customer.list.advancedSetting.showOnList") }}</th>
+            <th>{{ t("customer.list.advancedSetting.showOnFilter") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="settingItem in advancedFilterForm.filters.filter(
+              c => c.filterType !== 'cascadingdropdown'
+            )"
+            v-bind:key="settingItem.filterKey"
+          >
+            <td>{{ t(settingItem.langethKey) }}</td>
+            <td>
+              <el-switch
+                v-model="settingItem.showOnGrid"
+                class="ml-2"
+                style="
 
-                --el-switch-on-color: #13ce66;
-                --el-switch-off-color: #ff4949;
-              "
-              @change="handleListEnable(settingItem)"
-            />
-          </td>
-          <td>
-            <el-switch
-              v-model="settingItem.showOnFilter"
-              class="ml-2"
-              style="
+                  --el-switch-on-color: #13ce66;
+                  --el-switch-off-color: #ff4949;
+                "
+                @change="handleListEnable(settingItem)"
+              />
+            </td>
+            <td>
+              <el-switch
+                v-model="settingItem.showOnFilter"
+                class="ml-2"
+                style="
 
-                --el-switch-on-color: #13ce66;
-                --el-switch-off-color: #ff4949;
-              "
-              @change="handleFilterEnable(settingItem)"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <template #footer>
-      <div style="flex: auto">
-        <el-button @click="resetAdvancedFilterForm(advancedFilterFormRef)">
-          {{ t("customer.list.quickFilter.resetText") }}</el-button
-        >
-      </div>
-    </template>
-  </el-drawer>
-  <el-tour
-    v-model="openTour"
-    :current="tourStep"
-    @finish="handlefinishTour"
-    @close="handlefinishTour"
-  >
-    <el-tour-step
-      :target="refBtnAddFilter?.$el"
-      :title="t('customer.tour.tourQF1Title')"
-      :description="t('customer.tour.tourQF1Text')"
-    />
-    <el-tour-step
-      v-if="quickFilterList && quickFilterList.length > 0"
-      :target="refsQuickFilterBtn[0]?.$el"
-      :title="t('customer.tour.tourQF2Title')"
-      :description="t('customer.tour.tourQF2ext')"
-    />
-    <el-tour-step
-      :target="refBtnAdvancedFilterSetting?.$el"
-      :title="t('customer.tour.tourBF1Title')"
-      :description="t('customer.tour.tourBF1ext')"
-    />
-    <!-- <template #indicators="{ current, total }">
+                  --el-switch-on-color: #13ce66;
+                  --el-switch-off-color: #ff4949;
+                "
+                @change="handleFilterEnable(settingItem)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <template #footer>
+        <div style="flex: auto">
+          <el-button @click="resetAdvancedFilterForm(advancedFilterFormRef)">
+            {{ t("customer.list.quickFilter.resetText") }}</el-button
+          >
+        </div>
+      </template>
+    </el-drawer>
+    <el-tour
+      v-model="openTour"
+      :current="tourStep"
+      @finish="handlefinishTour"
+      @close="handlefinishTour"
+    >
+      <el-tour-step
+        :target="refBtnAddFilter?.$el"
+        :title="t('customer.tour.tourQF1Title')"
+        :description="t('customer.tour.tourQF1Text')"
+      />
+      <el-tour-step
+        v-if="quickFilterList && quickFilterList.length > 0"
+        :target="refsQuickFilterBtn[0]?.$el"
+        :title="t('customer.tour.tourQF2Title')"
+        :description="t('customer.tour.tourQF2ext')"
+      />
+      <el-tour-step
+        :target="refBtnAdvancedFilterSetting?.$el"
+        :title="t('customer.tour.tourBF1Title')"
+        :description="t('customer.tour.tourBF1ext')"
+      />
+      <!-- <template #indicators="{ current, total }">
       <span>{{ current + 1 }} / {{ total }}</span>
     </template> -->
-  </el-tour>
-  <el-dialog
-    v-model="dialogVisible"
-    :title="t('customer.list.quickFilter.warnTitle')"
-    width="500"
-  >
-    <span>{{ t("customer.list.quickFilter.delWarnText") }}</span>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="dialogVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="deleteQuickFilter">
-          Confirm
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
+    </el-tour>
+    <el-dialog
+      v-model="dialogVisible"
+      :title="t('customer.list.quickFilter.warnTitle')"
+      width="500"
+    >
+      <span>{{ t("customer.list.quickFilter.delWarnText") }}</span>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">Cancel</el-button>
+          <el-button type="primary" @click="deleteQuickFilter">
+            Confirm
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 <style scoped>
 :deep(#quick-filter-drawer .el-form-item--default) {
@@ -942,5 +1069,16 @@ onMounted(() => {
   font-size: var(--el-form-label-font-size);
   font-weight: bold;
   color: var(--el-text-color-regular);
+}
+
+.containerC {
+  display: flex;
+  flex-direction: column;
+  height: 90vh; /* 或者其它固定高度 */
+}
+
+.flex-table {
+  flex: 1; /* 填满所有可用空间 */
+  overflow: auto; /* 添加滚动条 */
 }
 </style>
