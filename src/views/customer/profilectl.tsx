@@ -34,37 +34,55 @@ export interface QuickFilter {
   filters: QuickFilterDetail[];
 }
 export function customerProfileCTL() {
-  let profileFormDataInit = [];
+  const profileDataInit = ref({});
   const profileFormData = ref([]);
-  const profileData = ref({ columns: [] });
+  const profileData = ref({});
   // TODO: 补全所有栏位
   async function fetchProfileData(HQID, basicRole, advRole, warnMsg) {
     try {
       const [result1, result2] = await Promise.all([
         axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
-        axios.get("/api/Customer/CustomerProfileResult?hqid=" + HQID)
+        axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
       ]);
       console.log("result1", result1.data.returnValue);
       console.log("result2", result2.data.returnValue);
-      profileFormDataInit = deepClone(result1.data.returnValue);
       profileFormData.value = deepClone(result1.data.returnValue);
       profileData.value = deepClone(result2.data.returnValue);
+      profileDataInit.value = deepClone(result2.data.returnValue);
       profileFormData.value.forEach(column => {
-        column.value = result2.data.returnValue[column.filterKey];
+        // column.value = result2.data.returnValue[column.filterKey];
         if (column.visibilityLevel === 1) {
           if (basicRole === "NA") {
-            column.value = warnMsg;
+            // column.value = warnMsg;
             profileData.value[column.filterKey] = warnMsg;
+            profileDataInit.value[column.filterKey] = warnMsg;
           }
         } else if (column.visibilityLevel === 2) {
           if (advRole === "NA") {
-            column.value = warnMsg;
+            // column.value = warnMsg;
             profileData.value[column.filterKey] = warnMsg;
+            profileDataInit.value[column.filterKey] = warnMsg;
           }
         }
       });
-      console.log("profileFormData", profileFormData);
-      console.log("profileData", profileData);
+      // profileDataInit.value = ref(deepClone(profileData.value));
+      console.log("profileDataInit", profileDataInit.value);
+      console.log("profileData", profileData.value);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+  const PLFormData = ref({});
+  async function fetchPLData(HQID, PID) {
+    try {
+      const [result1, result2] = await Promise.all([
+        axios.get("/api/Customer/GetPLDetailData?LID=" + HQID + "&PID=" + PID),
+        axios.get("/api/Customer/GetPLListData?LID=" + HQID)
+      ]);
+      console.log("GetPLListData result:", result2.data.returnValue);
+      tabsPLList.value = deepClone(result2.data.returnValue);
+
+      PLFormData.value = deepClone(result1.data.returnValue);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -89,6 +107,7 @@ export function customerProfileCTL() {
       }
     ]
   });
+  const tabsPLList = ref([]);
   const currentUser = ref("Andy Kang"); // 当前登录用户
   const newMessage = ref(""); // 新的留言
   const editIndex = ref(-1); // 当前编辑的索引
@@ -598,10 +617,11 @@ export function customerProfileCTL() {
   });
   const activePanelNames = ref(["BasicFilterForm"]);
   return {
-    profileFormDataInit,
+    profileDataInit,
     profileFormData,
     profileData,
     rules,
+    tabsPLList,
     currentUser,
     newMessage,
     editIndex,
@@ -614,6 +634,7 @@ export function customerProfileCTL() {
     deleteMessage,
     formatTimestamp,
     fetchProfileData,
+    fetchPLData,
     getOptions,
     convertDropDownValue,
     filterOptions,
