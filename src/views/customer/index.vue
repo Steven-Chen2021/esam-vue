@@ -804,6 +804,23 @@ onMounted(() => {
                   :value="option.value"
                 />
               </el-select>
+              <el-select
+                v-else-if="
+                  filterOptions[filterItem.filterKey] &&
+                  filterItem.filterType === 'dropdown' &&
+                  filterItem.filterSourceType === 'api'
+                "
+                v-model="filterItem.selectValue"
+                :placeholder="t('customer.list.quickFilter.holderSelectText')"
+                style="width: 338px"
+              >
+                <el-option
+                  v-for="option in filterOptions[filterItem.filterKey].list"
+                  :key="option.value"
+                  :label="option.text"
+                  :value="option.value"
+                />
+              </el-select>
               <el-autocomplete
                 v-if="
                   filterItem.filterType === 'autocomplete' &&

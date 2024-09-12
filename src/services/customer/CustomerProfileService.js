@@ -1,9 +1,12 @@
 import API from "../interceptor";
 
-class CustomerSearchService {
-  async getCustomerProfile(params) {
+class CustomerProfileService {
+  async updateCustomerProfile(params) {
     try {
-      const response = await API.post("/api/Customer/CustomerResult", params);
+      const response = await API.post(
+        "/api/Customer/UpdateCustomerProfile",
+        params
+      );
       return response;
     } catch (error) {
       console.error(error);
@@ -44,4 +47,4 @@ class CustomerSearchService {
   }
 }
 
-export default new CustomerSearchService();
+export default new CustomerProfileService();

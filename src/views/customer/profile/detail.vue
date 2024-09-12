@@ -5,7 +5,9 @@ import { ref, computed, onMounted } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { customerProfileCTL } from "../profilectl";
 import { useRoute, useRouter } from "vue-router";
-import { FormInstance } from "element-plus";
+import { ElNotification, FormInstance } from "element-plus";
+import { useUserStoreHook } from "@/store/modules/user";
+import CustomerProfileService from "@/services/customer/CustomerProfileService";
 import {
   Check,
   Delete,
@@ -17,10 +19,11 @@ import {
 const route = useRoute();
 const router = useRouter();
 const {
-  profileFormDataInit,
+  profileDataInit,
   profileFormData,
   profileData,
   rules,
+  tabsPLList,
   currentUser,
   newMessage,
   editIndex,
@@ -33,6 +36,7 @@ const {
   deleteMessage,
   formatTimestamp,
   fetchProfileData,
+  fetchPLData,
   getOptions,
   convertDropDownValue,
   filterOptions,
@@ -67,11 +71,39 @@ const buttonList = [
   }
 ];
 const profileFormRef = ref<FormInstance>();
-const submitForm = async (formEl: FormInstance | undefined) => {
+const submitForm = async (formEl: FormInstance | undefined, disable) => {
   if (!formEl) return;
+  if (disable) return;
   await formEl.validate((valid, fields) => {
     if (valid) {
-      console.log("submit!");
+      const profileNew = ref({});
+
+      const data = profileData.value;
+      const dataInit = profileDataInit.value;
+      console.log("dataInit", dataInit);
+
+      for (const key in data) {
+        console.log("key", key);
+        console.log("data[key]", data[key]);
+        console.log("dataInit[key]", dataInit[key]);
+        if (data[key] !== dataInit[key]) {
+          profileNew.value[key] = data[key];
+        }
+      }
+      profileNew.value["hqid"] = route.query.LID;
+      console.log("submit! profileNew:", profileNew.value);
+      CustomerProfileService.updateCustomerProfile(profileNew.value)
+        .then(data => {
+          console.log("updateCustomerProfile data", data);
+          ElNotification({
+            title: t("customer.list.quickFilter.alertTitle"),
+            message: t("customer.list.quickFilter.updateSucText"),
+            type: "success"
+          });
+        })
+        .catch(err => {
+          console.log("updateCustomerProfile error", err);
+        });
     } else {
       console.log("error submit!", fields);
     }
@@ -85,10 +117,28 @@ const disableStatus = filterItem => {
     return arr.includes(advRole);
   }
 };
-const basicRole =
-  typeof route.query.basicRole === "string" ? route.query.basicRole : "";
-const advRole =
-  typeof route.query.advRole === "string" ? route.query.advRole : "";
+const basicRole = (() => {
+  const username = useUserStoreHook()?.username;
+  if (username === "C2232") {
+    return "read";
+  } else if (username === "B2232") {
+    return "read";
+  } else {
+    // Handle other cases or return a default value
+    return "write"; // Replace with the actual default role or handling
+  }
+})();
+const advRole = (() => {
+  const username = useUserStoreHook()?.username;
+  if (username === "C2232") {
+    return "NA";
+  } else if (username === "B2232") {
+    return "read";
+  } else {
+    // Handle other cases or return a default value
+    return "write"; // Replace with the actual default role or handling
+  }
+})();
 const goBack = () => {
   router.go(-1);
 };
@@ -100,13 +150,14 @@ const handleDeleteMessage = () => {
 };
 onMounted(() => {
   console.log("onMounted LID", route.query.LID);
-  console.log("onMounted Role", route.query.basicRole);
+  console.log("userName", useUserStoreHook()?.username);
   fetchProfileData(
     route.query.LID,
     basicRole,
     advRole,
     t("customer.profile.general.unauthorized")
   );
+  fetchPLData(route.query.LID, 0);
 });
 </script>
 
@@ -140,28 +191,28 @@ onMounted(() => {
             :loading="size !== 'disabled'"
             :icon="useRenderIcon('ri:save-line')"
             :disabled="basicRole === 'read'"
-            @click="submitForm(profileFormRef)"
+            @click="submitForm(profileFormRef, false)"
           >
             {{ size === "disabled" ? "Save" : "Processing" }}
           </el-button>
         </div>
       </div>
       <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
-        <div class="p-4">
+        <div class="pt-2 pb-2">
           <el-collapse v-model="activeName" class="mb-2">
             <el-collapse-item
               :title="t('customer.profile.general.title')"
               name="general"
               class="custom-collapse-title"
             >
-              <div id="basic-filter-form" style="padding: 8px">
+              <div style="padding: 8px">
                 <el-form
                   ref="profileFormRef"
                   :inline="true"
                   :model="profileData"
                   :rules="rules"
                   label-width="auto"
-                  class="demo-form-inline"
+                  class="demo-form-inline top-align-form-item"
                   status-icon
                 >
                   <div>
@@ -179,7 +230,7 @@ onMounted(() => {
                           filterItem.readOnlyOnDetail ||
                           filterItem.filterType === 'lable'
                         "
-                        >{{ filterItem.value }}</el-text
+                        >{{ profileData[filterItem.filterKey] }}</el-text
                       >
                       <el-select
                         v-else-if="
@@ -269,8 +320,20 @@ onMounted(() => {
                           t('customer.list.quickFilter.holderKeyinText')
                         "
                         style="width: 338px"
+                        @blur="
+                          submitForm(profileFormRef, disableStatus(filterItem))
+                        "
                       />
-
+                      <el-input
+                        v-else-if="filterItem.filterType === 'inputarea'"
+                        v-model="profileData[filterItem.filterKey]"
+                        :disabled="disableStatus(filterItem)"
+                        :placeholder="
+                          t('customer.list.quickFilter.holderKeyinText')
+                        "
+                        style="width: 338px"
+                        type="textarea"
+                      />
                       <el-date-picker
                         v-else-if="filterItem.filterType === 'daterange'"
                         v-model="filterItem.value"
@@ -298,61 +361,19 @@ onMounted(() => {
               name="comments"
               class="custom-collapse-title"
             >
-              <el-scrollbar max-height="400px" class="scroll-container">
-                <!-- 历史留言 -->
-                <el-card
-                  v-for="(message, index) in messages"
-                  :key="index"
-                  class="message-card"
-                >
-                  <div class="message-header">
-                    <span>{{ message.user }}</span>
-                    <div class="message-actions">
-                      <el-button
-                        v-if="isCurrentUser(message.user)"
-                        :icon="Edit"
-                        circle
-                        @click="editMessage(index)"
-                      />
-                      <el-button
-                        v-if="isCurrentUser(message.user)"
-                        :icon="Delete"
-                        circle
-                        @click="
-                          deleteMessageIndex = index;
-                          dialogVisible = true;
-                        "
-                      />
-                    </div>
-                  </div>
-                  <div v-if="editIndex !== index">
-                    <p class="el-text">{{ message.content }}</p>
-                    <p v-if="message.timestamp" class="message-date">
-                      Last edited: {{ formatTimestamp(message.timestamp) }}
-                    </p>
-                  </div>
-                  <el-input
-                    v-else
-                    v-model="message.content"
-                    placeholder="Edit your message"
-                    style="margin-top: 4px"
-                    @blur="saveEdit(index)"
+              <el-tabs type="border-card">
+                <el-tab-pane
+                  v-for="tabItem in tabsPLList"
+                  :key="tabItem.smhqid"
+                  :label="tabItem.description"
+                  :name="tabItem.smhqid"
+                  ><el-form
+                    :model="PLFormData"
+                    label-width="auto"
+                    style="max-width: 600px"
                   />
-                </el-card>
-
-                <!-- 悬浮的新增留言输入框和按钮 -->
-                <div class="input-container">
-                  <el-input
-                    v-model="newMessage"
-                    type="textarea"
-                    placeholder="Write a message..."
-                    class="new-message-input"
-                  />
-                  <el-button type="primary" @click="postMessage"
-                    >Post</el-button
-                  >
-                </div>
-              </el-scrollbar>
+                </el-tab-pane>
+              </el-tabs>
             </el-collapse-item>
           </el-collapse>
         </div>
@@ -438,5 +459,11 @@ onMounted(() => {
   width: 100%;
   max-width: 600px;
   resize: none; /* 禁止调整大小 */
+}
+
+.top-align-form-item > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 </style>
