@@ -2,35 +2,22 @@
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 import Close from "@iconify-icons/ep/close";
-import {
-  ref,
-  reactive,
-  onMounted,
-  watch,
-  provide,
-  computed,
-  nextTick
-} from "vue";
+import { ref, reactive, onMounted, computed, nextTick } from "vue";
 import { useDetail } from "./hooks";
 const { toDetail, router } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { QuickFilter, quickFilterCTL } from "./quickfilterctl";
 import { listCTL } from "./listctl";
-import { key } from "localforage";
-import { message, closeAllMessage } from "@/utils/message";
 import { useTourStore } from "@/store/modules/tour";
 import {
   ElNotification,
   ButtonInstance,
-  DropdownInstance,
   ElDropdown,
-  ElMessageBox,
   FormInstance,
   FormRules
 } from "element-plus";
 import CustomerQuickFilterService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
-import { useUserStoreHook } from "@/store/modules/user";
 const quickFilterShow = ref(false);
 const {
   getOptions,
