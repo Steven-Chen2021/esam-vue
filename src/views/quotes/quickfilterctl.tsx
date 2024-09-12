@@ -84,12 +84,10 @@ export function quickFilterCTL() {
           a.filterSourceType === "API" &&
           a.filterSource
       );
-      // console.log("selectFilterList", selectFilterList);
       selectFilterList.forEach(async item => {
         const response = await CustomerQuickFilterService.getStatusList(
           item.filterSource
         );
-        console.log(`fetchStatusList ${item.filterKey}`, response);
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;
@@ -114,10 +112,11 @@ export function quickFilterCTL() {
           //   item.filterSource,
           //   { OptionsResourceType: 2, Paginator: false }
           // );
-          await CustomerQuickFilterService.getAutoCompleteList({
-            OptionsResourceType: 2,
-            Paginator: false
-          });
+          await CustomerQuickFilterService.getDropdownList(item.filterSource);
+        // await CustomerQuickFilterService.getAutoCompleteList({
+        //   OptionsResourceType: 2,
+        //   Paginator: false
+        // });
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;

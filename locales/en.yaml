@@ -348,3 +348,4 @@ quote:
       shipper: Shipper
       consignee: Consignee
       remark: Remark
+      newQuoteBtn: Create Quote

@@ -1,4 +1,4 @@
-import CustomerSearchService from "@/services/customer/CustomerSearchService";
+import QuoteSearchService from "@/services/quote/QuoteSearchService";
 import type { TableColumnCtx } from "element-plus";
 // import Sortable from "sortablejs";
 // import { gridResultData } from "./data";
@@ -41,13 +41,13 @@ export function listCTL() {
   const currentPage = ref(1);
   const pageSize = ref(20);
   const total = ref(0);
-  const sortField = ref("HQID");
-  const sortOrder = ref("asc");
+  const sortField = ref("issueDate");
+  const sortOrder = ref("desc");
   const tableData = ref([]);
   const loading = ref(true);
   const fetchData = async () => {
     loading.value = true;
-    CustomerSearchService.getCustomerList(searchParams)
+    QuoteSearchService.getQuoteList(searchParams)
       .then(data => {
         // console.log("getCustomerList params", searchParams);
         console.log("getCustomerList result", data);
@@ -61,7 +61,7 @@ export function listCTL() {
       });
   };
   const searchParams = reactive({
-    APIRequestType: 4,
+    APIRequestType: 8,
     ConditionalSettings: null,
     pageSize: pageSize,
     pageIndex: currentPage,

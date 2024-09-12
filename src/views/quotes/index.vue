@@ -487,6 +487,22 @@ onMounted(() => {
           name="BasicFilterForm"
           class="custom-collapse-title"
         >
+          <template #title>
+            <div class="flex justify-between ...">
+              <div>
+                {{ t("customer.list.advancedSetting.basicFilterTitle") }}
+              </div>
+              <div class="pl-5">
+                <el-button
+                  ref="refBtnAdvancedFilterSetting"
+                  type="success"
+                  :icon="useRenderIcon('ep:plus')"
+                  @click="handleAdvancedSettings"
+                  >{{ $t("quote.quickfilter.newQuoteBtn") }}</el-button
+                >
+              </div>
+            </div>
+          </template>
           <div id="basic-filter-form" style="padding: 8px">
             <el-form
               ref="advancedFilterFormRef"

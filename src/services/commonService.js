@@ -21,6 +21,15 @@ class CustomerQuickFilterService {
       return [];
     }
   }
+  async getDropdownList(Url) {
+    try {
+      const response = await API.get(Url);
+      return response.returnValue;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
   async updateQuickFilter(params) {
     try {
       const response = await API.put(
