@@ -168,6 +168,7 @@ watch(loginDay, value => {
             <h2 class="outline-none">
               <TypeIt
                 :options="{ strings: [title], cursor: false, speed: 100 }"
+                style="text-transform: none"
               />
             </h2>
           </Motion>

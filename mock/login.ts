@@ -10,9 +10,10 @@ export default defineFakeRoute([
         return {
           success: true,
           data: {
-            avatar: "https://avatars.githubusercontent.com/u/44761321",
+            avatar:
+              "https://eHRTest.dimerco.com:9104/hr/Internal/UserHandler.ashx?Type=UserPhoto&UserID=A1231",
             username: "admin",
-            nickname: "小铭",
+            nickname: "Steven Chen",
             // 一个用户可能有多个角色
             roles: ["admin"],
             accessToken: "eyJhbGciOiJIUzUxMiJ9.admin",

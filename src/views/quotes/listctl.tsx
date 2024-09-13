@@ -107,9 +107,11 @@ export function listCTL() {
   }) => {
     // console.log("tableRowClassName rowIndex", rowIndex);
     if (row && rowIndex === 1) {
-      return "warning-row";
+      console.log("warning-row sample", row);
+      // return "warning-row";
     } else if (rowIndex === 3) {
-      return "success-row";
+      console.log("success-row sample", row);
+      // return "success-row";
     }
     return "";
   };

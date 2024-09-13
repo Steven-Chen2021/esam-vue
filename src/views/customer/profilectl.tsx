@@ -1,4 +1,4 @@
-import CustomerQuickFilterService from "@/services/customer/CustomerQuickFilterService";
+import CustomerQuickFilterService from "@/services/commonService";
 import axios from "axios";
 // import Sortable from "sortablejs";
 // import { clone, delay } from "@pureadmin/utils";

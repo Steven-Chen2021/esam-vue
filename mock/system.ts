@@ -9,9 +9,10 @@ export default defineFakeRoute([
     response: ({ body }) => {
       let list = [
         {
-          avatar: "https://avatars.githubusercontent.com/u/44761321",
+          avatar:
+            "https://eHRTest.dimerco.com:9104/hr/Internal/UserHandler.ashx?Type=UserPhoto&UserID=A1231",
           username: "admin",
-          nickname: "小铭",
+          nickname: "Steven Chen",
           phone: "15888886789",
           email: faker.internet.email(),
           sex: 0,

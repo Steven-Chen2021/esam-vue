@@ -296,7 +296,7 @@ customer:
       basicFilterTitle: Basic Filters
 quote:     
   quickfilter:
-      productLineName: Product Line
+      productLineName: PL
       quoteNo: Quote#
       attentionTo: Attention To
       effectiveDate: Effective Date
@@ -305,7 +305,7 @@ quote:
       issueBy: Issue By
       status: Status
       tradeTerm: Trade Term
-      shppingTerm: Shpping Term
+      shppingTerm: Shipping Term
       creditTerm: Credit Term
       reference: Reference
       laneSegment: Lane Segment

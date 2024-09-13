@@ -372,6 +372,37 @@ const calculateMaxHeight = () => {
 
 const maxHeight = ref(null);
 
+const formatDate = dateString => {
+  if (isNaN(Date.parse(dateString))) {
+    return dateString; // 如果不是有效日期，返回原本的資料
+  }
+  if (dateString === 0) {
+    return "";
+  }
+  const date = new Date(dateString);
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ];
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const seconds = date.getSeconds().toString().padStart(2, "0");
+  return `${month} ${day}, ${year}`;
+};
+
 onMounted(() => {
   // calculateMaxHeight();
   // window.addEventListener("resize", calculateMaxHeight);
@@ -692,7 +723,7 @@ onMounted(() => {
       >
         <template #default="scope">
           <span v-if="col.filterKey !== 'combatTeamPL'">{{
-            scope.row[col.filterKey]
+            formatDate(scope.row[col.filterKey])
           }}</span>
           <div
             v-else-if="
