@@ -20,6 +20,48 @@ export default defineFakeRoute([
             expires: "2030/10/30 00:00:00"
           }
         };
+      } else if (body.username.toUpperCase() === "B1231") {
+        return {
+          success: true,
+          data: {
+            avatar: "https://avatars.githubusercontent.com/u/44761321",
+            username: "B1231",
+            nickname: "Steven Chen(B1231)",
+            // 一个用户可能有多个角色
+            roles: ["admin"],
+            accessToken: "eyJhbGciOiJIUzUxMiJ9.admin",
+            refreshToken: "eyJhbGciOiJIUzUxMiJ9.adminRefresh",
+            expires: "2030/10/30 00:00:00"
+          }
+        };
+      } else if (body.username.toUpperCase() === "A1231") {
+        return {
+          success: true,
+          data: {
+            avatar: "https://avatars.githubusercontent.com/u/44761321",
+            username: "A1231",
+            nickname: "Steven Chen(A1231)",
+            // 一个用户可能有多个角色
+            roles: ["admin"],
+            accessToken: "eyJhbGciOiJIUzUxMiJ9.admin",
+            refreshToken: "eyJhbGciOiJIUzUxMiJ9.adminRefresh",
+            expires: "2030/10/30 00:00:00"
+          }
+        };
+      } else if (body.username.toUpperCase() === "C1231") {
+        return {
+          success: true,
+          data: {
+            avatar: "https://avatars.githubusercontent.com/u/44761321",
+            username: "C1231",
+            nickname: "Steven Chen(C1231)",
+            // 一个用户可能有多个角色
+            roles: ["admin"],
+            accessToken: "eyJhbGciOiJIUzUxMiJ9.admin",
+            refreshToken: "eyJhbGciOiJIUzUxMiJ9.adminRefresh",
+            expires: "2030/10/30 00:00:00"
+          }
+        };
       } else {
         return {
           success: true,

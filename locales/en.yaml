@@ -271,6 +271,12 @@ customer:
     customerYTDGP: YTD GP
     customerExpense: Expense
     remark: Remark
+    country: Country
+    state: State
+    city: City
+    zip: Zip
+    leadSourceGroup: Lead Source
+    industryGroup: Industry
   tour:
       tourQF1Title: Quick Filter
       tourQF1Text: Click to create a quick query and boost your work efficiency.
@@ -315,10 +321,42 @@ customer:
       hideFilterBtn: Hide Filters
       basicFilterTitle: Basic Filters
   profile:
+    title: Profile
     general: 
       title: General Information
       unauthorized: No permission to view
+    pl:
+      title: Product Line
+      leadOwner: Lead Owner
+      status: Status
+      keyAccount: Key Account
+      confirm: Confirm
+      assign: Assign to me
+      bookingConfirmRequired: Booking Confirmation Required
+      isf: ISF 10+2 Filling Required
+      sendAMS: AMS/ISF Data Send to Broker
+      members: Members
     comments:
       title: Comments
       postPlaceholder: Write a message
       editPlaceholder: Edit your message
+  deal:
+    title: Deal
+  contact:
+    title: Contact
+  credit:
+    title: Credit
+  quotation:
+    title: Quotation
+  iRFQ:
+    title: iRFQ
+  poms:
+    title: POMS
+  task:
+    title: Task
+  kpi:
+    title: KPI
+  report:
+    title: Shipment Report
+  setting:
+    title: Setting

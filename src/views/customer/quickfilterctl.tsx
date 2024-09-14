@@ -108,6 +108,33 @@ export function quickFilterCTL() {
           a.filterSource
       );
       selectFilterList.forEach(async item => {
+        let resourceType = 0;
+        switch (item.filterKey) {
+          case "productLineName":
+            resourceType = 2;
+            break;
+          case "country":
+            resourceType = 14;
+            break;
+          case "state":
+            resourceType = 15;
+            break;
+          case "city":
+            resourceType = 16;
+            break;
+          case "leadSourceGroup":
+            resourceType = 17;
+            break;
+          case "industryGroup":
+            resourceType = 18;
+            break;
+          case "status":
+            resourceType = 19;
+            break;
+          default:
+            resourceType = 0;
+            break;
+        }
         const response =
           // TODO: 跨域问题
           // await CustomerQuickFilterService.getOptionListNeedParam(
@@ -115,7 +142,7 @@ export function quickFilterCTL() {
           //   { OptionsResourceType: 2, Paginator: false }
           // );
           await CustomerQuickFilterService.getAutoCompleteList({
-            OptionsResourceType: 2,
+            OptionsResourceType: resourceType,
             Paginator: false
           });
         filterOptions.value[item.filterKey] = {};
@@ -341,15 +368,15 @@ export function quickFilterCTL() {
       } else {
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
-      advancedFilterForm.filters.forEach(a => {
-        // a.showOnGrid = true;
-        // a.showOnFilter = true;
-        // a.allowSorting = true;
-        // a.allowGridHeaderFilter = true;
-        if (a.width && a.width === 70) {
-          a.width = 140;
-        }
-      });
+      // advancedFilterForm.filters.forEach(a => {
+      //   // a.showOnGrid = true;
+      //   // a.showOnFilter = true;
+      //   // a.allowSorting = true;
+      //   // a.allowGridHeaderFilter = true;
+      //   if (a.width && a.width === 70) {
+      //     a.width = 140;
+      //   }
+      // });
       // advancedFilterForm.filters = deepClone(result1.data.returnValue);
       // // TODO: API
       // advancedFilterForm.filters.forEach(a => {
@@ -409,15 +436,15 @@ export function quickFilterCTL() {
             quickFilterFormInitData.filters
           );
         }
-        advancedFilterForm.filters.forEach(a => {
-          // a.showOnGrid = true;
-          // a.showOnFilter = true;
-          // a.allowSorting = true;
-          // a.allowGridHeaderFilter = true;
-          if (a.width && a.width === 70) {
-            a.width = 140;
-          }
-        });
+        // advancedFilterForm.filters.forEach(a => {
+        //   // a.showOnGrid = true;
+        //   // a.showOnFilter = true;
+        //   // a.allowSorting = true;
+        //   // a.allowGridHeaderFilter = true;
+        //   if (a.width && a.width === 70) {
+        //     a.width = 140;
+        //   }
+        // });
       })
       .catch(err => {
         console.log("getAdvancedFilterSetting error", err);
