@@ -336,6 +336,7 @@ customer:
       isf: ISF 10+2 Filling Required
       sendAMS: AMS/ISF Data Send to Broker
       members: Members
+      action: Action
     comments:
       title: Comments
       postPlaceholder: Write a message

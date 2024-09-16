@@ -380,9 +380,7 @@ onMounted(() => {
                         >
                           <el-checkbox :v-model="false" label="" />
                         </el-form-item>
-                        <el-form-item
-                          :label="t('customer.profile.pl.keyAccount')"
-                        >
+                        <el-form-item :label="t('customer.profile.pl.action')">
                           <el-select
                             v-model="formDataMap[tabItem.plName].action"
                             placeholder="Select"
