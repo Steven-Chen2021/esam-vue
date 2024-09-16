@@ -1,4 +1,5 @@
 import CustomerQuickFilterService from "@/services/commonService";
+import CustomerProfileService from "@/services/customer/CustomerProfileService";
 import axios from "axios";
 // import Sortable from "sortablejs";
 // import { clone, delay } from "@pureadmin/utils";
@@ -44,8 +45,6 @@ export function customerProfileCTL() {
         axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
         axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
       ]);
-      console.log("result1", result1.data.returnValue);
-      console.log("result2", result2.data.returnValue);
       profileFormData.value = deepClone(result1.data.returnValue);
       profileData.value = deepClone(result2.data.returnValue);
       profileDataInit.value = deepClone(result2.data.returnValue);
@@ -66,27 +65,68 @@ export function customerProfileCTL() {
         }
       });
       // profileDataInit.value = ref(deepClone(profileData.value));
-      console.log("profileDataInit", profileDataInit.value);
-      console.log("profileData", profileData.value);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   }
-  const PLFormData = ref({});
-  async function fetchPLData(HQID, PID) {
+  const formDataMap = reactive({});
+  const PLFormData = ref({
+    ownerName: "",
+    pid: null,
+    smhqid: null,
+    plName: null
+  });
+  const activeTabPID = ref();
+  const LeadID = ref(null);
+  const actionOptions = (currentUserID, ownerUserID) => {
+    if (currentUserID === ownerUserID) {
+      return [
+        { value: "Return", text: "Return" },
+        { value: "Send To", text: "Send To" }
+      ];
+    } else {
+      return [{ value: "Return", text: "Return" }];
+    }
+  };
+  async function fetchPLData(LID, PID) {
     try {
+      LeadID.value = LID;
       const [result1, result2] = await Promise.all([
-        axios.get("/api/Customer/GetPLDetailData?LID=" + HQID + "&PID=" + PID),
-        axios.get("/api/Customer/GetPLListData?LID=" + HQID)
+        axios.get("/api/Customer/GetPLDetailData?LID=" + LID + "&PID=" + PID),
+        axios.get("/api/Customer/GetPLListData?LID=" + LID)
       ]);
-      console.log("GetPLListData result:", result2.data.returnValue);
       tabsPLList.value = deepClone(result2.data.returnValue);
-
       PLFormData.value = deepClone(result1.data.returnValue);
+      if (PLFormData.value && PLFormData.value.pid) {
+        activeTabPID.value = `${PLFormData.value.pid}_${PLFormData.value.pid}_${LID}_${PLFormData.value.plName}`;
+        formDataMap[PLFormData.value.plName] = PLFormData.value;
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   }
+  const fetchPLFormData = async (LID, PID, plName) => {
+    if (formDataMap[plName]) {
+      // 如果已经有数据，直接返回，不再调用 API
+      return;
+    }
+    try {
+      const param = {
+        LID: LID,
+        PID: PID
+      };
+      const response = await CustomerProfileService.getPLDetailData(param);
+      formDataMap[plName] = response.returnValue;
+    } catch (error) {
+      console.error("Error fetching form data:", error);
+    }
+  };
+  watch(activeTabPID, newVal => {
+    const lid = newVal.split("_")[2]; // 从 tab 名称中提取 pid
+    const pid = newVal.split("_")[1]; // 从 tab 名称中提取 pid
+    const plName = newVal.split("_")[3]; // 从 tab 名称中提取 pid
+    fetchPLFormData(lid, pid, plName); // 根据 pid 获取表单数据
+  });
   interface profileRuleForm {
     customerName: string;
     localName: string;
@@ -108,64 +148,6 @@ export function customerProfileCTL() {
     ]
   });
   const tabsPLList = ref([]);
-  const currentUser = ref("Andy Kang"); // 当前登录用户
-  const newMessage = ref(""); // 新的留言
-  const editIndex = ref(-1); // 当前编辑的索引
-  const messages = ref([
-    {
-      user: "Andy Kang",
-      content:
-        "Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!Hello, this is my first message!",
-      likes: 0,
-      timestamp: new Date().toLocaleString()
-    },
-    {
-      user: "Steven Chen",
-      content: "Hi everyone!",
-      likes: 0,
-      timestamp: new Date().toLocaleString()
-    }
-  ]);
-
-  // 判断是否是当前用户
-  const isCurrentUser = user => user === currentUser.value;
-
-  // 新增留言
-  const postMessage = () => {
-    if (newMessage.value.trim()) {
-      messages.value.unshift({
-        user: currentUser.value,
-        content: newMessage.value.trim(),
-        likes: 0,
-        timestamp: new Date().toLocaleString()
-      });
-      newMessage.value = "";
-    }
-  };
-
-  // 点赞
-  const likeMessage = index => {
-    messages.value[index].likes++;
-  };
-
-  // 编辑留言
-  const editMessage = index => {
-    editIndex.value = index;
-  };
-
-  // 保存编辑
-  const saveEdit = index => {
-    editIndex.value = -1;
-    messages.value[index].timestamp = new Date().toLocaleString();
-  };
-  const formatTimestamp = timestamp => {
-    const date = new Date(timestamp);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-  };
-  // 删除留言
-  const deleteMessage = index => {
-    messages.value.splice(index, 1);
-  };
   // watch(
   //   () => profileFormData,
   //   newVal => {
@@ -243,7 +225,6 @@ export function customerProfileCTL() {
         const response = await CustomerQuickFilterService.getStatusList(
           item.filterSource
         );
-        console.log(`fetchStatusList ${item.filterKey}`, response);
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;
@@ -262,6 +243,30 @@ export function customerProfileCTL() {
           a.filterSource
       );
       selectFilterList.forEach(async item => {
+        let resourceType = 0;
+        switch (item.filterKey) {
+          case "productLineName":
+            resourceType = 2;
+            break;
+          case "country":
+            resourceType = 14;
+            break;
+          case "state":
+            resourceType = 15;
+            break;
+          case "city":
+            resourceType = 16;
+            break;
+          case "leadSourceGroup":
+            resourceType = 17;
+            break;
+          case "industryGroup":
+            resourceType = 18;
+            break;
+          default:
+            resourceType = 0;
+            break;
+        }
         const response =
           // TODO: 跨域问题
           // await CustomerQuickFilterService.getOptionListNeedParam(
@@ -269,7 +274,7 @@ export function customerProfileCTL() {
           //   { OptionsResourceType: 2, Paginator: false }
           // );
           await CustomerQuickFilterService.getAutoCompleteList({
-            OptionsResourceType: 2,
+            OptionsResourceType: resourceType,
             Paginator: false
           });
         filterOptions.value[item.filterKey] = {};
@@ -371,14 +376,12 @@ export function customerProfileCTL() {
   // };
   // TODO: API clcik quick filter to search
   const handleQuickFilterClick = (item: QuickFilter) => {
-    console.log(`Clicked button ${item.filterName}`);
     quickFilterList.value.forEach(a => {
       a.clicked = false;
     });
     if (quickFilterList.value.length > 1) {
       item.clicked = true;
     }
-    console.log("handleQuickFilterClick quickFilterList:", quickFilterList);
     initBasicFilter();
   };
   const getOptions = (jsonString: string) => {
@@ -622,17 +625,11 @@ export function customerProfileCTL() {
     profileData,
     rules,
     tabsPLList,
-    currentUser,
-    newMessage,
-    editIndex,
-    messages,
-    isCurrentUser,
-    postMessage,
-    likeMessage,
-    editMessage,
-    saveEdit,
-    deleteMessage,
-    formatTimestamp,
+    PLFormData,
+    formDataMap,
+    fetchPLFormData,
+    activeTabPID,
+    actionOptions,
     fetchProfileData,
     fetchPLData,
     getOptions,

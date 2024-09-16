@@ -113,7 +113,25 @@ export function useTags() {
     }
   ]);
 
+  // function conditionHandle(item, previous, next) {
+  //   if (isBoolean(route?.meta?.showLink) && route?.meta?.showLink === false) {
+  //     if (Object.keys(route.query).length > 0) {
+  //       return isEqual(route.query, item.query) ? previous : next;
+  //     } else {
+  //       return isEqual(route.params, item.params) ? previous : next;
+  //     }
+  //   } else {
+  //     return route.path === item.path ? previous : next;
+  //   }
+  // }
   function conditionHandle(item, previous, next) {
+    if (
+      (route.name === "CustomerDetail" || route.name === "CustomerList") &&
+      item.name === "CustomerList"
+    ) {
+      return previous; // 确保在 CustomerDetail 或 CustomerList 路由时激活 CustomerList 标签
+    }
+
     if (isBoolean(route?.meta?.showLink) && route?.meta?.showLink === false) {
       if (Object.keys(route.query).length > 0) {
         return isEqual(route.query, item.query) ? previous : next;
@@ -132,8 +150,20 @@ export function useTags() {
     };
   });
 
+  // const linkIsActive = computed(() => {
+  //   return item => {
+  //     return conditionHandle(item, "is-active", "");
+  //   };
+  // });
   const linkIsActive = computed(() => {
     return item => {
+      // 判断当前激活的路由
+      if (
+        (route.name === "CustomerDetail" || route.name === "CustomerList") &&
+        item.name === "CustomerList"
+      ) {
+        return "is-active"; // 激活 CustomerList 的标签
+      }
       return conditionHandle(item, "is-active", "");
     };
   });

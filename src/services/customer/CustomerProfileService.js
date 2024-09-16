@@ -12,12 +12,12 @@ class CustomerProfileService {
       console.error(error);
     }
   }
-  async updateQuickFilter(params) {
+  async getPLDetailData(params) {
     try {
-      const response = await API.put(
-        "/api/Common/CustomizeQuickFilterSetting",
-        params
-      );
+      const url = "/api/Customer/GetPLDetailData";
+      const queryString = new URLSearchParams(params).toString();
+      const fullUrl = `${url}?${queryString}`;
+      const response = await API.get(fullUrl);
       return response;
     } catch (error) {
       console.error(error);

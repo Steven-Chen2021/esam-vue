@@ -95,7 +95,7 @@ const handleViewClick = row => {
   console.log("handleViewClick row", row);
   Router.push({
     path: "/customer/detail",
-    query: { LID: row.hqid, basicRole: "read" }
+    query: { LID: row.hqid }
   });
 };
 // #region Quick Filter
@@ -453,7 +453,11 @@ onMounted(() => {
               <span
                 v-else-if="filterItem.filterType === 'dropdown'"
                 style="margin-left: 6px; font-weight: bold"
-                >{{ filterItem.selectValue }}</span
+                >{{
+                  filterOptions[filterItem.filterKey].list.filter(
+                    a => a.value === filterItem.selectValue
+                  )[0].text
+                }}</span
               ><span
                 v-else-if="filterItem.filterType === 'daterange'"
                 style="margin-left: 6px; font-weight: bold"
@@ -554,11 +558,12 @@ onMounted(() => {
                       filterItem.filterType === 'dropdown' &&
                       filterItem.filterSourceType === 'api'
                     "
-                    v-model="filterItem.value"
+                    v-model="filterItem.selectValue"
                     :placeholder="
                       t('customer.list.quickFilter.holderSelectText')
                     "
                     style="width: 338px"
+                    filterable
                   >
                     <el-option
                       v-for="option in filterOptions[filterItem.filterKey].list"
@@ -725,7 +730,6 @@ onMounted(() => {
           >
             View
           </el-button>
-          <el-button link type="primary" size="small">Edit</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -813,6 +817,7 @@ onMounted(() => {
                 v-model="filterItem.selectValue"
                 :placeholder="t('customer.list.quickFilter.holderSelectText')"
                 style="width: 338px"
+                filterable
               >
                 <el-option
                   v-for="option in filterOptions[filterItem.filterKey].list"

@@ -24,40 +24,15 @@ const {
   profileData,
   rules,
   tabsPLList,
-  currentUser,
-  newMessage,
-  editIndex,
-  messages,
-  isCurrentUser,
-  postMessage,
-  likeMessage,
-  editMessage,
-  saveEdit,
-  deleteMessage,
-  formatTimestamp,
+  PLFormData,
+  formDataMap,
+  activeTabPID,
+  actionOptions,
   fetchProfileData,
   fetchPLData,
   getOptions,
-  convertDropDownValue,
   filterOptions,
-  quickFilterForm,
-  quickFilterFormRef,
-  quickFilterFormInitData,
-  quickFilterList,
-  querySearchAsync,
-  handleQuickFilterClick,
-  updateQuickFilter,
-  fetchData,
-  advancedFilterForm,
-  basicFilterTopForm,
-  initAdvancedFilter,
-  initBasicFilter,
-  handleAdvancedReset,
-  showBasicFilterTopForm,
-  showBasicFilterForm,
-  formattedDateRange,
-  handleBasicFilterBtnClick,
-  activePanelNames
+  querySearchAsync
 } = customerProfileCTL();
 const activeName = ref(["general", "comments"]);
 const baseRadio = ref("default");
@@ -119,20 +94,20 @@ const disableStatus = filterItem => {
 };
 const basicRole = (() => {
   const username = useUserStoreHook()?.username;
-  if (username === "C2232") {
+  if (username === "C1231") {
     return "read";
-  } else if (username === "B2232") {
+  } else if (username === "B1231") {
     return "read";
   } else {
     // Handle other cases or return a default value
     return "write"; // Replace with the actual default role or handling
   }
 })();
+const username = useUserStoreHook()?.username;
 const advRole = (() => {
-  const username = useUserStoreHook()?.username;
-  if (username === "C2232") {
+  if (username === "C1231") {
     return "NA";
-  } else if (username === "B2232") {
+  } else if (username === "B1231") {
     return "read";
   } else {
     // Handle other cases or return a default value
@@ -143,21 +118,15 @@ const goBack = () => {
   router.go(-1);
 };
 const dialogVisible = ref(false);
-const deleteMessageIndex = ref(-1);
-const handleDeleteMessage = () => {
-  dialogVisible.value = false;
-  deleteMessage(deleteMessageIndex);
-};
+const LID = route.query.LID;
 onMounted(() => {
-  console.log("onMounted LID", route.query.LID);
-  console.log("userName", useUserStoreHook()?.username);
   fetchProfileData(
     route.query.LID,
     basicRole,
     advRole,
     t("customer.profile.general.unauthorized")
   );
-  fetchPLData(route.query.LID, 0);
+  fetchPLData(LID, 0);
 });
 </script>
 
@@ -179,16 +148,6 @@ onMounted(() => {
             :size="dynamicSize"
             :loading-icon="useRenderIcon('ep:eleme')"
             :loading="size !== 'disabled'"
-            :icon="useRenderIcon('ep:edit')"
-          >
-            {{ size === "disabled" ? "Save as Draft" : "Processing" }}
-          </el-button>
-          <el-button
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
             :icon="useRenderIcon('ri:save-line')"
             :disabled="basicRole === 'read'"
             @click="submitForm(profileFormRef, false)"
@@ -197,203 +156,496 @@ onMounted(() => {
           </el-button>
         </div>
       </div>
-      <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
-        <div class="pt-2 pb-2">
-          <el-collapse v-model="activeName" class="mb-2">
-            <el-collapse-item
-              :title="t('customer.profile.general.title')"
-              name="general"
-              class="custom-collapse-title"
-            >
-              <div style="padding: 8px">
-                <el-form
-                  ref="profileFormRef"
-                  :inline="true"
-                  :model="profileData"
-                  :rules="rules"
-                  label-width="auto"
-                  class="demo-form-inline top-align-form-item"
-                  status-icon
+      <el-tabs type="border-card" style="margin-top: 16px">
+        <el-tab-pane :label="t('customer.profile.title')"
+          ><el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
+            <div class="pt-2 pb-2">
+              <el-collapse v-model="activeName" class="mb-2">
+                <el-collapse-item
+                  :title="t('customer.profile.general.title')"
+                  name="general"
+                  class="custom-collapse-title"
                 >
-                  <div>
-                    <el-form-item
-                      v-for="filterItem in profileFormData.filter(
-                        c => c.filterType !== 'cascadingdropdown'
-                      )"
-                      :key="filterItem.filterKey"
-                      :style="{ width: '390px' }"
-                      :label="t(filterItem.langethKey)"
-                      :prop="filterItem.filterKey"
+                  <div style="padding: 8px">
+                    <el-form
+                      ref="profileFormRef"
+                      :inline="true"
+                      :model="profileData"
+                      :rules="rules"
+                      label-width="auto"
+                      class="demo-form-inline top-align-form-item"
+                      status-icon
                     >
-                      <el-text
-                        v-if="
-                          filterItem.readOnlyOnDetail ||
-                          filterItem.filterType === 'lable'
-                        "
-                        >{{ profileData[filterItem.filterKey] }}</el-text
-                      >
-                      <el-select
-                        v-else-if="
-                          filterItem.filterType === 'dropdown' &&
-                          filterItem.filterSourceType === 'data'
-                        "
-                        v-model="filterItem.selectValue"
-                        :disabled="disableStatus(filterItem)"
-                        :placeholder="
-                          t('customer.list.quickFilter.holderSelectText')
-                        "
-                        style="width: 338px"
-                      >
-                        <el-option
-                          v-for="option in getOptions(filterItem.filterSource)"
-                          :key="option.value"
-                          :label="option.text"
-                          :placeholder="
-                            t('customer.list.quickFilter.holderKeyinText')
-                          "
-                          :value="option.value"
-                        />
-                      </el-select>
-                      <el-select
-                        v-else-if="
-                          filterOptions[filterItem.filterKey] &&
-                          filterItem.filterType === 'select' &&
-                          filterItem.filterSourceType === 'API'
-                        "
-                        v-model="filterItem.value"
-                        :disabled="disableStatus(filterItem)"
-                        :placeholder="
-                          t('customer.list.quickFilter.holderSelectText')
-                        "
-                        style="width: 338px"
-                      >
-                        <el-option
-                          v-for="option in filterOptions[filterItem.filterKey]
-                            .list"
-                          :key="option.value"
-                          :label="option.text"
-                          :value="option.value"
-                        />
-                      </el-select>
-                      <el-select
-                        v-else-if="
-                          filterOptions[filterItem.filterKey] &&
-                          filterItem.filterType === 'dropdown' &&
-                          filterItem.filterSourceType === 'api'
-                        "
-                        v-model="filterItem.value"
-                        :disabled="disableStatus(filterItem)"
-                        :placeholder="
-                          t('customer.list.quickFilter.holderSelectText')
-                        "
-                        style="width: 338px"
-                      >
-                        <el-option
-                          v-for="option in filterOptions[filterItem.filterKey]
-                            .list"
-                          :key="option.value"
-                          :label="option.text"
-                          :value="option.value"
-                        />
-                      </el-select>
-                      <el-autocomplete
-                        v-else-if="
-                          filterItem.filterType === 'autocomplete' &&
-                          filterItem.filterSourceType === 'api'
-                        "
-                        v-model="filterItem.value"
-                        :disabled="disableStatus(filterItem)"
-                        :fetch-suggestions="
-                          (queryString, cb) =>
-                            querySearchAsync(queryString, cb, filterItem)
-                        "
-                        :placeholder="
-                          t('customer.list.quickFilter.holderKeyinText')
-                        "
-                        style="width: 338px"
-                      />
-                      <el-input
-                        v-else-if="filterItem.filterType === 'input'"
-                        v-model="profileData[filterItem.filterKey]"
-                        :disabled="disableStatus(filterItem)"
-                        :placeholder="
-                          t('customer.list.quickFilter.holderKeyinText')
-                        "
-                        style="width: 338px"
-                        @blur="
-                          submitForm(profileFormRef, disableStatus(filterItem))
-                        "
-                      />
-                      <el-input
-                        v-else-if="filterItem.filterType === 'inputarea'"
-                        v-model="profileData[filterItem.filterKey]"
-                        :disabled="disableStatus(filterItem)"
-                        :placeholder="
-                          t('customer.list.quickFilter.holderKeyinText')
-                        "
-                        style="width: 338px"
-                        type="textarea"
-                      />
-                      <el-date-picker
-                        v-else-if="filterItem.filterType === 'daterange'"
-                        v-model="filterItem.value"
-                        :disabled="disableStatus(filterItem)"
-                        :range-separator="
-                          $t('customer.list.quickFilter.dateSeparator')
-                        "
-                        :start-placeholder="
-                          $t('customer.list.quickFilter.startDateHolderText')
-                        "
-                        :end-placeholder="
-                          $t('customer.list.quickFilter.endDateHolderText')
-                        "
-                        format="MMM DD"
-                        value-format="YYYY-MM-DD"
-                        style="width: 338px"
-                      />
-                    </el-form-item>
+                      <div>
+                        <el-form-item
+                          v-for="filterItem in profileFormData.filter(
+                            c => c.filterType !== 'cascadingdropdown'
+                          )"
+                          :key="filterItem.filterKey"
+                          :style="{ width: '390px' }"
+                          :label="t(filterItem.langethKey)"
+                          :prop="filterItem.filterKey"
+                        >
+                          <el-text
+                            v-if="
+                              filterItem.readOnlyOnDetail ||
+                              filterItem.filterType === 'lable'
+                            "
+                            >{{ profileData[filterItem.filterKey] }}</el-text
+                          >
+                          <el-select
+                            v-else-if="
+                              filterItem.filterType === 'dropdown' &&
+                              filterItem.filterSourceType === 'data'
+                            "
+                            v-model="filterItem.selectValue"
+                            :disabled="disableStatus(filterItem)"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderSelectText')
+                            "
+                            style="width: 338px"
+                          >
+                            <el-option
+                              v-for="option in getOptions(
+                                filterItem.filterSource
+                              )"
+                              :key="option.value"
+                              :label="option.text"
+                              :placeholder="
+                                t('customer.list.quickFilter.holderKeyinText')
+                              "
+                              :value="option.value"
+                            />
+                          </el-select>
+                          <el-select
+                            v-else-if="
+                              filterOptions[filterItem.filterKey] &&
+                              filterItem.filterType === 'select' &&
+                              filterItem.filterSourceType === 'API'
+                            "
+                            v-model="filterItem.value"
+                            :disabled="disableStatus(filterItem)"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderSelectText')
+                            "
+                            style="width: 338px"
+                          >
+                            <el-option
+                              v-for="option in filterOptions[
+                                filterItem.filterKey
+                              ].list"
+                              :key="option.value"
+                              :label="option.text"
+                              :value="option.value"
+                            />
+                          </el-select>
+                          <el-select
+                            v-else-if="
+                              filterOptions[filterItem.filterKey] &&
+                              filterItem.filterType === 'dropdown' &&
+                              filterItem.filterSourceType === 'api'
+                            "
+                            v-model="filterItem.value"
+                            :disabled="disableStatus(filterItem)"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderSelectText')
+                            "
+                            style="width: 338px"
+                            filterable
+                          >
+                            <el-option
+                              v-for="option in filterOptions[
+                                filterItem.filterKey
+                              ].list"
+                              :key="option.value"
+                              :label="option.text"
+                              :value="option.value"
+                            />
+                          </el-select>
+                          <el-autocomplete
+                            v-else-if="
+                              filterItem.filterType === 'autocomplete' &&
+                              filterItem.filterSourceType === 'api'
+                            "
+                            v-model="filterItem.value"
+                            :disabled="disableStatus(filterItem)"
+                            :fetch-suggestions="
+                              (queryString, cb) =>
+                                querySearchAsync(queryString, cb, filterItem)
+                            "
+                            :placeholder="
+                              t('customer.list.quickFilter.holderKeyinText')
+                            "
+                            style="width: 338px"
+                          />
+                          <el-input
+                            v-else-if="filterItem.filterType === 'input'"
+                            v-model="profileData[filterItem.filterKey]"
+                            :disabled="disableStatus(filterItem)"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderKeyinText')
+                            "
+                            style="width: 338px"
+                            @blur="
+                              submitForm(
+                                profileFormRef,
+                                disableStatus(filterItem)
+                              )
+                            "
+                          />
+                          <el-input
+                            v-else-if="filterItem.filterType === 'inputarea'"
+                            v-model="profileData[filterItem.filterKey]"
+                            :disabled="disableStatus(filterItem)"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderKeyinText')
+                            "
+                            style="width: 338px"
+                            type="textarea"
+                          />
+                          <el-date-picker
+                            v-else-if="filterItem.filterType === 'daterange'"
+                            v-model="filterItem.value"
+                            :disabled="disableStatus(filterItem)"
+                            :range-separator="
+                              $t('customer.list.quickFilter.dateSeparator')
+                            "
+                            :start-placeholder="
+                              $t(
+                                'customer.list.quickFilter.startDateHolderText'
+                              )
+                            "
+                            :end-placeholder="
+                              $t('customer.list.quickFilter.endDateHolderText')
+                            "
+                            format="MMM DD"
+                            value-format="YYYY-MM-DD"
+                            style="width: 338px"
+                          />
+                        </el-form-item>
+                      </div>
+                    </el-form>
                   </div>
-                </el-form>
-              </div>
-            </el-collapse-item>
-            <el-collapse-item
-              :title="t('customer.profile.comments.title')"
-              name="comments"
-              class="custom-collapse-title"
-            >
-              <el-tabs type="border-card">
-                <el-tab-pane
-                  v-for="tabItem in tabsPLList"
-                  :key="tabItem.smhqid"
-                  :label="tabItem.description"
-                  :name="tabItem.smhqid"
-                  ><el-form
-                    :model="PLFormData"
-                    label-width="auto"
-                    style="max-width: 600px"
-                  />
-                </el-tab-pane>
-              </el-tabs>
-            </el-collapse-item>
-          </el-collapse>
-        </div>
-      </el-scrollbar>
+                </el-collapse-item>
+                <el-collapse-item
+                  :title="t('customer.profile.pl.title')"
+                  name="comments"
+                  class="custom-collapse-title"
+                >
+                  <el-tabs v-model="activeTabPID" type="border-card">
+                    <el-tab-pane
+                      v-for="tabItem in tabsPLList"
+                      :key="tabItem.smhqid"
+                      :label="tabItem.plName"
+                      :name="`${tabItem.smhqid}_${tabItem.pid}_${LID}_${tabItem.plName}`"
+                      ><el-form
+                        v-if="formDataMap[tabItem.plName]"
+                        :model="formDataMap[tabItem.plName]"
+                        label-width="auto"
+                        style="max-width: 600px"
+                      >
+                        <el-form-item
+                          :label="t('customer.profile.pl.leadOwner')"
+                        >
+                          <el-text>{{
+                            `${formDataMap[tabItem.plName].ownerName ? (formDataMap[tabItem.plName].ownerStation ? formDataMap[tabItem.plName].ownerName + " @ " + formDataMap[tabItem.plName].ownerStation : "") : ""}`
+                          }}</el-text>
+                          <el-button
+                            v-if="
+                              !formDataMap[tabItem.plName].ownerName ||
+                              formDataMap[tabItem.plName].ownerName == ''
+                            "
+                            style="margin-left: 6px"
+                            type="primary"
+                            plain
+                            >{{ t("customer.profile.pl.assign") }}</el-button
+                          >
+                        </el-form-item>
+                        <el-form-item :label="t('customer.profile.pl.status')">
+                          <el-text>{{
+                            formDataMap[tabItem.plName].status
+                          }}</el-text>
+                        </el-form-item>
+                        <el-form-item
+                          v-if="formDataMap[tabItem.plName].plName === 'OMS'"
+                          :label="
+                            t('customer.profile.pl.bookingConfirmRequired')
+                          "
+                        >
+                          <el-checkbox :v-model="false" label="" />
+                        </el-form-item>
+                        <el-form-item
+                          v-if="formDataMap[tabItem.plName].plName === 'OMS'"
+                          :label="t('customer.profile.pl.isf')"
+                        >
+                          <el-checkbox :v-model="false" label="" />
+                        </el-form-item>
+                        <el-form-item
+                          :label="t('customer.profile.pl.keyAccount')"
+                        >
+                          <el-select
+                            v-model="formDataMap[tabItem.plName].action"
+                            placeholder="Select"
+                            size="large"
+                            style="width: 140px"
+                          >
+                            <el-option
+                              v-for="item in actionOptions(
+                                username,
+                                formDataMap[tabItem.plName].ownerUserID
+                              )"
+                              :key="item.value"
+                              :label="item.text"
+                              :value="item.value"
+                            />
+                          </el-select>
+                          <el-button
+                            style="margin-left: 6px"
+                            type="primary"
+                            plain
+                            >{{ t("customer.profile.pl.confirm") }}</el-button
+                          >
+                        </el-form-item>
+                      </el-form>
+                    </el-tab-pane>
+                  </el-tabs>
+                </el-collapse-item>
+              </el-collapse>
+            </div>
+          </el-scrollbar></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.deal.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the Deal Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.contact.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the contact Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.credit.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the Credit Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.quotation.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the Quotation Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.iRFQ.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the iRFQ Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.poms.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the POMS Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.task.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the Task Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.kpi.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the KPI Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.report.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the Shipment Report Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+        <el-tab-pane :label="t('customer.setting.title')"
+          ><div class="flex justify-center items-center h-[640px]">
+            <div class="ml-12">
+              <p
+                v-motion
+                class="font-medium text-4xl mb-4 dark:text-white"
+                :initial="{
+                  opacity: 0,
+                  y: 100
+                }"
+                :enter="{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    delay: 80
+                  }
+                }"
+              >
+                Welcome to the Setting Page
+              </p>
+            </div>
+          </div></el-tab-pane
+        >
+      </el-tabs>
     </el-card>
-    <el-dialog
-      v-model="dialogVisible"
-      :title="t('customer.list.quickFilter.warnTitle')"
-      width="500"
-    >
-      <span>{{ t("customer.list.quickFilter.delWarnText") }}</span>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="dialogVisible = false">Cancel</el-button>
-          <el-button type="primary" @click="handleDeleteMessage">
-            Confirm
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
