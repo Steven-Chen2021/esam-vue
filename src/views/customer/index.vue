@@ -714,7 +714,7 @@ onMounted(() => {
                 :content="ava.combatTeamUserName"
                 placement="top-start"
               >
-                <el-avatar size="large" :src="ava.combatTeamAvatar" />
+                <el-avatar size="small" :src="ava.combatTeamAvatar" />
               </el-tooltip>
             </div>
           </div>
