@@ -321,3 +321,5 @@ quote:
       consignee: Consignee
       remark: Remark
       newQuoteBtn: Create Quote
+      hqid: HQID
+      customerName: Customer

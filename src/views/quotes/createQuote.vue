@@ -1354,7 +1354,7 @@ const handleReset = () => {
 };
 
 defineOptions({
-  name: "CreateQuote"
+  name: "QuoteDetail"
 });
 
 const { toDetail, router } = useDetail();

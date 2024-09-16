@@ -18,6 +18,7 @@ import {
 } from "element-plus";
 import CustomerQuickFilterService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
+import { useRouter } from "vue-router";
 const quickFilterShow = ref(false);
 const {
   getOptions,
@@ -76,12 +77,12 @@ const handleListEnable = (obj: {
 const handleFilterEnable = (obj: any) => {
   submitAdvancedFilterForm();
 };
-import { useRouter } from "vue-router";
+
 const Router = useRouter();
 const handleViewClick = row => {
   console.log("handleViewClick row", row);
   Router.push({
-    path: "/customer/detail",
+    path: "/quotes/detail",
     query: { LID: row.hqid, basicRole: "read" }
   });
 };
@@ -372,8 +373,8 @@ const calculateMaxHeight = () => {
 
 const maxHeight = ref(null);
 
-const formatDate = dateString => {
-  if (isNaN(Date.parse(dateString))) {
+const formatDate = (dateString, columnName) => {
+  if (columnName === "hqid" || isNaN(Date.parse(dateString))) {
     return dateString; // 如果不是有效日期，返回原本的資料
   }
   if (dateString === 0) {
@@ -515,7 +516,7 @@ onMounted(() => {
                   ref="refBtnAdvancedFilterSetting"
                   type="success"
                   :icon="useRenderIcon('ep:plus')"
-                  @click="handleAdvancedSettings"
+                  @click="handleViewClick"
                   >{{ $t("quote.quickfilter.newQuoteBtn") }}</el-button
                 >
               </div>
@@ -723,7 +724,7 @@ onMounted(() => {
       >
         <template #default="scope">
           <span v-if="col.filterKey !== 'combatTeamPL'">{{
-            formatDate(scope.row[col.filterKey])
+            formatDate(scope.row[col.filterKey], col.filterKey)
           }}</span>
           <div
             v-else-if="
@@ -818,6 +819,24 @@ onMounted(() => {
                   :key="option.value"
                   :label="option.text"
                   :placeholder="t('customer.list.quickFilter.holderKeyinText')"
+                  :value="option.value"
+                />
+              </el-select>
+              <el-select
+                v-else-if="
+                  filterOptions[filterItem.filterKey] &&
+                  filterItem.filterType === 'dropdown' &&
+                  filterItem.filterSourceType === 'api'
+                "
+                v-model="filterItem.selectValue"
+                :placeholder="t('customer.list.quickFilter.holderSelectText')"
+                style="width: 338px"
+                filterable
+              >
+                <el-option
+                  v-for="option in filterOptions[filterItem.filterKey].list"
+                  :key="option.value"
+                  :label="option.text"
                   :value="option.value"
                 />
               </el-select>
