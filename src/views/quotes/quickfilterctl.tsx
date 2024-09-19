@@ -1,11 +1,7 @@
 import CustomerQuickFilterService from "@/services/commonService";
 import axios from "axios";
-// import Sortable from "sortablejs";
-// import { clone, delay } from "@pureadmin/utils";
 import { ref, onMounted, reactive, watch, computed } from "vue";
-// import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
-// import Sortable from "sortablejs";
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;

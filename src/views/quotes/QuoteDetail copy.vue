@@ -1,35 +1,24 @@
 <script setup lang="ts">
-import { h, ref, computed, onMounted } from "vue";
-
-import {
-  deleteChildren,
-  getNodeByUniqueId,
-  appendFieldByUniqueId
-} from "@/utils/tree";
-import { useDetail } from "./hooks";
-import { clone } from "@pureadmin/utils";
-import { transformI18n } from "@/plugins/i18n";
-import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { ref, onMounted } from "vue";
 import "plus-pro-components/es/components/drawer-form/style/css";
 import {
   type PlusColumn,
   type FieldValues,
-  PlusForm,
-  PlusDrawerForm
+  PlusForm
 } from "plus-pro-components";
 
 /*handsontable*/
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
 import "handsontable/dist/handsontable.full.css";
-import { DropdownMenu } from "handsontable/plugins";
 registerAllModules();
 
-import { key } from "localforage";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { addDialog } from "@/components/ReDialog";
-import multipleSelectTable from "./columns/index.vue";
+import QuoteDetailService from "@/services/quote/QuoteDetailService";
+
+defineOptions({
+  name: "QuoteDetail"
+});
 
 interface RestaurantItem {
   value: string;
@@ -62,6 +51,8 @@ const freightValues = ref([]);
 const localvalues = ref([]);
 const freightVisible = ref(false);
 const localVisible = ref(false);
+const activeName = ref("1");
+
 const columns: PlusColumn[] = [
   {
     label: "新增欄位",
@@ -1143,7 +1134,6 @@ const fclLocalChargeExport = {
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true
 };
-
 const lclLocalChargeExport = {
   data: [
     {
@@ -1327,7 +1317,6 @@ const lclLocalChargeImport = {
   contextMenu: true
 };
 
-const activeName = ref("1");
 const baseRadio = ref("default");
 const size = ref("disabled");
 const dynamicSize = ref();
@@ -1346,31 +1335,6 @@ const saveData = () => {
   }, 3000);
   console.log("saveData");
 };
-const handleSubmitError = (err: any) => {
-  console.log(err, "err");
-};
-const handleReset = () => {
-  console.log("handleReset");
-};
-
-defineOptions({
-  name: "QuoteDetail"
-});
-
-const { toDetail, router } = useDetail();
-const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
-
-const treeData = computed(() => {
-  return appendFieldByUniqueId(deleteChildren(menusTree), 0, {
-    disabled: true
-  });
-});
-
-const currentValues = ref<string[]>([]);
-
-const multiTags = computed(() => {
-  return useMultiTagsStoreHook()?.multiTags;
-});
 
 const localChargeItemOption = [
   { label: "Per Shpt", value: "preShpt" },

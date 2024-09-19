@@ -21,7 +21,7 @@ export default {
     {
       path: "/quotes/detail",
       name: "QuoteDetail",
-      component: () => import("@/views/quotes/createQuote.vue"),
+      component: () => import("@/views/quotes/QuoteDetail.vue"),
       meta: {
         title: $t("menus.dimercoQuotes"),
         showLink: false

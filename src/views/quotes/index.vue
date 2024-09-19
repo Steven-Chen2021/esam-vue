@@ -3,8 +3,6 @@ import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 import Close from "@iconify-icons/ep/close";
 import { ref, reactive, onMounted, computed, nextTick } from "vue";
-import { useDetail } from "./hooks";
-const { toDetail, router } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { QuickFilter, quickFilterCTL } from "./quickfilterctl";
 import { listCTL } from "./listctl";
@@ -19,6 +17,10 @@ import {
 import CustomerQuickFilterService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
 import { useRouter } from "vue-router";
+import { useDetail } from "./hooks";
+
+const { toDetail, router } = useDetail();
+
 const quickFilterShow = ref(false);
 const {
   getOptions,
@@ -66,14 +68,7 @@ const handleAdvancedSettings = () => {
 const handleListEnable = (obj: {
   value: string | ((index: number) => string);
   showOnGrid: any;
-}) => {
-  // customerColumns.value.forEach(column => {
-  //   const prop = column.prop;
-  //   if (prop === obj.value) {
-  //     column.hide = !obj.showColumn;
-  //   }
-  // });
-};
+}) => {};
 const handleFilterEnable = (obj: any) => {
   submitAdvancedFilterForm();
 };
@@ -516,7 +511,7 @@ onMounted(() => {
                   ref="refBtnAdvancedFilterSetting"
                   type="success"
                   :icon="useRenderIcon('ep:plus')"
-                  @click="handleViewClick"
+                  @click="router.push({ name: 'QuoteDetail' })"
                   >{{ $t("quote.quickfilter.newQuoteBtn") }}</el-button
                 >
               </div>
@@ -760,7 +755,18 @@ onMounted(() => {
           >
             View
           </el-button>
-          <el-button link type="primary" size="small">Edit</el-button>
+          <el-button
+            link
+            type="primary"
+            size="small"
+            @click="
+              toDetail(
+                { id: scope.row.hqid, qname: scope.row.quoteNo },
+                'params'
+              )
+            "
+            >Edit</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
