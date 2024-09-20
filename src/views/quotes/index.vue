@@ -511,7 +511,12 @@ onMounted(() => {
                   ref="refBtnAdvancedFilterSetting"
                   type="success"
                   :icon="useRenderIcon('ep:plus')"
-                  @click="router.push({ name: 'QuoteDetail' })"
+                  @click="
+                    router.push({
+                      name: 'QuoteDetail',
+                      params: { id: 0, qname: 'Create Quotation' }
+                    })
+                  "
                   >{{ $t("quote.quickfilter.newQuoteBtn") }}</el-button
                 >
               </div>

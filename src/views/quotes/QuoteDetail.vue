@@ -18,21 +18,27 @@ import QuoteDetailService from "@/services/quote/QuoteDetailService";
 
 // RouterHooks
 import { useDetail } from "./hooks";
-const { getParameter, router } = useDetail();
+const { initToDetail, getParameter, router } = useDetail();
 
 defineOptions({
   name: "QuoteDetail"
 });
-
+initToDetail("params");
 interface RestaurantItem {
   value: string;
   hqid: number;
 }
 
+interface DropDownOption {
+  text: string;
+  value: number;
+}
+let customerAutocompleted = ref<DropDownOption[]>([]);
+
 interface QuoteDetailParam {
   QID: number;
 }
-
+const quoteDetail = ref<QuoteDetailParam[]>([]);
 let restaurants = ref<RestaurantItem[]>([]);
 const createFilter = (queryString: string) => {
   return (restaurant: RestaurantItem) => {
@@ -1357,15 +1363,18 @@ const freightChargeItemOption = [
 ];
 
 onMounted(() => {
-  QuoteDetailService.getQuoteDetailResult();
+  console.log("getParameter", getParameter);
+  if (getParameter.id != "0") {
+    QuoteDetailService.getQuoteDetailResult(getParameter.id);
+  }
 });
 </script>
 
 <template>
   <div>
     <el-card shadow="never" class="relative h-96 overflow-hidden">
-      <div class="flex ...">
-        <div class="grow h-8 ...">
+      <div class="flex flex-row-reverse ...">
+        <!-- <div class="grow h-8 ...">
           <el-button
             :icon="useRenderIcon(buttonList[0].icon)"
             @click="router.push({ name: buttonList[0].routerName })"
@@ -1374,53 +1383,53 @@ onMounted(() => {
               <p>{{ buttonList[0].text }}</p>
             </template>
           </el-button>
-        </div>
-        <div class="grow-0 h-8 ...">
-          <el-button
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
-            :icon="useRenderIcon('ep:delete')"
-            @click="saveData"
-          >
-            {{ size === "disabled" ? "Delete" : "Processing" }}
-          </el-button>
-          <el-button
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
-            :icon="useRenderIcon('ep:view')"
-            @click="saveData"
-          >
-            {{ size === "disabled" ? "Preview" : "Processing" }}
-          </el-button>
-          <el-button
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
-            :icon="useRenderIcon('ep:edit')"
-            @click="saveData"
-          >
-            {{ size === "disabled" ? "Save as Draft" : "Processing" }}
-          </el-button>
-          <el-button
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
-            :icon="useRenderIcon('ri:save-line')"
-            @click="saveData"
-          >
-            {{ size === "disabled" ? "Save" : "Processing" }}
-          </el-button>
-        </div>
+        </div> -->
+
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ep:delete')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Delete" : "Processing" }}
+        </el-button>
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ep:view')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Preview" : "Processing" }}
+        </el-button>
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ep:edit')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Save as Draft" : "Processing" }}
+        </el-button>
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ri:save-line')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Save" : "Processing" }}
+        </el-button>
+        <!-- <div class="grow-0 h-8 ..." /> -->
       </div>
 
       <!-- Content Section -->

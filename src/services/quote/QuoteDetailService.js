@@ -1,9 +1,9 @@
 import API from "../interceptor";
 
 class QuoteDetailService {
-  async getQuoteDetailResult(params) {
+  async getQuoteDetailResult(QID) {
     try {
-      const response = await API.get("/api/Quote/QuoteDetailResult", params);
+      const response = await API.get(`/api/Quote/QuoteDetailResult?qid=${QID}`);
       return response;
     } catch (error) {
       console.error(error);
