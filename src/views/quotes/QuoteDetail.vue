@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, defineComponent } from "vue";
 import "plus-pro-components/es/components/drawer-form/style/css";
 import {
   type PlusColumn,
@@ -20,41 +20,30 @@ import QuoteDetailService from "@/services/quote/QuoteDetailService";
 import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
 
+import { QuoteDetailHooks } from "./quoteDetailHooks";
+const {
+  getCustomerByOwnerUserResult,
+  customerResult,
+  productLineOptions,
+  getChargeCodeSettingResult,
+  ChargeCodeSettingResult,
+  chargeCodeSettingValues,
+  handleHotTableSettingRefresh,
+  FreightChargeSettings,
+  freightChargeHotTableKey
+} = QuoteDetailHooks();
+
 defineOptions({
   name: "QuoteDetail"
 });
 initToDetail("params");
-interface RestaurantItem {
-  value: string;
-  hqid: number;
-}
 
-interface DropDownOption {
-  text: string;
-  value: number;
-}
-let customerAutocompleted = ref<DropDownOption[]>([]);
-
-interface QuoteDetailParam {
-  QID: number;
-}
-const quoteDetail = ref<QuoteDetailParam[]>([]);
-let restaurants = ref<RestaurantItem[]>([]);
-const createFilter = (queryString: string) => {
-  return (restaurant: RestaurantItem) => {
-    return (
-      restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0
-    );
+function createFilter(queryString: string) {
+  return (customer: { text: string; value: number }) => {
+    return customer.text.toLowerCase().includes(queryString.toLowerCase());
   };
-};
-const loadAll = () => {
-  return [
-    { value: "MICROSOFT TAIWAN", hqid: 46394 },
-    { value: "ASUS TW", hqid: 46395 },
-    { value: "Apple Inc.", hqid: 46798 },
-    { value: "LENOVO", hqid: 48415 }
-  ];
-};
+}
+
 const handleOpen = (ChargeType: string) => {
   if (ChargeType === "FREIGHT") {
     freightVisible.value = true;
@@ -62,47 +51,11 @@ const handleOpen = (ChargeType: string) => {
     localVisible.value = true;
   }
 };
-const freightValues = ref([]);
+
 const localvalues = ref([]);
 const freightVisible = ref(false);
 const localVisible = ref(false);
 const activeName = ref("1");
-
-const columns: PlusColumn[] = [
-  {
-    label: "新增欄位",
-    prop: "demand",
-    valueType: "checkbox",
-    options: [
-      {
-        label: "Carrier",
-        value: "carrier"
-      },
-      {
-        label: "Cut-off",
-        value: "cutoff"
-      }
-    ]
-  }
-];
-
-const localcolumns: PlusColumn[] = [
-  {
-    label: "新增欄位",
-    prop: "demand",
-    valueType: "checkbox",
-    options: [
-      {
-        label: "Carrier",
-        value: "carrier"
-      },
-      {
-        label: "Cut-off",
-        value: "cutoff"
-      }
-    ]
-  }
-];
 
 const result = ref<FieldValues>({
   ShippingTerm: null,
@@ -122,17 +75,6 @@ const result = ref<FieldValues>({
   currency: null,
   shipmentMode: null
 });
-
-const currencyOptions = [
-  { label: "USD", value: "usd", key: 1 },
-  { label: "TWD", value: "twd", key: 2 }
-];
-
-const TermsAndConditions = [
-  { label: "English", value: "en", key: 1 },
-  { label: "Traditional Chinese", value: "tw", key: 2 },
-  { label: "Simplified Chinese", value: "cn", key: 3 }
-];
 
 const rules = {
   name: [
@@ -156,11 +98,15 @@ const quoteDetailColumns: PlusColumn[] = [
     prop: "CustomerLead",
     valueType: "autocomplete",
     fieldProps: {
+      valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
         const results = queryString
-          ? restaurants.value.filter(createFilter(queryString))
-          : restaurants.value;
+          ? customerResult.customers.filter(createFilter(queryString))
+          : customerResult.customers;
         cb(results);
+      },
+      onSelect: (item: { text: string; value: number }) => {
+        console.log("Selected customer ID:", item.value);
       }
     }
   },
@@ -169,32 +115,7 @@ const quoteDetailColumns: PlusColumn[] = [
     width: 360,
     prop: "PL",
     valueType: "select",
-    options: [
-      {
-        label: "Air",
-        value: 2
-      },
-      {
-        label: "Sea",
-        value: 6
-      },
-      {
-        label: "Truck",
-        value: 7
-      },
-      {
-        label: "Rail",
-        value: 14
-      },
-      {
-        label: "Warehouse",
-        value: 10
-      },
-      {
-        label: "Domestic",
-        value: 4
-      }
-    ],
+    options: productLineOptions,
     colProps: {
       span: 8
     }
@@ -283,19 +204,19 @@ const quoteDetailColumns: PlusColumn[] = [
     options: [
       {
         label: "FCL",
-        value: "FCL"
+        value: 1
       },
       {
         label: "LCL",
-        value: "LCL"
+        value: 4
       }
     ],
     colProps: {
       span: 16
     },
     fieldProps: {
-      onChange: () => {
-        console.log("onChange");
+      onChange: (value: number) => {
+        getChargeCodeSettingResult(value);
       }
     }
   },
@@ -439,209 +360,6 @@ const quoteDetailColumns: PlusColumn[] = [
     ],
     colProps: {
       span: 8
-    }
-  }
-];
-
-const termsDetailColumns: PlusColumn[] = [
-  {
-    label: "Shipping Term",
-    width: 120,
-    prop: "ShippingTerm",
-    valueType: "select",
-    options: [
-      {
-        label: "DD",
-        value: "DD"
-      },
-      {
-        label: "DP",
-        value: "DP"
-      },
-      {
-        label: "PP",
-        value: "PP"
-      },
-      {
-        label: "PD",
-        value: "PD"
-      }
-    ],
-    colProps: {
-      span: 8
-    }
-  },
-  {
-    label: "Trade Term",
-    width: 120,
-    prop: "TradeTerm",
-    valueType: "select",
-    options: [
-      {
-        label: "CIF",
-        value: "CIF"
-      },
-      {
-        label: "CIP",
-        value: "CIP"
-      },
-      {
-        label: "CPT",
-        value: "CPT"
-      },
-      {
-        label: "DDP",
-        value: "DDP"
-      },
-      {
-        label: "DDU",
-        value: "DDU"
-      },
-      {
-        label: "EXW",
-        value: "EXW"
-      },
-      {
-        label: "FAS",
-        value: "FAS"
-      },
-      {
-        label: "FCA",
-        value: "FCA"
-      },
-      {
-        label: "FOB",
-        value: "FOB"
-      },
-      {
-        label: "CFR",
-        value: "CFR"
-      },
-      {
-        label: "DAP",
-        value: "DAP"
-      },
-      {
-        label: "DPU",
-        value: "DPU"
-      }
-    ],
-    colProps: {
-      span: 8
-    }
-  },
-  {
-    label: "Credit Term",
-    width: 120,
-    prop: "CreditTerm",
-    valueType: "select",
-    options: [
-      {
-        label: "EOM15",
-        value: "EOM15"
-      },
-      {
-        label: "EOM20",
-        value: "EOM20"
-      },
-      {
-        label: "EOM25",
-        value: "EOM25"
-      },
-      {
-        label: "EOM30",
-        value: "EOM30"
-      },
-      {
-        label: "EOM45",
-        value: "EOM45"
-      },
-      {
-        label: "EOM60",
-        value: "EOM60"
-      },
-      {
-        label: "EOM75",
-        value: "EOM75"
-      },
-      {
-        label: "EOM90",
-        value: "EOM90"
-      },
-      {
-        label: "NET07",
-        value: "NET07"
-      },
-      {
-        label: "NET15",
-        value: "NET15"
-      },
-      {
-        label: "NET21",
-        value: "NET21"
-      },
-      {
-        label: "NET30",
-        value: "NET30"
-      },
-      {
-        label: "NET45",
-        value: "NET45"
-      },
-      {
-        label: "NET50",
-        value: "NET50"
-      },
-      {
-        label: "NET55",
-        value: "NET55"
-      },
-      {
-        label: "NET60",
-        value: "NET60"
-      },
-      {
-        label: "NET80",
-        value: "NET80"
-      },
-      {
-        label: "NET90",
-        value: "NET90"
-      }
-    ],
-    colProps: {
-      span: 8
-    }
-  },
-  {
-    label: "Effective - Expired",
-    prop: "endTime",
-    valueType: "date-picker",
-    fieldProps: {
-      type: "datetimerange",
-      startPlaceholder: "Effective",
-      endPlaceholder: "Expired"
-    },
-    colProps: {
-      span: 16
-    }
-  },
-  {
-    label: "Type",
-    prop: "gift",
-    valueType: "radio",
-    options: [
-      {
-        label: "All Year Round",
-        value: "en"
-      },
-      {
-        label: "One Time Only",
-        value: "cn"
-      }
-    ],
-    colProps: {
-      span: 24
     }
   }
 ];
@@ -854,160 +572,6 @@ const flcFreightChargeSettings = {
     },
     {
       data: "fortyFiveFeetCNTCost",
-      type: "numeric"
-    },
-    {
-      data: "TT",
-      type: "numeric"
-    }
-  ],
-  autoWrapRow: true,
-  autoWrapCol: true,
-  allowInsertColumn: true,
-  allowInsertRow: true,
-  allowInvalid: true,
-  licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  contextMenu: true
-};
-const lclFreightChargeSettings = {
-  data: [
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      min: null,
-      CBM: null,
-      CBMUOM: null,
-      CBMCost: null,
-      preTON: null,
-      TONCost: null,
-      TT: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      min: null,
-      CBM: null,
-      CBMUOM: null,
-      CBMCost: null,
-      preTON: null,
-      TONCost: null,
-      TT: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      min: null,
-      CBM: null,
-      CBMUOM: null,
-      CBMCost: null,
-      preTON: null,
-      TONCost: null,
-      TT: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      min: null,
-      CBM: null,
-      CBMUOM: null,
-      CBMCost: null,
-      preTON: null,
-      TONCost: null,
-      TT: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      min: null,
-      CBM: null,
-      CBMUOM: null,
-      CBMCost: null,
-      preTON: null,
-      TONCost: null,
-      TT: null
-    }
-  ],
-  colHeaders: [
-    "Place of Receipt",
-    "Port of loading",
-    "Port of discharge",
-    "Place of delivery",
-    "Minimun",
-    "Pre CBM",
-    "CBM UOM",
-    "CBM Cost",
-    "Per TON",
-    "TON Cost",
-    "Transit time"
-  ],
-  rowHeaders: false,
-  dropdownMenu: true,
-  width: "100%",
-  height: "auto",
-  columns: [
-    {
-      data: "POR",
-      type: "dropdown",
-      source: [
-        "TWKHH - (Kaohsiung)",
-        "USLAX - (Los Angeles)",
-        "CNSHA - (Shanghai)",
-        "CNSZX - (Shenzhen)"
-      ]
-    },
-    {
-      data: "POL",
-      type: "dropdown",
-      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
-    },
-    {
-      data: "PODischarge",
-      type: "dropdown",
-      source: ["YVR - VANCOUVER", "LAX - LOS ANGELES"]
-    },
-    {
-      data: "PODelivery",
-      type: "dropdown",
-      source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
-    },
-    {
-      data: "min",
-      type: "numeric"
-    },
-    {
-      data: "CBM",
-      type: "numeric"
-    },
-    {
-      data: "CBMUOM",
-      type: "dropdown",
-      source: ["KG", "LB"]
-    },
-    {
-      data: "CBMCost",
-      type: "numeric"
-    },
-    {
-      data: "preTON",
-      type: "numeric"
-    },
-    {
-      data: "TONCost",
       type: "numeric"
     },
     {
@@ -1332,41 +896,31 @@ const lclLocalChargeImport = {
   contextMenu: true
 };
 
-const baseRadio = ref("default");
 const size = ref("disabled");
 const dynamicSize = ref();
-const buttonList = [
-  {
-    type: "",
-    text: "Back",
-    icon: "ep:back",
-    routerName: "quoteSearch"
-  }
-];
 
 const saveData = () => {
   size.value = "default";
   setTimeout(() => {
     size.value = "disabled";
   }, 3000);
-  console.log("saveData");
 };
 
-const localChargeItemOption = [
-  { label: "Per Shpt", value: "preShpt" },
-  { label: "Per Weight", value: "preWeight" },
-  { label: "Per Bill", value: "preBill" }
-];
-const freightChargeItemOption = [
-  { label: "Carrier", value: "carrier" },
-  { label: "Cut-off", value: "cutoff" }
-];
+const handleCheckboxGroupChange = (values: string[]) => {
+  console.log("Selected values:", values);
+  const selectedItems = ChargeCodeSettingResult.filter(item =>
+    values.includes(item.columnName)
+  );
+  console.log("Selected items:", selectedItems);
+  handleHotTableSettingRefresh();
+};
 
 onMounted(() => {
-  console.log("getParameter", getParameter);
   if (getParameter.id != "0") {
     QuoteDetailService.getQuoteDetailResult(getParameter.id);
   }
+  getCustomerByOwnerUserResult();
+  getChargeCodeSettingResult(1);
 });
 </script>
 
@@ -1469,12 +1023,9 @@ onMounted(() => {
               </el-tooltip>
               <!-- <HotTable :settings="hotSettings" /> -->
               <hot-table
-                v-if="result.shipmentMode === 'FCL'"
-                :settings="flcFreightChargeSettings"
-              />
-              <hot-table
-                v-if="result.shipmentMode === 'LCL'"
-                :settings="lclFreightChargeSettings"
+                v-if="result.shipmentMode === 1"
+                :key="freightChargeHotTableKey"
+                :settings="FreightChargeSettings"
               />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
@@ -1561,26 +1112,17 @@ onMounted(() => {
       </el-scrollbar>
     </el-card>
     <el-drawer v-model="freightVisible" title="Add new columns">
-      <el-checkbox-group v-model="freightValues">
+      <el-checkbox-group
+        v-model="chargeCodeSettingValues"
+        @change="handleCheckboxGroupChange"
+      >
         <el-checkbox
-          v-for="item in freightChargeItemOption"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
+          v-for="item in ChargeCodeSettingResult"
+          :key="item.columnName"
+          :label="item.headerName"
+          :value="item.columnName"
         >
-          {{ item.label }}
-        </el-checkbox>
-      </el-checkbox-group>
-    </el-drawer>
-    <el-drawer v-model="localVisible" title="Add new columns">
-      <el-checkbox-group v-model="localvalues">
-        <el-checkbox
-          v-for="item in localChargeItemOption"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        >
-          {{ item.label }}
+          {{ item.headerName }}
         </el-checkbox>
       </el-checkbox-group>
     </el-drawer>

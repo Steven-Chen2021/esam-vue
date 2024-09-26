@@ -519,6 +519,18 @@ onMounted(() => {
                   "
                   >{{ $t("quote.quickfilter.newQuoteBtn") }}</el-button
                 >
+
+                <el-button
+                  ref="refBtnAdvancedFilterSetting"
+                  type="success"
+                  :icon="useRenderIcon('ep:plus')"
+                  @click="
+                    router.push({
+                      name: 'QuoteDetailTest'
+                    })
+                  "
+                  >{{ "HotTable Test" }}</el-button
+                >
               </div>
             </div>
           </template>

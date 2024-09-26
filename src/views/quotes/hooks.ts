@@ -37,8 +37,6 @@ export function useDetail() {
       // 路由跳转
       router.push({ name: "QuoteDetail", query: parameter });
     } else if (model === "params") {
-      console.log("route", route.name);
-      console.log("router", router);
       useMultiTagsStoreHook().handleTags("push", {
         path: `/quotes/detail/:id`,
         name: "QuoteDetail",
