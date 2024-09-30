@@ -13,6 +13,12 @@ import { registerAllModules } from "handsontable/registry";
 import "handsontable/dist/handsontable.full.css";
 registerAllModules();
 
+defineComponent({
+  components: {
+    HotTable
+  }
+});
+
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import QuoteDetailService from "@/services/quote/QuoteDetailService";
 
@@ -27,10 +33,7 @@ const {
   productLineOptions,
   getChargeCodeSettingResult,
   ChargeCodeSettingResult,
-  chargeCodeSettingValues,
-  handleHotTableSettingRefresh,
-  FreightChargeSettings,
-  freightChargeHotTableKey
+  chargeCodeSettingValues
 } = QuoteDetailHooks();
 
 defineOptions({
@@ -38,24 +41,11 @@ defineOptions({
 });
 initToDetail("params");
 
-function createFilter(queryString: string) {
-  return (customer: { text: string; value: number }) => {
-    return customer.text.toLowerCase().includes(queryString.toLowerCase());
-  };
-}
-
-const handleOpen = (ChargeType: string) => {
-  if (ChargeType === "FREIGHT") {
-    freightVisible.value = true;
-  } else {
-    localVisible.value = true;
-  }
-};
-
-const localvalues = ref([]);
 const freightVisible = ref(false);
 const localVisible = ref(false);
 const activeName = ref("1");
+const dynamicSize = ref();
+const size = ref("disabled");
 
 const result = ref<FieldValues>({
   ShippingTerm: null,
@@ -75,7 +65,6 @@ const result = ref<FieldValues>({
   currency: null,
   shipmentMode: null
 });
-
 const rules = {
   name: [
     {
@@ -90,7 +79,6 @@ const rules = {
     }
   ]
 };
-
 const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
@@ -118,6 +106,17 @@ const quoteDetailColumns: PlusColumn[] = [
     options: productLineOptions,
     colProps: {
       span: 8
+    },
+    fieldProps: {
+      onChange: (value: number) => {
+        if (value === 6) {
+          //Ocean Freight Charge
+          getChargeCodeSettingResult(1);
+          handleProductLineChange();
+          console.log(ChargeCodeSettingResult);
+          console.log(chargeCodeSettingValues);
+        }
+      }
     }
   },
   {
@@ -195,29 +194,6 @@ const quoteDetailColumns: PlusColumn[] = [
     ],
     colProps: {
       span: 8
-    }
-  },
-  {
-    label: "Mode",
-    prop: "shipmentMode",
-    valueType: "radio",
-    options: [
-      {
-        label: "FCL",
-        value: 1
-      },
-      {
-        label: "LCL",
-        value: 4
-      }
-    ],
-    colProps: {
-      span: 16
-    },
-    fieldProps: {
-      onChange: (value: number) => {
-        getChargeCodeSettingResult(value);
-      }
     }
   },
   {
@@ -363,222 +339,15 @@ const quoteDetailColumns: PlusColumn[] = [
     }
   }
 ];
-
-const flcFreightChargeSettings = {
-  data: [
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      TT: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null,
-      twentyFeetCNTCost: null,
-      fortyFeetCNTCost: null,
-      fortyFeetHighCubicCost: null,
-      fortyFiveFeetCNTCost: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      CBM: null,
-      CBMUOM: null,
-      Cost: null,
-      TT: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null,
-      twentyFeetCNTCost: null,
-      fortyFeetCNTCost: null,
-      fortyFeetHighCubicCost: null,
-      fortyFiveFeetCNTCost: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      CBM: null,
-      CBMUOM: null,
-      Cost: null,
-      TT: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null,
-      twentyFeetCNTCost: null,
-      fortyFeetCNTCost: null,
-      fortyFeetHighCubicCost: null,
-      fortyFiveFeetCNTCost: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      CBM: null,
-      CBMUOM: null,
-      Cost: null,
-      TT: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null,
-      twentyFeetCNTCost: null,
-      fortyFeetCNTCost: null,
-      fortyFeetHighCubicCost: null,
-      fortyFiveFeetCNTCost: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      CBM: null,
-      CBMUOM: null,
-      Cost: null,
-      TT: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null,
-      twentyFeetCNTCost: null,
-      fortyFeetCNTCost: null,
-      fortyFeetHighCubicCost: null,
-      fortyFiveFeetCNTCost: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      CBM: null,
-      CBMUOM: null,
-      Cost: null,
-      TT: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null,
-      twentyFeetCNTCost: null,
-      fortyFeetCNTCost: null,
-      fortyFeetHighCubicCost: null,
-      fortyFiveFeetCNTCost: null
-    },
-    {
-      ID: null,
-      POR: null,
-      POL: null,
-      PODischarge: null,
-      PODelivery: null,
-      CBM: null,
-      CBMUOM: null,
-      Cost: null,
-      TT: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null,
-      twentyFeetCNTCost: null,
-      fortyFeetCNTCost: null,
-      fortyFeetHighCubicCost: null,
-      fortyFiveFeetCNTCost: null
-    }
-  ],
-  colHeaders: [
-    "Place of Receipt",
-    "Port of loading",
-    "Port of discharge",
-    "Place of delivery",
-    "20CNT",
-    "20CNT Cost",
-    "40CNT",
-    "40CNT Cost",
-    "40HQ",
-    "40HQ Cost",
-    "45CNT",
-    "45CNT Cost",
-    "Transit time"
-  ],
+const freightChargeSettings = ref({
+  data: [],
+  colHeaders: [],
   rowHeaders: false,
   dropdownMenu: true,
   width: "100%",
   height: "auto",
-  columns: [
-    {
-      data: "POR",
-      type: "dropdown",
-      source: [
-        "TWKHH - (Kaohsiung)",
-        "USLAX - (Los Angeles)",
-        "CNSHA - (Shanghai)",
-        "CNSZX - (Shenzhen)"
-      ]
-    },
-    {
-      data: "POL",
-      type: "dropdown",
-      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
-    },
-    {
-      data: "PODischarge",
-      type: "dropdown",
-      source: ["YVR - VANCOUVER", "LAX - LOS ANGELES"]
-    },
-    {
-      data: "PODelivery",
-      type: "dropdown",
-      source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
-    },
-    {
-      data: "twentyFeetCNT",
-      type: "numeric"
-    },
-    {
-      data: "twentyFeetCNTCost",
-      type: "numeric"
-    },
-    {
-      data: "fortyFeetCNT",
-      type: "numeric"
-    },
-    {
-      data: "fortyFeetCNTCost",
-      type: "numeric"
-    },
-    {
-      data: "fortyFeetHighCubic",
-      type: "numeric"
-    },
-    {
-      data: "fortyFeetHighCubicCost",
-      type: "numeric"
-    },
-    {
-      data: "fortyFiveFeetCNT",
-      type: "numeric"
-    },
-    {
-      data: "fortyFiveFeetCNTCost",
-      type: "numeric"
-    },
-    {
-      data: "TT",
-      type: "numeric"
-    }
-  ],
+  columns: [],
+  colWidths: [],
   autoWrapRow: true,
   autoWrapCol: true,
   allowInsertColumn: true,
@@ -586,122 +355,11 @@ const flcFreightChargeSettings = {
   allowInvalid: true,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true
-};
-const fclLocalChargeExport = {
-  data: [
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "USD",
-      ChargeItem: 1,
-      preContainer: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
-    },
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "USD",
-      ChargeItem: 1,
-      preContainer: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
-    },
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "USD",
-      ChargeItem: 1,
-      preContainer: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
-    },
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "USD",
-      ChargeItem: 1,
-      preContainer: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
-    },
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "USD",
-      ChargeItem: 1,
-      preContainer: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
-    },
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "USD",
-      ChargeItem: 1,
-      preContainer: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
-    }
-  ],
-  colHeaders: [
-    "City",
-    "Currency",
-    "Charge Item",
-    "Per Container",
-    "20CNT",
-    "40CNT",
-    "40HQ",
-    "45CNT"
-  ],
-  columns: [
-    {
-      data: "City",
-      type: "dropdown",
-      source: [
-        "TWKHH - (Kaohsiung)",
-        "USLAX - (Los Angeles)",
-        "CNSHA - (Shanghai)",
-        "CNSZX - (Shenzhen)"
-      ]
-    },
-    {
-      data: "Currency",
-      type: "dropdown",
-      source: ["TWD", "USD", "EUR", "CNY", "SDG"]
-    },
-    {
-      data: "ChargeItem",
-      type: "dropdown",
-      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
-    },
-    {
-      data: "preContainer",
-      type: "numeric"
-    },
-    {
-      data: "twentyFeetCNT",
-      type: "numeric"
-    },
-    {
-      data: "fortyFeetCNT",
-      type: "numeric"
-    },
-    {
-      data: "fortyFeetHighCubic",
-      type: "numeric"
-    },
-    {
-      data: "fortyFiveFeetCNT",
-      type: "numeric"
-    }
-  ],
+});
+const localChargeExport = {
+  data: [],
+  colHeaders: [],
+  columns: [],
   rowHeaders: false,
   dropdownMenu: true,
   width: "100%",
@@ -713,47 +371,10 @@ const fclLocalChargeExport = {
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true
 };
-const lclLocalChargeExport = {
-  data: [
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "usd",
-      ChargeItem: 1,
-      preCBM: null,
-      preShpt: null
-    }
-  ],
-  colHeaders: ["City", "Currency", "Charge Item", "Per CBM", "Per Shpt"],
-  columns: [
-    {
-      data: "City",
-      type: "dropdown",
-      source: [
-        "TWKHH - (Kaohsiung)",
-        "USLAX - (Los Angeles)",
-        "CNSHA - (Shanghai)",
-        "CNSZX - (Shenzhen)"
-      ]
-    },
-    {
-      data: "Currency",
-      type: "dropdown",
-      source: ["TWD", "USD", "EUR", "CNY", "SDG"]
-    },
-    {
-      data: "ChargeItem",
-      type: "dropdown",
-      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
-    },
-    {
-      data: "preCBM",
-      type: "numeric"
-    },
-    {
-      data: "preShpt",
-      type: "numeric"
-    }
-  ],
+const localChargeImport = {
+  data: [],
+  colHeaders: [],
+  columns: [],
   rowHeaders: false,
   dropdownMenu: true,
   width: "100%",
@@ -765,139 +386,6 @@ const lclLocalChargeExport = {
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true
 };
-
-const fclLocalChargeImport = {
-  data: [
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "usd",
-      ChargeItem: 1,
-      preContainer: null,
-      twentyFeetCNT: null,
-      fortyFeetCNT: null,
-      fortyFeetHighCubic: null,
-      fortyFiveFeetCNT: null
-    }
-  ],
-  colHeaders: [
-    "City",
-    "Currency",
-    "Charge Item",
-    "Per Container",
-    "20CNT",
-    "40CNT",
-    "40HQ",
-    "45CNT"
-  ],
-  columns: [
-    {
-      data: "City",
-      type: "dropdown",
-      source: [
-        "TWKHH - (Kaohsiung)",
-        "USLAX - (Los Angeles)",
-        "CNSHA - (Shanghai)",
-        "CNSZX - (Shenzhen)"
-      ]
-    },
-    {
-      data: "Currency",
-      type: "dropdown",
-      source: ["TWD", "USD", "EUR", "CNY", "SDG"]
-    },
-    {
-      data: "ChargeItem",
-      type: "dropdown",
-      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
-    },
-    {
-      data: "preContainer",
-      type: "numeric"
-    },
-    {
-      data: "twentyFeetCNT",
-      type: "numeric"
-    },
-    {
-      data: "fortyFeetCNT",
-      type: "numeric"
-    },
-    {
-      data: "fortyFeetHighCubic",
-      type: "numeric"
-    },
-    {
-      data: "fortyFiveFeetCNT",
-      type: "numeric"
-    }
-  ],
-  rowHeaders: false,
-  dropdownMenu: true,
-  width: "100%",
-  height: "auto",
-  autoWrapRow: true,
-  autoWrapCol: true,
-  allowInsertColumn: true,
-  allowInsertRow: true,
-  licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  contextMenu: true
-};
-
-const lclLocalChargeImport = {
-  data: [
-    {
-      City: "TWKHH - (Kaohsiung)",
-      Currency: "usd",
-      ChargeItem: 1,
-      preCBM: null,
-      preShpt: null
-    }
-  ],
-  colHeaders: ["City", "Currency", "Charge Item", "Per CBM", "Per Shpt"],
-  columns: [
-    {
-      data: "City",
-      type: "dropdown",
-      source: [
-        "TWKHH - (Kaohsiung)",
-        "USLAX - (Los Angeles)",
-        "CNSHA - (Shanghai)",
-        "CNSZX - (Shenzhen)"
-      ]
-    },
-    {
-      data: "Currency",
-      type: "dropdown",
-      source: ["TWD", "USD", "EUR", "CNY", "SDG"]
-    },
-    {
-      data: "ChargeItem",
-      type: "dropdown",
-      source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
-    },
-    {
-      data: "preCBM",
-      type: "numeric"
-    },
-    {
-      data: "preShpt",
-      type: "numeric"
-    }
-  ],
-  rowHeaders: false,
-  dropdownMenu: true,
-  width: "100%",
-  height: "auto",
-  autoWrapRow: true,
-  autoWrapCol: true,
-  allowInsertColumn: true,
-  allowInsertRow: true,
-  licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  contextMenu: true
-};
-
-const size = ref("disabled");
-const dynamicSize = ref();
 
 const saveData = () => {
   size.value = "default";
@@ -912,7 +400,46 @@ const handleCheckboxGroupChange = (values: string[]) => {
     values.includes(item.columnName)
   );
   console.log("Selected items:", selectedItems);
-  handleHotTableSettingRefresh();
+  const sourceData = selectedItems.filter(item => item.selected);
+  freightChargeSettings.value.colHeaders = selectedItems.map(
+    item => item.headerName
+  );
+  freightChargeSettings.value.columns = selectedItems.map(
+    item => item.hotTableColumnSetting
+  );
+  freightChargeSettings.value.colWidths = selectedItems.map(
+    item => item.columnWidth
+  );
+  console.log("freight Charge Settings:", freightChargeSettings);
+};
+
+const handleProductLineChange = () => {
+  console.log("Selected items:", ChargeCodeSettingResult);
+  const sourceData = ChargeCodeSettingResult.filter(item => item.selected);
+  freightChargeSettings.value.colHeaders = ChargeCodeSettingResult.map(
+    item => item.headerName
+  );
+  // freightChargeSettings.value.columns = selectedItems.map(
+  //   item => item.hotTableColumnSetting
+  // );
+  // freightChargeSettings.value.colWidths = selectedItems.map(
+  //   item => item.columnWidth
+  // );
+  // console.log("freight Charge Settings:", freightChargeSettings);
+};
+
+const handleOpen = (ChargeType: string) => {
+  if (ChargeType === "FREIGHT") {
+    freightVisible.value = true;
+  } else {
+    localVisible.value = true;
+  }
+};
+
+const createFilter = (queryString: string) => {
+  return (customer: { text: string; value: number }) => {
+    return customer.text.toLowerCase().includes(queryString.toLowerCase());
+  };
 };
 
 onMounted(() => {
@@ -920,7 +447,6 @@ onMounted(() => {
     QuoteDetailService.getQuoteDetailResult(getParameter.id);
   }
   getCustomerByOwnerUserResult();
-  getChargeCodeSettingResult(1);
 });
 </script>
 
@@ -1021,12 +547,7 @@ onMounted(() => {
                   @click="handleOpen('FREIGHT')"
                 />
               </el-tooltip>
-              <!-- <HotTable :settings="hotSettings" /> -->
-              <hot-table
-                v-if="result.shipmentMode === 1"
-                :key="freightChargeHotTableKey"
-                :settings="FreightChargeSettings"
-              />
+              <hot-table :settings="freightChargeSettings" />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
               <template #title>
@@ -1046,14 +567,7 @@ onMounted(() => {
                   @click="handleOpen('LOCAL')"
                 />
               </el-tooltip>
-              <HotTable
-                v-if="result.shipmentMode === 'FCL'"
-                :settings="fclLocalChargeExport"
-              />
-              <HotTable
-                v-if="result.shipmentMode === 'LCL'"
-                :settings="lclLocalChargeExport"
-              />
+              <HotTable :settings="localChargeExport" />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
               <template #title>
@@ -1073,14 +587,7 @@ onMounted(() => {
                   @click="handleOpen('LOCAL')"
                 />
               </el-tooltip>
-              <HotTable
-                v-if="result.shipmentMode === 'FCL'"
-                :settings="fclLocalChargeImport"
-              />
-              <HotTable
-                v-if="result.shipmentMode === 'LCL'"
-                :settings="lclLocalChargeImport"
-              />
+              <HotTable :settings="localChargeImport" />
             </el-collapse-item>
             <el-collapse-item title="REMARK " name="6">
               <template #title>

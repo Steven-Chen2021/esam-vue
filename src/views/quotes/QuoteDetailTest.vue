@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, ref } from "vue";
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
 import "handsontable/dist/handsontable.full.css";
@@ -10,7 +10,7 @@ defineComponent({
     HotTable
   }
 });
-const hotTableData = {
+const hotTableData = ref({
   data: [
     {
       ID: null,
@@ -156,10 +156,116 @@ const hotTableData = {
   allowInvalid: true,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true
+});
+
+const handleHotTableSettingChange = (type: string) => {
+  console.log("type", type);
+  if (type === "One") {
+    hotTableData.value.colHeaders = [
+      "Place of Receipt",
+      "Port of loading",
+      "Port of discharge",
+      "Place of delivery",
+      "20CNT",
+      "20CNT Cost"
+    ];
+    hotTableData.value.columns = [
+      {
+        data: "POR",
+        type: "dropdown",
+        source: [
+          "TWKHH - (Kaohsiung)",
+          "USLAX - (Los Angeles)",
+          "CNSHA - (Shanghai)",
+          "CNSZX - (Shenzhen)"
+        ]
+      },
+      {
+        data: "POL",
+        type: "dropdown",
+        source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
+      },
+      {
+        data: "PODischarge",
+        type: "dropdown",
+        source: ["YVR - VANCOUVER", "LAX - LOS ANGELES"]
+      },
+      {
+        data: "PODelivery",
+        type: "dropdown",
+        source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
+      },
+      {
+        data: "twentyFeetCNT",
+        type: "numeric"
+      }
+    ];
+  } else {
+    hotTableData.value.colHeaders = [
+      "Place of Receipt",
+      "Port of loading",
+      "Port of discharge",
+      "Place of delivery",
+      "20CNT",
+      "20CNT Cost",
+      "40CNT",
+      "40CNT Cost",
+      "Transit time"
+    ];
+    hotTableData.value.columns = [
+      {
+        data: "POR",
+        type: "dropdown",
+        source: [
+          "TWKHH - (Kaohsiung)",
+          "USLAX - (Los Angeles)",
+          "CNSHA - (Shanghai)",
+          "CNSZX - (Shenzhen)"
+        ]
+      },
+      {
+        data: "POL",
+        type: "dropdown",
+        source: ["KHH - KAOHSIUNG", "SZX - SHENZHEN"]
+      },
+      {
+        data: "PODischarge",
+        type: "dropdown",
+        source: ["YVR - VANCOUVER", "LAX - LOS ANGELES"]
+      },
+      {
+        data: "PODelivery",
+        type: "dropdown",
+        source: ["CAYYZ - Toronto", "USLAX - Los Angeles"]
+      },
+      {
+        data: "twentyFeetCNT",
+        type: "numeric"
+      },
+      {
+        data: "twentyFeetCNTCost",
+        type: "numeric"
+      },
+      {
+        data: "fortyFeetCNT",
+        type: "numeric"
+      },
+      {
+        data: "fortyFeetCNTCost",
+        type: "numeric"
+      },
+      {
+        data: "TT",
+        type: "numeric"
+      }
+    ];
+  }
 };
 </script>
 
 <template>
+  <el-button @click="handleHotTableSettingChange('One')">Sample One</el-button>
+  <el-button @click="handleHotTableSettingChange('Two')"> Sample two</el-button>
   <hot-table :settings="hotTableData" />
 </template>
 

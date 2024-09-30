@@ -11,6 +11,14 @@ export function QuoteDetailHooks() {
     headerName: string;
     columnName: string;
     selected: boolean;
+    columnWidth: number;
+    hotTableColumnSetting: iHotTableColumnSetting[];
+  }
+
+  interface iHotTableColumnSetting {
+    data: string;
+    type: string;
+    source: [];
   }
 
   // interface iBasicHotTableColumnsSetting {
