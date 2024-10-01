@@ -33,7 +33,12 @@ const {
   productLineOptions,
   getChargeCodeSettingResult,
   ChargeCodeSettingResult,
-  chargeCodeSettingValues
+  chargeCodeSettingValues,
+  handleHotTableSettingRefresh,
+  FreightChargeSettings,
+  freightChargeHotTableKey,
+  getProductLineByCustomerResult,
+  productLineResult
 } = QuoteDetailHooks();
 
 defineOptions({
@@ -95,6 +100,8 @@ const quoteDetailColumns: PlusColumn[] = [
       },
       onSelect: (item: { text: string; value: number }) => {
         console.log("Selected customer ID:", item.value);
+        getProductLineByCustomerResult(item.value);
+        console.log("productLineResult", productLineResult);
       }
     }
   },
@@ -103,7 +110,7 @@ const quoteDetailColumns: PlusColumn[] = [
     width: 360,
     prop: "PL",
     valueType: "select",
-    options: productLineOptions,
+    options: productLineResult,
     colProps: {
       span: 8
     },
@@ -113,8 +120,6 @@ const quoteDetailColumns: PlusColumn[] = [
           //Ocean Freight Charge
           getChargeCodeSettingResult(1);
           handleProductLineChange();
-          console.log(ChargeCodeSettingResult);
-          console.log(chargeCodeSettingValues);
         }
       }
     }
@@ -419,13 +424,6 @@ const handleProductLineChange = () => {
   freightChargeSettings.value.colHeaders = ChargeCodeSettingResult.map(
     item => item.headerName
   );
-  // freightChargeSettings.value.columns = selectedItems.map(
-  //   item => item.hotTableColumnSetting
-  // );
-  // freightChargeSettings.value.colWidths = selectedItems.map(
-  //   item => item.columnWidth
-  // );
-  // console.log("freight Charge Settings:", freightChargeSettings);
 };
 
 const handleOpen = (ChargeType: string) => {

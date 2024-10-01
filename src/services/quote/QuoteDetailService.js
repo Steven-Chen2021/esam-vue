@@ -31,6 +31,17 @@ class QuoteDetailService {
       console.error(error);
     }
   }
+
+  async getProductLineByCustomerData(CustomerHQID) {
+    try {
+      const url = "/api/Quote/ProductLineByCustomerResult";
+      const fullUrl = `${url}?CustomerHQID=${CustomerHQID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new QuoteDetailService();

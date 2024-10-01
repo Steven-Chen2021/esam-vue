@@ -20,29 +20,17 @@ export function QuoteDetailHooks() {
     type: string;
     source: [];
   }
-
-  // interface iBasicHotTableColumnsSetting {
-  //   data: string;
-  //   type: string;
-  //   source: boolean;
-  // }
-
   const customerResult = reactive({
     customers: [] as Array<dropdownCtl>,
     loading: false,
     error: null as string | null
   });
 
+  const productLineResult = ref([]);
+
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
 
-  const productLineOptions = reactive([
-    { label: "Air", value: 2 },
-    { label: "Sea", value: 6 },
-    { label: "Truck", value: 7 },
-    { label: "Rail", value: 14 },
-    { label: "Warehouse", value: 10 },
-    { label: "Domestic", value: 4 }
-  ]);
+  const productLineOptions = reactive<dropdownCtl[]>(null);
 
   const chargeCodeSettingValues = ref([]);
 
@@ -123,6 +111,21 @@ export function QuoteDetailHooks() {
     freightChargeHotTableKey.value += 1;
   }
 
+  async function getProductLineByCustomerResult(customerHQID: number) {
+    try {
+      const response =
+        await quoteDetailService.getProductLineByCustomerData(customerHQID);
+      if (response != null) {
+        productLineResult.value = response.returnValue.map((item: any) => ({
+          label: item.productLineCode,
+          value: item.pid
+        }));
+      }
+    } catch (error) {
+      console.log("getProductLineByCustomerResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -132,6 +135,8 @@ export function QuoteDetailHooks() {
     chargeCodeSettingValues,
     handleHotTableSettingRefresh,
     FreightChargeSettings,
-    freightChargeHotTableKey
+    freightChargeHotTableKey,
+    getProductLineByCustomerResult,
+    productLineResult
   };
 }
