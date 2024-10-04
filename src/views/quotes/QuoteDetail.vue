@@ -34,11 +34,22 @@ const {
   getChargeCodeSettingResult,
   ChargeCodeSettingResult,
   chargeCodeSettingValues,
-  handleHotTableSettingRefresh,
   FreightChargeSettings,
   freightChargeHotTableKey,
   getProductLineByCustomerResult,
-  productLineResult
+  getShippingTermResult,
+  getAttentionToResult,
+  getQuoteTypeResult,
+  getTradeTermResult,
+  getCreditTermResult,
+  getQuoteFreightChargeResult,
+  productLineResult,
+  shippingTermResult,
+  quoteTypeResult,
+  attentionToResult,
+  tradeTermResult,
+  creditTermResult,
+  freightChargeResult
 } = QuoteDetailHooks();
 
 defineOptions({
@@ -46,17 +57,20 @@ defineOptions({
 });
 initToDetail("params");
 
+const hotTableRef = ref(null);
 const freightVisible = ref(false);
 const localVisible = ref(false);
 const activeName = ref("1");
 const dynamicSize = ref();
 const size = ref("disabled");
+const qid = ref(0);
 
 const result = ref<FieldValues>({
   ShippingTerm: null,
   TradeTerm: null,
   CreditTerm: null,
   CustomerLead: null,
+  CustomerHQID: null as number,
   AttentionTo: null,
   status: null,
   PL: null,
@@ -68,7 +82,8 @@ const result = ref<FieldValues>({
   saleseTel: null,
   salesMobile: null,
   currency: null,
-  shipmentMode: null
+  shipmentMode: null,
+  quoteType: null
 });
 const rules = {
   name: [
@@ -99,9 +114,9 @@ const quoteDetailColumns: PlusColumn[] = [
         cb(results);
       },
       onSelect: (item: { text: string; value: number }) => {
-        console.log("Selected customer ID:", item.value);
+        result.value.CustomerHQID = item.value;
         getProductLineByCustomerResult(item.value);
-        console.log("productLineResult", productLineResult);
+        getAttentionToResult(item.value);
       }
     }
   },
@@ -116,11 +131,21 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onChange: (value: number) => {
+        const PLCode = ref();
         if (value === 6) {
           //Ocean Freight Charge
           getChargeCodeSettingResult(1);
           handleProductLineChange();
+          PLCode.value = "OMS";
+        } else if (value === 2) {
+          PLCode.value = "AMS";
         }
+        getQuoteTypeResult("Lead", "Type", PLCode.value);
+        getCreditTermResult(result.value.CustomerHQID as number, value);
+        getQuoteFreightChargeResult(qid.value, value);
+        console.clear();
+        console.log(freightChargeResult);
+        freightChargeSettings.value.data = freightChargeResult.value;
       }
     }
   },
@@ -142,42 +167,16 @@ const quoteDetailColumns: PlusColumn[] = [
     width: 120,
     prop: "ShippingTerm",
     valueType: "select",
-    options: [
-      {
-        label: "DD",
-        value: "DD"
-      },
-      {
-        label: "DP",
-        value: "DP"
-      },
-      {
-        label: "PP",
-        value: "PP"
-      },
-      {
-        label: "PD",
-        value: "PD"
-      }
-    ],
+    options: shippingTermResult,
     colProps: {
       span: 8
     }
   },
   {
     label: "Type",
-    prop: "gift",
+    prop: "quoteType",
     valueType: "radio",
-    options: [
-      {
-        label: "All Year Round",
-        value: "en"
-      },
-      {
-        label: "One Time Only",
-        value: "cn"
-      }
-    ],
+    options: quoteTypeResult,
     colProps: {
       span: 16
     }
@@ -187,16 +186,7 @@ const quoteDetailColumns: PlusColumn[] = [
     width: 360,
     prop: "AttentionTo",
     valueType: "select",
-    options: [
-      {
-        label: "Mr. Frank Lee",
-        value: "259"
-      },
-      {
-        label: "Ms. Mary Li",
-        value: "37923506"
-      }
-    ],
+    options: attentionToResult,
     colProps: {
       span: 8
     }
@@ -206,56 +196,7 @@ const quoteDetailColumns: PlusColumn[] = [
     width: 120,
     prop: "TradeTerm",
     valueType: "select",
-    options: [
-      {
-        label: "CIF",
-        value: "CIF"
-      },
-      {
-        label: "CIP",
-        value: "CIP"
-      },
-      {
-        label: "CPT",
-        value: "CPT"
-      },
-      {
-        label: "DDP",
-        value: "DDP"
-      },
-      {
-        label: "DDU",
-        value: "DDU"
-      },
-      {
-        label: "EXW",
-        value: "EXW"
-      },
-      {
-        label: "FAS",
-        value: "FAS"
-      },
-      {
-        label: "FCA",
-        value: "FCA"
-      },
-      {
-        label: "FOB",
-        value: "FOB"
-      },
-      {
-        label: "CFR",
-        value: "CFR"
-      },
-      {
-        label: "DAP",
-        value: "DAP"
-      },
-      {
-        label: "DPU",
-        value: "DPU"
-      }
-    ],
+    options: tradeTermResult,
     colProps: {
       span: 8
     }
@@ -265,80 +206,7 @@ const quoteDetailColumns: PlusColumn[] = [
     width: 120,
     prop: "CreditTerm",
     valueType: "select",
-    options: [
-      {
-        label: "EOM15",
-        value: "EOM15"
-      },
-      {
-        label: "EOM20",
-        value: "EOM20"
-      },
-      {
-        label: "EOM25",
-        value: "EOM25"
-      },
-      {
-        label: "EOM30",
-        value: "EOM30"
-      },
-      {
-        label: "EOM45",
-        value: "EOM45"
-      },
-      {
-        label: "EOM60",
-        value: "EOM60"
-      },
-      {
-        label: "EOM75",
-        value: "EOM75"
-      },
-      {
-        label: "EOM90",
-        value: "EOM90"
-      },
-      {
-        label: "NET07",
-        value: "NET07"
-      },
-      {
-        label: "NET15",
-        value: "NET15"
-      },
-      {
-        label: "NET21",
-        value: "NET21"
-      },
-      {
-        label: "NET30",
-        value: "NET30"
-      },
-      {
-        label: "NET45",
-        value: "NET45"
-      },
-      {
-        label: "NET50",
-        value: "NET50"
-      },
-      {
-        label: "NET55",
-        value: "NET55"
-      },
-      {
-        label: "NET60",
-        value: "NET60"
-      },
-      {
-        label: "NET80",
-        value: "NET80"
-      },
-      {
-        label: "NET90",
-        value: "NET90"
-      }
-    ],
+    options: creditTermResult,
     colProps: {
       span: 8
     }
@@ -443,8 +311,17 @@ const createFilter = (queryString: string) => {
 onMounted(() => {
   if (getParameter.id != "0") {
     QuoteDetailService.getQuoteDetailResult(getParameter.id);
+    const id = Array.isArray(getParameter.id)
+      ? parseInt(getParameter.id[0], 10)
+      : parseInt(getParameter.id, 10);
+    if (!isNaN(id)) {
+      qid.value = id;
+    }
   }
   getCustomerByOwnerUserResult();
+  getShippingTermResult();
+  getTradeTermResult();
+  hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
 });
 </script>
 
@@ -545,7 +422,8 @@ onMounted(() => {
                   @click="handleOpen('FREIGHT')"
                 />
               </el-tooltip>
-              <hot-table :settings="freightChargeSettings" />
+
+              <HotTable ref="hotTableRef" :settings="freightChargeSettings" />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
               <template #title>

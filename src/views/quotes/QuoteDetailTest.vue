@@ -12,18 +12,10 @@ defineComponent({
   }
 });
 const hotTableRef = ref(null);
-
-const hotTableColHeaders = ref(["col A", "col B", "col C", "col D"]);
-const hotTableColWidths = ref([150, 90, 100, 200]);
-const hotTableResult = ref([
-  { fid: null, cola: null, colb: null, colc: null, cold: null }
-]);
-const hotTableCols = ref([
-  { data: "cola", type: "date" },
-  { data: "colb", type: "checkbox" },
-  { data: "colc", type: "text" },
-  { data: "cold", type: "numeric" }
-]);
+const hotTableColHeaders = ref();
+const hotTableColWidths = ref();
+const hotTableResult = ref();
+const hotTableCols = ref();
 
 const handleHotTableSettingChange = (type: string) => {
   console.log("type", type);
@@ -35,35 +27,59 @@ const handleHotTableSettingChange = (type: string) => {
       "Place of delivery"
     ];
     hotTableCols.value = [
+      { data: "POR", type: "date" },
+      { data: "POL", type: "checkbox" },
+      { data: "PODischarge", type: "text" },
+      { data: "PODelivery", type: "numeric" }
+    ];
+    // 更新資料
+    hotTableResult.value = [
       {
-        data: "POR",
-        type: "number"
-      },
-      {
-        data: "POL",
-        type: "number"
-      },
-      {
-        data: "PODischarge",
-        type: "number"
-      },
-      {
-        data: "PODelivery",
-        type: "number"
+        fid: 10,
+        POR: "2024-01-01",
+        POL: "1",
+        PODischarge: "Wilson Testing",
+        PODelivery: 1
       }
     ];
 
-    // 更新資料
-    hotTableResult.value = [
-      { fid: 10, POR: 1, POL: 1, PODischarge: 1, PODelivery: 1 }
-    ];
-
-    console.log(hotTableResult.value);
     hotTableRef.value.hotInstance.loadData(hotTableResult.value);
   }
 };
 
-onMounted(() => {});
+onMounted(() => {
+  hotTableColHeaders.value = ["id", "col A", "col B", "col C", "col D"];
+  hotTableColWidths.value = [50, 150, 90, 100, 200];
+  hotTableCols.value = [
+    { data: "id", type: "numeric" },
+    { data: "cola", type: "date" },
+    { data: "colb", type: "checkbox" },
+    { data: "colc", type: "text" },
+    { data: "cold", type: "numeric" }
+  ];
+  hotTableResult.value = [
+    {
+      id: 0,
+      cola: "2024-01-01",
+      colb: 2,
+      colc: "Wilson row 1 colc",
+      cold: 5
+    },
+    {
+      id: 0,
+      cola: "2024-01-02",
+      colb: 1,
+      colc: "Wilson row 3 colc",
+      cold: 10
+    }
+  ];
+  hotTableRef.value.hotInstance.loadData(hotTableResult.value);
+  // hotTableRef.value.hotInstance.updateSettings({
+  //   contextMenu: true,
+  //   colHeaders: true,
+  //   fixedRowsTop: 2
+  // });
+});
 </script>
 
 <template>
@@ -77,12 +93,13 @@ onMounted(() => {});
     :colHeaders="hotTableColHeaders"
     :dropdownMenu="true"
     :hiddenColumns="{
+      columns: [0],
       indicators: true
     }"
     :contextMenu="true"
     :multiColumnSorting="true"
     :filters="true"
-    :rowHeaders="true"
+    :rowHeaders="false"
     :manualRowMove="true"
     :autoWrapRow="true"
     :autoWrapCol="true"

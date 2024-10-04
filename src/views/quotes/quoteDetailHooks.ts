@@ -20,13 +20,20 @@ export function QuoteDetailHooks() {
     type: string;
     source: [];
   }
+
   const customerResult = reactive({
     customers: [] as Array<dropdownCtl>,
     loading: false,
     error: null as string | null
   });
 
+  const freightChargeResult = ref([]);
   const productLineResult = ref([]);
+  const shippingTermResult = ref([]);
+  const quoteTypeResult = ref([]);
+  const attentionToResult = ref([]);
+  const tradeTermResult = ref([]);
+  const creditTermResult = ref([]);
 
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
 
@@ -85,32 +92,11 @@ export function QuoteDetailHooks() {
         chargeCodeSettingValues.value = selectedItems.map(
           item => item.columnName
         );
-        handleHotTableSettingRefresh();
       }
     } catch (error) {
       console.error("getChargeCodeSettingResult Error", error);
     }
   }
-
-  async function handleHotTableSettingRefresh() {
-    FreightChargeSettings.colHeaders = [
-      "Place of Receipt",
-      "Port of loading",
-      "Port of discharge",
-      "Place of delivery",
-      "20CNT",
-      "20CNT Cost",
-      "40CNT",
-      "40CNT Cost",
-      "40HQ",
-      "40HQ Cost",
-      "45CNT",
-      "45CNT Cost",
-      "Transit time"
-    ];
-    freightChargeHotTableKey.value += 1;
-  }
-
   async function getProductLineByCustomerResult(customerHQID: number) {
     try {
       const response =
@@ -126,6 +112,99 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getShippingTermResult() {
+    try {
+      const response = await quoteDetailService.getShippingTerm();
+      if (response != null) {
+        shippingTermResult.value = response.returnValue.map((item: any) => ({
+          label: item.text,
+          value: item.value
+        }));
+      }
+    } catch (error) {
+      console.log("getShippingTermResult", error);
+    }
+  }
+
+  async function getAttentionToResult(customerHQID: number) {
+    try {
+      const response = await quoteDetailService.getAttentionTo(customerHQID);
+      if (response != null) {
+        attentionToResult.value = response.returnValue.map((item: any) => ({
+          label: item.contactName,
+          value: item.contactHQID
+        }));
+      }
+    } catch (error) {
+      console.log("getAttentionToResult", error);
+    }
+  }
+
+  async function getQuoteTypeResult(
+    CodeClass: string,
+    CodeContents: string,
+    CodeCondition: string
+  ) {
+    try {
+      const response = await quoteDetailService.getQuoteType(
+        CodeClass,
+        CodeContents,
+        CodeCondition
+      );
+      if (response != null) {
+        quoteTypeResult.value = response.returnValue.map((item: any) => ({
+          label: item.text,
+          value: item.value
+        }));
+      }
+    } catch (error) {
+      console.log("getQuoteTypeResult", error);
+    }
+  }
+
+  async function getTradeTermResult() {
+    try {
+      const response = await quoteDetailService.getTradeTerm();
+      if (response != null) {
+        tradeTermResult.value = response.returnValue.map((item: any) => ({
+          label: item.text,
+          value: item.value
+        }));
+      }
+    } catch (error) {
+      console.log("getTradeTermResult", error);
+    }
+  }
+
+  async function getCreditTermResult(HQID: number, PID: number) {
+    try {
+      const response = await quoteDetailService.getCreditTerm(HQID, PID);
+      if (response != null) {
+        creditTermResult.value = response.returnValue.map((item: any) => ({
+          label: item.creditTermCode,
+          value: item.hqid
+        }));
+      }
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
+  async function getQuoteFreightChargeResult(QuoteID: number, PID: number) {
+    try {
+      const response = await quoteDetailService.getQuoteFreightCharge(
+        QuoteID,
+        PID
+      );
+      if (response != null) {
+        freightChargeResult.value.splice(0);
+        freightChargeResult.value.push(...response.returnValue);
+      }
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -133,10 +212,21 @@ export function QuoteDetailHooks() {
     getChargeCodeSettingResult,
     ChargeCodeSettingResult,
     chargeCodeSettingValues,
-    handleHotTableSettingRefresh,
     FreightChargeSettings,
     freightChargeHotTableKey,
     getProductLineByCustomerResult,
-    productLineResult
+    getShippingTermResult,
+    getAttentionToResult,
+    getQuoteTypeResult,
+    getTradeTermResult,
+    getCreditTermResult,
+    getQuoteFreightChargeResult,
+    productLineResult,
+    shippingTermResult,
+    quoteTypeResult,
+    attentionToResult,
+    tradeTermResult,
+    creditTermResult,
+    freightChargeResult
   };
 }
