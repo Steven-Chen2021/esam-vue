@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, defineComponent } from "vue";
+import { ref, onMounted, defineComponent, toRaw, watchEffect } from "vue";
 import "plus-pro-components/es/components/drawer-form/style/css";
 import {
   type PlusColumn,
@@ -143,8 +143,7 @@ const quoteDetailColumns: PlusColumn[] = [
         getQuoteTypeResult("Lead", "Type", PLCode.value);
         getCreditTermResult(result.value.CustomerHQID as number, value);
         getQuoteFreightChargeResult(qid.value, value);
-        console.clear();
-        console.log(freightChargeResult);
+        console.log(freightChargeResult.value);
         freightChargeSettings.value.data = freightChargeResult.value;
       }
     }
@@ -268,12 +267,9 @@ const saveData = () => {
 };
 
 const handleCheckboxGroupChange = (values: string[]) => {
-  console.log("Selected values:", values);
   const selectedItems = ChargeCodeSettingResult.filter(item =>
     values.includes(item.columnName)
   );
-  console.log("Selected items:", selectedItems);
-  const sourceData = selectedItems.filter(item => item.selected);
   freightChargeSettings.value.colHeaders = selectedItems.map(
     item => item.headerName
   );
@@ -283,12 +279,10 @@ const handleCheckboxGroupChange = (values: string[]) => {
   freightChargeSettings.value.colWidths = selectedItems.map(
     item => item.columnWidth
   );
-  console.log("freight Charge Settings:", freightChargeSettings);
 };
 
 const handleProductLineChange = () => {
-  console.log("Selected items:", ChargeCodeSettingResult);
-  const sourceData = ChargeCodeSettingResult.filter(item => item.selected);
+  console.log(freightChargeSettings);
   freightChargeSettings.value.colHeaders = ChargeCodeSettingResult.map(
     item => item.headerName
   );
@@ -307,6 +301,27 @@ const createFilter = (queryString: string) => {
     return customer.text.toLowerCase().includes(queryString.toLowerCase());
   };
 };
+
+watchEffect(() => {
+  if (ChargeCodeSettingResult.length > 0) {
+    const sourceData = [];
+    ChargeCodeSettingResult.forEach(item => {
+      if (item.selected) {
+        sourceData.push(item);
+      }
+    });
+    freightChargeSettings.value.colHeaders = sourceData.map(
+      item => item.headerName
+    );
+    freightChargeSettings.value.columns = sourceData.map(
+      item => item.hotTableColumnSetting
+    );
+    freightChargeSettings.value.colWidths = sourceData.map(
+      item => item.columnWidth
+    );
+    console.log("sourceData", sourceData); // 最後打印出篩選結果
+  }
+});
 
 onMounted(() => {
   if (getParameter.id != "0") {

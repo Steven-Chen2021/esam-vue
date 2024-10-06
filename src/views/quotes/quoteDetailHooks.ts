@@ -12,7 +12,7 @@ export function QuoteDetailHooks() {
     columnName: string;
     selected: boolean;
     columnWidth: number;
-    hotTableColumnSetting: iHotTableColumnSetting[];
+    hotTableColumnSetting: iHotTableColumnSetting;
   }
 
   interface iHotTableColumnSetting {
