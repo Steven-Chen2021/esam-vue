@@ -323,3 +323,5 @@ quote:
       newQuoteBtn: Create Quote
       hqid: HQID
       customerName: Customer
+  quotedetail:
+    cbm: type of CBM

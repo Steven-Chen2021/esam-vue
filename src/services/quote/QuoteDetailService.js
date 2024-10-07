@@ -65,10 +65,10 @@ class QuoteDetailService {
     }
   }
 
-  async getTradeTerm() {
+  async getTradeTerm(ShippingTerm) {
     try {
       const url = "/api/Quote/TradeTermResult";
-      const fullUrl = `${url}`;
+      const fullUrl = `${url}?ShippingTerm=${ShippingTerm}`;
       const response = await API.get(fullUrl);
       return response;
     } catch (error) {

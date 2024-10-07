@@ -363,7 +363,7 @@ export function quickFilterCTL() {
       fetchOptionsNeedParam(quickFilterFormInitData.filters);
 
       const customizedFilters = result2.data.returnValue;
-      // console.log("filterColumns", filterColumns);
+      console.log("customizedFilters", customizedFilters);
       // console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {
         const filterColumnsClone = deepClone(filterColumns);

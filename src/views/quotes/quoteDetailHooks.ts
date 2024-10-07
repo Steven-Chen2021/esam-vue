@@ -162,9 +162,9 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function getTradeTermResult() {
+  async function getTradeTermResult(ShippingTerm: string) {
     try {
-      const response = await quoteDetailService.getTradeTerm();
+      const response = await quoteDetailService.getTradeTerm(ShippingTerm);
       if (response != null) {
         tradeTermResult.value = response.returnValue.map((item: any) => ({
           label: item.text,

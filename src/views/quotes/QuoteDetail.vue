@@ -6,7 +6,6 @@ import {
   type FieldValues,
   PlusForm
 } from "plus-pro-components";
-
 /*handsontable*/
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
@@ -83,7 +82,9 @@ const result = ref<FieldValues>({
   salesMobile: null,
   currency: null,
   shipmentMode: null,
-  quoteType: null
+  quoteType: null,
+  cbm: 1000,
+  cbmUOM: "KG"
 });
 const rules = {
   name: [
@@ -155,7 +156,8 @@ const quoteDetailColumns: PlusColumn[] = [
     fieldProps: {
       type: "datetimerange",
       startPlaceholder: "Effective",
-      endPlaceholder: "Expired"
+      endPlaceholder: "Expired",
+      format: "YYYY-MMM-DD"
     },
     colProps: {
       span: 16
@@ -169,6 +171,12 @@ const quoteDetailColumns: PlusColumn[] = [
     options: shippingTermResult,
     colProps: {
       span: 8
+    },
+    fieldProps: {
+      onChange: (value: string) => {
+        getTradeTermResult(value);
+        result.value.TradeTerm = null;
+      }
     }
   },
   {
@@ -264,6 +272,10 @@ const saveData = () => {
   setTimeout(() => {
     size.value = "disabled";
   }, 3000);
+
+  console.log("result", result);
+  console.log("freightChargeSettings-data", freightChargeSettings.value.data);
+  console.log("freightChargeSettings", freightChargeSettings);
 };
 
 const handleCheckboxGroupChange = (values: string[]) => {
@@ -335,7 +347,6 @@ onMounted(() => {
   }
   getCustomerByOwnerUserResult();
   getShippingTermResult();
-  getTradeTermResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
 });
 </script>
@@ -343,39 +354,17 @@ onMounted(() => {
 <template>
   <div>
     <el-card shadow="never" class="relative h-96 overflow-hidden">
-      <div class="flex flex-row-reverse ...">
-        <!-- <div class="grow h-8 ...">
-          <el-button
-            :icon="useRenderIcon(buttonList[0].icon)"
-            @click="router.push({ name: buttonList[0].routerName })"
-          >
-            <template v-if="baseRadio !== 'circle'" #default>
-              <p>{{ buttonList[0].text }}</p>
-            </template>
-          </el-button>
-        </div> -->
-
+      <div class="flex justify-end space-x-1">
         <el-button
           type="primary"
           plain
           :size="dynamicSize"
           :loading-icon="useRenderIcon('ep:eleme')"
           :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:delete')"
+          :icon="useRenderIcon('ri:save-line')"
           @click="saveData"
         >
-          {{ size === "disabled" ? "Delete" : "Processing" }}
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:view')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Preview" : "Processing" }}
+          {{ size === "disabled" ? "Save" : "Processing" }}
         </el-button>
         <el-button
           type="primary"
@@ -394,12 +383,22 @@ onMounted(() => {
           :size="dynamicSize"
           :loading-icon="useRenderIcon('ep:eleme')"
           :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ri:save-line')"
+          :icon="useRenderIcon('ep:view')"
           @click="saveData"
         >
-          {{ size === "disabled" ? "Save" : "Processing" }}
+          {{ size === "disabled" ? "Preview" : "Processing" }}
         </el-button>
-        <!-- <div class="grow-0 h-8 ..." /> -->
+        <el-button
+          type="primary"
+          plain
+          :size="dynamicSize"
+          :loading-icon="useRenderIcon('ep:eleme')"
+          :loading="size !== 'disabled'"
+          :icon="useRenderIcon('ep:delete')"
+          @click="saveData"
+        >
+          {{ size === "disabled" ? "Delete" : "Processing" }}
+        </el-button>
       </div>
 
       <!-- Content Section -->
@@ -418,6 +417,27 @@ onMounted(() => {
                 label-width="auto"
                 :hasFooter="false"
               />
+
+              <div
+                class="el-form-item asterisk-left el-form-item--label-left plus-form-item"
+              >
+                <div class="el-form-item__label-wrap" style="width: 138px">
+                  <label class="el-form-item__label"
+                    >{{ $t("quote.quotedetail.cbm") }} :</label
+                  >
+                </div>
+                <div class="el-form-item__content">
+                  <el-input-number v-model="result.cbm" :min="0" />
+                  <el-select
+                    v-model="result.cbmUOM"
+                    placeholder="Select"
+                    style="width: 80px; height: 32px; margin-left: 5px"
+                  >
+                    <el-option key="KG" label="KG" value="KG" />
+                    <el-option key="LB" label="LB" value="LB" />
+                  </el-select>
+                </div>
+              </div>
             </el-collapse-item>
             <el-collapse-item title="FREIGHT CHARGE" name="3">
               <template #title>
@@ -514,14 +534,17 @@ onMounted(() => {
         v-model="chargeCodeSettingValues"
         @change="handleCheckboxGroupChange"
       >
-        <el-checkbox
-          v-for="item in ChargeCodeSettingResult"
-          :key="item.columnName"
-          :label="item.headerName"
-          :value="item.columnName"
-        >
-          {{ item.headerName }}
-        </el-checkbox>
+        <div class="grid grid-cols-2 gap-4">
+          <el-checkbox
+            v-for="item in ChargeCodeSettingResult"
+            :key="item.columnName"
+            :label="item.headerName"
+            :value="item.columnName"
+            class="flex items-center"
+          >
+            {{ item.headerName }}
+          </el-checkbox>
+        </div>
       </el-checkbox-group>
     </el-drawer>
   </div>

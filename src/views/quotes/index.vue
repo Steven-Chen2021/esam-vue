@@ -38,7 +38,6 @@ const {
   initAdvancedFilter,
   handleAdvancedReset,
   showBasicFilterTopForm,
-  showBasicFilterForm,
   formattedDateRange,
   handleBasicFilterBtnClick,
   activePanelNames
@@ -46,7 +45,6 @@ const {
 const {
   tableData,
   tableRowClassName,
-  columnfilterHandler,
   currentPage,
   pageSize,
   total,
@@ -122,7 +120,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 2;
+      quickFilterForm.filterAppliedPage = 6;
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -206,7 +204,7 @@ const deleteQuickFilter = () => {
   dialogVisible.value = false;
   const params = {
     filterID: deleteQuickFilterID.value,
-    filterAppliedPage: 2
+    filterAppliedPage: 6
   };
   CustomerQuickFilterService.deleteQuickFilter(params)
     .then(data => {
@@ -467,7 +465,7 @@ onMounted(() => {
               <span
                 v-else-if="filterItem.filterType === 'dropdown'"
                 style="margin-left: 6px; font-weight: bold"
-                >{{ filterItem.selectValue }}</span
+                >{{ filterItem.value }}</span
               ><span
                 v-else-if="filterItem.filterType === 'daterange'"
                 style="margin-left: 6px; font-weight: bold"
@@ -518,18 +516,6 @@ onMounted(() => {
                     })
                   "
                   >{{ $t("quote.quickfilter.newQuoteBtn") }}</el-button
-                >
-
-                <el-button
-                  ref="refBtnAdvancedFilterSetting"
-                  type="success"
-                  :icon="useRenderIcon('ep:plus')"
-                  @click="
-                    router.push({
-                      name: 'QuoteDetailTest'
-                    })
-                  "
-                  >{{ "HotTable Test" }}</el-button
                 >
               </div>
             </div>
