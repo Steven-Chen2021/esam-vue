@@ -354,51 +354,62 @@ onMounted(() => {
 <template>
   <div>
     <el-card shadow="never" class="relative h-96 overflow-hidden">
-      <div class="flex justify-end space-x-1">
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ri:save-line')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Save" : "Processing" }}
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:edit')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Save as Draft" : "Processing" }}
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:view')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Preview" : "Processing" }}
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :size="dynamicSize"
-          :loading-icon="useRenderIcon('ep:eleme')"
-          :loading="size !== 'disabled'"
-          :icon="useRenderIcon('ep:delete')"
-          @click="saveData"
-        >
-          {{ size === "disabled" ? "Delete" : "Processing" }}
-        </el-button>
+      <div class="flex justify-between items-center">
+        <!-- 左側 Label 和 Icon 按鈕 -->
+        <div class="flex items-center space-x-2">
+          <span class="text-gray-700">QA123456789</span>
+          <el-button type="primary" plain size="small" @click="handleIconClick">
+            History Log
+          </el-button>
+        </div>
+
+        <!-- 右側按鈕群組 -->
+        <div class="flex space-x-1">
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ri:save-line')"
+            @click="saveData"
+          >
+            {{ size === "disabled" ? "Save" : "Processing" }}
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ep:edit')"
+            @click="saveData"
+          >
+            {{ size === "disabled" ? "Save as Draft" : "Processing" }}
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ep:view')"
+            @click="saveData"
+          >
+            {{ size === "disabled" ? "Preview" : "Processing" }}
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ep:delete')"
+            @click="saveData"
+          >
+            {{ size === "disabled" ? "Delete" : "Processing" }}
+          </el-button>
+        </div>
       </div>
 
       <!-- Content Section -->
