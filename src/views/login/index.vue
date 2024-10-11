@@ -32,6 +32,7 @@ import Lock from "@iconify-icons/ri/lock-fill";
 import Check from "@iconify-icons/ep/check";
 import User from "@iconify-icons/ri/user-3-fill";
 import Info from "@iconify-icons/ri/information-line";
+import { useUserStore } from "@/store/modules/ssoUser";
 
 defineOptions({
   name: "Login"
@@ -44,6 +45,9 @@ const loading = ref(false);
 const checked = ref(false);
 const disabled = ref(false);
 const ruleFormRef = ref<FormInstance>();
+
+const userStore = useUserStore();
+
 const currentPage = computed(() => {
   return useUserStoreHook().currentPage;
 });
@@ -110,6 +114,14 @@ watch(checked, bool => {
 watch(loginDay, value => {
   useUserStoreHook().SET_LOGINDAY(value);
 });
+
+const login = async () => {
+  try {
+    await userStore.login();
+  } catch (error) {
+    console.error("Login failed:", error);
+  }
+};
 </script>
 
 <template>
@@ -274,6 +286,16 @@ watch(loginDay, value => {
                 >
                   {{ t("login.pureLogin") }}
                 </el-button>
+                <!-- <el-button
+                  class="w-full mt-4"
+                  size="default"
+                  type="primary"
+                  :loading="loading"
+                  :disabled="disabled"
+                  @click="onLogin(ruleFormRef)"
+                >
+                  {{ t("login.pureLogin") }}
+                </el-button> -->
               </el-form-item>
             </Motion>
 

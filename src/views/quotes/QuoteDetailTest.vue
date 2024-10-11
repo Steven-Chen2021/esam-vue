@@ -27,7 +27,7 @@ const handleHotTableSettingChange = (type: string) => {
       "Place of delivery"
     ];
     hotTableCols.value = [
-      { data: "POR", type: "date" },
+      { data: "sal", type: "date" },
       { data: "POL", type: "checkbox" },
       { data: "PODischarge", type: "text" },
       { data: "PODelivery", type: "numeric" }
