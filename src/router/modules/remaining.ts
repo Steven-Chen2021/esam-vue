@@ -1,4 +1,5 @@
 import { $t } from "@/plugins/i18n";
+import Callback from "@/utils/oidcCallBack"; // 指向你的 Callback.ts 文件
 const Layout = () => import("@/layout/index.vue");
 
 export default [
@@ -48,5 +49,10 @@ export default [
       showLink: false,
       rank: 104
     }
+  },
+  {
+    path: "/callback",
+    name: "Callback",
+    component: Callback
   }
 ] satisfies Array<RouteConfigsTable>;

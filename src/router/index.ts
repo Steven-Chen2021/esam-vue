@@ -8,6 +8,7 @@ import remainingRouter from "./modules/remaining";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 import { isUrl, openLink, storageLocal, isAllEmpty } from "@pureadmin/utils";
+import { login, getUser } from "@/utils/oidcLogin";
 import {
   ascending,
   getTopMenu,
@@ -102,11 +103,20 @@ export function resetRouter() {
 }
 
 /** 路由白名单 */
-const whiteList = ["/login"];
+const whiteList = ["/login", "/callback"];
 
 const { VITE_HIDE_HOME } = import.meta.env;
 
-router.beforeEach((to: ToRouteType, _from, next) => {
+router.beforeEach(async (to: ToRouteType, _from, next) => {
+  // OIDC 驗證邏輯
+  const user = await getUser(); // 檢查是否已有登入的用戶
+
+  // 如果沒有取得 OIDC 使用者資訊且路徑不是 "/callback"，執行登入流程
+  if (!user && to.path !== "/callback") {
+    await login();
+    return; // 暫停後面的邏輯，等待登入完成
+  }
+
   if (to.meta?.keepAlive) {
     handleAliveRoute(to, "add");
     // 页面整体刷新和点击标签页刷新
