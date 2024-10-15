@@ -1,5 +1,6 @@
 import CustomerQuickFilterService from "@/services/commonService";
-import axios from "axios";
+import QuickFilterService from "@/services/quickFilterService";
+// import axios from "axios";
 import { ref, onMounted, reactive, watch, computed } from "vue";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 export interface QuickFilterDetail {
@@ -307,14 +308,11 @@ export function quickFilterCTL() {
   async function fetchData() {
     try {
       const [result1, result2, result3] = await Promise.all([
-        axios.get("/api/Common/QuickFilterColumnList?requestType=5"),
-        axios.get(
-          "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=6"
-        ),
-        axios.get("/api/Common/ColumnSetting?APIRequestType=7")
+        QuickFilterService.getQuickFilterColumnList(5),
+        QuickFilterService.getCustomizeQuickFilterSetting(6),
+        QuickFilterService.getColumnSetting(7)
       ]);
-
-      quickFilterFormInitData.filters = deepClone(result1.data.returnValue);
+      quickFilterFormInitData.filters = deepClone(result1);
       quickFilterFormInitData.filters.forEach(a => {
         a.showOnGrid = true;
         a.showOnFilter = true;
@@ -326,43 +324,24 @@ export function quickFilterCTL() {
         a.ValueEnd = "";
       });
       if (
-        result3.data &&
-        result3.data.returnValue &&
-        Array.isArray(result3.data.returnValue) &&
-        result3.data.returnValue.length ===
-          quickFilterFormInitData.filters.length
+        result3 &&
+        Array.isArray(result3) &&
+        result3.length === quickFilterFormInitData.filters.length
       ) {
-        advancedFilterForm.filters = deepClone(result3.data.returnValue);
+        advancedFilterForm.filters = deepClone(result3);
       } else {
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
       advancedFilterForm.filters.forEach(a => {
-        // a.showOnGrid = true;
-        // a.showOnFilter = true;
-        // a.allowSorting = true;
-        // a.allowGridHeaderFilter = true;
         if (a.width && a.width === 70) {
           a.width = 140;
         }
       });
-      // advancedFilterForm.filters = deepClone(result1.data.returnValue);
-      // // TODO: API
-      // advancedFilterForm.filters.forEach(a => {
-      //   a.showOnGrid = true;
-      //   a.showOnFilter = true;
-      //   a.allowSorting = true;
-      //   a.allowGridHeaderFilter = true;
-      // });
-      // console.log("advancedFilterForm", advancedFilterForm);
-      // console.log(
-      //   "advancedFilterForm length",
-      //   advancedFilterForm.filters.length % 2
-      // );
-      const filterColumns = result1.data.returnValue;
+      const filterColumns = result1;
       fetchOptions(quickFilterFormInitData.filters);
       fetchOptionsNeedParam(quickFilterFormInitData.filters);
 
-      const customizedFilters = result2.data.returnValue;
+      const customizedFilters = result2;
       console.log("customizedFilters", customizedFilters);
       // console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {

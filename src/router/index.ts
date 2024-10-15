@@ -110,7 +110,9 @@ const { VITE_HIDE_HOME } = import.meta.env;
 router.beforeEach(async (to: ToRouteType, _from, next) => {
   // OIDC 驗證邏輯
   const user = await getUser(); // 檢查是否已有登入的用戶
-
+  console.log("OIDC User 11", !user);
+  console.log("OIDC User 22", to.path !== "/callback");
+  console.log("OIDC User 33", !user && to.path !== "/callback");
   // 如果沒有取得 OIDC 使用者資訊且路徑不是 "/callback"，執行登入流程
   if (!user && to.path !== "/callback") {
     await login();
@@ -125,6 +127,9 @@ router.beforeEach(async (to: ToRouteType, _from, next) => {
     }
   }
   const userInfo = storageLocal().getItem<DataInfo<number>>(userKey);
+  console.log("Vue User Key", userKey);
+  console.log("Vue User", userInfo);
+
   NProgress.start();
   const externalLink = isUrl(to?.name as string);
   if (!externalLink) {

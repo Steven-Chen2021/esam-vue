@@ -53,6 +53,11 @@ export default [
   {
     path: "/callback",
     name: "Callback",
-    component: Callback
+    component: Callback,
+    meta: {
+      title: $t("status.pureLoad"),
+      showLink: false,
+      rank: 999
+    }
   }
 ] satisfies Array<RouteConfigsTable>;
