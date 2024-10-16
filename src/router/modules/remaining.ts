@@ -59,5 +59,15 @@ export default [
       showLink: false,
       rank: 999
     }
+  },
+  {
+    path: "/logout",
+    name: "Logout",
+    component: () => import("@/views/login/logout-callback.vue"),
+    meta: {
+      title: $t("menus.pureLogin"),
+      showLink: false,
+      rank: 101
+    }
   }
 ] satisfies Array<RouteConfigsTable>;

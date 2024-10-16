@@ -8,7 +8,7 @@ import remainingRouter from "./modules/remaining";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 import { isUrl, openLink, storageLocal, isAllEmpty } from "@pureadmin/utils";
-import { login, getUser } from "@/utils/oidcLogin";
+// import { login, getUser } from "@/utils/oidcLogin";
 import {
   ascending,
   getTopMenu,
@@ -103,22 +103,27 @@ export function resetRouter() {
 }
 
 /** 路由白名单 */
-const whiteList = ["/login", "/callback"];
+const whiteList = ["/login", "/callback", "/logout"];
 
 const { VITE_HIDE_HOME } = import.meta.env;
 
 router.beforeEach(async (to: ToRouteType, _from, next) => {
-  // OIDC 驗證邏輯
-  const user = await getUser(); // 檢查是否已有登入的用戶
-  console.log("OIDC User 11", !user);
-  console.log("OIDC User 22", to.path !== "/callback");
-  console.log("OIDC User 33", !user && to.path !== "/callback");
-  // 如果沒有取得 OIDC 使用者資訊且路徑不是 "/callback"，執行登入流程
-  if (!user && to.path !== "/callback") {
-    await login();
-    return; // 暫停後面的邏輯，等待登入完成
-  }
+  // // 如果是登出回調頁面，直接允許導航
+  // console.log(to.path);
+  // if (to.path === "/logout") {
+  //   next();
+  //   return;
+  // }
 
+  // // OIDC 驗證邏輯
+  // const user = await getUser(); // 檢查是否已有登入的用戶
+  // if (!user && to.path !== "/callback") {
+  //   await login();
+  //   return; // 暫停後面的邏輯，等待登入完成
+  // } else {
+  //   console.log(user);
+  //   console.log(to.path);
+  // }
   if (to.meta?.keepAlive) {
     handleAliveRoute(to, "add");
     // 页面整体刷新和点击标签页刷新
@@ -127,9 +132,6 @@ router.beforeEach(async (to: ToRouteType, _from, next) => {
     }
   }
   const userInfo = storageLocal().getItem<DataInfo<number>>(userKey);
-  console.log("Vue User Key", userKey);
-  console.log("Vue User", userInfo);
-
   NProgress.start();
   const externalLink = isUrl(to?.name as string);
   if (!externalLink) {
