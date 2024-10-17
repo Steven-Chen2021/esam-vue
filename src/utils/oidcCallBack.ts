@@ -73,15 +73,6 @@ export default {
         };
         setToken(tokenData.data);
         window.location.href = `${window.location.origin}/#/welcome`;
-        // return initRouter().then(() => {
-        //   disabled.value = true;
-        //   router
-        //     .push(getTopMenu(true).path)
-        //     .then(() => {
-        //       message(t("login.pureLoginSuccess"), { type: "success" });
-        //     })
-        //     .finally(() => (disabled.value = false));
-        // });
       } catch (error) {
         console.error("Callback handling failed:", error);
         router.push("/error");
