@@ -19,7 +19,8 @@ buttons:
   pureBackTop: 回到顶部
   pureOpenText: 开
   pureCloseText: 关
-  pureHistoryLog: 历史纪录
+  pureHistoryLog: 历史纪录  
+  pureAdd: 新增
 search:
   pureTotal: 共
   pureHistory: 搜索历史
@@ -326,3 +327,4 @@ quote:
       customerName: Customer
   quotedetail:
     cbm: type of CBM
+    WeightBreak: 重量區間
