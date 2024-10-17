@@ -1,4 +1,5 @@
 import { $t } from "@/plugins/i18n";
+import Callback from "@/utils/oidcCallBack"; // 指向你的 Callback.ts 文件
 const Layout = () => import("@/layout/index.vue");
 
 export default [
@@ -47,6 +48,26 @@ export default [
       title: $t("buttons.pureAccountSettings"),
       showLink: false,
       rank: 104
+    }
+  },
+  {
+    path: "/callback",
+    name: "Callback",
+    component: Callback,
+    meta: {
+      title: $t("status.pureLoad"),
+      showLink: false,
+      rank: 999
+    }
+  },
+  {
+    path: "/logout",
+    name: "Logout",
+    component: () => import("@/views/login/logout-callback.vue"),
+    meta: {
+      title: $t("menus.pureLogin"),
+      showLink: false,
+      rank: 101
     }
   }
 ] satisfies Array<RouteConfigsTable>;

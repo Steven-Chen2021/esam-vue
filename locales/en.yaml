@@ -18,7 +18,8 @@ buttons:
   pureClose: Close
   pureBackTop: BackTop
   pureOpenText: Open
-  pureCloseText: Close
+  pureCloseText: Close  
+  pureHistoryLog: History Log  
 search:
   pureTotal: Total
   pureHistory: History
@@ -390,3 +391,5 @@ quote:
       newQuoteBtn: Create Quote
       hqid: HQID
       customerName: Customer
+  quotedetail:
+    cbm: type of CBM

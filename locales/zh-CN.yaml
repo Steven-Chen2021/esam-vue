@@ -19,6 +19,7 @@ buttons:
   pureBackTop: 回到顶部
   pureOpenText: 开
   pureCloseText: 关
+  pureHistoryLog: 历史纪录
 search:
   pureTotal: 共
   pureHistory: 搜索历史
@@ -323,3 +324,5 @@ quote:
       newQuoteBtn: Create Quote
       hqid: HQID
       customerName: Customer
+  quotedetail:
+    cbm: type of CBM

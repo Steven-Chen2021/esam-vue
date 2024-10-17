@@ -1,4 +1,6 @@
 import axios from "axios";
+// import { getToken, formatToken } from "@/utils/auth";
+import { getToken } from "@/utils/auth";
 // import AuthenticationService from "./AuthenticationService";
 /**
  * Axios basic configuration
@@ -49,6 +51,10 @@ const API = axios.create({
 // );
 API.interceptors.request.use(
   config => {
+    const data = getToken();
+    if (data) {
+      config.headers["Authorization"] = "Bearer " + data.accessToken;
+    }
     // const isDCAPI = config.url?.indexOf("api/DocumentCloud/Documents") > -1;
     // const token = isDCAPI
     //   ? AuthenticationService.dctoken()

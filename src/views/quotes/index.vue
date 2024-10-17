@@ -3,8 +3,6 @@ import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 import Close from "@iconify-icons/ep/close";
 import { ref, reactive, onMounted, computed, nextTick } from "vue";
-import { useDetail } from "./hooks";
-const { toDetail, router } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { QuickFilter, quickFilterCTL } from "./quickfilterctl";
 import { listCTL } from "./listctl";
@@ -19,6 +17,10 @@ import {
 import CustomerQuickFilterService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
 import { useRouter } from "vue-router";
+import { useDetail } from "./hooks";
+
+const { toDetail, router } = useDetail();
+
 const quickFilterShow = ref(false);
 const {
   getOptions,
@@ -36,7 +38,6 @@ const {
   initAdvancedFilter,
   handleAdvancedReset,
   showBasicFilterTopForm,
-  showBasicFilterForm,
   formattedDateRange,
   handleBasicFilterBtnClick,
   activePanelNames
@@ -44,7 +45,6 @@ const {
 const {
   tableData,
   tableRowClassName,
-  columnfilterHandler,
   currentPage,
   pageSize,
   total,
@@ -66,14 +66,7 @@ const handleAdvancedSettings = () => {
 const handleListEnable = (obj: {
   value: string | ((index: number) => string);
   showOnGrid: any;
-}) => {
-  // customerColumns.value.forEach(column => {
-  //   const prop = column.prop;
-  //   if (prop === obj.value) {
-  //     column.hide = !obj.showColumn;
-  //   }
-  // });
-};
+}) => {};
 const handleFilterEnable = (obj: any) => {
   submitAdvancedFilterForm();
 };
@@ -127,7 +120,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 2;
+      quickFilterForm.filterAppliedPage = 6;
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -211,7 +204,7 @@ const deleteQuickFilter = () => {
   dialogVisible.value = false;
   const params = {
     filterID: deleteQuickFilterID.value,
-    filterAppliedPage: 2
+    filterAppliedPage: 6
   };
   CustomerQuickFilterService.deleteQuickFilter(params)
     .then(data => {
@@ -472,7 +465,7 @@ onMounted(() => {
               <span
                 v-else-if="filterItem.filterType === 'dropdown'"
                 style="margin-left: 6px; font-weight: bold"
-                >{{ filterItem.selectValue }}</span
+                >{{ filterItem.value }}</span
               ><span
                 v-else-if="filterItem.filterType === 'daterange'"
                 style="margin-left: 6px; font-weight: bold"
@@ -516,7 +509,12 @@ onMounted(() => {
                   ref="refBtnAdvancedFilterSetting"
                   type="success"
                   :icon="useRenderIcon('ep:plus')"
-                  @click="handleViewClick"
+                  @click="
+                    router.push({
+                      name: 'QuoteDetail',
+                      params: { id: 0, qname: 'Create Quotation' }
+                    })
+                  "
                   >{{ $t("quote.quickfilter.newQuoteBtn") }}</el-button
                 >
               </div>
@@ -760,7 +758,18 @@ onMounted(() => {
           >
             View
           </el-button>
-          <el-button link type="primary" size="small">Edit</el-button>
+          <el-button
+            link
+            type="primary"
+            size="small"
+            @click="
+              toDetail(
+                { id: scope.row.hqid, qname: scope.row.quoteNo },
+                'params'
+              )
+            "
+            >Edit</el-button
+          >
         </template>
       </el-table-column>
     </el-table>

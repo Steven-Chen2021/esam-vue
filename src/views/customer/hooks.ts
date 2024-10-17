@@ -28,7 +28,7 @@ export function useDetail() {
     if (model === "params") {
       useMultiTagsStoreHook().handleTags("push", {
         path: `/quotes/detail/:id`,
-        name: "CreateQuote",
+        name: "QuoteDetail",
         params: parameter,
         meta: {
           title: {
@@ -39,7 +39,7 @@ export function useDetail() {
           // title: `No.${index} - 详情信息`,
         }
       });
-      router.push({ name: "CreateQuote", params: parameter });
+      router.push({ name: "QuoteDetail", params: parameter });
     }
   }
 

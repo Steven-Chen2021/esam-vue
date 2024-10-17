@@ -1,22 +1,6 @@
 import QuoteSearchService from "@/services/quote/QuoteSearchService";
 import type { TableColumnCtx } from "element-plus";
-// import Sortable from "sortablejs";
-// import { gridResultData } from "./data";
-// import { clone, delay } from "@pureadmin/utils";
-// import {
-//   ref,
-//   nextTick,
-//   onMounted,
-//   reactive,
-//   watchEffect,
-//   computed,
-//   watch
-// } from "vue";
-// import type { PaginationProps, LoadingConfig, Align } from "@pureadmin/table";
-// import { message } from "@/utils/message";
-
 import { reactive, ref } from "vue";
-// import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 export interface ColumnDetailVM {
   label: string;
   value: string;
@@ -121,10 +105,6 @@ export function listCTL() {
     column: TableColumnCtx<any>
   ) => {
     const property = column["property"];
-    // console.log("columnfilterHandler property", property);
-    // console.log("columnfilterHandler value", value);
-    // searchParams[property] = value;
-    // fetchData();
     return row[property].toString().indexOf(value) !== -1;
   };
   // 初始加载数据
