@@ -26,6 +26,8 @@ import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
 
 import { QuoteDetailHooks } from "./quoteDetailHooks";
+import { LocalChargeHooks } from "./local-charge/localChargeHooks";
+
 const {
   getCustomerByOwnerUserResult,
   customerResult,
@@ -50,6 +52,12 @@ const {
   creditTermResult,
   freightChargeResult
 } = QuoteDetailHooks();
+
+const {
+  exportLocalChargeResult,
+  newExportLocalChargeItem,
+  addColumnHeaderItem
+} = LocalChargeHooks();
 
 defineOptions({
   name: "QuoteDetail"
@@ -370,65 +378,64 @@ onMounted(() => {
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
 });
 
-// 預設的 Timeline 項目資料
-const timelineItems = ref([
-  {
-    timestamp: "",
-    header: "Update Github template",
-    description: "Tom committed 2018/4/12 20:46",
-    checked1: false,
-    checked2: false,
-    parsedNumber: 0
-  },
-  {
-    timestamp: "2000",
-    header: "Update Github template",
-    description: "Tom committed 2018/4/3 20:46",
-    checked1: false,
-    checked2: false,
-    parsedNumber: 2000
-  }
-]);
+// const timelineItems = ref([
+//   {
+//     timestamp: "",
+//     header: "Update Github template",
+//     description: "Tom committed 2018/4/12 20:46",
+//     checked1: false,
+//     checked2: false,
+//     parsedNumber: 0
+//   },
+//   {
+//     timestamp: "2000",
+//     header: "Update Github template",
+//     description: "Tom committed 2018/4/3 20:46",
+//     checked1: false,
+//     checked2: false,
+//     parsedNumber: 2000
+//   }
+// ]);
 
-// 新增的 Timeline 項目
-const newTimelineItem = ref({
-  timestamp: "",
-  header: "",
-  description: "自動產生的描述...",
-  checked1: false,
-  checked2: false,
-  parsedNumber: 0
-});
-// 將符號與數字分開
-const parseTimestamp = timestamp => {
-  const symbol = timestamp.charAt(0); // 取得第一個字元符號
-  const number = parseInt(timestamp.slice(1), 10); // 解析後面的數字
-  return { symbol, number };
-};
-// 新增 Timeline 項目的函數
-const addTimelineItem = () => {
-  if (newTimelineItem.value.timestamp) {
-    // 解析 timestamp，並加入到 timelineItems 中
-    const { symbol, number } = parseTimestamp(newTimelineItem.value.timestamp);
+// // 新增的 Timeline 項目
+// const newTimelineItem = ref({
+//   timestamp: "",
+//   header: "",
+//   description: "自動產生的描述...",
+//   checked1: false,
+//   checked2: false,
+//   parsedNumber: 0
+// });
+// // 將符號與數字分開
+// const parseTimestamp = timestamp => {
+//   const symbol = timestamp.charAt(0); // 取得第一個字元符號
+//   const number = parseInt(timestamp.slice(1), 10); // 解析後面的數字
+//   return { symbol, number };
+// };
+// // 新增 Timeline 項目的函數
+// const addTimelineItem = () => {
+//   if (newTimelineItem.value.timestamp) {
+//     // 解析 timestamp，並加入到 timelineItems 中
+//     const { symbol, number } = parseTimestamp(newTimelineItem.value.timestamp);
 
-    timelineItems.value.push({
-      ...newTimelineItem.value,
-      parsedNumber: number // 把解析出來的數字存下來，方便後續排序
-    });
+//     timelineItems.value.push({
+//       ...newTimelineItem.value,
+//       parsedNumber: number // 把解析出來的數字存下來，方便後續排序
+//     });
 
-    // 清空輸入欄位
-    newTimelineItem.value.timestamp = "";
-    newTimelineItem.value.header = "";
-    newTimelineItem.value.checked1 = false;
-    newTimelineItem.value.checked2 = false;
+//     // 清空輸入欄位
+//     newTimelineItem.value.timestamp = "";
+//     newTimelineItem.value.header = "";
+//     newTimelineItem.value.checked1 = false;
+//     newTimelineItem.value.checked2 = false;
 
-    // 對 timelineItems 進行排序，依照 parsedNumber 由小到大排列
-    timelineItems.value = timelineItems.value.sort(
-      (a, b) => a.parsedNumber - b.parsedNumber
-    );
-    console.log(timelineItems);
-  }
-};
+//     // 對 timelineItems 進行排序，依照 parsedNumber 由小到大排列
+//     timelineItems.value = timelineItems.value.sort(
+//       (a, b) => a.parsedNumber - b.parsedNumber
+//     );
+//     console.log(timelineItems);
+//   }
+// };
 </script>
 
 <template>
@@ -648,38 +655,35 @@ const addTimelineItem = () => {
     </el-drawer>
     <el-drawer v-model="localVisible" title="Local Charge Settings">
       <div>
-        <el-form :model="newTimelineItem" @submit.prevent="addTimelineItem">
-          <el-form-item label="Weight Break">
+        <el-form
+          :model="newExportLocalChargeItem"
+          @submit.prevent="addColumnHeaderItem"
+        >
+          <el-form-item :label="$t('quote.quotedetail.WeightBreak')">
             <el-input
-              v-model="newTimelineItem.timestamp"
+              v-model="newExportLocalChargeItem.columnHeader"
               placeholder="Break Point"
             />
           </el-form-item>
-          <!-- <el-form-item label="Task Name">
-            <el-input
-              v-model="newTimelineItem.header"
-              placeholder="輸入任務名稱"
-            />
-          </el-form-item> -->
-          <el-button type="primary" @click="addTimelineItem"
-            >新增項目</el-button
-          >
+          <el-button type="primary" @click="addColumnHeaderItem">{{
+            $t("buttons.pureAdd")
+          }}</el-button>
         </el-form>
         <ElDivider />
         <el-timeline style="max-width: 600px">
           <el-timeline-item
-            v-for="(item, index) in timelineItems"
+            v-for="(item, index) in exportLocalChargeResult"
             :key="index"
-            :timestamp="item.timestamp"
+            :timestamp="item.columnHeader"
             placement="top"
           >
-            <el-card>
+            <el-card class="local-charge-setting-card">
               <!-- <h4>{{ item.header }}</h4>
               <p>{{ item.description }}</p> -->
 
               <!-- 兩個 Checkbox 供使用者勾選 -->
-              <el-checkbox v-model="item.checked1">Selling Rate</el-checkbox>
-              <el-checkbox v-model="item.checked2">Cost</el-checkbox>
+              <el-checkbox v-model="item.sellingRate">Selling Rate</el-checkbox>
+              <el-checkbox v-model="item.Cost">Cost</el-checkbox>
             </el-card>
           </el-timeline-item>
         </el-timeline>
@@ -712,5 +716,9 @@ const addTimelineItem = () => {
 
 :deep(.el-col) {
   max-height: 38px !important;
+}
+
+:deep(.el-card__body) {
+  padding: 6px;
 }
 </style>

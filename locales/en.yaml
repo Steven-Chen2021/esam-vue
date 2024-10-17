@@ -19,7 +19,8 @@ buttons:
   pureBackTop: BackTop
   pureOpenText: Open
   pureCloseText: Close  
-  pureHistoryLog: History Log  
+  pureHistoryLog: History Log    
+  pureAdd: Add
 search:
   pureTotal: Total
   pureHistory: History
@@ -393,3 +394,4 @@ quote:
       customerName: Customer
   quotedetail:
     cbm: type of CBM
+    WeightBreak: Weight Break
