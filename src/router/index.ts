@@ -8,7 +8,7 @@ import remainingRouter from "./modules/remaining";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 import { isUrl, openLink, storageLocal, isAllEmpty } from "@pureadmin/utils";
-// import { login, getUser } from "@/utils/oidcLogin";
+import { login, getUser } from "@/utils/oidcLogin";
 import {
   ascending,
   getTopMenu,
@@ -32,6 +32,7 @@ import {
   removeToken,
   multipleTabsKey
 } from "@/utils/auth";
+// import { sleep } from "vite-plugin-fake-server";
 
 /** 自动导入全部静态路由，无需再手动引入！匹配 src/router/modules 目录（任何嵌套级别）中具有 .ts 扩展名的所有文件，除了 remaining.ts 文件
  * 如何匹配所有文件请看：https://github.com/mrmlnc/fast-glob#basic-syntax
@@ -107,6 +108,10 @@ const whiteList = ["/login", "/callback", "/logout"];
 
 const { VITE_HIDE_HOME } = import.meta.env;
 
+const sleep = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 router.beforeEach(async (to: ToRouteType, _from, next) => {
   // // 如果是登出回調頁面，直接允許導航
   // console.log(to.path);
@@ -116,7 +121,13 @@ router.beforeEach(async (to: ToRouteType, _from, next) => {
   // }
 
   // // OIDC 驗證邏輯
-  // const user = await getUser(); // 檢查是否已有登入的用戶
+  const user = await getUser(); // 檢查是否已有登入的用戶;
+  await sleep(500);
+  if (!user && to.path !== "/callback") {
+    console.log(user);
+    login();
+    return; // 暫停後面的邏輯，等待登入完成
+  }
   // if (!user && to.path !== "/callback") {
   //   await login();
   //   return; // 暫停後面的邏輯，等待登入完成
