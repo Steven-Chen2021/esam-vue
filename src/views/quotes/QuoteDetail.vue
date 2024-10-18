@@ -28,6 +28,11 @@ const { initToDetail, getParameter, router } = useDetail();
 import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
 
+const tmpvalue = ref();
+const test = valeu => {
+  console.log(valeu);
+};
+
 const {
   getCustomerByOwnerUserResult,
   customerResult,
@@ -56,7 +61,12 @@ const {
 const {
   exportLocalChargeResult,
   newExportLocalChargeItem,
-  addColumnHeaderItem
+  addColumnHeaderItem,
+  removeItem,
+  exportLocationResult,
+  importLocationResult,
+  exportLocalChargeHotTableSetting,
+  importLocalChargeHotTableSetting
 } = LocalChargeHooks();
 
 defineOptions({
@@ -65,12 +75,16 @@ defineOptions({
 initToDetail("params");
 
 const hotTableRef = ref(null);
+const importHotTableRef = ref(null);
+const exportHotTableRef = ref(null);
 const freightVisible = ref(false);
 const localVisible = ref(false);
 const activeName = ref("1");
 const dynamicSize = ref();
 const size = ref("disabled");
 const qid = ref(0);
+const disabledExportLocalChargeBtn = ref(true);
+const disabledImportLocalChargeBtn = ref(true);
 
 const result = ref<FieldValues>({
   ShippingTerm: null,
@@ -235,6 +249,47 @@ const handleAfterChange = (changes, source) => {
       console.log(
         `資料變更 - 列: ${row}, 欄位: ${prop}, 舊值: ${oldValue}, 新值: ${newValue}`
       );
+      if (
+        ["poreceipt", "poloading", "podelivery", "podischarge"].includes(prop)
+      ) {
+        exportLocationResult.value.splice(0, exportLocationResult.value.length);
+        importLocationResult.value.splice(0, importLocationResult.value.length);
+
+        freightChargeSettings.value.data.forEach(rowData => {
+          if (rowData.poreceipt) {
+            exportLocationResult.value.push(rowData.poreceipt);
+          }
+          if (rowData.poloading) {
+            exportLocationResult.value.push(rowData.poloading);
+          }
+        });
+        freightChargeSettings.value.data.forEach(rowData => {
+          if (rowData.podelivery) {
+            importLocationResult.value.push(rowData.podelivery);
+          }
+          if (rowData.podischarge) {
+            importLocationResult.value.push(rowData.podischarge);
+          }
+        });
+        console.log("exportLocationResult", exportLocationResult);
+        console.log("importLocationResult", importLocationResult);
+      }
+      if (exportLocationResult.value.length > 0) {
+        exportLocalChargeHotTableSetting.value.columns.forEach(column => {
+          if (column.data === "location") {
+            column.source = exportLocationResult.value;
+          }
+        });
+        disabledExportLocalChargeBtn.value = false;
+      }
+      if (importLocationResult.value.length > 0) {
+        importLocalChargeHotTableSetting.value.columns.forEach(column => {
+          if (column.data === "location") {
+            column.source = importLocationResult.value;
+          }
+        });
+        disabledImportLocalChargeBtn.value = false;
+      }
     });
   }
 };
@@ -377,65 +432,6 @@ onMounted(() => {
   getShippingTermResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
 });
-
-// const timelineItems = ref([
-//   {
-//     timestamp: "",
-//     header: "Update Github template",
-//     description: "Tom committed 2018/4/12 20:46",
-//     checked1: false,
-//     checked2: false,
-//     parsedNumber: 0
-//   },
-//   {
-//     timestamp: "2000",
-//     header: "Update Github template",
-//     description: "Tom committed 2018/4/3 20:46",
-//     checked1: false,
-//     checked2: false,
-//     parsedNumber: 2000
-//   }
-// ]);
-
-// // 新增的 Timeline 項目
-// const newTimelineItem = ref({
-//   timestamp: "",
-//   header: "",
-//   description: "自動產生的描述...",
-//   checked1: false,
-//   checked2: false,
-//   parsedNumber: 0
-// });
-// // 將符號與數字分開
-// const parseTimestamp = timestamp => {
-//   const symbol = timestamp.charAt(0); // 取得第一個字元符號
-//   const number = parseInt(timestamp.slice(1), 10); // 解析後面的數字
-//   return { symbol, number };
-// };
-// // 新增 Timeline 項目的函數
-// const addTimelineItem = () => {
-//   if (newTimelineItem.value.timestamp) {
-//     // 解析 timestamp，並加入到 timelineItems 中
-//     const { symbol, number } = parseTimestamp(newTimelineItem.value.timestamp);
-
-//     timelineItems.value.push({
-//       ...newTimelineItem.value,
-//       parsedNumber: number // 把解析出來的數字存下來，方便後續排序
-//     });
-
-//     // 清空輸入欄位
-//     newTimelineItem.value.timestamp = "";
-//     newTimelineItem.value.header = "";
-//     newTimelineItem.value.checked1 = false;
-//     newTimelineItem.value.checked2 = false;
-
-//     // 對 timelineItems 進行排序，依照 parsedNumber 由小到大排列
-//     timelineItems.value = timelineItems.value.sort(
-//       (a, b) => a.parsedNumber - b.parsedNumber
-//     );
-//     console.log(timelineItems);
-//   }
-// };
 </script>
 
 <template>
@@ -581,10 +577,15 @@ onMounted(() => {
                   :icon="useRenderIcon('ep:setting')"
                   size="small"
                   circle
+                  :disabled="disabledExportLocalChargeBtn"
                   @click="handleOpen('LOCAL')"
                 />
               </el-tooltip>
-              <HotTable :settings="localChargeExport" />
+              <HotTable
+                v-if="!disabledExportLocalChargeBtn"
+                ref="exportHotTableRef"
+                :settings="exportLocalChargeHotTableSetting"
+              />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
               <template #title>
@@ -601,10 +602,14 @@ onMounted(() => {
                   :icon="useRenderIcon('ep:setting')"
                   size="small"
                   circle
+                  :disabled="disabledImportLocalChargeBtn"
                   @click="handleOpen('LOCAL')"
                 />
               </el-tooltip>
-              <HotTable :settings="localChargeImport" />
+              <HotTable
+                ref="importHotTableRef"
+                :settings="importLocalChargeHotTableSetting"
+              />
             </el-collapse-item>
             <el-collapse-item title="REMARK " name="6">
               <template #title>
@@ -665,6 +670,10 @@ onMounted(() => {
               placeholder="Break Point"
             />
           </el-form-item>
+          <el-form-item>
+            <label>{{ tmpvalue }}</label>
+            <el-slider v-model="tmpvalue" range :max="100" @change="test" />
+          </el-form-item>
           <el-button type="primary" @click="addColumnHeaderItem">{{
             $t("buttons.pureAdd")
           }}</el-button>
@@ -678,12 +687,27 @@ onMounted(() => {
             placement="top"
           >
             <el-card class="local-charge-setting-card">
-              <!-- <h4>{{ item.header }}</h4>
-              <p>{{ item.description }}</p> -->
-
-              <!-- 兩個 Checkbox 供使用者勾選 -->
-              <el-checkbox v-model="item.sellingRate">Selling Rate</el-checkbox>
-              <el-checkbox v-model="item.Cost">Cost</el-checkbox>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                "
+              >
+                <div style="display: flex; align-items: center">
+                  <el-checkbox v-model="item.sellingRate"
+                    >Selling Rate</el-checkbox
+                  >
+                  <el-checkbox v-model="item.Cost" style="margin-left: 20px"
+                    >Cost</el-checkbox
+                  >
+                </div>
+                <el-button
+                  :icon="useRenderIcon('ep:delete')"
+                  circle
+                  @click="removeItem(index)"
+                />
+              </div>
             </el-card>
           </el-timeline-item>
         </el-timeline>
