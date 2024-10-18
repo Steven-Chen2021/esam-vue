@@ -19,11 +19,20 @@ export default {
       }
     },
     {
-      path: "/customer/detail",
+      path: "/customer/members/:id/:qname/:pl",
+      name: "CustomerMembers",
+      component: () => import("@/views/customer/profile/members.vue"),
+      meta: {
+        title: $t("menus.dimercoCustomer"),
+        showLink: false
+      }
+    },
+    {
+      path: "/customer/detail/:id/:qname",
       name: "CustomerDetail",
       component: () => import("@/views/customer/profile/detail.vue"),
       meta: {
-        title: $t("menus.dimercoQuotes"),
+        title: $t("menus.dimercoCustomer"),
         showLink: false
       }
     }

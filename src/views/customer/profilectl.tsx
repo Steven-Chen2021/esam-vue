@@ -1,17 +1,16 @@
+import { useI18n } from "vue-i18n";
 import CustomerQuickFilterService from "@/services/commonService";
 import CustomerProfileService from "@/services/customer/CustomerProfileService";
-import axios from "axios";
+import QuickFilterService from "@/services/quickFilterService";
 // import Sortable from "sortablejs";
 // import { clone, delay } from "@pureadmin/utils";
 import { ref, onMounted, reactive, watch, computed } from "vue";
 // import { message } from "@/utils/message";
-import type {
-  FormInstance,
-  FormRules
-} from "element-plus/es/components/form/index.mjs";
+import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;
+  ControlTypeOnDetail: string;
   filterSourceType: string;
   filterSource: any;
   value: any;
@@ -25,6 +24,7 @@ export interface QuickFilterDetail {
   allowSorting: boolean;
   allowGridHeaderFilter: boolean;
   width: number;
+  controlTypeOnDetail: string;
 }
 export interface QuickFilter {
   filterName: string;
@@ -35,19 +35,30 @@ export interface QuickFilter {
   filters: QuickFilterDetail[];
 }
 export function customerProfileCTL() {
-  const profileDataInit = ref({});
+  const { t } = useI18n();
+  const profileDataInit = ref({ customerName: "" });
   const profileFormData = ref([]);
-  const profileData = ref({});
+  const profileData = ref({ agentRO: null, agentROCheck: null });
   // TODO: 补全所有栏位
   async function fetchProfileData(HQID, basicRole, advRole, warnMsg) {
     try {
       const [result1, result2] = await Promise.all([
-        axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
-        axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
+        // axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
+        // axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
+        CustomerProfileService.getCustomerProfileColumnList(5),
+        CustomerProfileService.getCustomerProfileResult(HQID)
       ]);
-      profileFormData.value = deepClone(result1.data.returnValue);
-      profileData.value = deepClone(result2.data.returnValue);
-      profileDataInit.value = deepClone(result2.data.returnValue);
+      loadAgentROList();
+      profileData.value = deepClone(result2.returnValue);
+      if (HQID === "0") {
+        profileFormData.value = deepClone(
+          result1.returnValue.filter(c => c.showOnDetailAdd === true)
+        );
+      } else {
+        profileFormData.value = deepClone(result1.returnValue);
+      }
+      profileData.value["agentROCheck"] = false;
+      profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
         // column.value = result2.data.returnValue[column.filterKey];
         if (column.visibilityLevel === 1) {
@@ -64,12 +75,30 @@ export function customerProfileCTL() {
           }
         }
       });
+      console.log("profileData", profileData.value);
+      console.log("profileFormData", profileFormData.value);
       // profileDataInit.value = ref(deepClone(profileData.value));
+      if (result1.returnValue) {
+        fetchOptionsNeedParam(result1.returnValue);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   }
-  const formDataMap = reactive({});
+  const handleAgentROCheckChange = v => {
+    console.log("handleAgentROCheckChange", profileData.value);
+    if (v) {
+      console.log("handleAgentROCheckChange 1", v);
+      profileData.value["leadSourceGroupID"] = 6;
+      handleDropDownChange(6, { filterKey: "leadSourceGroupID" }, 6);
+      profileData.value["leadSourceID"] = 6;
+      leadSourceDisable.value = true;
+    } else {
+      leadSourceDisable.value = false;
+    }
+  };
+  const leadSourceDisable = ref(false);
+  const formDataMap = ref({});
   const PLFormData = ref({
     ownerName: "",
     pid: null,
@@ -78,6 +107,7 @@ export function customerProfileCTL() {
   });
   const activeTabPID = ref();
   const LeadID = ref(null);
+  // TODO: Login userID check
   const actionOptions = (currentUserID, ownerUserID) => {
     if (currentUserID === ownerUserID) {
       return [
@@ -92,21 +122,27 @@ export function customerProfileCTL() {
     try {
       LeadID.value = LID;
       const [result1, result2] = await Promise.all([
-        axios.get("/api/Customer/GetPLDetailData?LID=" + LID + "&PID=" + PID),
-        axios.get("/api/Customer/GetPLListData?LID=" + LID)
+        // axios.get("/api/Customer/GetPLDetailData?LID=" + LID + "&PID=" + PID),
+        // axios.get("/api/Customer/GetPLListData?LID=" + LID)
+        CustomerProfileService.getPLDetailData(LID, PID),
+        CustomerProfileService.getPLListData(LID)
       ]);
-      tabsPLList.value = deepClone(result2.data.returnValue);
-      PLFormData.value = deepClone(result1.data.returnValue);
-      if (PLFormData.value && PLFormData.value.pid) {
-        activeTabPID.value = `${PLFormData.value.pid}_${PLFormData.value.pid}_${LID}_${PLFormData.value.plName}`;
-        formDataMap[PLFormData.value.plName] = PLFormData.value;
-      }
+      tabsPLList.value = deepClone(result2.returnValue);
+      PLFormData.value = deepClone(result1.returnValue);
+      console.log("PLFormData", PLFormData.value);
+      // if (PLFormData.value && PLFormData.value.pid) {
+      //   activeTabPID.value = `${PLFormData.value.pid}_${PLFormData.value.pid}_${LID}_${PLFormData.value.plName}`;
+      // } else {
+      //   activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LID}_${tabsPLList.value[0].plName}`;
+      // }
+      activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LID}_${tabsPLList.value[0].plName}`;
+      formDataMap.value[PLFormData.value.plName] = deepClone(PLFormData.value);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   }
-  const fetchPLFormData = async (LID, PID, plName) => {
-    if (formDataMap[plName]) {
+  const fetchPLFormData = async (LID, PID, plName, update) => {
+    if (!update && formDataMap.value[plName]) {
       // 如果已经有数据，直接返回，不再调用 API
       return;
     }
@@ -116,7 +152,7 @@ export function customerProfileCTL() {
         PID: PID
       };
       const response = await CustomerProfileService.getPLDetailData(param);
-      formDataMap[plName] = response.returnValue;
+      formDataMap.value[plName] = deepClone(response.returnValue);
     } catch (error) {
       console.error("Error fetching form data:", error);
     }
@@ -125,29 +161,251 @@ export function customerProfileCTL() {
     const lid = newVal.split("_")[2]; // 从 tab 名称中提取 pid
     const pid = newVal.split("_")[1]; // 从 tab 名称中提取 pid
     const plName = newVal.split("_")[3]; // 从 tab 名称中提取 pid
-    fetchPLFormData(lid, pid, plName); // 根据 pid 获取表单数据
+    fetchPLFormData(lid, pid, plName, false); // 根据 pid 获取表单数据
   });
-  interface profileRuleForm {
-    customerName: string;
-    localName: string;
-  }
-  const rules = reactive<FormRules<profileRuleForm>>({
+  const rules = {
     customerName: [
       {
         required: true,
-        message: "Please input Activity name",
+        message: t("customer.profile.general.mandatory"),
         trigger: "blur"
       }
     ],
     localName: [
       {
         required: true,
-        message: "Please input Activity name",
+        message: t("customer.profile.general.mandatory"),
         trigger: "blur"
       }
+    ],
+    mainAddress: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "focusout"
+      }
+    ],
+    country: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
+    state: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
+    // city: [
+    //   {
+    //     required: true,
+    //     message: t('customer.profile.general.mandatory'),
+    //     trigger: "change"
+    //   }
+    // ],
+    zip: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "blur"
+      }
+    ],
+    leadSourceGroupID: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
+    leadSourceID: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
+    industryGroupID: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
+    industryID: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
+    createdFor: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
     ]
-  });
+  };
+  // const getFormItemProp = key => {
+  //   let newKey = "";
+  //   switch (key) {
+  //     case "leadSourceGroup":
+  //       newKey = "leadSourceGroupID";
+  //       break;
+  //     case "industryGroup":
+  //       newKey = "industryGroupID";
+  //       break;
+  //     default:
+  //       newKey = key;
+  //       break;
+  //   }
+  //   console.log("getFormItemProp newKey", newKey);
+  //   return newKey;
+  // };
+  const getFormItemLabel = filterItem => {
+    let text = "";
+    switch (filterItem.filterKey) {
+      case "leadSourceGroup":
+      case "industryGroup":
+        text = "";
+        break;
+      default:
+        text = t(filterItem.langethKey);
+        break;
+    }
+    return text;
+  };
   const tabsPLList = ref([]);
+  const handleDropDownChange = async (v, filterItem, subValue) => {
+    console.log("handleDropDownChange value", v);
+    console.log("handleDropDownChange filterItem", filterItem);
+    switch (filterItem.filterKey) {
+      case "country": {
+        const response =
+          // TODO: 跨域问题
+          await CustomerQuickFilterService.getAutoCompleteList({
+            OptionsResourceType: 15,
+            ParentParams: [v],
+            Paginator: false
+          });
+        filterOptions.value["state"] = {};
+        filterOptions.value["state"].list = response;
+        filterOptions.value["city"].list = [];
+        profileData.value["city"] = "";
+        profileData.value["state"] = "";
+        break;
+      }
+      case "state": {
+        const response =
+          // TODO: 跨域问题
+          await CustomerQuickFilterService.getAutoCompleteList({
+            OptionsResourceType: 16,
+            ParentParams: profileData.value["country"] + "," + v,
+            Paginator: false
+          });
+        console.log("dropdown change api para", {
+          OptionsResourceType: 16,
+          ParentParams: profileData.value["country"] + "," + v,
+          Paginator: false
+        });
+        filterOptions.value["city"] = {};
+        filterOptions.value["city"].list = response;
+        profileData.value["city"] = "";
+        break;
+      }
+      case "city": {
+        break;
+      }
+      case "leadSourceGroupID": {
+        // const response =
+        //   // TODO: 跨域问题
+        //   await CustomerQuickFilterService.getAutoCompleteList({
+        //     OptionsResourceType: 100,
+        //     ParentParams: [v],
+        //     Paginator: false
+        //   });
+        // filterOptions.value["leadSource"] = {};
+        // filterOptions.value["leadSource"].list = response;
+        // filterOptions.value["leadSourceDetail"].list = [];
+        // profileData.value["leadSourceDetail"] = "";
+        // profileData.value["leadSourceID"] = "";
+        const subParam = {
+          OptionsResourceType: 100,
+          ParentParams: v,
+          Paginator: false
+        };
+        CustomerQuickFilterService.getAutoCompleteList(subParam).then(data => {
+          filterOptions.value["leadSource"] = {};
+          filterOptions.value["leadSource"].list = data;
+          filterOptions.value["leadSourceDetail"].list = [];
+          profileData.value["leadSourceDetail"] = "";
+          profileData.value["leadSourceID"] = "";
+          if (subValue) {
+            profileData.value["leadSourceID"] = subValue;
+          }
+        });
+        break;
+      }
+      case "leadSourceID": {
+        const response =
+          // TODO: 跨域问题
+          await CustomerQuickFilterService.getAutoCompleteList({
+            OptionsResourceType: 101,
+            ParentParams: [v],
+            Paginator: false
+          });
+        // console.log("dropdown change api para", {
+        //   OptionsResourceType: 101,
+        //   ParentParams: [v],
+        //   Paginator: false
+        // });
+        // console.log("dropdown change api response", response);
+        // console.log("profileData", profileData.value);
+        filterOptions.value["leadSourceDetail"] = {};
+        filterOptions.value["leadSourceDetail"].list = response;
+        profileData.value["leadSourceDetail"] = "";
+        break;
+      }
+      case "industryGroupID": {
+        const response =
+          // TODO: 跨域问题
+          await CustomerQuickFilterService.getAutoCompleteList({
+            OptionsResourceType: 102,
+            ParentParams: v,
+            Paginator: false
+          });
+        filterOptions.value["industry"] = {};
+        filterOptions.value["industry"].list = response;
+        profileData.value["industryID"] = "";
+        break;
+      }
+    }
+  };
+  const ddlNeedExtraList = ["city"]; //City dropdownList with extra input textbox
+  const ddlCasList = ["industryGroup", "leadSourceGroup"]; //cascading dropdown
+  const inputNeedExtraList = ["phone", "fax"]; //Need extra input textbox
+  const handleClickPLHistory = async PLDetail => {
+    console.log("handleClickPLHistory PLDetail", PLDetail);
+    dialogPLUpdateHistoryVisible.value = true;
+    PLHistoryTitle.value = PLDetail.plName;
+    CustomerProfileService.getPLUpdateHistoryListData({
+      SourceID: PLDetail.id,
+      SourceType: "LeadNew"
+    })
+      .then(data => {
+        PLUpdateHistoryList.value = data.returnValue;
+      })
+      .catch(err => {
+        console.log("getPLUpdateHistoryListData error", err);
+      });
+  };
+  const dialogPLUpdateHistoryVisible = ref(false);
+  const PLHistoryTitle = ref();
+  const PLUpdateHistoryList = ref([]);
+  const dialogReturnVisible = ref(false);
   // watch(
   //   () => profileFormData,
   //   newVal => {
@@ -203,8 +461,13 @@ export function customerProfileCTL() {
   // TODO: API get quick filter list,转变日期格式
   // let quickFilterList = reactive<QuickFilter[]>([]);
   const quickFilterList = ref<QuickFilter[]>([]);
+  const showAutoSaveAlert = ref(true);
   onMounted(() => {
-    fetchData();
+    setTimeout(() => {
+      showAutoSaveAlert.value = false;
+    }, 10000);
+    // loadDimOrgOptions();
+    // fetchData();
     // nextTick(() => {
     //   columnDrop();
     // });
@@ -212,6 +475,17 @@ export function customerProfileCTL() {
   // TODO: API
   //取得下拉选单列表,统一存入filterOptions
   const filterOptions = ref({});
+  const loadAgentROList = async () => {
+    const subParam = {
+      OptionsResourceType: 104,
+      Paginator: false
+    };
+    CustomerQuickFilterService.getAutoCompleteList(subParam).then(data => {
+      filterOptions.value["agentRO"] = {};
+      filterOptions.value["agentRO"].list = data;
+      filterOptions.value["agentRO"].loading = false;
+    });
+  };
   const fetchOptions = async (filterItems: QuickFilterDetail[]) => {
     try {
       const selectFilterList: QuickFilterDetail[] = filterItems.filter(
@@ -238,12 +512,19 @@ export function customerProfileCTL() {
     try {
       const selectFilterList: QuickFilterDetail[] = filterItems.filter(
         a =>
-          a.filterType === "dropdown" &&
-          a.filterSourceType === "api" &&
-          a.filterSource
+          (a.filterType === "dropdown" &&
+            a.filterSourceType === "api" &&
+            a.filterSource) ||
+          (a.filterType === "cascadingdropdown" &&
+            a.filterSourceType === "api" &&
+            a.filterSource)
       );
       selectFilterList.forEach(async item => {
         let resourceType = 0;
+        const subParam = {
+          OptionsResourceType: resourceType,
+          Paginator: false
+        };
         switch (item.filterKey) {
           case "productLineName":
             resourceType = 2;
@@ -251,12 +532,21 @@ export function customerProfileCTL() {
           case "country":
             resourceType = 14;
             break;
-          case "state":
+          case "state": {
             resourceType = 15;
-            break;
-          case "city":
+            if (profileData) {
+              subParam["ParentParams"] = profileData.value["country"];
+              break;
+            }
+          }
+          case "city": {
             resourceType = 16;
-            break;
+            if (profileData) {
+              subParam["ParentParams"] =
+                profileData.value["country"] + "," + profileData.value["state"];
+              break;
+            }
+          }
           case "leadSourceGroup":
             resourceType = 17;
             break;
@@ -267,34 +557,111 @@ export function customerProfileCTL() {
             resourceType = 0;
             break;
         }
-        const response =
-          // TODO: 跨域问题
-          // await CustomerQuickFilterService.getOptionListNeedParam(
-          //   item.filterSource,
-          //   { OptionsResourceType: 2, Paginator: false }
-          // );
-          await CustomerQuickFilterService.getAutoCompleteList({
-            OptionsResourceType: resourceType,
-            Paginator: false
-          });
-        filterOptions.value[item.filterKey] = {};
-        filterOptions.value[item.filterKey].list = response;
-        filterOptions.value[item.filterKey].loading = false;
+        if (resourceType === 0) {
+          console.log("fetchOptionsNeedParam item", item);
+        }
+        subParam.OptionsResourceType = resourceType;
+        CustomerQuickFilterService.getAutoCompleteList(subParam).then(data => {
+          filterOptions.value[item.filterKey] = {};
+          filterOptions.value[item.filterKey].list = data;
+          filterOptions.value[item.filterKey].loading = false;
+        });
+        if (item.filterKey === "leadSourceGroup") {
+          if (profileData) {
+            CustomerQuickFilterService.getAutoCompleteList({
+              OptionsResourceType: 100,
+              Paginator: false,
+              ParentParams: profileData.value["leadSourceGroupID"]
+            }).then(data => {
+              filterOptions.value["leadSource"] = {};
+              filterOptions.value["leadSource"].list = data;
+              filterOptions.value["leadSource"].loading = false;
+            });
+            CustomerQuickFilterService.getAutoCompleteList({
+              OptionsResourceType: 101,
+              Paginator: false,
+              ParentParams: profileData.value["leadSourceID"]
+            }).then(data => {
+              filterOptions.value["leadSourceDetail"] = {};
+              filterOptions.value["leadSourceDetail"].list = data;
+              filterOptions.value["leadSourceDetail"].loading = false;
+            });
+          }
+        } else if (item.filterKey === "industryGroup") {
+          if (profileData) {
+            CustomerQuickFilterService.getAutoCompleteList({
+              OptionsResourceType: 102,
+              Paginator: false,
+              ParentParams: profileData.value["industryGroupID"]
+            }).then(data => {
+              filterOptions.value["industry"] = {};
+              filterOptions.value["industry"].list = data;
+              filterOptions.value["industry"].loading = false;
+            });
+          }
+        }
       });
+      //Load currency list
+      CustomerQuickFilterService.getAutoCompleteList({
+        OptionsResourceType: 103,
+        Paginator: false
+      }).then(data => {
+        filterOptions.value["currency"] = {};
+        filterOptions.value["currency"].list = data;
+        filterOptions.value["currency"].loading = false;
+      });
+      //Load createdFor list
+      CustomerQuickFilterService.getAutoCompleteList({
+        OptionsResourceType: 105,
+        Paginator: false
+      }).then(data => {
+        filterOptions.value["createdFor"] = {};
+        filterOptions.value["createdFor"].list = data;
+        filterOptions.value["createdFor"].loading = false;
+      });
+      console.log("filterOptions", filterOptions.value);
     } catch (error) {
       console.error("Failed to fetch list:", error);
       return [];
     }
   };
+  const dimOrgOptions = ref([]);
+  const userNameOptions = ref([]);
+  async function loadDimOrgOptions() {
+    try {
+      const response = await CustomerQuickFilterService.getAutoCompleteList({
+        OptionsResourceType: 20,
+        Paginator: false
+      });
+      dimOrgOptions.value = response; // 将获取的选项赋值给 dimOrgOptions
+    } catch (error) {
+      console.error("获取选项时出错:", error);
+    }
+  }
+  function loadUserNameOptions() {
+    try {
+      //TODO: API
+      // const response = await CustomerQuickFilterService.getAutoCompleteList({
+      //   OptionsResourceType: 20,
+      //   Paginator: false
+      // });
+      userNameOptions.value = [
+        { text: "Andy Kang", value: "Andy Kang" },
+        { text: "Amy Chen", value: "Amy Chen" }
+      ]; // 将获取的选项赋值给 dimOrgOptions
+    } catch (error) {
+      console.error("获取选项时出错:", error);
+    }
+  }
   // 监听 filters 的变化
-  watch(
-    () => quickFilterForm.filters,
-    newFilters => {
-      fetchOptions(newFilters);
-      fetchOptionsNeedParam(newFilters);
-    },
-    { deep: true } // 深度监听 filters 的变化
-  );
+  // watch(
+  //   () => profileData.value,
+  //   () => {
+  //     fetchOptionsNeedParam(quickFilterFormInitData.filters);
+  //   },
+  //   { deep: true } // 深度监听 filters 的变化
+  // );
+  const membersFormData = ref({});
   //autocomplete
   interface AutoCompleteItem {
     value: string;
@@ -469,14 +836,19 @@ export function customerProfileCTL() {
   async function fetchData() {
     try {
       const [result1, result2, result3] = await Promise.all([
-        axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
-        axios.get(
-          "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2"
-        ),
-        axios.get("/api/Common/ColumnSetting?APIRequestType=3")
+        // axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
+        // axios.get(
+        //   "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2"
+        // ),
+        // axios.get("/api/Common/ColumnSetting?APIRequestType=3")
+        CustomerProfileService.getCustomerProfileColumnList(5),
+        QuickFilterService.getCustomizeQuickFilterSetting(2),
+        QuickFilterService.getColumnSetting(3)
       ]);
 
-      quickFilterFormInitData.filters = deepClone(result1.data.returnValue);
+      // quickFilterFormInitData.filters = deepClone(
+      //   result1.filter(c => c.showOnDetailAdd === true)
+      // );
       quickFilterFormInitData.filters.forEach(a => {
         a.showOnGrid = true;
         a.showOnFilter = true;
@@ -486,15 +858,15 @@ export function customerProfileCTL() {
         a.selectValue = "";
         a.ValueBegin = "";
         a.ValueEnd = "";
+        a.filterType = a.controlTypeOnDetail;
       });
       if (
-        result3.data &&
-        result3.data.returnValue &&
-        Array.isArray(result3.data.returnValue) &&
-        result3.data.returnValue.length ===
-          quickFilterFormInitData.filters.length
+        result3 &&
+        result3 &&
+        Array.isArray(result3) &&
+        result3.length === quickFilterFormInitData.filters.length
       ) {
-        advancedFilterForm.filters = deepClone(result3.data.returnValue);
+        advancedFilterForm.filters = deepClone(result3);
       } else {
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
@@ -507,11 +879,12 @@ export function customerProfileCTL() {
           a.width = 140;
         }
       });
-      const filterColumns = result1.data.returnValue;
+      const filterColumns = result1;
       fetchOptions(quickFilterFormInitData.filters);
       fetchOptionsNeedParam(quickFilterFormInitData.filters);
+      loadAgentROList();
 
-      const customizedFilters = result2.data.returnValue;
+      const customizedFilters = result2;
       // console.log("filterColumns", filterColumns);
       // console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {
@@ -620,6 +993,10 @@ export function customerProfileCTL() {
   });
   const activePanelNames = ref(["BasicFilterForm"]);
   return {
+    membersFormData,
+    loadDimOrgOptions,
+    loadUserNameOptions,
+    userNameOptions,
     profileDataInit,
     profileFormData,
     profileData,
@@ -629,11 +1006,24 @@ export function customerProfileCTL() {
     formDataMap,
     fetchPLFormData,
     activeTabPID,
+    handleDropDownChange,
+    handleClickPLHistory,
+    dialogPLUpdateHistoryVisible,
+    handleAgentROCheckChange,
+    PLUpdateHistoryList,
+    PLHistoryTitle,
+    dialogReturnVisible,
+    dimOrgOptions,
+    ddlNeedExtraList,
+    ddlCasList,
+    inputNeedExtraList,
+    showAutoSaveAlert,
     actionOptions,
     fetchProfileData,
     fetchPLData,
     getOptions,
     convertDropDownValue,
+    getFormItemLabel,
     filterOptions,
     quickFilterForm,
     quickFilterFormRef,
@@ -653,6 +1043,7 @@ export function customerProfileCTL() {
     // handleCustomerSearch,
     formattedDateRange,
     handleBasicFilterBtnClick,
-    activePanelNames
+    activePanelNames,
+    leadSourceDisable
   };
 }

@@ -189,6 +189,7 @@ menus:
   dimercoReport: Report
   dimercoCustomer: Customer
   dimercoDeal: Deal
+  dimercoMembers: Members
   
 status:
   pureLoad: Loading...
@@ -241,6 +242,7 @@ login:
   purePassWordDifferentReg: The two passwords do not match!
   purePassWordUpdateReg: Password has been updated
 customer:
+  add: Add New
   quickfilter:
     hqid: HQID
     status: Status
@@ -277,8 +279,9 @@ customer:
     state: State
     city: City
     zip: Zip
-    leadSourceGroup: Lead Source
-    industryGroup: Industry
+    leadSourceGroup: Lead Source Group
+    leadSourceDetail: Lead Source Detail
+    industryGroup: Industry Group
   tour:
       tourQF1Title: Quick Filter
       tourQF1Text: Click to create a quick query and boost your work efficiency.
@@ -324,9 +327,19 @@ customer:
       basicFilterTitle: Basic Filters
   profile:
     title: Profile
+    autoSaveAlert: The system will automatically save when you make changes.
+    cityAlert: Please select or enter City
+    alertTilte: Alert
+    leadSourceAlert: Please select Event Code
     general: 
       title: General Information
       unauthorized: No permission to view
+      ext: Ext
+      localNameAlert: Registered company name from local government
+      mandatory: Mandatory
+      currency: Currency
+      agentRO: Agent RO
+      createdFor: Created For
     pl:
       title: Product Line
       leadOwner: Lead Owner
@@ -339,10 +352,36 @@ customer:
       sendAMS: AMS/ISF Data Send to Broker
       members: Members
       action: Action
+      date: Date
+      leadStatus: Lead Status
+      ownerStation: Owner Station
+      owner: Owner
+      assigner: Assigner
+      historyTitle: History
+      unassigned: UnAssigned
+      coodinateAlert: You could apply to Station Coordinator to take on the role of Lead Owner.
+      returnAlert: There is no longer a Lead Owner, so no further action is needed. 
+      returnSuc: Return successfully.
+      assignSuc: Assign successfully.
+      assignFail: Assign failed.
+      returnMissStation: Please select station.
+      updateOMSPLSuc: Update successfully.
+      updateOMSPLFail: Update failed.
+      editMembers: Edit
     comments:
       title: Comments
       postPlaceholder: Write a message
       editPlaceholder: Edit your message
+    members:
+      title: Combat team Maintain
+      station: Station
+      userName: User Name
+      search: Search
+      all: All
+      leftTitle: Available users
+      rightTitle: Existed members
+      addTooltip: Add to Combat team
+      removeTooltip: Remove from Combat team
   deal:
     title: Deal
   contact:

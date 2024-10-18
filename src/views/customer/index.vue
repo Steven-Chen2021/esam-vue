@@ -11,6 +11,7 @@ import {
   computed,
   nextTick
 } from "vue";
+import { Plus } from "@element-plus/icons-vue";
 import { useDetail } from "./hooks";
 const { toDetail, router } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
@@ -43,6 +44,7 @@ const {
   querySearchAsync,
   handleQuickFilterClick,
   fetchData,
+  fetchAdvancedFilterData,
   advancedFilterForm,
   basicFilterTopForm,
   initAdvancedFilter,
@@ -79,23 +81,29 @@ const handleListEnable = (obj: {
   value: string | ((index: number) => string);
   showOnGrid: any;
 }) => {
-  // customerColumns.value.forEach(column => {
-  //   const prop = column.prop;
-  //   if (prop === obj.value) {
-  //     column.hide = !obj.showColumn;
-  //   }
-  // });
+  submitAdvancedFilterForm();
 };
 const handleFilterEnable = (obj: any) => {
   submitAdvancedFilterForm();
 };
-import { useRouter } from "vue-router";
-const Router = useRouter();
+// import { useRouter } from "vue-router";
+// const Router = useRouter();
 const handleViewClick = row => {
   console.log("handleViewClick row", row);
-  Router.push({
-    path: "/customer/detail",
-    query: { LID: row.hqid }
+  // Router.push({
+  //   path: "/customer/detail",
+  //   query: { LID: row.hqid }
+  // });
+  // toDetail({ id: row.hqid, qname: row.customerName }, "params");
+  router.push({
+    name: "CustomerDetail",
+    params: { id: row.hqid, qname: row.customerName }
+  });
+};
+const handleAddCustomer = () => {
+  router.push({
+    name: "CustomerDetail",
+    params: { id: 0, qname: "Create Customer" }
   });
 };
 // #region Quick Filter
@@ -121,6 +129,7 @@ const handleFilterClick = filter => {
   console.log("handleFilterClick filtered", filters);
   handleConditionalSearch({ filters: filters });
   handleQuickFilterClick(filter);
+  activePanelNames.value = [];
 };
 const quickFilterRules = reactive<FormRules<QuickFilter>>({
   filterName: [
@@ -262,7 +271,8 @@ const initQuickFilter = () => {
     showOnFilter: filter.showOnFilter,
     allowSorting: filter.allowSorting,
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
-    width: 140
+    width: 140,
+    controlTypeOnDetail: ""
   }));
   console.log("initQuickFilter", quickFilterForm);
 };
@@ -293,12 +303,14 @@ const handleEditQuickFilter = (item: QuickFilter) => {
     showOnFilter: filter.showOnFilter,
     allowSorting: filter.allowSorting,
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
-    width: 140
+    width: 140,
+    controlTypeOnDetail: ""
   }));
 };
 const dialogVisible = ref(false);
 // #endregion
 // #region Tour
+const showTour = ref(false);
 const tourStore = useTourStore();
 const openTour = computed({
   get: () => tourStore.customerListShow,
@@ -357,6 +369,9 @@ const submitAdvancedFilterForm = () => {
 const handleSearch = filterForm => {
   activePanelNames.value = [];
   handleConditionalSearch(filterForm);
+  quickFilterList.value.forEach(a => {
+    a.clicked = false;
+  });
 };
 const handleResetSearch = () => {
   handleResetConditionalSearch();
@@ -385,10 +400,31 @@ const calculateMaxHeight = () => {
 
 const maxHeight = ref(null);
 
-onMounted(() => {
-  // calculateMaxHeight();
-  // window.addEventListener("resize", calculateMaxHeight);
+onMounted(async () => {
+  fetchData();
+  fetchAdvancedFilterData();
+  await nextTick(); // 等待 DOM 更新完成
+  setTimeout(() => {
+    // 在这里决定是否显示 el-tour
+    if (tourStore.customerListShow) {
+      // 这里可以添加你的逻辑决定是否显示
+      showTour.value = true; // 或者根据其他条件来决定
+    }
+  }, 2000);
 });
+watch(
+  () => tourStore.customerListShow,
+  () => {
+    setTimeout(() => {
+      // 在这里决定是否显示 el-tour
+      if (tourStore.customerListShow) {
+        // 这里可以添加你的逻辑决定是否显示
+        showTour.value = true; // 或者根据其他条件来决定
+      }
+    }, 100);
+  },
+  { deep: true } // 深度监听 filters 的变化
+);
 </script>
 
 <template>
@@ -505,7 +541,8 @@ onMounted(() => {
                   v-for="filterItem in advancedFilterForm.filters.filter(
                     c =>
                       c.showOnFilter === true &&
-                      c.filterType !== 'cascadingdropdown'
+                      c.filterType !== 'cascadingdropdown' &&
+                      c.filterKey !== 'capitalAmount'
                   )"
                   :key="filterItem.filterKey"
                   :style="{ width: '390px' }"
@@ -595,7 +632,6 @@ onMounted(() => {
                     "
                     style="width: 338px"
                   />
-
                   <el-date-picker
                     v-if="filterItem.filterType === 'daterange'"
                     v-model="filterItem.ValueBegin"
@@ -660,6 +696,9 @@ onMounted(() => {
                       $t("customer.list.advancedSetting.settingBtn")
                     }}</el-button
                   >
+                  <el-button :icon="Plus" @click="handleAddCustomer">{{
+                    $t("customer.add")
+                  }}</el-button>
                 </el-form-item>
               </div>
             </el-form>
@@ -977,7 +1016,7 @@ onMounted(() => {
       </template>
     </el-drawer>
     <el-tour
-      v-model="openTour"
+      v-model="showTour"
       :current="tourStep"
       @finish="handlefinishTour"
       @close="handlefinishTour"

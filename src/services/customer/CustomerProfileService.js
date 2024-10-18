@@ -1,6 +1,47 @@
 import API from "../interceptor";
 
 class CustomerProfileService {
+  async getPLDetailData(LID, PID) {
+    try {
+      const url = `/api/Customer/GetPLDetailData?LID=${LID}&PID=${PID}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+  async getPLListData(LID) {
+    try {
+      const url = `/api/Customer/GetPLListData?LID=${LID}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+  async getCustomerProfileColumnList(requestType) {
+    try {
+      const url = `/api/Customer/CustomerProfileColumnList?requestType=${requestType}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+  async getCustomerProfileResult(LID) {
+    try {
+      const url = `/api/Customer/CustomerProfileResult?LID=${LID}`;
+      const response = await API.get(url);
+      console.log("getCustomerProfileResult response", response);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
   async updateCustomerProfile(params) {
     try {
       const response = await API.post(
@@ -23,10 +64,21 @@ class CustomerProfileService {
       console.error(error);
     }
   }
-  async addQuickFilter(params) {
+  async getPLUpdateHistoryListData(params) {
+    try {
+      const url = "/api/Customer/GetPLUpdateHistoryListData";
+      const queryString = new URLSearchParams(params).toString();
+      const fullUrl = `${url}?${queryString}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async ChangeProductLinesOwner(params) {
     try {
       const response = await API.post(
-        "/api/Common/CustomizeQuickFilterSetting",
+        "/api/Customer/ChangeProductLinesOwner",
         params
       );
       return response;
@@ -34,12 +86,20 @@ class CustomerProfileService {
       console.error(error);
     }
   }
-  async deleteQuickFilter(params) {
+  async AddPL(params) {
     try {
-      const url = "/api/Common/CustomizeQuickFilterSetting";
-      const queryString = new URLSearchParams(params).toString();
-      const fullUrl = `${url}?${queryString}`;
-      const response = await API.delete(fullUrl);
+      const response = await API.post("/api/Customer/AddPL", params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async UpdateCustomerPLData(params) {
+    try {
+      const response = await API.post(
+        "/api/Customer/UpdateCustomerPLData",
+        params
+      );
       return response;
     } catch (error) {
       console.error(error);
