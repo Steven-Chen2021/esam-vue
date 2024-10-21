@@ -16,7 +16,7 @@ export const useTourStore = defineStore("tour", {
   actions: {
     setCustomerListTour(value: boolean) {
       this.customerListShow = value;
-      setTourStatus({ customerListShow: false });
+      setTourStatus({ customerListShow: value });
     }
   }
 });

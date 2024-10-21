@@ -27,19 +27,19 @@ export function useDetail() {
     });
     if (model === "params") {
       useMultiTagsStoreHook().handleTags("push", {
-        path: `/quotes/detail/:id`,
-        name: "QuoteDetail",
+        path: `/customer/detail/:id`,
+        name: "CustomerDetail",
         params: parameter,
         meta: {
           title: {
-            zh: `${parameter.id === "0" ? "Create Quote" : "Quote# " + parameter.id}`,
-            en: `${parameter.id === "0" ? "Create Quote" : "Quote# " + parameter.id}`
+            zh: `${parameter.id === "0" ? "Create Customer" : parameter.qname}`,
+            en: `${parameter.id === "0" ? "Create Customer" : parameter.qname}`
           }
           // 如果使用的是非国际化精简版title可以像下面这么写
           // title: `No.${index} - 详情信息`,
         }
       });
-      router.push({ name: "QuoteDetail", params: parameter });
+      router.push({ name: "CustomerDetail", params: parameter });
     }
   }
 

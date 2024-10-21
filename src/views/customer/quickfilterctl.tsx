@@ -1,5 +1,5 @@
 import CustomerQuickFilterService from "@/services/commonService";
-import axios from "axios";
+import QuickFilterService from "@/services/quickFilterService";
 // import Sortable from "sortablejs";
 // import { clone, delay } from "@pureadmin/utils";
 import { ref, onMounted, reactive, watch, computed } from "vue";
@@ -22,6 +22,7 @@ export interface QuickFilterDetail {
   allowSorting: boolean;
   allowGridHeaderFilter: boolean;
   width: number;
+  controlTypeOnDetail: string;
 }
 export interface QuickFilter {
   filterName: string;
@@ -67,8 +68,8 @@ export function quickFilterCTL() {
   // let quickFilterList = reactive<QuickFilter[]>([]);
   const quickFilterList = ref<QuickFilter[]>([]);
   onMounted(() => {
-    fetchData();
-    fetchAdvancedFilterData();
+    // fetchData();
+    // fetchAdvancedFilterData();
     // nextTick(() => {
     //   columnDrop();
     // });
@@ -148,6 +149,7 @@ export function quickFilterCTL() {
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;
+        console.log("filterOptions", filterOptions.value);
       });
     } catch (error) {
       console.error("Failed to fetch list:", error);
@@ -170,7 +172,7 @@ export function quickFilterCTL() {
   }
   const createFilter = (queryString: string) => {
     return (item: AutoCompleteItem) => {
-      return item.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0;
+      return item.value.toLowerCase().indexOf(queryString.toLowerCase()) !== -1;
     };
   };
   const querySearchAsync = async (
@@ -178,27 +180,65 @@ export function quickFilterCTL() {
     cb: (arg: any) => void,
     filterItem: QuickFilterDetail
   ) => {
+    console.log("querySearchAsync", queryString);
     let OptionsResourceType;
-    if (filterItem.filterKey === "customerName") {
-      OptionsResourceType = 0;
-    } else {
-      OptionsResourceType = 1;
+    switch (filterItem.filterKey) {
+      case "customerName":
+        OptionsResourceType = 0;
+        break;
+      case "country":
+        OptionsResourceType = 106;
+        break;
+      case "state":
+        OptionsResourceType = 107;
+        break;
+      case "city":
+        OptionsResourceType = 108;
+        break;
+      case "leadSourceGroup":
+        OptionsResourceType = 109;
+        break;
+      case "industryGroup":
+        OptionsResourceType = 110;
+        break;
+      case "localName":
+        OptionsResourceType = 111;
+        break;
+      case "ownerSales":
+        OptionsResourceType = 112;
+        break;
+      case "leadSource":
+        OptionsResourceType = 113;
+        break;
+      case "leadSourceDetail":
+        OptionsResourceType = 114;
+        break;
+      case "industry":
+        OptionsResourceType = 115;
+        break;
     }
+    // if (filterItem.filterKey === "customerName") {
+    //   OptionsResourceType = 0;
+    // } else {
+    //   OptionsResourceType = 1;
+    // }
+    const searchKey = !queryString || queryString === "null" ? "" : queryString;
     const params = {
-      SearchKey: queryString,
+      SearchKey: searchKey,
       OptionsResourceType: OptionsResourceType,
       PageSize: 50,
       PageIndex: 1,
       Paginator: true
     };
+    console.log("params", params);
     try {
       // 发送请求并获取响应
       const response =
         await CustomerQuickFilterService.getAutoCompleteList(params);
 
       // 根据 queryString 过滤响应结果
-      const results = queryString
-        ? response.filter(createFilter(queryString))
+      const results = searchKey
+        ? response.filter(createFilter(searchKey))
         : response;
 
       // 判断 results 是否为数组
@@ -339,14 +379,17 @@ export function quickFilterCTL() {
   async function fetchData() {
     try {
       const [result1, result2, result3] = await Promise.all([
-        axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
-        axios.get(
-          "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2"
-        ),
-        axios.get("/api/Common/ColumnSetting?APIRequestType=3")
+        // axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
+        // axios.get(
+        //   "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2"
+        // ),
+        // axios.get("/api/Common/ColumnSetting?APIRequestType=3")
+        QuickFilterService.getQuickFilterColumnList(1),
+        QuickFilterService.getCustomizeQuickFilterSetting(2),
+        QuickFilterService.getColumnSetting(3)
       ]);
 
-      quickFilterFormInitData.filters = deepClone(result1.data.returnValue);
+      quickFilterFormInitData.filters = deepClone(result1);
       quickFilterFormInitData.filters.forEach(a => {
         a.showOnGrid = true;
         a.showOnFilter = true;
@@ -358,13 +401,11 @@ export function quickFilterCTL() {
         a.ValueEnd = "";
       });
       if (
-        result3.data &&
-        result3.data.returnValue &&
-        Array.isArray(result3.data.returnValue) &&
-        result3.data.returnValue.length ===
-          quickFilterFormInitData.filters.length
+        result3 &&
+        Array.isArray(result3) &&
+        result3.length === quickFilterFormInitData.filters.length
       ) {
-        advancedFilterForm.filters = deepClone(result3.data.returnValue);
+        advancedFilterForm.filters = deepClone(result3);
       } else {
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
@@ -390,11 +431,11 @@ export function quickFilterCTL() {
       //   "advancedFilterForm length",
       //   advancedFilterForm.filters.length % 2
       // );
-      const filterColumns = result1.data.returnValue;
+      const filterColumns = result1;
       fetchOptions(quickFilterFormInitData.filters);
       fetchOptionsNeedParam(quickFilterFormInitData.filters);
 
-      const customizedFilters = result2.data.returnValue;
+      const customizedFilters = result2;
       // console.log("filterColumns", filterColumns);
       // console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {
@@ -570,6 +611,7 @@ export function quickFilterCTL() {
     handleQuickFilterClick,
     updateQuickFilter,
     fetchData,
+    fetchAdvancedFilterData,
     advancedFilterForm,
     basicFilterTopForm,
     initAdvancedFilter,
