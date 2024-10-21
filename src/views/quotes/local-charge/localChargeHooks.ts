@@ -82,9 +82,9 @@ export function LocalChargeHooks() {
       "Display Name",
       "Condition",
       "Unit",
+      "UOM",
       "Amount",
       "Cost",
-      "UOM",
       "Remark"
     ],
     columns: [
@@ -97,9 +97,9 @@ export function LocalChargeHooks() {
         source: ["MIN", "FLAT", ">", ">=", "=", "<=", "<"]
       },
       { data: "Unit", type: "numeric" },
+      { data: "uom", type: "dropdown", source: ["KG", "LB", "CBM", "TON"] },
       { data: "sellingRate", type: "numeric" },
       { data: "cost", type: "numeric" },
-      { data: "uom", type: "dropdown", source: ["KG", "LB", "CBM", "TON"] },
       { data: "remark", type: "text" }
     ],
     rowHeaders: false,
@@ -119,7 +119,55 @@ export function LocalChargeHooks() {
       {
         chargeID: null,
         location: null,
-        chargeCode: "Min",
+        chargeCode: null,
+        displayName: null,
+        condition: null,
+        Unit: null,
+        sellingRate: null,
+        cost: null,
+        uom: null,
+        remark: null
+      },
+      {
+        chargeID: null,
+        location: null,
+        chargeCode: null,
+        displayName: null,
+        condition: null,
+        Unit: null,
+        sellingRate: null,
+        cost: null,
+        uom: null,
+        remark: null
+      },
+      {
+        chargeID: null,
+        location: null,
+        chargeCode: null,
+        displayName: null,
+        condition: null,
+        Unit: null,
+        sellingRate: null,
+        cost: null,
+        uom: null,
+        remark: null
+      },
+      {
+        chargeID: null,
+        location: null,
+        chargeCode: null,
+        displayName: null,
+        condition: null,
+        Unit: null,
+        sellingRate: null,
+        cost: null,
+        uom: null,
+        remark: null
+      },
+      {
+        chargeID: null,
+        location: null,
+        chargeCode: null,
         displayName: null,
         condition: null,
         Unit: null,
@@ -135,9 +183,9 @@ export function LocalChargeHooks() {
       "Display Name",
       "Condition",
       "Unit",
+      "UOM",
       "Amount",
       "Cost",
-      "UOM",
       "Remark"
     ],
     columns: [
@@ -150,9 +198,9 @@ export function LocalChargeHooks() {
         source: ["MIN", "FLAT", ">", ">=", "=", "<=", "<"]
       },
       { data: "Unit", type: "numeric" },
+      { data: "uom", type: "dropdown", source: ["KG", "LB", "CBM", "TON"] },
       { data: "sellingRate", type: "numeric" },
       { data: "cost", type: "numeric" },
-      { data: "uom", type: "dropdown", source: ["KG", "LB", "CBM", "TON"] },
       { data: "remark", type: "text" }
     ],
     rowHeaders: false,

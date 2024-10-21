@@ -566,21 +566,6 @@ onMounted(() => {
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Export)</span>
               </template>
-              <el-tooltip
-                class="box-item"
-                effect="dark"
-                content="Customized Columns"
-                placement="bottom"
-              >
-                <el-button
-                  class="mb-1"
-                  :icon="useRenderIcon('ep:setting')"
-                  size="small"
-                  circle
-                  :disabled="disabledExportLocalChargeBtn"
-                  @click="handleOpen('LOCAL')"
-                />
-              </el-tooltip>
               <HotTable
                 v-if="!disabledExportLocalChargeBtn"
                 ref="exportHotTableRef"
@@ -591,22 +576,8 @@ onMounted(() => {
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Import)</span>
               </template>
-              <el-tooltip
-                class="box-item"
-                effect="dark"
-                content="Customized Columns"
-                placement="bottom"
-              >
-                <el-button
-                  class="mb-1"
-                  :icon="useRenderIcon('ep:setting')"
-                  size="small"
-                  circle
-                  :disabled="disabledImportLocalChargeBtn"
-                  @click="handleOpen('LOCAL')"
-                />
-              </el-tooltip>
               <HotTable
+                v-if="!disabledImportLocalChargeBtn"
                 ref="importHotTableRef"
                 :settings="importLocalChargeHotTableSetting"
               />
