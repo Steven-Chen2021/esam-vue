@@ -331,6 +331,7 @@ customer:
     cityAlert: Please select or enter City
     alertTilte: Alert
     leadSourceAlert: Please select Event Code
+    disqualify: Disqualify
     general: 
       title: General Information
       unauthorized: No permission to view

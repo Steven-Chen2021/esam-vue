@@ -379,6 +379,18 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
         </div>
         <div class="grow-0 h-8 ...">
           <el-button
+            v-if="profileData['showDisqualify'] === 1"
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading-icon="useRenderIcon('ep:eleme')"
+            :loading="size !== 'disabled'"
+            :icon="useRenderIcon('ri:save-line')"
+            :disabled="basicRole === 'read'"
+          >
+            {{ t("customer.profile.disqualify") }}
+          </el-button>
+          <el-button
             type="primary"
             plain
             :size="dynamicSize"
