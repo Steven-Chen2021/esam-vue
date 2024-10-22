@@ -108,6 +108,17 @@ class QuoteDetailService {
       console.error(error);
     }
   }
+
+  async deleteQuotation(QuoteID) {
+    try {
+      const url = "/api/Quote/QuoteResult";
+      const fullUrl = `${url}?QuoteID=${QuoteID}`;
+      const response = await API.delete(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new QuoteDetailService();

@@ -113,12 +113,12 @@ const sleep = ms => {
 };
 
 router.beforeEach(async (to: ToRouteType, _from, next) => {
-  // // 如果是登出回調頁面，直接允許導航
-  // console.log(to.path);
-  // if (to.path === "/logout") {
-  //   next();
-  //   return;
-  // }
+  console.log("VITE_OIDC_AUTHORITY:", import.meta.env.VITE_OIDC_AUTHORITY);
+  console.log("VITE_OIDC_CLIENT_ID:", import.meta.env.VITE_OIDC_CLIENT_ID);
+  console.log(
+    "VITE_OIDC_REDIRECT_URI:",
+    import.meta.env.VITE_OIDC_REDIRECT_URI
+  );
 
   // // OIDC 驗證邏輯
   const user = await getUser(); // 檢查是否已有登入的用戶;

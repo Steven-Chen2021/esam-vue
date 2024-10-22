@@ -6,32 +6,27 @@ import {
   type FieldValues,
   PlusForm
 } from "plus-pro-components";
+import { ElNotification } from "element-plus";
 /*handsontable*/
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
 import "handsontable/dist/handsontable.full.css";
 registerAllModules();
-
 defineComponent({
   components: {
     HotTable
   }
 });
-
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import QuoteDetailService from "@/services/quote/QuoteDetailService";
 
 // RouterHooks
 import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
-
 import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
-
-const tmpvalue = ref();
-const test = valeu => {
-  console.log(valeu);
-};
+import { HistoryComponentHooks } from "./details/historyHooks";
+import { VxeTableBar } from "@/components/ReVxeTableBar";
 
 const {
   getCustomerByOwnerUserResult,
@@ -55,7 +50,8 @@ const {
   attentionToResult,
   tradeTermResult,
   creditTermResult,
-  freightChargeResult
+  freightChargeResult,
+  deleteQuotation
 } = QuoteDetailHooks();
 
 const {
@@ -69,6 +65,9 @@ const {
   importLocalChargeHotTableSetting
 } = LocalChargeHooks();
 
+const { historyColumns, historyResult, getHistoryResult } =
+  HistoryComponentHooks();
+
 defineOptions({
   name: "QuoteDetail"
 });
@@ -79,12 +78,16 @@ const importHotTableRef = ref(null);
 const exportHotTableRef = ref(null);
 const freightVisible = ref(false);
 const localVisible = ref(false);
+const historyVisible = ref(false);
 const activeName = ref("1");
 const dynamicSize = ref();
-const size = ref("disabled");
+const saveLoading = ref("disabled");
+const deleteLoading = ref("disabled");
+const historyLoading = ref(true);
 const qid = ref(0);
 const disabledExportLocalChargeBtn = ref(true);
 const disabledImportLocalChargeBtn = ref(true);
+const vxeTableRef = ref();
 
 const result = ref<FieldValues>({
   ShippingTerm: null,
@@ -319,46 +322,46 @@ const freightChargeSettings = ref({
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection
 });
-const localChargeExport = {
-  data: [],
-  colHeaders: [],
-  columns: [],
-  rowHeaders: false,
-  dropdownMenu: true,
-  width: "100%",
-  height: "auto",
-  autoWrapRow: true,
-  autoWrapCol: true,
-  allowInsertColumn: true,
-  allowInsertRow: true,
-  licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  contextMenu: true
-};
-const localChargeImport = {
-  data: [],
-  colHeaders: [],
-  columns: [],
-  rowHeaders: false,
-  dropdownMenu: true,
-  width: "100%",
-  height: "auto",
-  autoWrapRow: true,
-  autoWrapCol: true,
-  allowInsertColumn: true,
-  allowInsertRow: true,
-  licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  contextMenu: true
-};
 
 const saveData = () => {
-  size.value = "default";
+  saveLoading.value = "default";
   setTimeout(() => {
-    size.value = "disabled";
+    saveLoading.value = "disabled";
   }, 3000);
 
   console.log("result", result);
   console.log("freightChargeSettings-data", freightChargeSettings.value.data);
   console.log("freightChargeSettings", freightChargeSettings);
+};
+
+const deleteData = () => {
+  deleteLoading.value = "default";
+  if (qid.value > 0) {
+    const isDeleted = deleteQuotation(qid.value);
+    console.log(isDeleted);
+    if (isDeleted) {
+      ElNotification({
+        title: "successfully",
+        message: "Quotation deleted successfully!",
+        type: "success"
+      });
+      router.push("/quotes/index");
+    } else {
+      ElNotification({
+        title: "Error",
+        message: "Failed to delete the quotation.",
+        type: "error"
+      });
+    }
+  }
+  setTimeout(() => {
+    deleteLoading.value = "disabled";
+  }, 3000);
+};
+
+const viewHistory = () => {
+  historyVisible.value = true;
+  getHistoryResult();
 };
 
 const handleCheckboxGroupChange = (values: string[]) => {
@@ -416,6 +419,9 @@ watchEffect(() => {
     );
     console.log("sourceData", sourceData); // 最後打印出篩選結果
   }
+  if (historyResult.value.length > 0) {
+    historyLoading.value = false;
+  }
 });
 
 onMounted(() => {
@@ -450,53 +456,50 @@ onMounted(() => {
             plain
             :size="dynamicSize"
             :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
+            :loading="saveLoading !== 'disabled'"
             :icon="useRenderIcon('ri:save-line')"
             @click="saveData"
           >
-            {{ size === "disabled" ? "Save" : "Processing" }}
+            {{ saveLoading === "disabled" ? "Save" : "Processing" }}
           </el-button>
           <el-button
             type="primary"
             plain
             :size="dynamicSize"
             :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
+            :loading="saveLoading !== 'disabled'"
             :icon="useRenderIcon('ep:edit')"
             @click="saveData"
           >
-            {{ size === "disabled" ? "Save as Draft" : "Processing" }}
+            {{ saveLoading === "disabled" ? "Save as Draft" : "Processing" }}
           </el-button>
           <el-button
             type="primary"
             plain
             :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
             :icon="useRenderIcon('ep:view')"
             @click="saveData"
           >
-            {{ size === "disabled" ? "Preview" : "Processing" }}
+            {{ "Preview" }}
           </el-button>
           <el-button
+            v-if="qid > 0"
             type="primary"
             plain
             :size="dynamicSize"
             :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
+            :loading="deleteLoading !== 'disabled'"
             :icon="useRenderIcon('ep:delete')"
-            @click="saveData"
+            @click="deleteData"
           >
-            {{ size === "disabled" ? "Delete" : "Processing" }}
+            {{ deleteLoading === "disabled" ? "Delete" : "Processing" }}
           </el-button>
           <el-button
             type="primary"
             plain
             :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
             :icon="useRenderIcon('ri:list-view')"
-            @click="saveData"
+            @click="viewHistory"
           >
             {{ $t("buttons.pureHistoryLog") }}
           </el-button>
@@ -566,6 +569,14 @@ onMounted(() => {
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Export)</span>
               </template>
+
+              <el-tabs v-if="!disabledExportLocalChargeBtn" type="border-card">
+                <el-tab-pane label="User">User</el-tab-pane>
+                <el-tab-pane label="Config">Config</el-tab-pane>
+                <el-tab-pane label="Role">Role</el-tab-pane>
+                <el-tab-pane label="Task">Task</el-tab-pane>
+              </el-tabs>
+
               <HotTable
                 v-if="!disabledExportLocalChargeBtn"
                 ref="exportHotTableRef"
@@ -576,6 +587,12 @@ onMounted(() => {
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Import)</span>
               </template>
+              <el-tabs v-if="!disabledImportLocalChargeBtn" type="border-card">
+                <el-tab-pane label="User">User</el-tab-pane>
+                <el-tab-pane label="Config">Config</el-tab-pane>
+                <el-tab-pane label="Role">Role</el-tab-pane>
+                <el-tab-pane label="Task">Task</el-tab-pane>
+              </el-tabs>
               <HotTable
                 v-if="!disabledImportLocalChargeBtn"
                 ref="importHotTableRef"
@@ -629,6 +646,7 @@ onMounted(() => {
         </div>
       </el-checkbox-group>
     </el-drawer>
+    <!--
     <el-drawer v-model="localVisible" title="Local Charge Settings">
       <div>
         <el-form
@@ -683,6 +701,29 @@ onMounted(() => {
           </el-timeline-item>
         </el-timeline>
       </div>
+    </el-drawer>
+    -->
+    <el-drawer v-model="historyVisible" size="60%" title="History">
+      <VxeTableBar
+        :vxeTableRef="vxeTableRef"
+        :columns="historyColumns"
+        title=""
+        @refresh="getHistoryResult"
+      >
+        <template v-slot="{ size, dynamicColumns }">
+          <vxe-grid
+            ref="vxeTableRef"
+            v-loading="historyLoading"
+            show-overflow
+            height="500"
+            :size="size"
+            :row-config="{ isHover: true }"
+            :scroll-y="{ enabled: true }"
+            :columns="dynamicColumns"
+            :data="historyResult"
+          />
+        </template>
+      </VxeTableBar>
     </el-drawer>
   </div>
 </template>
