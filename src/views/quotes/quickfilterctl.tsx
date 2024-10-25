@@ -213,14 +213,12 @@ export function quickFilterCTL() {
   // };
   // TODO: API clcik quick filter to search
   const handleQuickFilterClick = (item: QuickFilter) => {
-    console.log(`Clicked button ${item.filterName}`);
     quickFilterList.value.forEach(a => {
       a.clicked = false;
     });
     if (quickFilterList.value.length > 1) {
       item.clicked = true;
     }
-    console.log("handleQuickFilterClick quickFilterList:", quickFilterList);
     initBasicFilter();
   };
   const getOptions = (jsonString: string) => {
@@ -342,8 +340,6 @@ export function quickFilterCTL() {
       fetchOptionsNeedParam(quickFilterFormInitData.filters);
 
       const customizedFilters = result2;
-      console.log("customizedFilters", customizedFilters);
-      // console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {
         const filterColumnsClone = deepClone(filterColumns);
         filterColumnsClone.forEach(filter => {
@@ -398,11 +394,6 @@ export function quickFilterCTL() {
       });
   };
   const initAdvancedFilter = () => {
-    console.log("initAdvancedFilter");
-    console.log(
-      "quickFilterFormInitData.filters",
-      quickFilterFormInitData.filters
-    );
     advancedFilterForm.filters.forEach((filter, index) => {
       Object.assign(filter, quickFilterFormInitData.filters[index]);
     });
@@ -445,7 +436,6 @@ export function quickFilterCTL() {
   // };
   const handleAdvancedReset = () => {
     initBasicFilter();
-    console.log("advancedFilterForm", advancedFilterForm.filters);
     // console.log(
     //   "handleAdvancedReset showBasicFilterTopForm",
     //   showBasicFilterTopForm.value
@@ -468,7 +458,6 @@ export function quickFilterCTL() {
     }
   };
   const handleBasicFilterBtnClick = item => {
-    console.log("handleBasicFilterBtnClick", item);
     item.value = "";
     item.selectValue = "";
     item.ValueBegin = "";

@@ -3,6 +3,12 @@ import { ref } from "vue";
 
 export function LocalChargeHooks() {
   interface iLocalChargeResult {
+    cityID: number;
+    city: string;
+    detail: iLocalChargeDetailResult[];
+  }
+
+  interface iLocalChargeDetailResult {
     id: number;
     chargeCodeID: number;
     chargeCode: string;
@@ -14,70 +20,8 @@ export function LocalChargeHooks() {
   }
 
   const exportLocalChargeHotTableSetting = ref({
-    data: [
-      {
-        chargeID: null,
-        location: null,
-        chargeCode: null,
-        displayName: null,
-        condition: null,
-        Unit: null,
-        sellingRate: null,
-        cost: null,
-        uom: null,
-        remark: null
-      },
-      {
-        chargeID: null,
-        location: null,
-        chargeCode: null,
-        displayName: null,
-        condition: null,
-        Unit: null,
-        sellingRate: null,
-        cost: null,
-        uom: null,
-        remark: null
-      },
-      {
-        chargeID: null,
-        location: null,
-        chargeCode: null,
-        displayName: null,
-        condition: null,
-        Unit: null,
-        sellingRate: null,
-        cost: null,
-        uom: null,
-        remark: null
-      },
-      {
-        chargeID: null,
-        location: null,
-        chargeCode: null,
-        displayName: null,
-        condition: null,
-        Unit: null,
-        sellingRate: null,
-        cost: null,
-        uom: null,
-        remark: null
-      },
-      {
-        chargeID: null,
-        location: null,
-        chargeCode: null,
-        displayName: null,
-        condition: null,
-        Unit: null,
-        sellingRate: null,
-        cost: null,
-        uom: null,
-        remark: null
-      }
-    ],
+    data: [],
     colHeaders: [
-      "Location",
       "Charge Code",
       "Display Name",
       "Condition",
@@ -88,8 +32,7 @@ export function LocalChargeHooks() {
       "Remark"
     ],
     columns: [
-      { data: "location", type: "dropdown", source: [] },
-      { data: "chargeCode", type: "dropdown", source: [] },
+      { data: "chargeCode", type: "dropdown", source: ["", ""] },
       { data: "displayName", type: "text" },
       {
         data: "condition",
@@ -113,6 +56,107 @@ export function LocalChargeHooks() {
     licenseKey: "524eb-e5423-11952-44a09-e7a22",
     contextMenu: true
   });
+
+  // const exportLocalChargeHotTableSetting = ref({
+  //   data: [
+  //     {
+  //       chargeID: null,
+  //       location: null,
+  //       chargeCode: null,
+  //       displayName: null,
+  //       condition: null,
+  //       Unit: null,
+  //       sellingRate: null,
+  //       cost: null,
+  //       uom: null,
+  //       remark: null
+  //     },
+  //     {
+  //       chargeID: null,
+  //       location: null,
+  //       chargeCode: null,
+  //       displayName: null,
+  //       condition: null,
+  //       Unit: null,
+  //       sellingRate: null,
+  //       cost: null,
+  //       uom: null,
+  //       remark: null
+  //     },
+  //     {
+  //       chargeID: null,
+  //       location: null,
+  //       chargeCode: null,
+  //       displayName: null,
+  //       condition: null,
+  //       Unit: null,
+  //       sellingRate: null,
+  //       cost: null,
+  //       uom: null,
+  //       remark: null
+  //     },
+  //     {
+  //       chargeID: null,
+  //       location: null,
+  //       chargeCode: null,
+  //       displayName: null,
+  //       condition: null,
+  //       Unit: null,
+  //       sellingRate: null,
+  //       cost: null,
+  //       uom: null,
+  //       remark: null
+  //     },
+  //     {
+  //       chargeID: null,
+  //       location: null,
+  //       chargeCode: null,
+  //       displayName: null,
+  //       condition: null,
+  //       Unit: null,
+  //       sellingRate: null,
+  //       cost: null,
+  //       uom: null,
+  //       remark: null
+  //     }
+  //   ],
+  //   colHeaders: [
+  //     "Location",
+  //     "Charge Code",
+  //     "Display Name",
+  //     "Condition",
+  //     "Unit",
+  //     "UOM",
+  //     "Amount",
+  //     "Cost",
+  //     "Remark"
+  //   ],
+  //   columns: [
+  //     { data: "location", type: "dropdown", source: [] },
+  //     { data: "chargeCode", type: "dropdown", source: [] },
+  //     { data: "displayName", type: "text" },
+  //     {
+  //       data: "condition",
+  //       type: "dropdown",
+  //       source: ["MIN", "FLAT", ">", ">=", "=", "<=", "<"]
+  //     },
+  //     { data: "Unit", type: "numeric" },
+  //     { data: "uom", type: "dropdown", source: ["KG", "LB", "CBM", "TON"] },
+  //     { data: "sellingRate", type: "numeric" },
+  //     { data: "cost", type: "numeric" },
+  //     { data: "remark", type: "text" }
+  //   ],
+  //   rowHeaders: false,
+  //   dropdownMenu: true,
+  //   width: "100%",
+  //   height: "auto",
+  //   autoWrapRow: true,
+  //   autoWrapCol: true,
+  //   allowInsertColumn: true,
+  //   allowInsertRow: true,
+  //   licenseKey: "524eb-e5423-11952-44a09-e7a22",
+  //   contextMenu: true
+  // });
 
   const importLocalChargeHotTableSetting = ref({
     data: [

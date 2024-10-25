@@ -1,6 +1,7 @@
 import quoteDetailService from "@/services/quote/QuoteDetailService";
-
 import { reactive, ref } from "vue";
+import type { FieldValues } from "plus-pro-components";
+
 export function QuoteDetailHooks() {
   interface dropdownCtl {
     text: string;
@@ -20,6 +21,79 @@ export function QuoteDetailHooks() {
     type: string;
     source: [];
   }
+
+  // interface iQuotationDetailResult {
+  //   qid: number;
+  //   quoteNo: string;
+  //   customerHQID: number;
+  //   plid: number;
+  //   productLineName: string;
+  //   productLineCode: string;
+  //   attentionToId: number;
+  //   attentionTo: string;
+  //   effectiveDate: string;
+  //   expiredDate: string;
+  //   issueDate: string;
+  //   issueById: string;
+  //   issueBy: string;
+  //   status: string;
+  //   statusId: string;
+  //   tradeTermId: number;
+  //   creditTermId: number;
+  //   shippingTerm?: string | null;
+  //   typeId: string;
+  //   type: string;
+  //   moveType?: string | null;
+  //   reference?: string | null;
+  //   laneSegment: string;
+  //   nra: string;
+  //   salesInfor: SalesInfo;
+  //   tradeTerm: string;
+  // }
+  // interface SalesInfo {
+  //   salesId: string;
+  //   salesName: string;
+  //   salesMail: string;
+  //   salesTel: string;
+  //   salesMobile: string;
+  // }
+
+  const quotationDetailResult = ref<FieldValues>({
+    qid: 0,
+    quoteNo: "",
+    plid: 0,
+    productLineName: "",
+    productLineCode: "",
+    attentionToId: 0,
+    attentionTo: "",
+    effectiveDate: "",
+    expiredDate: "",
+    issueDate: "",
+    issueById: "",
+    issueBy: "",
+    status: "",
+    statusId: "",
+    tradeTermId: 0,
+    creditTermId: 0,
+    shippingTerm: null,
+    typeId: "",
+    type: "",
+    moveType: null,
+    reference: null,
+    laneSegment: "",
+    nra: "",
+    cbm: 0,
+    cbmUom: "",
+    customerHQID: 0,
+    customerName: "",
+    tradeTerm: "",
+    salesId: "",
+    salesName: "",
+    salesMail: "",
+    salesTel: "",
+    salesMobile: "",
+    greetings: ""
+  });
 
   const customerResult = reactive({
     customers: [] as Array<dropdownCtl>,
@@ -60,6 +134,19 @@ export function QuoteDetailHooks() {
     contextMenu: true
   });
 
+  async function getQuotationDetailResult(QuoteID: number) {
+    try {
+      const response = await quoteDetailService.getQuoteDetailResult(QuoteID);
+      if (response && response.returnValue) {
+        quotationDetailResult.value = { ...response.returnValue };
+      } else {
+        throw new Error("Quotation Detail not found.");
+      }
+    } catch (error) {
+      console.error("getQuotationDetailResult Error:", error);
+    }
+  }
+
   async function getCustomerByOwnerUserResult() {
     customerResult.loading = true; // 開始撈取資料，設置 loading 為 true
     customerResult.error = null; // 清空之前的錯誤信息
@@ -78,10 +165,12 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function getChargeCodeSettingResult(ChargeCodeType: number) {
+  async function getChargeCodeSettingResult(QuoteID, PID) {
     try {
-      const response =
-        await quoteDetailService.ChargeCodeSettingResult(ChargeCodeType);
+      const response = await quoteDetailService.ChargeCodeSettingResult(
+        QuoteID,
+        PID
+      );
       if (response != null) {
         ChargeCodeSettingResult.splice(0);
         ChargeCodeSettingResult.push(...response.returnValue);
@@ -100,9 +189,11 @@ export function QuoteDetailHooks() {
 
   async function getProductLineByCustomerResult(customerHQID: number) {
     try {
+      console.log("getProductLineByCustomerResult", customerHQID);
       const response =
         await quoteDetailService.getProductLineByCustomerData(customerHQID);
       if (response != null) {
+        console.log("getProductLineByCustomerResult", response);
         productLineResult.value = response.returnValue.map((item: any) => ({
           label: item.productLineCode,
           value: item.pid
@@ -238,6 +329,8 @@ export function QuoteDetailHooks() {
     tradeTermResult,
     creditTermResult,
     freightChargeResult,
-    deleteQuotation
+    deleteQuotation,
+    quotationDetailResult,
+    getQuotationDetailResult
   };
 }

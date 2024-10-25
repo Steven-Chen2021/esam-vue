@@ -1,6 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, defineComponent, toRaw, watchEffect } from "vue";
+//CSS Import
 import "plus-pro-components/es/components/drawer-form/style/css";
+import "handsontable/dist/handsontable.full.css";
+import "@wangeditor/editor/dist/css/style.css";
+
+import {
+  onBeforeUnmount,
+  ref,
+  shallowRef,
+  onMounted,
+  defineComponent,
+  nextTick,
+  watchEffect
+} from "vue";
+
 import {
   type PlusColumn,
   type FieldValues,
@@ -10,7 +23,6 @@ import { ElNotification } from "element-plus";
 /*handsontable*/
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
-import "handsontable/dist/handsontable.full.css";
 registerAllModules();
 defineComponent({
   components: {
@@ -19,7 +31,6 @@ defineComponent({
 });
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import QuoteDetailService from "@/services/quote/QuoteDetailService";
-
 // RouterHooks
 import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
@@ -27,6 +38,10 @@ import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
 import { HistoryComponentHooks } from "./details/historyHooks";
 import { VxeTableBar } from "@/components/ReVxeTableBar";
+
+//Editor
+import { Editor, Toolbar } from "@wangeditor/editor-for-vue";
+import { i18nChangeLanguage } from "@wangeditor/editor";
 
 const {
   getCustomerByOwnerUserResult,
@@ -51,14 +66,12 @@ const {
   tradeTermResult,
   creditTermResult,
   freightChargeResult,
-  deleteQuotation
+  deleteQuotation,
+  quotationDetailResult,
+  getQuotationDetailResult
 } = QuoteDetailHooks();
 
 const {
-  exportLocalChargeResult,
-  newExportLocalChargeItem,
-  addColumnHeaderItem,
-  removeItem,
   exportLocationResult,
   importLocationResult,
   exportLocalChargeHotTableSetting,
@@ -75,10 +88,14 @@ initToDetail("params");
 
 const hotTableRef = ref(null);
 const importHotTableRef = ref(null);
-const exportHotTableRef = ref(null);
+// const exportHotTableRef = ref(null);
 const freightVisible = ref(false);
 const localVisible = ref(false);
 const historyVisible = ref(false);
+const deleteVisible = ref(false);
+const historyBtnVisible = ref(false);
+const deleteBtnVisible = ref(false);
+const previewBtnVisible = ref(false);
 const activeName = ref("1");
 const dynamicSize = ref();
 const saveLoading = ref("disabled");
@@ -89,28 +106,16 @@ const disabledExportLocalChargeBtn = ref(true);
 const disabledImportLocalChargeBtn = ref(true);
 const vxeTableRef = ref();
 
-const result = ref<FieldValues>({
-  ShippingTerm: null,
-  TradeTerm: null,
-  CreditTerm: null,
-  CustomerLead: null,
-  CustomerHQID: null as number,
-  AttentionTo: null,
-  status: null,
-  PL: null,
-  name: null,
-  remark: null,
-  TermsAndConditions: null,
-  salesName: null,
-  saleseMail: null,
-  saleseTel: null,
-  salesMobile: null,
-  currency: null,
-  shipmentMode: null,
-  quoteType: null,
-  cbm: 1000,
-  cbmUOM: "KG"
-});
+//Editor Parameters
+const mode = "default";
+const editorRef = shallowRef();
+const toolbarConfig: any = { excludeKeys: "fullScreen" };
+const editorConfig = { placeholder: "请输入内容..." };
+const handleCreated = editor => {
+  // 记录 editor 实例，重要！
+  editorRef.value = editor;
+};
+
 const rules = {
   name: [
     {
@@ -129,7 +134,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
     width: 120,
-    prop: "CustomerLead",
+    prop: "customerName",
     valueType: "autocomplete",
     fieldProps: {
       valueKey: "text",
@@ -140,7 +145,8 @@ const quoteDetailColumns: PlusColumn[] = [
         cb(results);
       },
       onSelect: (item: { text: string; value: number }) => {
-        result.value.CustomerHQID = item.value;
+        quotationDetailResult.value.customerHQID = item.value;
+        console.log("3236236823952j354", item);
         getProductLineByCustomerResult(item.value);
         getAttentionToResult(item.value);
       }
@@ -149,7 +155,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Product Line",
     width: 360,
-    prop: "PL",
+    prop: "productLineCode",
     valueType: "select",
     options: productLineResult,
     colProps: {
@@ -160,14 +166,17 @@ const quoteDetailColumns: PlusColumn[] = [
         const PLCode = ref();
         if (value === 6) {
           //Ocean Freight Charge
-          getChargeCodeSettingResult(1);
+          getChargeCodeSettingResult(qid.value, value);
           handleProductLineChange();
           PLCode.value = "OMS";
         } else if (value === 2) {
           PLCode.value = "AMS";
         }
         getQuoteTypeResult("Lead", "Type", PLCode.value);
-        getCreditTermResult(result.value.CustomerHQID as number, value);
+        getCreditTermResult(
+          quotationDetailResult.value.customerHQID as number,
+          value
+        );
         getQuoteFreightChargeResult(qid.value, value);
         console.log(freightChargeResult.value);
         freightChargeSettings.value.data = freightChargeResult.value;
@@ -176,10 +185,10 @@ const quoteDetailColumns: PlusColumn[] = [
   },
   {
     label: "Effective - Expired",
-    prop: "endTime",
+    prop: "period",
     valueType: "date-picker",
     fieldProps: {
-      type: "datetimerange",
+      type: "daterange",
       startPlaceholder: "Effective",
       endPlaceholder: "Expired",
       format: "YYYY-MMM-DD"
@@ -191,7 +200,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Shipping Term",
     width: 120,
-    prop: "ShippingTerm",
+    prop: "shippingTerm",
     valueType: "select",
     options: shippingTermResult,
     colProps: {
@@ -200,13 +209,13 @@ const quoteDetailColumns: PlusColumn[] = [
     fieldProps: {
       onChange: (value: string) => {
         getTradeTermResult(value);
-        result.value.TradeTerm = null;
+        quotationDetailResult.value.tradeTermId = null;
       }
     }
   },
   {
     label: "Type",
-    prop: "quoteType",
+    prop: "typeId",
     valueType: "radio",
     options: quoteTypeResult,
     colProps: {
@@ -216,7 +225,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Attention To",
     width: 360,
-    prop: "AttentionTo",
+    prop: "attentionTo",
     valueType: "select",
     options: attentionToResult,
     colProps: {
@@ -226,7 +235,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Trade Term",
     width: 120,
-    prop: "TradeTerm",
+    prop: "tradeTermCode",
     valueType: "select",
     options: tradeTermResult,
     colProps: {
@@ -236,7 +245,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Credit Term",
     width: 120,
-    prop: "CreditTerm",
+    prop: "creditTermCode",
     valueType: "select",
     options: creditTermResult,
     colProps: {
@@ -245,13 +254,9 @@ const quoteDetailColumns: PlusColumn[] = [
   }
 ];
 
-// 處理資料變更事件
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     changes.forEach(([row, prop, oldValue, newValue]) => {
-      console.log(
-        `資料變更 - 列: ${row}, 欄位: ${prop}, 舊值: ${oldValue}, 新值: ${newValue}`
-      );
       if (
         ["poreceipt", "poloading", "podelivery", "podischarge"].includes(prop)
       ) {
@@ -260,12 +265,22 @@ const handleAfterChange = (changes, source) => {
 
         freightChargeSettings.value.data.forEach(rowData => {
           if (rowData.poreceipt) {
-            exportLocationResult.value.push(rowData.poreceipt);
+            // 插入一筆新的 item 並將 rowData.poreceipt 當成 city 的值
+            exportLocationResult.value.push({
+              cityID: Math.random(), // 可以用實際的 cityID 或生成唯一 ID
+              city: rowData.poreceipt,
+              detail: [] // 可以視情況給 detail 內容或保留為空陣列
+            });
           }
           if (rowData.poloading) {
-            exportLocationResult.value.push(rowData.poloading);
+            exportLocationResult.value.push({
+              cityID: Math.random(), // 可以用實際的 cityID 或生成唯一 ID
+              city: rowData.poloading,
+              detail: []
+            });
           }
         });
+
         freightChargeSettings.value.data.forEach(rowData => {
           if (rowData.podelivery) {
             importLocationResult.value.push(rowData.podelivery);
@@ -274,8 +289,6 @@ const handleAfterChange = (changes, source) => {
             importLocationResult.value.push(rowData.podischarge);
           }
         });
-        console.log("exportLocationResult", exportLocationResult);
-        console.log("importLocationResult", importLocationResult);
       }
       if (exportLocationResult.value.length > 0) {
         exportLocalChargeHotTableSetting.value.columns.forEach(column => {
@@ -297,9 +310,13 @@ const handleAfterChange = (changes, source) => {
   }
 };
 
-// 處理選擇事件
 const handleAfterSelection = (row, column, row2, column2) => {
   console.log(`選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`);
+};
+
+const handleRemoveRow = (index, amount) => {
+  console.log(`刪除了 ${amount} 行，從索引 ${index} 開始`);
+  console.log(freightChargeSettings);
 };
 
 const freightChargeSettings = ref({
@@ -320,7 +337,8 @@ const freightChargeSettings = ref({
   contextMenu: true,
   // 添加事件監聽器
   afterChange: handleAfterChange,
-  afterSelection: handleAfterSelection
+  afterSelection: handleAfterSelection,
+  afterRemoveRow: handleRemoveRow
 });
 
 const saveData = () => {
@@ -329,7 +347,7 @@ const saveData = () => {
     saveLoading.value = "disabled";
   }, 3000);
 
-  console.log("result", result);
+  console.log("result", quotationDetailResult);
   console.log("freightChargeSettings-data", freightChargeSettings.value.data);
   console.log("freightChargeSettings", freightChargeSettings);
 };
@@ -426,17 +444,60 @@ watchEffect(() => {
 
 onMounted(() => {
   if (getParameter.id != "0") {
-    QuoteDetailService.getQuoteDetailResult(getParameter.id);
     const id = Array.isArray(getParameter.id)
       ? parseInt(getParameter.id[0], 10)
       : parseInt(getParameter.id, 10);
     if (!isNaN(id)) {
       qid.value = id;
     }
+    getQuotationDetailResult(qid.value).then(() => {
+      historyBtnVisible.value = true;
+      deleteBtnVisible.value = true;
+      previewBtnVisible.value = true;
+
+      nextTick(() => {
+        const selectedItem = {
+          text: quotationDetailResult.value.customerName,
+          value: quotationDetailResult.value.customerHQID
+        }; // 模擬選中的公司
+
+        const fieldProps = quoteDetailColumns[0].fieldProps as any;
+        if (fieldProps.onSelect) {
+          console.log("fieldProps.selectedItem", selectedItem);
+          console.log("fieldProps.onSelect", fieldProps.onSelect);
+          fieldProps.onSelect(selectedItem);
+        } else {
+          console.warn("onSelect is not defined in fieldProps.");
+        }
+
+        const companyNameColumn = quoteDetailColumns.find(
+          col => col.prop === "customerName"
+        ) as any;
+        if (companyNameColumn?.fieldProps?.onSelect) {
+          companyNameColumn.fieldProps.onSelect(selectedItem);
+        } else {
+          console.warn("onSelect is not defined for Company Name.");
+        }
+
+        const productLineCodeColumn = quoteDetailColumns.find(
+          col => col.prop === "productLineCode"
+        ) as any;
+        if (productLineCodeColumn?.fieldProps?.onChange) {
+          productLineCodeColumn.fieldProps.onChange(
+            quotationDetailResult.value.plid
+          );
+        }
+      });
+    });
   }
   getCustomerByOwnerUserResult();
   getShippingTermResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+});
+onBeforeUnmount(() => {
+  const editor = editorRef.value;
+  if (editor == null) return;
+  editor.destroy();
 });
 </script>
 
@@ -446,7 +507,7 @@ onMounted(() => {
       <div class="flex justify-between items-center">
         <!-- 左側 Label 和 Icon 按鈕 -->
         <div class="flex items-center space-x-2">
-          <span class="text-gray-700">QA123456789</span>
+          <span class="text-gray-700">{{ quotationDetailResult.quoteNo }}</span>
         </div>
 
         <!-- 右側按鈕群組 -->
@@ -474,6 +535,7 @@ onMounted(() => {
             {{ saveLoading === "disabled" ? "Save as Draft" : "Processing" }}
           </el-button>
           <el-button
+            v-if="previewBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -483,7 +545,7 @@ onMounted(() => {
             {{ "Preview" }}
           </el-button>
           <el-button
-            v-if="qid > 0"
+            v-if="deleteBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -495,6 +557,7 @@ onMounted(() => {
             {{ deleteLoading === "disabled" ? "Delete" : "Processing" }}
           </el-button>
           <el-button
+            v-if="historyBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -515,7 +578,7 @@ onMounted(() => {
                 <span class="text-orange-500">QUOTE DETAIL</span>
               </template>
               <PlusForm
-                v-model="result"
+                v-model="quotationDetailResult"
                 :columns="quoteDetailColumns"
                 :rules="rules"
                 :row-props="{ gutter: 20 }"
@@ -532,9 +595,12 @@ onMounted(() => {
                   >
                 </div>
                 <div class="el-form-item__content">
-                  <el-input-number v-model="result.cbm" :min="0" />
+                  <el-input-number
+                    v-model="quotationDetailResult.cbm"
+                    :min="0"
+                  />
                   <el-select
-                    v-model="result.cbmUOM"
+                    v-model="quotationDetailResult.cbmUOM"
                     placeholder="Select"
                     style="width: 80px; height: 32px; margin-left: 5px"
                   >
@@ -543,6 +609,25 @@ onMounted(() => {
                   </el-select>
                 </div>
               </div>
+            </el-collapse-item>
+            <el-collapse-item title="GREETINGS" name="2">
+              <template #title>
+                <span class="text-orange-500">GREETINGS</span>
+              </template>
+              <Toolbar
+                :editor="editorRef"
+                :defaultConfig="toolbarConfig"
+                :mode="mode"
+                style="border-bottom: 1px solid #ccc"
+              />
+              <Editor
+                v-model="quotationDetailResult.greetings"
+                :defaultConfig="editorConfig"
+                :mode="mode"
+                style="height: 500px; overflow-y: hidden"
+                @onCreated="handleCreated"
+              />
+              <EditorBase />
             </el-collapse-item>
             <el-collapse-item title="FREIGHT CHARGE" name="3">
               <template #title>
@@ -571,17 +656,20 @@ onMounted(() => {
               </template>
 
               <el-tabs v-if="!disabledExportLocalChargeBtn" type="border-card">
-                <el-tab-pane label="User">User</el-tab-pane>
-                <el-tab-pane label="Config">Config</el-tab-pane>
-                <el-tab-pane label="Role">Role</el-tab-pane>
-                <el-tab-pane label="Task">Task</el-tab-pane>
+                <el-tab-pane
+                  v-for="(item, index) in exportLocationResult"
+                  :key="index"
+                  :label="item.city"
+                >
+                  <HotTable :settings="exportLocalChargeHotTableSetting" />
+                </el-tab-pane>
               </el-tabs>
 
-              <HotTable
+              <!-- <HotTable
                 v-if="!disabledExportLocalChargeBtn"
                 ref="exportHotTableRef"
                 :settings="exportLocalChargeHotTableSetting"
-              />
+              /> -->
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
               <template #title>
@@ -599,12 +687,22 @@ onMounted(() => {
                 :settings="importLocalChargeHotTableSetting"
               />
             </el-collapse-item>
-            <el-collapse-item title="REMARK " name="6">
+            <el-collapse-item title="TERMS & CONDITIONS" name="6">
+              <template #title>
+                <span class="text-orange-500">TERMS & CONDITIONS</span>
+              </template>
+              <ol class="list-decimal pl-5">
+                <li>First</li>
+                <li>Second</li>
+                <li>Third</li>
+              </ol>
+            </el-collapse-item>
+            <el-collapse-item title="REMARK " name="7">
               <template #title>
                 <span class="text-orange-500">REMARK</span>
               </template>
               <el-input
-                v-model="result.remark"
+                v-model="quotationDetailResult.remark"
                 style="width: 440px"
                 placeholder="Please input"
                 clearable
@@ -618,10 +716,10 @@ onMounted(() => {
                 <span class="text-orange-500">SALES INFO</span>
               </template>
               <div class="flex flex-col ...">
-                <div>Name : {{ result.salesName }}</div>
-                <div>EMAIL : {{ result.saleseMail }}</div>
-                <div>Mobile : {{ result.salesMobile }}</div>
-                <div>Tel : {{ result.saleseTel }}</div>
+                <div>Name : {{ quotationDetailResult.salesName }}</div>
+                <div>EMAIL : {{ quotationDetailResult.salesMail }}</div>
+                <div>Mobile : {{ quotationDetailResult.salesMobile }}</div>
+                <div>Tel : {{ quotationDetailResult.salesTel }}</div>
               </div>
             </el-collapse-item>
           </el-collapse>
@@ -646,63 +744,6 @@ onMounted(() => {
         </div>
       </el-checkbox-group>
     </el-drawer>
-    <!--
-    <el-drawer v-model="localVisible" title="Local Charge Settings">
-      <div>
-        <el-form
-          :model="newExportLocalChargeItem"
-          @submit.prevent="addColumnHeaderItem"
-        >
-          <el-form-item :label="$t('quote.quotedetail.WeightBreak')">
-            <el-input
-              v-model="newExportLocalChargeItem.columnHeader"
-              placeholder="Break Point"
-            />
-          </el-form-item>
-          <el-form-item>
-            <label>{{ tmpvalue }}</label>
-            <el-slider v-model="tmpvalue" range :max="100" @change="test" />
-          </el-form-item>
-          <el-button type="primary" @click="addColumnHeaderItem">{{
-            $t("buttons.pureAdd")
-          }}</el-button>
-        </el-form>
-        <ElDivider />
-        <el-timeline style="max-width: 600px">
-          <el-timeline-item
-            v-for="(item, index) in exportLocalChargeResult"
-            :key="index"
-            :timestamp="item.columnHeader"
-            placement="top"
-          >
-            <el-card class="local-charge-setting-card">
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: space-between;
-                "
-              >
-                <div style="display: flex; align-items: center">
-                  <el-checkbox v-model="item.sellingRate"
-                    >Selling Rate</el-checkbox
-                  >
-                  <el-checkbox v-model="item.Cost" style="margin-left: 20px"
-                    >Cost</el-checkbox
-                  >
-                </div>
-                <el-button
-                  :icon="useRenderIcon('ep:delete')"
-                  circle
-                  @click="removeItem(index)"
-                />
-              </div>
-            </el-card>
-          </el-timeline-item>
-        </el-timeline>
-      </div>
-    </el-drawer>
-    -->
     <el-drawer v-model="historyVisible" size="60%" title="History">
       <VxeTableBar
         :vxeTableRef="vxeTableRef"

@@ -21,10 +21,21 @@ class QuoteDetailService {
     }
   }
 
-  async ChargeCodeSettingResult(ChargeCodeType) {
+  async ChargeCodeSettingResult_Old(ChargeCodeType) {
     try {
       const url = "/api/Quote/ChargeCodeSettingResult";
       const fullUrl = `${url}?ChargeCodeType=${ChargeCodeType}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async ChargeCodeSettingResult(QuoteID, PID) {
+    try {
+      const url = "/api/Quote/QuoteFreightColumnSettingResult";
+      const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}`;
       const response = await API.get(fullUrl);
       return response;
     } catch (error) {
@@ -114,6 +125,28 @@ class QuoteDetailService {
       const url = "/api/Quote/QuoteResult";
       const fullUrl = `${url}?QuoteID=${QuoteID}`;
       const response = await API.delete(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getFreightChargeSettingResult(QuoteID, PID) {
+    try {
+      const url = "/api/Quote/QuoteFreightColumnSettingResult";
+      const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getFreightChargeResult(QuoteID, PID) {
+    try {
+      const url = "/api/Quote/QuoteFreightChargeResult";
+      const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}`;
+      const response = await API.get(fullUrl);
       return response;
     } catch (error) {
       console.error(error);

@@ -764,7 +764,7 @@ onMounted(() => {
             size="small"
             @click="
               toDetail(
-                { id: scope.row.hqid, qname: scope.row.quoteNo },
+                { id: scope.row.qid, qname: scope.row.quoteNo },
                 'params'
               )
             "
