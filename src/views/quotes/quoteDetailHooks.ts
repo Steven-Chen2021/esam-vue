@@ -137,6 +137,8 @@ export function QuoteDetailHooks() {
   async function getQuotationDetailResult(QuoteID: number) {
     try {
       const response = await quoteDetailService.getQuoteDetailResult(QuoteID);
+      console.log("response", response);
+      console.log("responseR", response.returnValue);
       if (response && response.returnValue) {
         quotationDetailResult.value = { ...response.returnValue };
       } else {

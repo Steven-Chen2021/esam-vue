@@ -30,7 +30,7 @@ defineComponent({
   }
 });
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import QuoteDetailService from "@/services/quote/QuoteDetailService";
+
 // RouterHooks
 import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
@@ -41,17 +41,13 @@ import { VxeTableBar } from "@/components/ReVxeTableBar";
 
 //Editor
 import { Editor, Toolbar } from "@wangeditor/editor-for-vue";
-import { i18nChangeLanguage } from "@wangeditor/editor";
 
 const {
   getCustomerByOwnerUserResult,
   customerResult,
-  productLineOptions,
   getChargeCodeSettingResult,
   ChargeCodeSettingResult,
   chargeCodeSettingValues,
-  FreightChargeSettings,
-  freightChargeHotTableKey,
   getProductLineByCustomerResult,
   getShippingTermResult,
   getAttentionToResult,
@@ -75,7 +71,9 @@ const {
   exportLocationResult,
   importLocationResult,
   exportLocalChargeHotTableSetting,
-  importLocalChargeHotTableSetting
+  importLocalChargeHotTableSetting,
+  getLocalChargeResult,
+  localChargeResult
 } = LocalChargeHooks();
 
 const { historyColumns, historyResult, getHistoryResult } =
@@ -262,23 +260,58 @@ const handleAfterChange = (changes, source) => {
       ) {
         exportLocationResult.value.splice(0, exportLocationResult.value.length);
         importLocationResult.value.splice(0, importLocationResult.value.length);
-
         freightChargeSettings.value.data.forEach(rowData => {
           if (rowData.poreceipt) {
-            // 插入一筆新的 item 並將 rowData.poreceipt 當成 city 的值
-            exportLocationResult.value.push({
-              cityID: Math.random(), // 可以用實際的 cityID 或生成唯一 ID
-              city: rowData.poreceipt,
-              detail: [] // 可以視情況給 detail 內容或保留為空陣列
+            getLocalChargeResult(
+              qid.value,
+              quotationDetailResult.value.productLineCode,
+              true,
+              rowData.poreceipt
+            ).then(() => {
+              console.log(localChargeResult);
+              if (
+                localChargeResult.value &&
+                localChargeResult.value.length > 0
+              ) {
+                localChargeResult.value.forEach(localCharge => {
+                  console.log("localCharge", localCharge);
+                  exportLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [], // 預設值或實際資料
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map((column: any) => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true
+                    }
+                  });
+                });
+                disabledExportLocalChargeBtn.value = false;
+              }
             });
           }
-          if (rowData.poloading) {
-            exportLocationResult.value.push({
-              cityID: Math.random(), // 可以用實際的 cityID 或生成唯一 ID
-              city: rowData.poloading,
-              detail: []
-            });
-          }
+          // if (rowData.poloading) {
+          //   exportLocationResult.value.push({
+          //     cityID: Math.random(),
+          //     city: rowData.poloading,
+          //     detail: []
+          //   });
+          // }
         });
 
         freightChargeSettings.value.data.forEach(rowData => {
@@ -661,7 +694,7 @@ onBeforeUnmount(() => {
                   :key="index"
                   :label="item.city"
                 >
-                  <HotTable :settings="exportLocalChargeHotTableSetting" />
+                  <HotTable :settings="item.hotTableSetting" />
                 </el-tab-pane>
               </el-tabs>
 

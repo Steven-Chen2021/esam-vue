@@ -3,7 +3,9 @@ import API from "../interceptor";
 class QuoteDetailService {
   async getQuoteDetailResult(QID) {
     try {
-      const response = await API.get(`/api/Quote/QuoteDetailResult?qid=${QID}`);
+      const response = await API.get(
+        `/api/Quote/QuoteDetailResult?QuoteID=${QID}`
+      );
       return response;
     } catch (error) {
       console.error(error);
@@ -146,6 +148,17 @@ class QuoteDetailService {
     try {
       const url = "/api/Quote/QuoteFreightChargeResult";
       const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getLocalChargeResult(QuoteID, PID, IsExport, location) {
+    try {
+      const url = "/api/Quote/QuoteLocalChargegResult";
+      const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}&IsExport=${IsExport}&location=${location}`;
       const response = await API.get(fullUrl);
       return response;
     } catch (error) {

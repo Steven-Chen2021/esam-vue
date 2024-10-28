@@ -1,11 +1,12 @@
-// import quoteDetailService from "@/services/quote/QuoteDetailService";
+import quoteDetailService from "@/services/quote/QuoteDetailService";
 import { ref } from "vue";
 
 export function LocalChargeHooks() {
   interface iLocalChargeResult {
     cityID: number;
     city: string;
-    detail: iLocalChargeDetailResult[];
+    detail: iLocalChargeDetailResult[] | null;
+    hotTableSetting: iLocalChargeHotTableSetting | null;
   }
 
   interface iLocalChargeDetailResult {
@@ -17,6 +18,27 @@ export function LocalChargeHooks() {
     sellingRate: number;
     cost: number;
     remark: string;
+  }
+
+  interface iLocalChargeHotTableSetting {
+    data: [];
+    colHeaders: [];
+    rowHeaders: boolean;
+    dropdownMenu: boolean;
+    width: string;
+    height: string;
+    columns: Array<{
+      data: string;
+      type: string;
+      source?: string[];
+    }>;
+    autoWrapRow: boolean;
+    autoWrapCol: boolean;
+    allowInsertColumn: boolean;
+    allowInsertRow: boolean;
+    allowInvalid: boolean;
+    licenseKey: string;
+    contextMenu: boolean;
   }
 
   const exportLocalChargeHotTableSetting = ref({
@@ -56,8 +78,6 @@ export function LocalChargeHooks() {
     licenseKey: "524eb-e5423-11952-44a09-e7a22",
     contextMenu: true
   });
-
-  // const exportLocalChargeHotTableSetting = ref({
   //   data: [
   //     {
   //       chargeID: null,
@@ -262,65 +282,43 @@ export function LocalChargeHooks() {
   const exportLocationResult = ref<iLocalChargeResult[]>([]);
   const importLocationResult = ref<iLocalChargeResult[]>([]);
 
-  const exportLocalChargeResult = ref([
-    {
-      columnHeader: "",
-      sellingRate: false,
-      Cost: false,
-      sorting: 0
-    }
-  ]);
-
-  const newExportLocalChargeItem = ref({
-    columnHeader: "",
-    sellingRate: false,
-    Cost: false,
-    sorting: 0
-  });
-
-  // 將符號與數字分開
-  const parseColumnHeader = columnHeader => {
-    const symbol = columnHeader.charAt(0); // 取得第一個字元符號
-    const number = parseInt(columnHeader.slice(1), 10); // 解析後面的數字
-    return { symbol, number };
-  };
-
-  const addColumnHeaderItem = () => {
-    if (newExportLocalChargeItem.value.columnHeader) {
-      // 解析 timestamp，並加入到 timelineItems 中
-      const { number } = parseColumnHeader(
-        newExportLocalChargeItem.value.columnHeader
+  interface iLocalChargeSetting {
+    cityID: number;
+    city: string;
+    colHeaders: [];
+    columns: [];
+    detail: [];
+  }
+  const localChargeResult = ref<iLocalChargeSetting[] | null>([]);
+  async function getLocalChargeResult(
+    QuoteID: number,
+    PID: any,
+    IsExport: boolean,
+    location: number
+  ) {
+    try {
+      const response = await quoteDetailService.getLocalChargeResult(
+        QuoteID,
+        PID,
+        IsExport,
+        location
       );
-
-      exportLocalChargeResult.value.push({
-        ...newExportLocalChargeItem.value,
-        sorting: number // 把解析出來的數字存下來，方便後續排序
-      });
-      newExportLocalChargeItem.value.columnHeader = "";
-      newExportLocalChargeItem.value.sellingRate = false;
-      newExportLocalChargeItem.value.Cost = false;
-
-      // 對 timelineItems 進行排序，依照 parsedNumber 由小到大排列
-      exportLocalChargeResult.value = exportLocalChargeResult.value.sort(
-        (a, b) => a.sorting - b.sorting
-      );
-      console.log(exportLocalChargeResult);
+      if (response && response.returnValue) {
+        localChargeResult.value = response.returnValue;
+      } else {
+        throw new Error("Quotation Detail not found.");
+      }
+    } catch (error) {
+      console.error("getQuotationDetailResult Error:", error);
     }
-  };
-  const removeItem = index => {
-    if (index > 0) {
-      exportLocalChargeResult.value.splice(index, 1);
-    }
-  };
+  }
 
   return {
-    exportLocalChargeResult,
-    newExportLocalChargeItem,
-    addColumnHeaderItem,
-    removeItem,
     exportLocationResult,
     importLocationResult,
     exportLocalChargeHotTableSetting,
-    importLocalChargeHotTableSetting
+    importLocalChargeHotTableSetting,
+    getLocalChargeResult,
+    localChargeResult
   };
 }
