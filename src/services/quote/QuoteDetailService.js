@@ -23,17 +23,6 @@ class QuoteDetailService {
     }
   }
 
-  async ChargeCodeSettingResult_Old(ChargeCodeType) {
-    try {
-      const url = "/api/Quote/ChargeCodeSettingResult";
-      const fullUrl = `${url}?ChargeCodeType=${ChargeCodeType}`;
-      const response = await API.get(fullUrl);
-      return response;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   async ChargeCodeSettingResult(QuoteID, PID) {
     try {
       const url = "/api/Quote/QuoteFreightColumnSettingResult";
@@ -144,10 +133,21 @@ class QuoteDetailService {
     }
   }
 
-  async getFreightChargeResult(QuoteID, PID) {
+  // async getFreightChargeResult(QuoteID, PID) {
+  //   try {
+  //     const url = "/api/Quote/QuoteFreightChargeResult";
+  //     const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}`;
+  //     const response = await API.get(fullUrl);
+  //     return response;
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }
+
+  async getLocalChargeResult(QuoteID, PID, IsExport, location) {
     try {
-      const url = "/api/Quote/QuoteFreightChargeResult";
-      const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}`;
+      const url = "/api/Quote/QuoteLocalChargegResult";
+      const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}&IsExport=${IsExport}&location=${location}`;
       const response = await API.get(fullUrl);
       return response;
     } catch (error) {
@@ -155,11 +155,10 @@ class QuoteDetailService {
     }
   }
 
-  async getLocalChargeResult(QuoteID, PID, IsExport, location) {
+  async saveQuoteDetail(params) {
     try {
-      const url = "/api/Quote/QuoteLocalChargegResult";
-      const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}&IsExport=${IsExport}&location=${location}`;
-      const response = await API.get(fullUrl);
+      const url = "/api/Quote/QuoteDetailResult";
+      const response = await API.post(url, params);
       return response;
     } catch (error) {
       console.error(error);

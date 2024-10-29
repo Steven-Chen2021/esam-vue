@@ -1,4 +1,5 @@
 import quoteDetailService from "@/services/quote/QuoteDetailService";
+import commonService from "@/services/commonService";
 import { reactive, ref } from "vue";
 import type { FieldValues } from "plus-pro-components";
 
@@ -21,78 +22,46 @@ export function QuoteDetailHooks() {
     type: string;
     source: [];
   }
-
-  // interface iQuotationDetailResult {
-  //   qid: number;
-  //   quoteNo: string;
-  //   customerHQID: number;
-  //   plid: number;
-  //   productLineName: string;
-  //   productLineCode: string;
-  //   attentionToId: number;
-  //   attentionTo: string;
-  //   effectiveDate: string;
-  //   expiredDate: string;
-  //   issueDate: string;
-  //   issueById: string;
-  //   issueBy: string;
-  //   status: string;
-  //   statusId: string;
-  //   tradeTermId: number;
-  //   creditTermId: number;
-  //   shippingTerm?: string | null;
-  //   typeId: string;
-  //   type: string;
-  //   moveType?: string | null;
-  //   reference?: string | null;
-  //   laneSegment: string;
-  //   nra: string;
-  //   salesInfor: SalesInfo;
-  //   tradeTerm: string;
-  // }
-  // interface SalesInfo {
-  //   salesId: string;
-  //   salesName: string;
-  //   salesMail: string;
-  //   salesTel: string;
-  //   salesMobile: string;
-  // }
-
   const quotationDetailResult = ref<FieldValues>({
-    qid: 0,
-    quoteNo: "",
-    plid: 0,
-    productLineName: "",
-    productLineCode: "",
-    attentionToId: 0,
-    attentionTo: "",
-    effectiveDate: "",
-    expiredDate: "",
-    issueDate: "",
-    issueById: "",
-    issueBy: "",
-    status: "",
-    statusId: "",
-    tradeTermId: 0,
-    creditTermId: 0,
+    quoteid: null,
+    quoteNo: null,
+    plid: null,
+    productLineCode: null,
+    attentionToId: null,
+    attentionTo: null,
+    effectiveDate: null,
+    expiredDate: null,
+    issueDate: null,
+    issueById: null,
+    issueBy: null,
+    status: null,
+    statusCode: null,
+    tradeTermId: null,
+    creditTermId: null,
     shippingTerm: null,
-    typeId: "",
-    type: "",
+    typeCode: null,
+    type: null,
     moveType: null,
     reference: null,
-    laneSegment: "",
-    nra: "",
-    cbm: 0,
-    cbmUom: "",
-    customerHQID: 0,
-    customerName: "",
-    tradeTerm: "",
-    salesId: "",
-    salesName: "",
-    salesMail: "",
-    salesTel: "",
-    salesMobile: "",
-    greetings: ""
+    laneSegment: null,
+    nra: null,
+    period: [],
+    customerName: null,
+    customerHQID: null,
+    cbmToWT: null,
+    cbmToWTUOMID: null,
+    creditTermCode: null,
+    tradeTermCode: null,
+    salesId: null,
+    salesName: null,
+    salesMail: null,
+    salesTel: null,
+    salesMobile: null,
+    onePWD: null,
+    greeting: null,
+    terms: [] as any[],
+    salesInOffice: null,
+    salesOverseaOffice: null
   });
 
   const customerResult = reactive({
@@ -108,37 +77,36 @@ export function QuoteDetailHooks() {
   const attentionToResult = ref([]);
   const tradeTermResult = ref([]);
   const creditTermResult = ref([]);
+  const cbmTransferUOMResult = ref([]);
 
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
 
-  const productLineOptions = reactive<dropdownCtl[]>(null);
+  // const productLineOptions = reactive<dropdownCtl[]>(null);
 
   const chargeCodeSettingValues = ref([]);
 
-  const freightChargeHotTableKey = ref(0);
+  // const freightChargeHotTableKey = ref(0);
 
-  const FreightChargeSettings = reactive({
-    data: [],
-    colHeaders: [],
-    rowHeaders: false,
-    dropdownMenu: true,
-    width: "100%",
-    height: "auto",
-    columns: [],
-    autoWrapRow: true,
-    autoWrapCol: true,
-    allowInsertColumn: true,
-    allowInsertRow: true,
-    allowInvalid: true,
-    licenseKey: "524eb-e5423-11952-44a09-e7a22",
-    contextMenu: true
-  });
+  // const FreightChargeSettings = reactive({
+  //   data: [],
+  //   colHeaders: [],
+  //   rowHeaders: false,
+  //   dropdownMenu: true,
+  //   width: "100%",
+  //   height: "auto",
+  //   columns: [],
+  //   autoWrapRow: true,
+  //   autoWrapCol: true,
+  //   allowInsertColumn: true,
+  //   allowInsertRow: true,
+  //   allowInvalid: true,
+  //   licenseKey: "524eb-e5423-11952-44a09-e7a22",
+  //   contextMenu: true
+  // });
 
   async function getQuotationDetailResult(QuoteID: number) {
     try {
       const response = await quoteDetailService.getQuoteDetailResult(QuoteID);
-      console.log("response", response);
-      console.log("responseR", response.returnValue);
       if (response && response.returnValue) {
         quotationDetailResult.value = { ...response.returnValue };
       } else {
@@ -191,11 +159,9 @@ export function QuoteDetailHooks() {
 
   async function getProductLineByCustomerResult(customerHQID: number) {
     try {
-      console.log("getProductLineByCustomerResult", customerHQID);
       const response =
         await quoteDetailService.getProductLineByCustomerData(customerHQID);
       if (response != null) {
-        console.log("getProductLineByCustomerResult", response);
         productLineResult.value = response.returnValue.map((item: any) => ({
           label: item.productLineCode,
           value: item.pid
@@ -308,15 +274,50 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getCBMTransferUOMRsult() {
+    try {
+      const response = await commonService.getCBMTransferUOMResult();
+      if (response != null) {
+        cbmTransferUOMResult.value = response.map((item: any) => ({
+          label: item.text,
+          value: item.value
+        }));
+      }
+      return response;
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
+  async function getLocalCharge(QuoteID, PID, IsExport, location) {
+    try {
+      const response = await quoteDetailService.getLocalChargeResult(
+        QuoteID,
+        PID,
+        IsExport,
+        location
+      );
+      return response;
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
+  async function saveQuoteDetailResult(params) {
+    try {
+      const response = await quoteDetailService.saveQuoteDetail(params);
+      return response;
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
-    productLineOptions,
     getChargeCodeSettingResult,
     ChargeCodeSettingResult,
     chargeCodeSettingValues,
-    FreightChargeSettings,
-    freightChargeHotTableKey,
     getProductLineByCustomerResult,
     getShippingTermResult,
     getAttentionToResult,
@@ -333,6 +334,10 @@ export function QuoteDetailHooks() {
     freightChargeResult,
     deleteQuotation,
     quotationDetailResult,
-    getQuotationDetailResult
+    getQuotationDetailResult,
+    getCBMTransferUOMRsult,
+    cbmTransferUOMResult,
+    saveQuoteDetailResult,
+    getLocalCharge
   };
 }

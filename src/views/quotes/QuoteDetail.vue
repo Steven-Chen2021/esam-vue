@@ -64,7 +64,11 @@ const {
   freightChargeResult,
   deleteQuotation,
   quotationDetailResult,
-  getQuotationDetailResult
+  getQuotationDetailResult,
+  getCBMTransferUOMRsult,
+  cbmTransferUOMResult,
+  saveQuoteDetailResult,
+  getLocalCharge
 } = QuoteDetailHooks();
 
 const {
@@ -144,7 +148,6 @@ const quoteDetailColumns: PlusColumn[] = [
       },
       onSelect: (item: { text: string; value: number }) => {
         quotationDetailResult.value.customerHQID = item.value;
-        console.log("3236236823952j354", item);
         getProductLineByCustomerResult(item.value);
         getAttentionToResult(item.value);
       }
@@ -161,23 +164,33 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onChange: (value: number) => {
+        const _pid = value ?? (quotationDetailResult.value.pid as number);
         const PLCode = ref();
-        if (value === 6) {
+        if (_pid === 6) {
           //Ocean Freight Charge
-          getChargeCodeSettingResult(qid.value, value);
+          getChargeCodeSettingResult(qid.value, _pid);
           handleProductLineChange();
           PLCode.value = "OMS";
-        } else if (value === 2) {
+        } else if (_pid === 2) {
           PLCode.value = "AMS";
         }
         getQuoteTypeResult("Lead", "Type", PLCode.value);
+
         getCreditTermResult(
           quotationDetailResult.value.customerHQID as number,
-          value
+          _pid
         );
-        getQuoteFreightChargeResult(qid.value, value);
-        console.log(freightChargeResult.value);
-        freightChargeSettings.value.data = freightChargeResult.value;
+        getQuoteFreightChargeResult(qid.value, _pid).then(() => {
+          if (freightChargeResult.value.length > 0) {
+            freightChargeSettings.value.data = freightChargeResult.value;
+            hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+          } else {
+            console.log("freightChargeResult is empty");
+          }
+        });
+
+        //
+        // hotTableRef.value.hotInstance.loadData(freightChargeResult);
       }
     }
   },
@@ -206,6 +219,7 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onChange: (value: string) => {
+        console.log(value);
         getTradeTermResult(value);
         quotationDetailResult.value.tradeTermId = null;
       }
@@ -213,7 +227,7 @@ const quoteDetailColumns: PlusColumn[] = [
   },
   {
     label: "Type",
-    prop: "typeId",
+    prop: "typeCode",
     valueType: "radio",
     options: quoteTypeResult,
     colProps: {
@@ -233,7 +247,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Trade Term",
     width: 120,
-    prop: "tradeTermCode",
+    prop: "tradeTermId",
     valueType: "select",
     options: tradeTermResult,
     colProps: {
@@ -243,7 +257,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Credit Term",
     width: 120,
-    prop: "creditTermCode",
+    prop: "creditTermId",
     valueType: "select",
     options: creditTermResult,
     colProps: {
@@ -260,33 +274,37 @@ const handleAfterChange = (changes, source) => {
       ) {
         exportLocationResult.value.splice(0, exportLocationResult.value.length);
         importLocationResult.value.splice(0, importLocationResult.value.length);
+
+        let poreceiptPromise = Promise.resolve();
+        let poloadingPromise = Promise.resolve();
+        let podeliveryPromise = Promise.resolve();
+        let podischargePromise = Promise.resolve();
+
         freightChargeSettings.value.data.forEach(rowData => {
           if (rowData.poreceipt) {
-            getLocalChargeResult(
+            poreceiptPromise = getLocalChargeResult(
               qid.value,
               quotationDetailResult.value.productLineCode,
               true,
               rowData.poreceipt
             ).then(() => {
-              console.log(localChargeResult);
               if (
                 localChargeResult.value &&
                 localChargeResult.value.length > 0
               ) {
                 localChargeResult.value.forEach(localCharge => {
-                  console.log("localCharge", localCharge);
                   exportLocationResult.value.push({
                     cityID: localCharge.cityID,
                     city: localCharge.city,
                     detail: [],
                     hotTableSetting: {
-                      data: localCharge.detail || [], // 預設值或實際資料
+                      data: localCharge.detail || [],
                       colHeaders: localCharge.colHeaders || [],
                       rowHeaders: false,
                       dropdownMenu: true,
                       width: "100%",
                       height: "auto",
-                      columns: localCharge.columns.map((column: any) => ({
+                      columns: localCharge.columns.map(column => ({
                         data: column.data,
                         type: column.type,
                         source: column.source || []
@@ -305,39 +323,143 @@ const handleAfterChange = (changes, source) => {
               }
             });
           }
-          // if (rowData.poloading) {
-          //   exportLocationResult.value.push({
-          //     cityID: Math.random(),
-          //     city: rowData.poloading,
-          //     detail: []
-          //   });
-          // }
-        });
-
-        freightChargeSettings.value.data.forEach(rowData => {
+          if (rowData.poloading) {
+            poloadingPromise = getLocalChargeResult(
+              qid.value,
+              quotationDetailResult.value.productLineCode,
+              true,
+              rowData.poloading
+            ).then(() => {
+              if (
+                localChargeResult.value &&
+                localChargeResult.value.length > 0
+              ) {
+                localChargeResult.value.forEach(localCharge => {
+                  exportLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true
+                    }
+                  });
+                });
+                disabledExportLocalChargeBtn.value = false;
+              }
+            });
+          }
           if (rowData.podelivery) {
-            importLocationResult.value.push(rowData.podelivery);
+            podeliveryPromise = getLocalChargeResult(
+              qid.value,
+              quotationDetailResult.value.productLineCode,
+              false,
+              rowData.podelivery
+            ).then(() => {
+              if (
+                localChargeResult.value &&
+                localChargeResult.value.length > 0
+              ) {
+                localChargeResult.value.forEach(localCharge => {
+                  importLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true
+                    }
+                  });
+                });
+                disabledImportLocalChargeBtn.value = false;
+              }
+            });
           }
           if (rowData.podischarge) {
-            importLocationResult.value.push(rowData.podischarge);
+            podischargePromise = getLocalChargeResult(
+              qid.value,
+              quotationDetailResult.value.productLineCode,
+              false,
+              rowData.podischarge
+            ).then(() => {
+              if (
+                localChargeResult.value &&
+                localChargeResult.value.length > 0
+              ) {
+                localChargeResult.value.forEach(localCharge => {
+                  importLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true
+                    }
+                  });
+                });
+                disabledImportLocalChargeBtn.value = false;
+              }
+            });
           }
         });
-      }
-      if (exportLocationResult.value.length > 0) {
-        exportLocalChargeHotTableSetting.value.columns.forEach(column => {
-          if (column.data === "location") {
-            column.source = exportLocationResult.value;
-          }
+
+        Promise.all([
+          poreceiptPromise,
+          poloadingPromise,
+          podeliveryPromise,
+          podischargePromise
+        ]).then(() => {
+          disabledExportLocalChargeBtn.value = false;
+          disabledImportLocalChargeBtn.value = false;
         });
-        disabledExportLocalChargeBtn.value = false;
-      }
-      if (importLocationResult.value.length > 0) {
-        importLocalChargeHotTableSetting.value.columns.forEach(column => {
-          if (column.data === "location") {
-            column.source = importLocationResult.value;
-          }
-        });
-        disabledImportLocalChargeBtn.value = false;
       }
     });
   }
@@ -380,9 +502,17 @@ const saveData = () => {
     saveLoading.value = "disabled";
   }, 3000);
 
-  console.log("result", quotationDetailResult);
+  if (!quotationDetailResult.value.quoteid) {
+    quotationDetailResult.value.quoteid = 0;
+  }
+
+  const detailStatus = saveQuoteDetailResult(quotationDetailResult.value);
+  console.log(detailStatus);
+
+  console.log("result", quotationDetailResult.value);
   console.log("freightChargeSettings-data", freightChargeSettings.value.data);
-  console.log("freightChargeSettings", freightChargeSettings);
+  console.log("exportLocationResult", exportLocationResult);
+  console.log("importLocationResult", importLocationResult);
 };
 
 const deleteData = () => {
@@ -416,6 +546,8 @@ const viewHistory = () => {
 };
 
 const handleCheckboxGroupChange = (values: string[]) => {
+  console.log("34634634373", ChargeCodeSettingResult);
+  console.log("3463465434373", chargeCodeSettingValues);
   const selectedItems = ChargeCodeSettingResult.filter(item =>
     values.includes(item.columnName)
   );
@@ -431,7 +563,6 @@ const handleCheckboxGroupChange = (values: string[]) => {
 };
 
 const handleProductLineChange = () => {
-  console.log(freightChargeSettings);
   freightChargeSettings.value.colHeaders = ChargeCodeSettingResult.map(
     item => item.headerName
   );
@@ -454,6 +585,7 @@ const createFilter = (queryString: string) => {
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
+    // console.log(ChargeCodeSettingResult);
     ChargeCodeSettingResult.forEach(item => {
       if (item.selected) {
         sourceData.push(item);
@@ -468,7 +600,9 @@ watchEffect(() => {
     freightChargeSettings.value.colWidths = sourceData.map(
       item => item.columnWidth
     );
-    console.log("sourceData", sourceData); // 最後打印出篩選結果
+    // console.log(sourceData);
+    // console.log(freightChargeSettings);
+    // console.log(sourceData.map(item => item.hotTableColumnSetting));
   }
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
@@ -487,7 +621,6 @@ onMounted(() => {
       historyBtnVisible.value = true;
       deleteBtnVisible.value = true;
       previewBtnVisible.value = true;
-
       nextTick(() => {
         const selectedItem = {
           text: quotationDetailResult.value.customerName,
@@ -496,8 +629,6 @@ onMounted(() => {
 
         const fieldProps = quoteDetailColumns[0].fieldProps as any;
         if (fieldProps.onSelect) {
-          console.log("fieldProps.selectedItem", selectedItem);
-          console.log("fieldProps.onSelect", fieldProps.onSelect);
           fieldProps.onSelect(selectedItem);
         } else {
           console.warn("onSelect is not defined in fieldProps.");
@@ -517,7 +648,15 @@ onMounted(() => {
         ) as any;
         if (productLineCodeColumn?.fieldProps?.onChange) {
           productLineCodeColumn.fieldProps.onChange(
-            quotationDetailResult.value.plid
+            quotationDetailResult.value.pid
+          );
+        }
+        const shippingTermColumn = quoteDetailColumns.find(
+          col => col.prop === "shippingTerm"
+        ) as any;
+        if (shippingTermColumn?.fieldProps?.onChange) {
+          shippingTermColumn.fieldProps.onChange(
+            quotationDetailResult.value.shippingTerm
           );
         }
       });
@@ -525,8 +664,10 @@ onMounted(() => {
   }
   getCustomerByOwnerUserResult();
   getShippingTermResult();
+  getCBMTransferUOMRsult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
 });
+
 onBeforeUnmount(() => {
   const editor = editorRef.value;
   if (editor == null) return;
@@ -629,16 +770,20 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="el-form-item__content">
                   <el-input-number
-                    v-model="quotationDetailResult.cbm"
+                    v-model="quotationDetailResult.cbmToWT"
                     :min="0"
                   />
                   <el-select
-                    v-model="quotationDetailResult.cbmUOM"
+                    v-model="quotationDetailResult.cbmToWTUOMID"
                     placeholder="Select"
                     style="width: 80px; height: 32px; margin-left: 5px"
                   >
-                    <el-option key="KG" label="KG" value="KG" />
-                    <el-option key="LB" label="LB" value="LB" />
+                    <el-option
+                      v-for="item in cbmTransferUOMResult"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
                   </el-select>
                 </div>
               </div>
@@ -654,7 +799,7 @@ onBeforeUnmount(() => {
                 style="border-bottom: 1px solid #ccc"
               />
               <Editor
-                v-model="quotationDetailResult.greetings"
+                v-model="quotationDetailResult.greeting"
                 :defaultConfig="editorConfig"
                 :mode="mode"
                 style="height: 500px; overflow-y: hidden"
@@ -687,7 +832,6 @@ onBeforeUnmount(() => {
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Export)</span>
               </template>
-
               <el-tabs v-if="!disabledExportLocalChargeBtn" type="border-card">
                 <el-tab-pane
                   v-for="(item, index) in exportLocationResult"
@@ -697,37 +841,39 @@ onBeforeUnmount(() => {
                   <HotTable :settings="item.hotTableSetting" />
                 </el-tab-pane>
               </el-tabs>
-
-              <!-- <HotTable
-                v-if="!disabledExportLocalChargeBtn"
-                ref="exportHotTableRef"
-                :settings="exportLocalChargeHotTableSetting"
-              /> -->
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Import)</span>
               </template>
               <el-tabs v-if="!disabledImportLocalChargeBtn" type="border-card">
-                <el-tab-pane label="User">User</el-tab-pane>
-                <el-tab-pane label="Config">Config</el-tab-pane>
-                <el-tab-pane label="Role">Role</el-tab-pane>
-                <el-tab-pane label="Task">Task</el-tab-pane>
+                <el-tab-pane
+                  v-for="(item, index) in importLocationResult"
+                  :key="index"
+                  :label="item.city"
+                >
+                  <HotTable :settings="item.hotTableSetting" />
+                </el-tab-pane>
               </el-tabs>
-              <HotTable
-                v-if="!disabledImportLocalChargeBtn"
-                ref="importHotTableRef"
-                :settings="importLocalChargeHotTableSetting"
-              />
             </el-collapse-item>
             <el-collapse-item title="TERMS & CONDITIONS" name="6">
               <template #title>
                 <span class="text-orange-500">TERMS & CONDITIONS</span>
               </template>
-              <ol class="list-decimal pl-5">
-                <li>First</li>
-                <li>Second</li>
-                <li>Third</li>
+              <ol class="term-list">
+                <li
+                  v-for="term in quotationDetailResult.terms"
+                  :key="term.termOrder"
+                  class="term-item"
+                >
+                  <el-checkbox
+                    v-model="term.isSelected"
+                    :true-label="'Yes'"
+                    :false-label="'No'"
+                  >
+                    {{ term.contents }}
+                  </el-checkbox>
+                </li>
               </ol>
             </el-collapse-item>
             <el-collapse-item title="REMARK " name="7">

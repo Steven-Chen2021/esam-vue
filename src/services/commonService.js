@@ -102,6 +102,17 @@ class CustomerQuickFilterService {
       return [];
     }
   }
+
+  async getCBMTransferUOMResult() {
+    try {
+      const url = "/api/Common/CBMToWTUOM";
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
 }
 
 export default new CustomerQuickFilterService();
