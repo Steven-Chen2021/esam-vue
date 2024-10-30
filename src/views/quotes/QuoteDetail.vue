@@ -182,8 +182,195 @@ const quoteDetailColumns: PlusColumn[] = [
         );
         getQuoteFreightChargeResult(qid.value, _pid).then(() => {
           if (freightChargeResult.value.length > 0) {
+            let poreceiptPromise = Promise.resolve();
+            let poloadingPromise = Promise.resolve();
+            let podeliveryPromise = Promise.resolve();
+            let podischargePromise = Promise.resolve();
+            freightChargeResult.value.forEach(item => {
+              console.log(item);
+              if (item.pReceipt) {
+                console.log("pReceipt", item.pReceipt);
+                poreceiptPromise = getLocalChargeResult(
+                  quotationDetailResult.value.quoteid as number,
+                  quotationDetailResult.value.pid,
+                  true,
+                  item.pReceipt
+                ).then(() => {
+                  if (
+                    localChargeResult.value &&
+                    localChargeResult.value.length > 0
+                  ) {
+                    console.log("localChargeResult", localChargeResult.value);
+                    localChargeResult.value.forEach(localCharge => {
+                      exportLocationResult.value.push({
+                        cityID: localCharge.cityID,
+                        city: localCharge.city,
+                        detail: [],
+                        hotTableSetting: {
+                          data: localCharge.detail || [],
+                          colHeaders: localCharge.colHeaders || [],
+                          rowHeaders: false,
+                          dropdownMenu: true,
+                          width: "100%",
+                          height: "auto",
+                          columns: localCharge.columns.map(column => ({
+                            data: column.data,
+                            type: column.type,
+                            source: column.source || []
+                          })),
+                          autoWrapRow: true,
+                          autoWrapCol: true,
+                          allowInsertColumn: true,
+                          allowInsertRow: true,
+                          allowInvalid: true,
+                          licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                          contextMenu: true
+                        }
+                      });
+                    });
+                    disabledExportLocalChargeBtn.value = false;
+                  }
+                });
+              }
+              if (item.pLoading) {
+                poloadingPromise = getLocalChargeResult(
+                  quotationDetailResult.value.quoteid as number,
+                  quotationDetailResult.value.pid,
+                  true,
+                  item.pLoading
+                ).then(() => {
+                  if (
+                    localChargeResult.value &&
+                    localChargeResult.value.length > 0
+                  ) {
+                    localChargeResult.value.forEach(localCharge => {
+                      exportLocationResult.value.push({
+                        cityID: localCharge.cityID,
+                        city: localCharge.city,
+                        detail: [],
+                        hotTableSetting: {
+                          data: localCharge.detail || [],
+                          colHeaders: localCharge.colHeaders || [],
+                          rowHeaders: false,
+                          dropdownMenu: true,
+                          width: "100%",
+                          height: "auto",
+                          columns: localCharge.columns.map(column => ({
+                            data: column.data,
+                            type: column.type,
+                            source: column.source || []
+                          })),
+                          autoWrapRow: true,
+                          autoWrapCol: true,
+                          allowInsertColumn: true,
+                          allowInsertRow: true,
+                          allowInvalid: true,
+                          licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                          contextMenu: true
+                        }
+                      });
+                    });
+                    disabledExportLocalChargeBtn.value = false;
+                  }
+                });
+              }
+              if (item.pDelivery) {
+                podeliveryPromise = getLocalChargeResult(
+                  quotationDetailResult.value.quoteid as number,
+                  quotationDetailResult.value.pid,
+                  true,
+                  item.pDelivery
+                ).then(() => {
+                  if (
+                    localChargeResult.value &&
+                    localChargeResult.value.length > 0
+                  ) {
+                    localChargeResult.value.forEach(localCharge => {
+                      importLocationResult.value.push({
+                        cityID: localCharge.cityID,
+                        city: localCharge.city,
+                        detail: [],
+                        hotTableSetting: {
+                          data: localCharge.detail || [],
+                          colHeaders: localCharge.colHeaders || [],
+                          rowHeaders: false,
+                          dropdownMenu: true,
+                          width: "100%",
+                          height: "auto",
+                          columns: localCharge.columns.map(column => ({
+                            data: column.data,
+                            type: column.type,
+                            source: column.source || []
+                          })),
+                          autoWrapRow: true,
+                          autoWrapCol: true,
+                          allowInsertColumn: true,
+                          allowInsertRow: true,
+                          allowInvalid: true,
+                          licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                          contextMenu: true
+                        }
+                      });
+                    });
+                    disabledImportLocalChargeBtn.value = false;
+                  }
+                });
+              }
+              if (item.pDischarge) {
+                podischargePromise = getLocalChargeResult(
+                  quotationDetailResult.value.quoteid as number,
+                  quotationDetailResult.value.pid,
+                  true,
+                  item.pDischarge
+                ).then(() => {
+                  if (
+                    localChargeResult.value &&
+                    localChargeResult.value.length > 0
+                  ) {
+                    localChargeResult.value.forEach(localCharge => {
+                      importLocationResult.value.push({
+                        cityID: localCharge.cityID,
+                        city: localCharge.city,
+                        detail: [],
+                        hotTableSetting: {
+                          data: localCharge.detail || [],
+                          colHeaders: localCharge.colHeaders || [],
+                          rowHeaders: false,
+                          dropdownMenu: true,
+                          width: "100%",
+                          height: "auto",
+                          columns: localCharge.columns.map(column => ({
+                            data: column.data,
+                            type: column.type,
+                            source: column.source || []
+                          })),
+                          autoWrapRow: true,
+                          autoWrapCol: true,
+                          allowInsertColumn: true,
+                          allowInsertRow: true,
+                          allowInvalid: true,
+                          licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                          contextMenu: true
+                        }
+                      });
+                    });
+                    // disabledImportLocalChargeBtn.value = false;
+                  }
+                });
+              }
+              // console.log(item);
+            });
             freightChargeSettings.value.data = freightChargeResult.value;
-            hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+            Promise.all([
+              poreceiptPromise,
+              poloadingPromise,
+              podeliveryPromise,
+              podischargePromise
+            ]).then(() => {
+              disabledExportLocalChargeBtn.value = false;
+              disabledImportLocalChargeBtn.value = false;
+            });
+            // hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
           } else {
             console.log("freightChargeResult is empty");
           }
@@ -219,7 +406,6 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onChange: (value: string) => {
-        console.log(value);
         getTradeTermResult(value);
         quotationDetailResult.value.tradeTermId = null;
       }
@@ -600,9 +786,6 @@ watchEffect(() => {
     freightChargeSettings.value.colWidths = sourceData.map(
       item => item.columnWidth
     );
-    // console.log(sourceData);
-    // console.log(freightChargeSettings);
-    // console.log(sourceData.map(item => item.hotTableColumnSetting));
   }
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
