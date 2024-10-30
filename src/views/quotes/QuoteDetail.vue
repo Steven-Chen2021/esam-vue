@@ -132,6 +132,7 @@ const rules = {
     }
   ]
 };
+const cnt = ref(0);
 const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
@@ -164,6 +165,8 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onChange: (value: number) => {
+        cnt.value = cnt.value++;
+        console.log(cnt.value);
         const _pid = value ?? (quotationDetailResult.value.pid as number);
         const PLCode = ref();
         if (_pid === 6) {
@@ -187,9 +190,7 @@ const quoteDetailColumns: PlusColumn[] = [
             let podeliveryPromise = Promise.resolve();
             let podischargePromise = Promise.resolve();
             freightChargeResult.value.forEach(item => {
-              console.log(item);
               if (item.pReceipt) {
-                console.log("pReceipt", item.pReceipt);
                 poreceiptPromise = getLocalChargeResult(
                   quotationDetailResult.value.quoteid as number,
                   quotationDetailResult.value.pid,
@@ -200,7 +201,6 @@ const quoteDetailColumns: PlusColumn[] = [
                     localChargeResult.value &&
                     localChargeResult.value.length > 0
                   ) {
-                    console.log("localChargeResult", localChargeResult.value);
                     localChargeResult.value.forEach(localCharge => {
                       exportLocationResult.value.push({
                         cityID: localCharge.cityID,
@@ -228,7 +228,6 @@ const quoteDetailColumns: PlusColumn[] = [
                         }
                       });
                     });
-                    disabledExportLocalChargeBtn.value = false;
                   }
                 });
               }
@@ -270,7 +269,6 @@ const quoteDetailColumns: PlusColumn[] = [
                         }
                       });
                     });
-                    disabledExportLocalChargeBtn.value = false;
                   }
                 });
               }
@@ -278,7 +276,7 @@ const quoteDetailColumns: PlusColumn[] = [
                 podeliveryPromise = getLocalChargeResult(
                   quotationDetailResult.value.quoteid as number,
                   quotationDetailResult.value.pid,
-                  true,
+                  false,
                   item.pDelivery
                 ).then(() => {
                   if (
@@ -312,7 +310,6 @@ const quoteDetailColumns: PlusColumn[] = [
                         }
                       });
                     });
-                    disabledImportLocalChargeBtn.value = false;
                   }
                 });
               }
@@ -320,7 +317,7 @@ const quoteDetailColumns: PlusColumn[] = [
                 podischargePromise = getLocalChargeResult(
                   quotationDetailResult.value.quoteid as number,
                   quotationDetailResult.value.pid,
-                  true,
+                  false,
                   item.pDischarge
                 ).then(() => {
                   if (
@@ -354,11 +351,9 @@ const quoteDetailColumns: PlusColumn[] = [
                         }
                       });
                     });
-                    // disabledImportLocalChargeBtn.value = false;
                   }
                 });
               }
-              // console.log(item);
             });
             freightChargeSettings.value.data = freightChargeResult.value;
             Promise.all([
@@ -370,14 +365,10 @@ const quoteDetailColumns: PlusColumn[] = [
               disabledExportLocalChargeBtn.value = false;
               disabledImportLocalChargeBtn.value = false;
             });
-            // hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
           } else {
             console.log("freightChargeResult is empty");
           }
         });
-
-        //
-        // hotTableRef.value.hotInstance.loadData(freightChargeResult);
       }
     }
   },
@@ -460,6 +451,8 @@ const handleAfterChange = (changes, source) => {
       ) {
         exportLocationResult.value.splice(0, exportLocationResult.value.length);
         importLocationResult.value.splice(0, importLocationResult.value.length);
+
+        console.log("573474", exportLocationResult);
 
         let poreceiptPromise = Promise.resolve();
         let poloadingPromise = Promise.resolve();
@@ -1077,6 +1070,10 @@ onBeforeUnmount(() => {
               <template #title>
                 <span class="text-orange-500">SALES INFO</span>
               </template>
+              <div
+                class="flex flex-col ..."
+                v-html="quotationDetailResult.salesInfo"
+              />
               <div class="flex flex-col ...">
                 <div>Name : {{ quotationDetailResult.salesName }}</div>
                 <div>EMAIL : {{ quotationDetailResult.salesMail }}</div>

@@ -297,6 +297,7 @@ export function LocalChargeHooks() {
     location: number
   ) {
     try {
+      localChargeResult.value = [];
       const response = await quoteDetailService.getLocalChargeResult(
         QuoteID,
         PID,
