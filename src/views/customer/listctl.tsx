@@ -1,5 +1,5 @@
 import CustomerSearchService from "@/services/customer/CustomerSearchService";
-import type { TableColumnCtx } from "element-plus";
+import { ElMessage } from "element-plus";
 // import Sortable from "sortablejs";
 // import { gridResultData } from "./data";
 // import { clone, delay } from "@pureadmin/utils";
@@ -49,13 +49,30 @@ export function listCTL() {
     loading.value = true;
     CustomerSearchService.getCustomerList(searchParams)
       .then(data => {
-        // console.log("getCustomerList params", searchParams);
-        console.log("getCustomerList result", data);
-        tableData.value = data.returnValue.results;
-        if (data) total.value = data.returnValue.totalRecord;
+        if (data.isSuccess) {
+          tableData.value = data.returnValue.results;
+          if (
+            data &&
+            data.returnValue &&
+            Array.isArray(data.returnValue.results)
+          ) {
+            total.value = data.returnValue.totalRecord;
+          } else {
+            total.value = 0;
+          }
+        } else {
+          tableData.value = [];
+          total.value = 0;
+          ElMessage({
+            message: data.errorMessage,
+            grouping: true,
+            type: "warning"
+          });
+        }
         loading.value = false;
       })
       .catch(err => {
+        tableData.value = [];
         console.log("getCustomerList error", err);
         loading.value = false;
       });
@@ -113,24 +130,23 @@ export function listCTL() {
     }
     return "";
   };
-  const columnfilterHandler = (
-    value: string,
-    row: any,
-    column: TableColumnCtx<any>
-  ) => {
-    const property = column["property"];
-    // console.log("columnfilterHandler property", property);
-    // console.log("columnfilterHandler value", value);
-    // searchParams[property] = value;
-    // fetchData();
-    return row[property].toString().indexOf(value) !== -1;
-  };
+  // const columnfilterHandler = (
+  //   value: string,
+  //   row: any,
+  //   column: TableColumnCtx<any>
+  // ) => {
+  //   const property = column["property"];
+  //   // console.log("columnfilterHandler property", property);
+  //   // console.log("columnfilterHandler value", value);
+  //   // searchParams[property] = value;
+  //   // fetchData();
+  //   return row[property].toString().indexOf(value) !== -1;
+  // };
   // 初始加载数据
   fetchData();
   return {
     tableData,
     tableRowClassName,
-    columnfilterHandler,
     currentPage,
     pageSize,
     total,

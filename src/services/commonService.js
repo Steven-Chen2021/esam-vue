@@ -73,6 +73,16 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
+  async getAdvancedFilterSettingByRequestType(requestTypeID) {
+    try {
+      const response = await API.get(
+        `/api/Common/ColumnSetting?APIRequestType=${requestTypeID}`
+      );
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
   async updateAdvancedFilter(params) {
     try {
       const response = await API.post("/api/Common/ColumnSetting", params);
@@ -84,6 +94,14 @@ class CustomerQuickFilterService {
   async getResult(url) {
     try {
       const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async autoSave(params) {
+    try {
+      const response = await API.post("/api/AutoSave/AutoSave", params);
       return response;
     } catch (error) {
       console.error(error);

@@ -20,6 +20,7 @@ import { listCTL } from "../customer/listctl";
 import { key } from "localforage";
 import { message, closeAllMessage } from "@/utils/message";
 import { useTourStore } from "@/store/modules/tour";
+import { customer } from "@/router/enums";
 import {
   ElNotification,
   ButtonInstance,
@@ -44,6 +45,7 @@ const {
   querySearchAsync,
   handleQuickFilterClick,
   fetchData,
+  fetchQuickFilterData,
   fetchAdvancedFilterData,
   advancedFilterForm,
   basicFilterTopForm,
@@ -58,7 +60,6 @@ const {
 const {
   tableData,
   tableRowClassName,
-  columnfilterHandler,
   currentPage,
   pageSize,
   total,
@@ -192,7 +193,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
               message: t("customer.list.quickFilter.addSucText"),
               type: "success"
             });
-            fetchData();
+            fetchQuickFilterData(customer);
             setTimeout(() => {
               setTourStep();
             }, 800);
@@ -209,7 +210,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
               message: t("customer.list.quickFilter.updateSucText"),
               type: "success"
             });
-            fetchData();
+            fetchData(customer);
           })
           .catch(err => {
             console.log("updateQuickFilter error", err);
@@ -242,7 +243,7 @@ const deleteQuickFilter = () => {
         message: t("customer.list.quickFilter.delSucText"),
         type: "success"
       });
-      fetchData();
+      fetchData(customer);
     })
     .catch(err => {
       console.log("deleteQuickFilter error", err);
@@ -401,8 +402,8 @@ const calculateMaxHeight = () => {
 const maxHeight = ref(null);
 
 onMounted(async () => {
-  fetchData();
-  fetchAdvancedFilterData();
+  fetchData(customer);
+  fetchAdvancedFilterData(customer);
   await nextTick(); // 等待 DOM 更新完成
   setTimeout(() => {
     // 在这里决定是否显示 el-tour

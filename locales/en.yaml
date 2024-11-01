@@ -332,6 +332,15 @@ customer:
     alertTilte: Alert
     leadSourceAlert: Please select Event Code
     disqualify: Disqualify
+    disqualifyReason: Disqualify Reason
+    autoSaveSucAlert: Auto Save Successfully.
+    autoSaveFailAlert: Auto Save Failed.
+    cancel: Cancel
+    submit: Submit
+    submitting: Submitting...
+    warningAlert: Are you sure to DisQualify?
+    disQualifySucAlert: DisQualify Successfully.
+    disQualifyFailAlert: DisQualify Failed.
     general: 
       title: General Information
       unauthorized: No permission to view
@@ -383,6 +392,7 @@ customer:
       rightTitle: Existed members
       addTooltip: Add to Combat team
       removeTooltip: Remove from Combat team
+      searchAlert: Please select staiton or input UserName
   deal:
     title: Deal
   contact:
