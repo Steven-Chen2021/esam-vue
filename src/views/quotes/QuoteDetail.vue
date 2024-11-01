@@ -1087,8 +1087,8 @@ onBeforeUnmount(() => {
 
 /* 調整 checkbox 的位置靠左上 */
 .checkbox-content {
+  top: -5px;
   align-self: flex-start; /* 讓 checkbox 自身靠左上 */
-  margin-top: 4px; /* 調整與文字的對齊 */
   margin-right: 8px; /* 與文字間隔 */
 }
 
