@@ -59,6 +59,11 @@ export function QuoteDetailHooks() {
     salesMobile: null,
     onePWD: null,
     greeting: null,
+    signature: null,
+    lclDetails: null,
+    fclDetails: null,
+    exportCharge: null,
+    importCharge: null,
     terms: [] as any[],
     salesInOffice: null,
     salesOverseaOffice: null

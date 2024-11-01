@@ -132,7 +132,7 @@ const rules = {
     }
   ]
 };
-const cnt = ref(0);
+
 const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
@@ -165,8 +165,6 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onChange: (value: number) => {
-        cnt.value = cnt.value++;
-        console.log(cnt.value);
         const _pid = value ?? (quotationDetailResult.value.pid as number);
         const PLCode = ref();
         if (_pid === 6) {
@@ -184,190 +182,191 @@ const quoteDetailColumns: PlusColumn[] = [
           _pid
         );
         getQuoteFreightChargeResult(qid.value, _pid).then(() => {
-          if (freightChargeResult.value.length > 0) {
-            let poreceiptPromise = Promise.resolve();
-            let poloadingPromise = Promise.resolve();
-            let podeliveryPromise = Promise.resolve();
-            let podischargePromise = Promise.resolve();
-            freightChargeResult.value.forEach(item => {
-              if (item.pReceipt) {
-                poreceiptPromise = getLocalChargeResult(
-                  quotationDetailResult.value.quoteid as number,
-                  quotationDetailResult.value.pid,
-                  true,
-                  item.pReceipt
-                ).then(() => {
-                  if (
-                    localChargeResult.value &&
-                    localChargeResult.value.length > 0
-                  ) {
-                    localChargeResult.value.forEach(localCharge => {
-                      exportLocationResult.value.push({
-                        cityID: localCharge.cityID,
-                        city: localCharge.city,
-                        detail: [],
-                        hotTableSetting: {
-                          data: localCharge.detail || [],
-                          colHeaders: localCharge.colHeaders || [],
-                          rowHeaders: false,
-                          dropdownMenu: true,
-                          width: "100%",
-                          height: "auto",
-                          columns: localCharge.columns.map(column => ({
-                            data: column.data,
-                            type: column.type,
-                            source: column.source || []
-                          })),
-                          autoWrapRow: true,
-                          autoWrapCol: true,
-                          allowInsertColumn: true,
-                          allowInsertRow: true,
-                          allowInvalid: true,
-                          licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                          contextMenu: true
-                        }
-                      });
-                    });
-                  }
-                });
-              }
-              if (item.pLoading) {
-                poloadingPromise = getLocalChargeResult(
-                  quotationDetailResult.value.quoteid as number,
-                  quotationDetailResult.value.pid,
-                  true,
-                  item.pLoading
-                ).then(() => {
-                  if (
-                    localChargeResult.value &&
-                    localChargeResult.value.length > 0
-                  ) {
-                    localChargeResult.value.forEach(localCharge => {
-                      exportLocationResult.value.push({
-                        cityID: localCharge.cityID,
-                        city: localCharge.city,
-                        detail: [],
-                        hotTableSetting: {
-                          data: localCharge.detail || [],
-                          colHeaders: localCharge.colHeaders || [],
-                          rowHeaders: false,
-                          dropdownMenu: true,
-                          width: "100%",
-                          height: "auto",
-                          columns: localCharge.columns.map(column => ({
-                            data: column.data,
-                            type: column.type,
-                            source: column.source || []
-                          })),
-                          autoWrapRow: true,
-                          autoWrapCol: true,
-                          allowInsertColumn: true,
-                          allowInsertRow: true,
-                          allowInvalid: true,
-                          licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                          contextMenu: true
-                        }
-                      });
-                    });
-                  }
-                });
-              }
-              if (item.pDelivery) {
-                podeliveryPromise = getLocalChargeResult(
-                  quotationDetailResult.value.quoteid as number,
-                  quotationDetailResult.value.pid,
-                  false,
-                  item.pDelivery
-                ).then(() => {
-                  if (
-                    localChargeResult.value &&
-                    localChargeResult.value.length > 0
-                  ) {
-                    localChargeResult.value.forEach(localCharge => {
-                      importLocationResult.value.push({
-                        cityID: localCharge.cityID,
-                        city: localCharge.city,
-                        detail: [],
-                        hotTableSetting: {
-                          data: localCharge.detail || [],
-                          colHeaders: localCharge.colHeaders || [],
-                          rowHeaders: false,
-                          dropdownMenu: true,
-                          width: "100%",
-                          height: "auto",
-                          columns: localCharge.columns.map(column => ({
-                            data: column.data,
-                            type: column.type,
-                            source: column.source || []
-                          })),
-                          autoWrapRow: true,
-                          autoWrapCol: true,
-                          allowInsertColumn: true,
-                          allowInsertRow: true,
-                          allowInvalid: true,
-                          licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                          contextMenu: true
-                        }
-                      });
-                    });
-                  }
-                });
-              }
-              if (item.pDischarge) {
-                podischargePromise = getLocalChargeResult(
-                  quotationDetailResult.value.quoteid as number,
-                  quotationDetailResult.value.pid,
-                  false,
-                  item.pDischarge
-                ).then(() => {
-                  if (
-                    localChargeResult.value &&
-                    localChargeResult.value.length > 0
-                  ) {
-                    localChargeResult.value.forEach(localCharge => {
-                      importLocationResult.value.push({
-                        cityID: localCharge.cityID,
-                        city: localCharge.city,
-                        detail: [],
-                        hotTableSetting: {
-                          data: localCharge.detail || [],
-                          colHeaders: localCharge.colHeaders || [],
-                          rowHeaders: false,
-                          dropdownMenu: true,
-                          width: "100%",
-                          height: "auto",
-                          columns: localCharge.columns.map(column => ({
-                            data: column.data,
-                            type: column.type,
-                            source: column.source || []
-                          })),
-                          autoWrapRow: true,
-                          autoWrapCol: true,
-                          allowInsertColumn: true,
-                          allowInsertRow: true,
-                          allowInvalid: true,
-                          licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                          contextMenu: true
-                        }
-                      });
-                    });
-                  }
+          console.log(freightChargeResult.value);
+          freightChargeSettings.value.data = freightChargeResult.value;
+          let exportPromise = Promise.resolve();
+          let importPromise = Promise.resolve();
+
+          if ((quotationDetailResult.value.quoteid as number) > 0) {
+            //don't forEach, just use quoteID to find out all data
+            exportPromise = getLocalChargeResult(
+              quotationDetailResult.value.quoteid as number,
+              quotationDetailResult.value.pid,
+              true,
+              ""
+            ).then(() => {
+              if (
+                localChargeResult.value &&
+                localChargeResult.value.length > 0
+              ) {
+                localChargeResult.value.forEach(localCharge => {
+                  exportLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true
+                    }
+                  });
                 });
               }
             });
-            freightChargeSettings.value.data = freightChargeResult.value;
-            Promise.all([
-              poreceiptPromise,
-              poloadingPromise,
-              podeliveryPromise,
-              podischargePromise
-            ]).then(() => {
-              disabledExportLocalChargeBtn.value = false;
-              disabledImportLocalChargeBtn.value = false;
+
+            importPromise = getLocalChargeResult(
+              quotationDetailResult.value.quoteid as number,
+              quotationDetailResult.value.pid,
+              false,
+              ""
+            ).then(() => {
+              if (
+                localChargeResult.value &&
+                localChargeResult.value.length > 0
+              ) {
+                localChargeResult.value.forEach(localCharge => {
+                  importLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true
+                    }
+                  });
+                });
+              }
             });
           } else {
-            console.log("freightChargeResult is empty");
+            //new quote, forEach all FreightCharge setting to bind local charge
+            const uniqueExportCities = freightChargeResult.value.filter(
+              (item, index, self) =>
+                index === self.findIndex(t => t.pReceipt === item.pReceipt)
+            );
+
+            const uniqueImportCities = freightChargeResult.value.filter(
+              (item, index, self) =>
+                index === self.findIndex(t => t.pDelivery === item.pDelivery)
+            );
+
+            uniqueExportCities.forEach(item => {
+              exportPromise = getLocalChargeResult(
+                quotationDetailResult.value.quoteid as number,
+                quotationDetailResult.value.pid,
+                true,
+                quotationDetailResult.value.quoteid ? "" : item.pReceipt
+              ).then(() => {
+                if (
+                  localChargeResult.value &&
+                  localChargeResult.value.length > 0
+                ) {
+                  localChargeResult.value.forEach(localCharge => {
+                    exportLocationResult.value.push({
+                      cityID: localCharge.cityID,
+                      city: localCharge.city,
+                      detail: [],
+                      hotTableSetting: {
+                        data: localCharge.detail || [],
+                        colHeaders: localCharge.colHeaders || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        columns: localCharge.columns.map(column => ({
+                          data: column.data,
+                          type: column.type,
+                          source: column.source || []
+                        })),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true
+                      }
+                    });
+                  });
+                }
+              });
+            });
+            uniqueImportCities.forEach(item => {
+              importPromise = getLocalChargeResult(
+                quotationDetailResult.value.quoteid as number,
+                quotationDetailResult.value.pid,
+                false,
+                quotationDetailResult.value.quoteid ? "" : item.pDelivery
+              ).then(() => {
+                if (
+                  localChargeResult.value &&
+                  localChargeResult.value.length > 0
+                ) {
+                  localChargeResult.value.forEach(localCharge => {
+                    importLocationResult.value.push({
+                      cityID: localCharge.cityID,
+                      city: localCharge.city,
+                      detail: [],
+                      hotTableSetting: {
+                        data: localCharge.detail || [],
+                        colHeaders: localCharge.colHeaders || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        columns: localCharge.columns.map(column => ({
+                          data: column.data,
+                          type: column.type,
+                          source: column.source || []
+                        })),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true
+                      }
+                    });
+                  });
+                }
+              });
+            });
           }
+          Promise.all([exportPromise, importPromise]).then(() => {
+            disabledExportLocalChargeBtn.value = false;
+            disabledImportLocalChargeBtn.value = false;
+          });
         });
       }
     }
@@ -446,199 +445,103 @@ const quoteDetailColumns: PlusColumn[] = [
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     changes.forEach(([row, prop, oldValue, newValue]) => {
-      if (
-        ["poreceipt", "poloading", "podelivery", "podischarge"].includes(prop)
-      ) {
-        exportLocationResult.value.splice(0, exportLocationResult.value.length);
-        importLocationResult.value.splice(0, importLocationResult.value.length);
+      console.log(row);
+      console.log(prop);
+      console.log(oldValue);
+      console.log(newValue);
+      if (prop === "pReceipt") {
+        const cityExists = exportLocationResult.value.some(
+          item => item.city === newValue
+        );
+        if (!cityExists) {
+          console.log(
+            `City ${newValue} 不存在於 exportLocationResult.value 中，執行相應操作`
+          );
 
-        console.log("573474", exportLocationResult);
+          getLocalChargeResult(
+            0,
+            quotationDetailResult.value.pid,
+            true,
+            newValue
+          ).then(() => {
+            if (localChargeResult.value && localChargeResult.value.length > 0) {
+              localChargeResult.value.forEach(localCharge => {
+                exportLocationResult.value.push({
+                  cityID: localCharge.cityID,
+                  city: localCharge.city,
+                  detail: [],
+                  hotTableSetting: {
+                    data: localCharge.detail || [],
+                    colHeaders: localCharge.colHeaders || [],
+                    rowHeaders: false,
+                    dropdownMenu: true,
+                    width: "100%",
+                    height: "auto",
+                    columns: localCharge.columns.map(column => ({
+                      data: column.data,
+                      type: column.type,
+                      source: column.source || []
+                    })),
+                    autoWrapRow: true,
+                    autoWrapCol: true,
+                    allowInsertColumn: true,
+                    allowInsertRow: true,
+                    allowInvalid: true,
+                    licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                    contextMenu: true
+                  }
+                });
+              });
+            }
+          });
+        }
+      }
+      if (prop === "pDelivery") {
+        const cityExists = importLocationResult.value.some(
+          item => item.city === newValue
+        );
+        if (!cityExists) {
+          console.log(
+            `City ${newValue} 不存在於 exportLocationResult.value 中，執行相應操作`
+          );
 
-        let poreceiptPromise = Promise.resolve();
-        let poloadingPromise = Promise.resolve();
-        let podeliveryPromise = Promise.resolve();
-        let podischargePromise = Promise.resolve();
-
-        freightChargeSettings.value.data.forEach(rowData => {
-          if (rowData.poreceipt) {
-            poreceiptPromise = getLocalChargeResult(
-              qid.value,
-              quotationDetailResult.value.productLineCode,
-              true,
-              rowData.poreceipt
-            ).then(() => {
-              if (
-                localChargeResult.value &&
-                localChargeResult.value.length > 0
-              ) {
-                localChargeResult.value.forEach(localCharge => {
-                  exportLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    hotTableSetting: {
-                      data: localCharge.detail || [],
-                      colHeaders: localCharge.colHeaders || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      columns: localCharge.columns.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true
-                    }
-                  });
+          getLocalChargeResult(
+            0,
+            quotationDetailResult.value.pid,
+            false,
+            newValue
+          ).then(() => {
+            if (localChargeResult.value && localChargeResult.value.length > 0) {
+              localChargeResult.value.forEach(localCharge => {
+                importLocationResult.value.push({
+                  cityID: localCharge.cityID,
+                  city: localCharge.city,
+                  detail: [],
+                  hotTableSetting: {
+                    data: localCharge.detail || [],
+                    colHeaders: localCharge.colHeaders || [],
+                    rowHeaders: false,
+                    dropdownMenu: true,
+                    width: "100%",
+                    height: "auto",
+                    columns: localCharge.columns.map(column => ({
+                      data: column.data,
+                      type: column.type,
+                      source: column.source || []
+                    })),
+                    autoWrapRow: true,
+                    autoWrapCol: true,
+                    allowInsertColumn: true,
+                    allowInsertRow: true,
+                    allowInvalid: true,
+                    licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                    contextMenu: true
+                  }
                 });
-                disabledExportLocalChargeBtn.value = false;
-              }
-            });
-          }
-          if (rowData.poloading) {
-            poloadingPromise = getLocalChargeResult(
-              qid.value,
-              quotationDetailResult.value.productLineCode,
-              true,
-              rowData.poloading
-            ).then(() => {
-              if (
-                localChargeResult.value &&
-                localChargeResult.value.length > 0
-              ) {
-                localChargeResult.value.forEach(localCharge => {
-                  exportLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    hotTableSetting: {
-                      data: localCharge.detail || [],
-                      colHeaders: localCharge.colHeaders || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      columns: localCharge.columns.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true
-                    }
-                  });
-                });
-                disabledExportLocalChargeBtn.value = false;
-              }
-            });
-          }
-          if (rowData.podelivery) {
-            podeliveryPromise = getLocalChargeResult(
-              qid.value,
-              quotationDetailResult.value.productLineCode,
-              false,
-              rowData.podelivery
-            ).then(() => {
-              if (
-                localChargeResult.value &&
-                localChargeResult.value.length > 0
-              ) {
-                localChargeResult.value.forEach(localCharge => {
-                  importLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    hotTableSetting: {
-                      data: localCharge.detail || [],
-                      colHeaders: localCharge.colHeaders || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      columns: localCharge.columns.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true
-                    }
-                  });
-                });
-                disabledImportLocalChargeBtn.value = false;
-              }
-            });
-          }
-          if (rowData.podischarge) {
-            podischargePromise = getLocalChargeResult(
-              qid.value,
-              quotationDetailResult.value.productLineCode,
-              false,
-              rowData.podischarge
-            ).then(() => {
-              if (
-                localChargeResult.value &&
-                localChargeResult.value.length > 0
-              ) {
-                localChargeResult.value.forEach(localCharge => {
-                  importLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    hotTableSetting: {
-                      data: localCharge.detail || [],
-                      colHeaders: localCharge.colHeaders || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      columns: localCharge.columns.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true
-                    }
-                  });
-                });
-                disabledImportLocalChargeBtn.value = false;
-              }
-            });
-          }
-        });
-
-        Promise.all([
-          poreceiptPromise,
-          poloadingPromise,
-          podeliveryPromise,
-          podischargePromise
-        ]).then(() => {
-          disabledExportLocalChargeBtn.value = false;
-          disabledImportLocalChargeBtn.value = false;
-        });
+              });
+            }
+          });
+        }
       }
     });
   }
@@ -1032,7 +935,11 @@ onBeforeUnmount(() => {
                 </el-tab-pane>
               </el-tabs>
             </el-collapse-item>
-            <el-collapse-item title="TERMS & CONDITIONS" name="6">
+            <el-collapse-item
+              title="TERMS & CONDITIONS"
+              name="6"
+              class="collapse-item"
+            >
               <template #title>
                 <span class="text-orange-500">TERMS & CONDITIONS</span>
               </template>
@@ -1042,13 +949,15 @@ onBeforeUnmount(() => {
                   :key="term.termOrder"
                   class="term-item"
                 >
-                  <el-checkbox
-                    v-model="term.isSelected"
-                    :true-label="'Yes'"
-                    :false-label="'No'"
-                  >
-                    {{ term.contents }}
-                  </el-checkbox>
+                  <div class="checkbox-wrapper">
+                    <el-checkbox
+                      v-model="term.isSelected"
+                      :true-label="'Yes'"
+                      :false-label="'No'"
+                      class="checkbox-content"
+                    />
+                    <span class="checkbox-label">{{ term.contents }}</span>
+                  </div>
                 </li>
               </ol>
             </el-collapse-item>
@@ -1075,10 +984,7 @@ onBeforeUnmount(() => {
                 v-html="quotationDetailResult.salesInfo"
               />
               <div class="flex flex-col ...">
-                <div>Name : {{ quotationDetailResult.salesName }}</div>
-                <div>EMAIL : {{ quotationDetailResult.salesMail }}</div>
-                <div>Mobile : {{ quotationDetailResult.salesMobile }}</div>
-                <div>Tel : {{ quotationDetailResult.salesTel }}</div>
+                <div v-html="quotationDetailResult.signature" />
               </div>
             </el-collapse-item>
           </el-collapse>
@@ -1156,5 +1062,40 @@ onBeforeUnmount(() => {
 
 :deep(.el-card__body) {
   padding: 6px;
+}
+
+.collapse-item {
+  height: auto;
+  overflow: visible;
+}
+
+.term-list {
+  padding: 0;
+  list-style-type: none;
+}
+
+.term-item {
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* 包裝 checkbox 和文字的容器 */
+.checkbox-wrapper {
+  display: flex;
+  align-items: flex-start; /* 頂部對齊 */
+}
+
+/* 調整 checkbox 的位置靠左上 */
+.checkbox-content {
+  align-self: flex-start; /* 讓 checkbox 自身靠左上 */
+  margin-top: 4px; /* 調整與文字的對齊 */
+  margin-right: 8px; /* 與文字間隔 */
+}
+
+.checkbox-label {
+  max-width: 100%; /* 避免內容溢出 */
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: normal;
 }
 </style>

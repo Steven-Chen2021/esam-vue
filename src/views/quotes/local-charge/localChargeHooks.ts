@@ -294,7 +294,7 @@ export function LocalChargeHooks() {
     QuoteID: number,
     PID: any,
     IsExport: boolean,
-    location: number
+    location: string
   ) {
     try {
       localChargeResult.value = [];
