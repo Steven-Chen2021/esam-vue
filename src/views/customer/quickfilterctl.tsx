@@ -23,6 +23,7 @@ export interface QuickFilterDetail {
   allowGridHeaderFilter: boolean;
   width: number;
   controlTypeOnDetail: string;
+  enableOnSearchView: boolean;
 }
 export interface QuickFilter {
   filterName: string;
@@ -103,11 +104,9 @@ export function quickFilterCTL() {
   const fetchOptionsNeedParam = async (filterItems: QuickFilterDetail[]) => {
     try {
       const selectFilterList: QuickFilterDetail[] = filterItems.filter(
-        a =>
-          a.filterType === "dropdown" &&
-          a.filterSourceType === "api" &&
-          a.filterSource
+        a => a.filterType === "dropdown" && a.filterSourceType === "api"
       );
+      console.log("fetchOptionsNeedParam filterItems", filterItems);
       selectFilterList.forEach(async item => {
         let resourceType = 0;
         switch (item.filterKey) {
@@ -131,6 +130,9 @@ export function quickFilterCTL() {
             break;
           case "status":
             resourceType = 19;
+            break;
+          case "Names":
+            resourceType = 118;
             break;
           default:
             resourceType = 0;

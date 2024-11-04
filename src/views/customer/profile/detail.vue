@@ -207,9 +207,12 @@ const autoSaveForm = async (
   if (disableStatus(filterItem)) return;
   await formEl.validate((valid, fields) => {
     console.log("validate fields:", fields);
-    const fieldValid = !fields.hasOwnProperty(filterItem.filterKey);
+    let fieldValid = true;
+    if (fields) {
+      fieldValid = !fields.hasOwnProperty(filterItem.filterKey);
+    }
     console.log("fieldValid:", fieldValid);
-    if (fieldValid) {
+    if (!fields || fieldValid) {
       const data = profileData.value;
       const dataInit = profileDataInit.value;
       console.log("dataInit", dataInit);
@@ -242,7 +245,10 @@ const autoSaveForm = async (
         case "capitalCurrencyID":
         case "capitalAmount":
         case "commodity":
-        case "webSite": {
+        case "webSite":
+        case "customerAnnualRevenue":
+        case "customerEstRevenue":
+        case "remark": {
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);

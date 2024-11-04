@@ -536,6 +536,7 @@ watch(
               label-width="auto"
               class="demo-form-inline"
               status-icon
+              label-position="left"
             >
               <div>
                 <el-form-item
@@ -1136,7 +1137,8 @@ watch(
 .containerC {
   display: flex;
   flex-direction: column;
-  height: 90vh; /* 或者其它固定高度 */
+  height: calc(100vh - 81px - 81px);
+  overflow-y: auto; /* 允许垂直滚动 */
 }
 
 .flex-table {
