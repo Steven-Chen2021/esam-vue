@@ -68,7 +68,10 @@ const {
   getCBMTransferUOMRsult,
   cbmTransferUOMResult,
   saveQuoteDetailResult,
-  getLocalCharge
+  getLocalCharge,
+  saveFreightChargeResult,
+  saveLocalChargeResult,
+  frightChargeParams
 } = QuoteDetailHooks();
 
 const {
@@ -588,11 +591,36 @@ const saveData = () => {
     quotationDetailResult.value.quoteid = 0;
   }
 
-  const detailStatus = saveQuoteDetailResult(quotationDetailResult.value);
-  console.log(detailStatus);
+  const detailStatus = saveQuoteDetailResult(quotationDetailResult.value).then(
+    res => {
+      if (res && res.isSuccess) {
+        //save Charge Items.
+        frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
+        frightChargeParams.value.pid = quotationDetailResult.value.pid;
+        frightChargeParams.value.quoteFreights =
+          freightChargeSettings.value.data;
+        saveFreightChargeResult(frightChargeParams).then(() => { 
+          
+        });
 
+        ElNotification({
+          title: "successfully",
+          message: "Quotation save successfully!",
+          type: "success"
+        });
+      } else {
+        ElNotification({
+          title: "Error",
+          message: "Failed to save the quotation.",
+          type: "error"
+        });
+      }
+    }
+  );
+  console.log(detailStatus);
   console.log("result", quotationDetailResult.value);
   console.log("freightChargeSettings-data", freightChargeSettings.value.data);
+  console.log("frightChargeParams", frightChargeParams.value);
   console.log("exportLocationResult", exportLocationResult);
   console.log("importLocationResult", importLocationResult);
 };

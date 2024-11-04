@@ -69,6 +69,12 @@ export function QuoteDetailHooks() {
     salesOverseaOffice: null
   });
 
+  const frightChargeParams = ref({
+    quoteID: null,
+    pid: null,
+    quoteFreights: [] as any[]
+  });
+
   const customerResult = reactive({
     customers: [] as Array<dropdownCtl>,
     loading: false,
@@ -84,30 +90,9 @@ export function QuoteDetailHooks() {
   const creditTermResult = ref([]);
   const cbmTransferUOMResult = ref([]);
 
-  const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
+  const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]); 
 
-  // const productLineOptions = reactive<dropdownCtl[]>(null);
-
-  const chargeCodeSettingValues = ref([]);
-
-  // const freightChargeHotTableKey = ref(0);
-
-  // const FreightChargeSettings = reactive({
-  //   data: [],
-  //   colHeaders: [],
-  //   rowHeaders: false,
-  //   dropdownMenu: true,
-  //   width: "100%",
-  //   height: "auto",
-  //   columns: [],
-  //   autoWrapRow: true,
-  //   autoWrapCol: true,
-  //   allowInsertColumn: true,
-  //   allowInsertRow: true,
-  //   allowInvalid: true,
-  //   licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  //   contextMenu: true
-  // });
+  const chargeCodeSettingValues = ref([]); 
 
   async function getQuotationDetailResult(QuoteID: number) {
     try {
@@ -317,6 +302,24 @@ export function QuoteDetailHooks() {
     }
   }
 
+   async function saveFreightChargeResult(params) {
+    try {
+      const response = await quoteDetailService.saveFreightCharge(params);
+      return response;
+    } catch (error) {
+      console.log("saveFreightChargeResult", error);
+    }
+  }
+
+   async function saveLocalChargeResult(params) {
+    try {
+      const response = await quoteDetailService.saveLocalCharge(params);
+      return response;
+    } catch (error) {
+      console.log("saveLocalChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -343,6 +346,9 @@ export function QuoteDetailHooks() {
     getCBMTransferUOMRsult,
     cbmTransferUOMResult,
     saveQuoteDetailResult,
-    getLocalCharge
+    getLocalCharge,
+    saveFreightChargeResult,
+    saveLocalChargeResult,
+    frightChargeParams
   };
 }

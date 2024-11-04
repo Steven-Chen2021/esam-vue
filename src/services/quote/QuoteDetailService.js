@@ -164,6 +164,24 @@ class QuoteDetailService {
       console.error(error);
     }
   }
+  async saveFreightCharge(params) {
+    try {
+      const url = "/api/Quote/QuoteFreightChargeResult";
+      const response = await API.post(url, params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async saveLocalCharge(params) {
+    try {
+      const url = "/api/Quote/QuoteLocalChargeResult";
+      const response = await API.post(url, params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new QuoteDetailService();
