@@ -90,9 +90,9 @@ export function QuoteDetailHooks() {
   const creditTermResult = ref([]);
   const cbmTransferUOMResult = ref([]);
 
-  const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]); 
+  const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
 
-  const chargeCodeSettingValues = ref([]); 
+  const chargeCodeSettingValues = ref([]);
 
   async function getQuotationDetailResult(QuoteID: number) {
     try {
@@ -212,13 +212,14 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function getTradeTermResult(ShippingTerm: string) {
+  async function getTradeTermResult() {
     try {
-      const response = await quoteDetailService.getTradeTerm(ShippingTerm);
+      const response = await quoteDetailService.getTradeTerm();
       if (response != null) {
         tradeTermResult.value = response.returnValue.map((item: any) => ({
           label: item.text,
-          value: item.value
+          value: item.value,
+          shippingTerm: item.shippingTerm
         }));
       }
     } catch (error) {
@@ -302,7 +303,7 @@ export function QuoteDetailHooks() {
     }
   }
 
-   async function saveFreightChargeResult(params) {
+  async function saveFreightChargeResult(params) {
     try {
       const response = await quoteDetailService.saveFreightCharge(params);
       return response;
@@ -311,7 +312,7 @@ export function QuoteDetailHooks() {
     }
   }
 
-   async function saveLocalChargeResult(params) {
+  async function saveLocalChargeResult(params) {
     try {
       const response = await quoteDetailService.saveLocalCharge(params);
       return response;

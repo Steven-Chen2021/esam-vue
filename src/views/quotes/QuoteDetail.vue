@@ -77,10 +77,9 @@ const {
 const {
   exportLocationResult,
   importLocationResult,
-  exportLocalChargeHotTableSetting,
-  importLocalChargeHotTableSetting,
   getLocalChargeResult,
-  localChargeResult
+  localChargeResult,
+  handleSaveLocalCharge
 } = LocalChargeHooks();
 
 const { historyColumns, historyResult, getHistoryResult } =
@@ -185,7 +184,6 @@ const quoteDetailColumns: PlusColumn[] = [
           _pid
         );
         getQuoteFreightChargeResult(qid.value, _pid).then(() => {
-          console.log(freightChargeResult.value);
           freightChargeSettings.value.data = freightChargeResult.value;
           let exportPromise = Promise.resolve();
           let importPromise = Promise.resolve();
@@ -225,7 +223,10 @@ const quoteDetailColumns: PlusColumn[] = [
                       allowInsertRow: true,
                       allowInvalid: true,
                       licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true
+                      contextMenu: true,
+                      afterChange: handleAfterChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow
                     }
                   });
                 });
@@ -265,7 +266,10 @@ const quoteDetailColumns: PlusColumn[] = [
                       allowInsertRow: true,
                       allowInvalid: true,
                       licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true
+                      contextMenu: true,
+                      afterChange: handleAfterChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow
                     }
                   });
                 });
@@ -317,7 +321,10 @@ const quoteDetailColumns: PlusColumn[] = [
                         allowInsertRow: true,
                         allowInvalid: true,
                         licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                        contextMenu: true
+                        contextMenu: true,
+                        afterChange: handleAfterChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow
                       }
                     });
                   });
@@ -358,7 +365,10 @@ const quoteDetailColumns: PlusColumn[] = [
                         allowInsertRow: true,
                         allowInvalid: true,
                         licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                        contextMenu: true
+                        contextMenu: true,
+                        afterChange: handleAfterChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow
                       }
                     });
                   });
@@ -398,10 +408,10 @@ const quoteDetailColumns: PlusColumn[] = [
       span: 8
     },
     fieldProps: {
-      onChange: (value: string) => {
-        getTradeTermResult(value);
-        quotationDetailResult.value.tradeTermId = null;
-      }
+      // onChange: (value: string) => {
+      //   getTradeTermResult(value);
+      //   quotationDetailResult.value.tradeTermId = null;
+      // }
     }
   },
   {
@@ -431,6 +441,14 @@ const quoteDetailColumns: PlusColumn[] = [
     options: tradeTermResult,
     colProps: {
       span: 8
+    },
+    fieldProps: {
+      onChange: item => {
+        const selectTT = tradeTermResult.value.find(
+          col => col.value === item
+        ) as any;
+        quotationDetailResult.value.shippingTerm = selectTT;
+      }
     }
   },
   {
@@ -448,10 +466,6 @@ const quoteDetailColumns: PlusColumn[] = [
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     changes.forEach(([row, prop, oldValue, newValue]) => {
-      console.log(row);
-      console.log(prop);
-      console.log(oldValue);
-      console.log(newValue);
       if (prop === "pReceipt") {
         const cityExists = exportLocationResult.value.some(
           item => item.city === newValue
@@ -491,7 +505,10 @@ const handleAfterChange = (changes, source) => {
                     allowInsertRow: true,
                     allowInvalid: true,
                     licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                    contextMenu: true
+                    contextMenu: true,
+                    afterChange: handleAfterChange,
+                    afterSelection: handleAfterSelection,
+                    afterRemoveRow: handleRemoveRow
                   }
                 });
               });
@@ -538,7 +555,10 @@ const handleAfterChange = (changes, source) => {
                     allowInsertRow: true,
                     allowInvalid: true,
                     licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                    contextMenu: true
+                    contextMenu: true,
+                    afterChange: handleAfterChange,
+                    afterSelection: handleAfterSelection,
+                    afterRemoveRow: handleRemoveRow
                   }
                 });
               });
@@ -551,12 +571,14 @@ const handleAfterChange = (changes, source) => {
 };
 
 const handleAfterSelection = (row, column, row2, column2) => {
-  console.log(`選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`);
+  console.log(
+    "handleAfterSelection",
+    `選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`
+  );
 };
 
 const handleRemoveRow = (index, amount) => {
-  console.log(`刪除了 ${amount} 行，從索引 ${index} 開始`);
-  console.log(freightChargeSettings);
+  console.log("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
 };
 
 const freightChargeSettings = ref({
@@ -599,9 +621,7 @@ const saveData = () => {
         frightChargeParams.value.pid = quotationDetailResult.value.pid;
         frightChargeParams.value.quoteFreights =
           freightChargeSettings.value.data;
-        saveFreightChargeResult(frightChargeParams).then(() => { 
-          
-        });
+        saveFreightChargeResult(frightChargeParams).then(() => {});
 
         ElNotification({
           title: "successfully",
@@ -629,7 +649,6 @@ const deleteData = () => {
   deleteLoading.value = "default";
   if (qid.value > 0) {
     const isDeleted = deleteQuotation(qid.value);
-    console.log(isDeleted);
     if (isDeleted) {
       ElNotification({
         title: "successfully",
@@ -656,8 +675,6 @@ const viewHistory = () => {
 };
 
 const handleCheckboxGroupChange = (values: string[]) => {
-  console.log("34634634373", ChargeCodeSettingResult);
-  console.log("3463465434373", chargeCodeSettingValues);
   const selectedItems = ChargeCodeSettingResult.filter(item =>
     values.includes(item.columnName)
   );
@@ -695,7 +712,6 @@ const createFilter = (queryString: string) => {
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
-    // console.log(ChargeCodeSettingResult);
     ChargeCodeSettingResult.forEach(item => {
       if (item.selected) {
         sourceData.push(item);
@@ -770,6 +786,10 @@ onMounted(() => {
     });
   }
   getCustomerByOwnerUserResult();
+  getTradeTermResult().then(itme => {
+    console.log("getTradeTermResult", tradeTermResult);
+  });
+
   getShippingTermResult();
   getCBMTransferUOMRsult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
@@ -787,7 +807,7 @@ onBeforeUnmount(() => {
     <el-card shadow="never" class="relative h-96 overflow-hidden">
       <div class="flex justify-between items-center">
         <!-- 左側 Label 和 Icon 按鈕 -->
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-2 pt-3 pl-3 font-bold">
           <span class="text-gray-700">{{ quotationDetailResult.quoteNo }}</span>
         </div>
 
@@ -852,7 +872,7 @@ onBeforeUnmount(() => {
 
       <!-- Content Section -->
       <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
-        <div class="p-4">
+        <div class="p-1">
           <el-collapse v-model="activeName" class="mb-2">
             <el-collapse-item title="QUOTE DETAIL" name="1">
               <template #title>
