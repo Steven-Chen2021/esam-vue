@@ -430,38 +430,36 @@ watch(
 
 <template>
   <div class="containerC">
-    <el-card shadow="never" class="max-h-12 p-0">
-      <div class="flex flex-row">
-        <div class="basis-4/5">
-          <el-button ref="refBtnAddFilter" @click="handleQuickFilterOpen">{{
-            t("customer.list.quickFilter.addFilterbtn")
-          }}</el-button>
-          <el-dropdown
-            v-for="(item, index) in quickFilterList"
-            v-bind:key="item.id"
-            :ref="el => (refsQuickFilterBtn[index] = el)"
-            loading
-            split-button
-            :plain="!item.clicked"
-            :type="item.clicked ? 'primary' : ''"
-            style="margin-left: 10px"
-            @click="handleFilterClick(item)"
-          >
-            {{ item.filterName }}
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="handleEditQuickFilter(item)">{{
-                  t("customer.list.quickFilter.editBtnText")
-                }}</el-dropdown-item>
-                <el-dropdown-item @click="handleDeleteQuickFilter(item)">{{
-                  t("customer.list.quickFilter.delBtnText")
-                }}</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+    <div class="flex flex-row">
+      <div class="basis-4/5">
+        <el-button ref="refBtnAddFilter" @click="handleQuickFilterOpen">{{
+          t("customer.list.quickFilter.addFilterbtn")
+        }}</el-button>
+        <el-dropdown
+          v-for="(item, index) in quickFilterList"
+          v-bind:key="item.id"
+          :ref="el => (refsQuickFilterBtn[index] = el)"
+          loading
+          split-button
+          :plain="!item.clicked"
+          :type="item.clicked ? 'primary' : ''"
+          style="margin-left: 10px"
+          @click="handleFilterClick(item)"
+        >
+          {{ item.filterName }}
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleEditQuickFilter(item)">{{
+                t("customer.list.quickFilter.editBtnText")
+              }}</el-dropdown-item>
+              <el-dropdown-item @click="handleDeleteQuickFilter(item)">{{
+                t("customer.list.quickFilter.delBtnText")
+              }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
-    </el-card>
+    </div>
     <el-divider />
     <div>
       <el-form
@@ -713,7 +711,7 @@ watch(
       border
       class="flex-table"
       :data="tableData"
-      style="width: 100%"
+      style="width: 100%; min-height: 200px"
       :row-class-name="tableRowClassName"
       :max-height="maxHeight"
       @sort-change="handleSortChange"
