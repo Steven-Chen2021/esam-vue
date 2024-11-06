@@ -109,7 +109,7 @@ const qid = ref(0);
 const disabledExportLocalChargeBtn = ref(true);
 const disabledImportLocalChargeBtn = ref(true);
 const vxeTableRef = ref();
-
+const hideQuotationType = ref(true);
 //Editor Parameters
 const mode = "default";
 const editorRef = shallowRef();
@@ -167,6 +167,7 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onChange: (value: number) => {
+        hideQuotationType.value = !(value > 0);
         const _pid = value ?? (quotationDetailResult.value.pid as number);
         const PLCode = ref();
         if (_pid === 6) {
@@ -286,6 +287,8 @@ const quoteDetailColumns: PlusColumn[] = [
               (item, index, self) =>
                 index === self.findIndex(t => t.pDelivery === item.pDelivery)
             );
+            console.log("uniqueExportCities", uniqueExportCities);
+            console.log("uniqueImportCities", uniqueImportCities);
 
             uniqueExportCities.forEach(item => {
               exportPromise = getLocalChargeResult(
@@ -419,6 +422,7 @@ const quoteDetailColumns: PlusColumn[] = [
     prop: "typeCode",
     valueType: "radio",
     options: quoteTypeResult,
+    hideInForm: hideQuotationType,
     colProps: {
       span: 16
     }
@@ -466,6 +470,7 @@ const quoteDetailColumns: PlusColumn[] = [
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     changes.forEach(([row, prop, oldValue, newValue]) => {
+      console.log(prop);
       if (prop === "pReceipt") {
         const cityExists = exportLocationResult.value.some(
           item => item.city === newValue
@@ -793,6 +798,7 @@ onMounted(() => {
   getShippingTermResult();
   getCBMTransferUOMRsult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+  console.log(quotationDetailResult);
 });
 
 onBeforeUnmount(() => {
@@ -1018,7 +1024,7 @@ onBeforeUnmount(() => {
                 style="width: 440px"
                 placeholder="Please input"
                 clearable
-                maxlength="30"
+                maxlength="500"
                 show-word-limit
                 type="textarea"
               />
