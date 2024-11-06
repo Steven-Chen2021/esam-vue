@@ -42,20 +42,20 @@ export function customerProfileCTL() {
   const profileFormData = ref([]);
   const profileData = ref({ agentRO: null, agentROCheck: null });
   // TODO: 补全所有栏位
-  async function fetchProfileData(HQID, warnMsg) {
+  async function fetchProfileData() {
     try {
       const [result1, result2, result3] = await Promise.all([
         // axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
         // axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
         CustomerProfileService.getCustomerProfileColumnList(5),
-        CustomerProfileService.getCustomerProfileResult(HQID),
-        CustomerProfileService.getUserAuthByCustomerResult(HQID)
+        CustomerProfileService.getCustomerProfileResult(LeadID.value),
+        CustomerProfileService.getUserAuthByCustomerResult(LeadID.value)
       ]);
       console.log("getUserAuthByCustomerResult", result3.returnValue);
       userAuth.value = deepClone(result3.returnValue);
       loadAgentROList();
       profileData.value = deepClone(result2.returnValue);
-      if (HQID === "0") {
+      if (LeadID.value === "0") {
         profileFormData.value = deepClone(
           result1.returnValue.filter(c => c.showOnDetailAdd === true)
         );
@@ -63,6 +63,17 @@ export function customerProfileCTL() {
         profileFormData.value = deepClone(result1.returnValue);
       }
       profileData.value["agentROCheck"] = false;
+      console.log("profileData.value", profileData.value);
+      if (
+        !profileData.value["agentId"] ||
+        profileData.value["agentId"] <= 0 ||
+        !profileData.value["agent"] ||
+        profileData.value["agent"] === ""
+      ) {
+        profileFormData.value = profileFormData.value.filter(
+          c => c.filterKey !== "agent"
+        );
+      }
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
         // column.value = result2.data.returnValue[column.filterKey];
@@ -73,9 +84,13 @@ export function customerProfileCTL() {
         //   }
         // } else
         if (column.visibilityLevel === 2) {
-          if (!userAuth.value["isReadAdvanceColumn"]) {
-            profileData.value[column.filterKey] = warnMsg;
-            profileDataInit.value[column.filterKey] = warnMsg;
+          if (!userAuth.value["isReadAdvanceColumn"] && LeadID.value !== "0") {
+            profileData.value[column.filterKey] = t(
+              "customer.profile.general.unauthorized"
+            );
+            profileDataInit.value[column.filterKey] = t(
+              "customer.profile.general.unauthorized"
+            );
           }
         }
       });
@@ -123,13 +138,17 @@ export function customerProfileCTL() {
       return [{ value: "Return", text: "Return" }];
     }
   };
-  async function fetchPLData(LID, PID) {
+  const checkedPL = ref([]);
+  const handleCheckedPLChange = (value: string[]) => {
+    console.log("handleCheckedPLChange", value);
+  };
+  async function fetchPLData(PID) {
     try {
-      console.log("fetchPLData", `LID:${LID} PID:${PID}`);
-      LeadID.value = LID;
+      console.log("fetchPLData", `LID:${LeadID.value} PID:${PID}`);
+      // LeadID.value = LID;
       const [result1, result2] = await Promise.all([
-        CustomerProfileService.getPLDetailData(LID, PID),
-        CustomerProfileService.getPLListData(LID)
+        CustomerProfileService.getPLDetailData(LeadID.value, PID),
+        CustomerProfileService.getPLListData(LeadID.value)
       ]);
       PLFormData.value = deepClone(result1.returnValue);
       tabsPLList.value = deepClone(result2.returnValue);
@@ -138,16 +157,18 @@ export function customerProfileCTL() {
       // } else {
       //   activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LID}_${tabsPLList.value[0].plName}`;
       // }
-      activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LID}_${tabsPLList.value[0].plName}`;
+      activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LeadID.value}_${tabsPLList.value[0].plName}`;
       formDataMap.value[PLFormData.value.plName] = deepClone(PLFormData.value);
       console.log("PLFormData.value", PLFormData.value);
-      LeadMemberService.getLeadMembersResult(PLFormData.value["id"]).then(
-        data => {
-          console.log("getLeadMembersResult data", data);
-          formDataMap.value[PLFormData.value.plName]["members"] =
-            data.returnValue;
-        }
-      );
+      if (LeadID.value !== "0" && PLFormData.value["id"]) {
+        LeadMemberService.getLeadMembersResult(PLFormData.value["id"]).then(
+          data => {
+            console.log("getLeadMembersResult data", data);
+            formDataMap.value[PLFormData.value.plName]["members"] =
+              data.returnValue;
+          }
+        );
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -205,13 +226,6 @@ export function customerProfileCTL() {
       }
     ],
     country: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
-    state: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
@@ -1075,16 +1089,22 @@ export function customerProfileCTL() {
   });
   const activePanelNames = ref(["BasicFilterForm"]);
   const disableStatus = filterItem => {
-    if (filterItem.visibilityLevel === 1) {
-      return !userAuth.value["isWrite"];
+    if (filterItem.visibilityLevel === 2) {
+      return !userAuth.value["isWrite"] && LeadID.value !== "0";
     } else {
       if (
         filterItem.filterKey === "leadSourceGroupID" ||
         filterItem.filterKey === "leadSourceID"
       ) {
-        return leadSourceDisable.value || !userAuth.value["isWrite"];
+        return (
+          leadSourceDisable.value ||
+          ((!userAuth.value["isWrite"] ||
+            (profileData.value["agent"] &&
+              profileData.value["agent"] !== "")) &&
+            LeadID.value !== "0")
+        );
       } else {
-        return !userAuth.value["isWrite"];
+        return !userAuth.value["isWrite"] && LeadID.value !== "0";
       }
     }
   };
@@ -1143,6 +1163,9 @@ export function customerProfileCTL() {
     stationOptions,
     loadStationOptions,
     userAuth,
-    disableStatus
+    disableStatus,
+    LeadID,
+    checkedPL,
+    handleCheckedPLChange
   };
 }

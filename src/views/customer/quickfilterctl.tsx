@@ -34,6 +34,7 @@ export interface QuickFilter {
   filters: QuickFilterDetail[];
 }
 export function quickFilterCTL() {
+  const filterRequestType = ref(1);
   const quickFilterFormRef = ref<FormInstance>();
   // const quickFilterFormInitData: QuickFilter = {
   //   filterName: "",
@@ -374,11 +375,11 @@ export function quickFilterCTL() {
     }
     return clone;
   }
-  const fetchData = async requestType => {
+  const fetchData = async () => {
     let p1 = 1;
     let p2 = 2;
     let p3 = 3;
-    switch (requestType) {
+    switch (filterRequestType.value) {
       case customer: {
         p1 = 1;
         p2 = 2;
@@ -474,10 +475,10 @@ export function quickFilterCTL() {
       console.error("Error fetching data:", error);
     }
   };
-  const fetchQuickFilterData = async requestType => {
+  const fetchQuickFilterData = async () => {
     let p1 = 1;
     let p2 = 2;
-    switch (requestType) {
+    switch (filterRequestType.value) {
       case customer: {
         p1 = 1;
         p2 = 2;
@@ -544,9 +545,9 @@ export function quickFilterCTL() {
       console.error("Error fetching data:", error);
     }
   };
-  const fetchAdvancedFilterData = async requestType => {
+  const fetchAdvancedFilterData = async () => {
     let p1 = 3;
-    switch (requestType) {
+    switch (filterRequestType.value) {
       case customer: {
         p1 = 3;
         break;
@@ -719,6 +720,7 @@ export function quickFilterCTL() {
     // handleCustomerSearch,
     formattedDateRange,
     handleBasicFilterBtnClick,
-    activePanelNames
+    activePanelNames,
+    filterRequestType
   };
 }

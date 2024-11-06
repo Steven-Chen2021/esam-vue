@@ -45,7 +45,10 @@ const {
   leadSourceDisable,
   handleAgentROCheckChange,
   userAuth,
-  disableStatus
+  disableStatus,
+  LeadID,
+  checkedPL,
+  handleCheckedPLChange
 } = customerProfileCTL();
 // const { fetchMembersData } = leadmemberctl();
 defineOptions({
@@ -77,6 +80,7 @@ const handleMembersEdit = (PLDetail, PLTab) => {
 };
 const profileFormRef = ref<FormInstance>();
 const refCity = ref(null);
+const refAgent = ref(null);
 const refLeadSourceDetail = ref(null);
 const handleDropDownChange = async (
   formEl: FormInstance | undefined,
@@ -202,7 +206,7 @@ const autoSaveForm = async (
   v
 ) => {
   if (LID === "0" || !userAuth.value["isWrite"]) return;
-  console.log("submitForm", profileData.value);
+  console.log("autoSaveForm", profileData.value);
   if (!formEl) return;
   if (disableStatus(filterItem)) return;
   await formEl.validate((valid, fields) => {
@@ -349,60 +353,39 @@ const autoSaveForm = async (
         default:
           break;
       }
-
-      // if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
-      //   if (
-      //     refLeadSourceDetail.value &&
-      //     refLeadSourceDetail.value.length === 1
-      //   ) {
-      //     refLeadSourceDetail.value[0].toggleMenu();
-      //     ElNotification({
-      //       title: t("customer.profile.alertTilte"),
-      //       message: t("customer.profile.leadSourceAlert"),
-      //       type: "warning"
-      //     });
-      //     return;
-      //   }
-      // }
-      // for (const key in data) {
-      //   // console.log("key", key);
-      //   // console.log("data[key]", data[key]);
-      //   // console.log("dataInit[key]", dataInit[key]);
-      //   if (data[key] !== dataInit[key]) {
-      //     profileNew.value[key] = data[key];
-      //   }
-      // }
-      // profileNew.value["hqid"] = LID;
-      // console.log("submit! profileNew:", profileNew.value);
-      // CustomerProfileService.updateCustomerProfile(profileNew.value)
-      //   .then(data => {
-      //     console.log("updateCustomerProfile data", data);
-      //     // ElNotification({
-      //     //   title: t("customer.list.quickFilter.alertTitle"),
-      //     //   message: t("customer.list.quickFilter.updateSucText"),
-      //     //   type: "success"
-      //     // });
-      //   })
-      //   .catch(err => {
-      //     console.log("updateCustomerProfile error", err);
-      //   });
     } else {
       console.log("error submit!", fields);
     }
   });
 };
 const submitForm = async (formEl: FormInstance | undefined, disable) => {
-  console.log("submitForm", profileData.value);
+  profileData.value["PlList"] = checkedPL.value;
   if (!formEl) return;
   if (disable) return;
   await formEl.validate((valid, fields) => {
     if (valid) {
-      const profileNew = ref({});
-
       const data = profileData.value;
-      const dataInit = profileDataInit.value;
-      console.log("dataInit", dataInit);
-      console.log("data", data);
+      if (data["agentROCheck"] && (!data["agentId"] || data["agentId"] === 0)) {
+        ElMessage({
+          message: t("customer.profile.agentRO"),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+        // console.log("refAgent", refAgent);
+        // console.log("refCity", refCity);
+        // if (refAgent.value && refAgent.value.length === 1) {
+        //   setTimeout(() => {
+        //     refAgent.value[0].toggleMenu();
+        //   }, 500);
+        //   ElMessage({
+        //     message: t("customer.profile.agentRO"),
+        //     grouping: true,
+        //     type: "warning"
+        //   });
+        //   return;
+        // }
+      }
       if (
         (!data["city"] || data["city"] === "" || data["city"] === null) &&
         (!data["cityText"] ||
@@ -410,10 +393,12 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           data["cityText"] === null)
       ) {
         if (refCity.value && refCity.value.length === 1) {
-          refCity.value[0].toggleMenu();
-          ElNotification({
-            title: t("customer.profile.alertTilte"),
+          setTimeout(() => {
+            refCity.value[0].toggleMenu();
+          }, 500);
+          ElMessage({
             message: t("customer.profile.cityAlert"),
+            grouping: true,
             type: "warning"
           });
           return;
@@ -424,36 +409,58 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           refLeadSourceDetail.value &&
           refLeadSourceDetail.value.length === 1
         ) {
-          refLeadSourceDetail.value[0].toggleMenu();
-          ElNotification({
-            title: t("customer.profile.alertTilte"),
+          setTimeout(() => {
+            refLeadSourceDetail.value[0].toggleMenu();
+          }, 500);
+          ElMessage({
             message: t("customer.profile.leadSourceAlert"),
+            grouping: true,
             type: "warning"
           });
           return;
         }
       }
-      for (const key in data) {
-        // console.log("key", key);
-        // console.log("data[key]", data[key]);
-        // console.log("dataInit[key]", dataInit[key]);
-        if (data[key] !== dataInit[key]) {
-          profileNew.value[key] = data[key];
-        }
-      }
-      profileNew.value["hqid"] = LID;
-      console.log("submit! profileNew:", profileNew.value);
-      CustomerProfileService.updateCustomerProfile(profileNew.value)
+      // const profileNew = ref({});
+
+      // const dataInit = profileDataInit.value;
+      // console.log("dataInit", dataInit);
+      // console.log("data", data);
+
+      // for (const key in data) {
+      //   // console.log("key", key);
+      //   // console.log("data[key]", data[key]);
+      //   // console.log("dataInit[key]", dataInit[key]);
+      //   if (data[key] !== dataInit[key]) {
+      //     profileNew.value[key] = data[key];
+      //   }
+      // }
+      profileData.value["hqid"] = LID;
+      console.log("submit! profileData:", profileData.value);
+      CustomerProfileService.updateCustomerProfile(profileData.value)
         .then(data => {
           console.log("updateCustomerProfile data", data);
-          // ElNotification({
-          //   title: t("customer.list.quickFilter.alertTitle"),
-          //   message: t("customer.list.quickFilter.updateSucText"),
-          //   type: "success"
-          // });
+          ElMessage({
+            message: t("customer.profile.fullSaveSucAlert"),
+            grouping: true,
+            type: "success"
+          });
+          if (data.isSuccess && data.returnValue) {
+            router.replace({
+              name: "CustomerDetail",
+              params: {
+                id: data.returnValue,
+                qname: profileData.value["customerName"]
+              }
+            });
+          }
         })
         .catch(err => {
           console.log("updateCustomerProfile error", err);
+          ElMessage({
+            message: t("customer.profile.fullSaveFailAlert"),
+            grouping: true,
+            type: "warning"
+          });
         });
     } else {
       console.log("error submit!", fields);
@@ -475,33 +482,13 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
 //     }
 //   }
 // };
-// const basicRole = (() => {
-//   const username = useUserStoreHook()?.username;
-//   if (username === "C1231") {
-//     return "read";
-//   } else if (username === "B1231") {
-//     return "read";
-//   } else {
-//     // Handle other cases or return a default value
-//     return "write"; // Replace with the actual default role or handling
-//   }
-// })();
 const username = useUserStoreHook()?.username;
-// const advRole = (() => {
-//   if (username === "C1231") {
-//     return "NA";
-//   } else if (username === "B1231") {
-//     return "read";
-//   } else {
-//     // Handle other cases or return a default value
-//     return "write"; // Replace with the actual default role or handling
-//   }
-// })();
 const dialogVisible = ref(false);
 const LID = getParameter.id;
 onMounted(() => {
-  fetchProfileData(LID, t("customer.profile.general.unauthorized"));
-  fetchPLData(LID, 0);
+  LeadID.value = LID;
+  fetchProfileData();
+  fetchPLData(0);
 });
 const returnPL = ref({
   id: "",
@@ -711,8 +698,8 @@ const onDisQualifyConfirmClick = () => {
         type: "success"
       });
       disQualifyDialog.value = false;
-      fetchProfileData(LID, t("customer.profile.general.unauthorized"));
-      fetchPLData(LID, 0);
+      fetchProfileData();
+      fetchPLData(0);
     })
     .catch(err => {
       console.log("autosave error", err);
@@ -753,7 +740,7 @@ const cancelForm = () => {
             :loading-icon="useRenderIcon('ep:eleme')"
             :loading="size !== 'disabled'"
             :icon="useRenderIcon('ri:save-line')"
-            :disabled="!userAuth['isWrite']"
+            :disabled="!userAuth['isWrite'] && LID !== '0'"
             @click="disQualifyDialog = true"
           >
             {{ t("customer.profile.disqualify") }}
@@ -765,7 +752,7 @@ const cancelForm = () => {
             :loading-icon="useRenderIcon('ep:eleme')"
             :loading="size !== 'disabled'"
             :icon="useRenderIcon('ri:save-line')"
-            :disabled="!userAuth['isWrite']"
+            :disabled="!userAuth['isWrite'] && LID !== '0'"
             @click="submitForm(profileFormRef, false)"
           >
             {{ size === "disabled" ? "Save" : "Processing" }}
@@ -808,7 +795,7 @@ const cancelForm = () => {
                           v-if="LID === '0'"
                           :style="{ width: '390px' }"
                           :label="t('customer.profile.general.agentRO')"
-                          prop="agentRO"
+                          prop="agentId"
                         >
                           <div style="display: flex">
                             <el-checkbox
@@ -822,7 +809,8 @@ const cancelForm = () => {
                                 profileData.agentROCheck &&
                                 filterOptions['agentRO']
                               "
-                              v-model="profileData['agentRO']"
+                              ref="refAgent"
+                              v-model="profileData['agentId']"
                               :placeholder="
                                 t('customer.list.quickFilter.holderSelectText')
                               "
@@ -834,7 +822,7 @@ const cancelForm = () => {
                                     profileFormRef,
                                     v,
                                     {
-                                      filterKey: 'agentRO'
+                                      filterKey: 'agentId'
                                     },
                                     null
                                   )
@@ -859,79 +847,12 @@ const cancelForm = () => {
                           <el-text
                             v-if="
                               filterItem.readOnlyOnDetail ||
-                              filterItem.filterType === 'lable'
+                              filterItem.filterType === 'lable' ||
+                              (filterItem.filterKey === 'customerName' &&
+                                LID !== '0')
                             "
                             >{{ profileData[filterItem.filterKey] }}</el-text
                           >
-                          <!-- <el-select
-                            v-else-if="
-                              filterItem.filterType === 'dropdown' &&
-                              filterItem.filterSourceType === 'data'
-                            "
-                            v-model="filterItem.selectValue"
-                            :disabled="disableStatus(filterItem)"
-                            :placeholder="
-                              t('customer.list.quickFilter.holderSelectText')
-                            "
-                            style="width: 338px"
-                          >
-                            <el-option
-                              v-for="option in getOptions(
-                                filterItem.filterSource
-                              )"
-                              :key="option.value"
-                              :label="option.text"
-                              :placeholder="
-                                t('customer.list.quickFilter.holderKeyinText')
-                              "
-                              :value="option.value"
-                            />
-                          </el-select> -->
-                          <!-- <el-select
-                            v-else-if="
-                              filterOptions[filterItem.filterKey] &&
-                              filterItem.filterType === 'select' &&
-                              filterItem.filterSourceType === 'API'
-                            "
-                            v-model="filterItem.value"
-                            :disabled="disableStatus(filterItem)"
-                            :placeholder="
-                              t('customer.list.quickFilter.holderSelectText')
-                            "
-                            style="width: 338px"
-                          >
-                            <el-option
-                              v-for="option in filterOptions[
-                                filterItem.filterKey
-                              ].list"
-                              :key="option.value"
-                              :label="option.text"
-                              :value="option.value"
-                            />
-                          </el-select> -->
-                          <!-- <el-select
-                            v-else-if="
-                              filterOptions[filterItem.filterKey] &&
-                              filterItem.filterType === 'dropdown' &&
-                              filterItem.filterSourceType === 'api'
-                            "
-                            v-model="filterItem.value"
-                            :disabled="disableStatus(filterItem)"
-                            :placeholder="
-                              t('customer.list.quickFilter.holderSelectText')
-                            "
-                            style="width: 338px"
-                            filterable
-                          >
-                            <el-option
-                              v-for="option in filterOptions[
-                                filterItem.filterKey
-                              ].list"
-                              :key="option.value"
-                              :label="option.text"
-                              :value="option.value"
-                            />
-                          </el-select> -->
                           <div
                             v-else-if="
                               filterOptions[filterItem.filterKey] &&
@@ -1515,6 +1436,20 @@ const cancelForm = () => {
                         </el-form-item>
                       </div>
                     </el-form>
+                    <el-checkbox-group
+                      v-if="LID === '0'"
+                      v-model="checkedPL"
+                      @change="handleCheckedPLChange"
+                    >
+                      <el-checkbox
+                        v-for="PLItem in tabsPLList"
+                        :key="PLItem.smhqid"
+                        :label="PLItem.plName"
+                        :value="PLItem.smhqid"
+                      >
+                        {{ PLItem.plName }}
+                      </el-checkbox>
+                    </el-checkbox-group>
                   </div>
                 </el-collapse-item>
                 <el-collapse-item

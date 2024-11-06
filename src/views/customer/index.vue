@@ -58,6 +58,7 @@ const {
   activePanelNames
 } = quickFilterCTL();
 const {
+  fetchListData,
   tableData,
   tableRowClassName,
   currentPage,
@@ -68,7 +69,8 @@ const {
   handleSizeChange,
   handleConditionalSearch,
   handleResetConditionalSearch,
-  loading
+  loading,
+  requestType
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -273,7 +275,8 @@ const initQuickFilter = () => {
     allowSorting: filter.allowSorting,
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
-    controlTypeOnDetail: ""
+    controlTypeOnDetail: "",
+    enableOnSearchView: filter.enableOnSearchView
   }));
   console.log("initQuickFilter", quickFilterForm);
 };
@@ -305,7 +308,8 @@ const handleEditQuickFilter = (item: QuickFilter) => {
     allowSorting: filter.allowSorting,
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
-    controlTypeOnDetail: ""
+    controlTypeOnDetail: "",
+    enableOnSearchView: filter.enableOnSearchView
   }));
 };
 const dialogVisible = ref(false);
@@ -402,6 +406,8 @@ const calculateMaxHeight = () => {
 const maxHeight = ref(null);
 
 onMounted(async () => {
+  requestType.value = customer;
+  fetchListData();
   fetchData(customer);
   fetchAdvancedFilterData(customer);
   await nextTick(); // 等待 DOM 更新完成
@@ -540,7 +546,8 @@ watch(
                 <el-form-item
                   v-for="filterItem in advancedFilterForm.filters.filter(
                     c =>
-                      c.showOnFilter === true &&
+                      c.showOnFilter &&
+                      c.enableOnSearchView &&
                       c.filterType !== 'cascadingdropdown' &&
                       c.filterKey !== 'capitalAmount'
                   )"
@@ -718,7 +725,10 @@ watch(
     >
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
-          c => c.filterType !== 'cascadingdropdown' && c.showOnGrid
+          c =>
+            c.filterType !== 'cascadingdropdown' &&
+            c.showOnGrid &&
+            c.enableOnSearchView
         )"
         :key="col.filterKey"
         :prop="col.filterKey"
@@ -808,7 +818,8 @@ watch(
             </el-form-item>
             <el-form-item
               v-for="filterItem in quickFilterForm.filters.filter(
-                c => c.filterType !== 'cascadingdropdown'
+                c =>
+                  c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
               )"
               :key="filterItem.filterKey"
               :label="t(filterItem.langethKey)"
@@ -975,7 +986,7 @@ watch(
         <tbody>
           <tr
             v-for="settingItem in advancedFilterForm.filters.filter(
-              c => c.filterType !== 'cascadingdropdown'
+              c => c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
             )"
             v-bind:key="settingItem.filterKey"
           >

@@ -247,7 +247,7 @@ contact:
     FullName: Name
     VIP: VIP
     Company: Company
-    Title: Title
+    Titles: Title
     Role: Role
     Department: Department
     Location: Location
@@ -299,6 +299,7 @@ customer:
     leadSourceGroup: Lead Source Group
     leadSourceDetail: Lead Source Detail
     industryGroup: Industry Group
+    agent: Agent RO
   tour:
       tourQF1Title: Quick Filter
       tourQF1Text: Click to create a quick query and boost your work efficiency.
@@ -346,6 +347,7 @@ customer:
     title: Profile
     autoSaveAlert: The system will automatically save when you make changes.
     cityAlert: Please select or enter City
+    agentRO: Please select Agent
     alertTilte: Alert
     leadSourceAlert: Please select Event Code
     disqualify: Disqualify
@@ -358,6 +360,8 @@ customer:
     warningAlert: Are you sure to DisQualify?
     disQualifySucAlert: DisQualify Successfully.
     disQualifyFailAlert: DisQualify Failed.
+    fullSaveFailAlert: Save Failed.
+    fullSaveSucAlert: Save Successfully.
     general: 
       title: General Information
       unauthorized: No permission to view
