@@ -100,6 +100,7 @@ const deleteVisible = ref(false);
 const historyBtnVisible = ref(false);
 const deleteBtnVisible = ref(false);
 const previewBtnVisible = ref(false);
+const showCBMTransfer = ref(false);
 const activeName = ref("1");
 const dynamicSize = ref();
 const saveLoading = ref("disabled");
@@ -167,14 +168,30 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onChange: (value: number) => {
+        if (qid.value < 1) {
+          const _customerHQID = quotationDetailResult.value.customerHQID;
+          const _customerName = quotationDetailResult.value.customerName;
+          const _productLineCode = quotationDetailResult.value.productLineCode;
+          getQuotationDetailResult(
+            qid.value,
+            _productLineCode as number,
+            _customerHQID as number
+          ).then(res => {
+            quotationDetailResult.value.customerHQID = _customerHQID;
+            quotationDetailResult.value.customerName = _customerName;
+            quotationDetailResult.value.productLineCode = _productLineCode;
+          });
+        }
         hideQuotationType.value = !(value > 0);
         const _pid = value ?? (quotationDetailResult.value.pid as number);
         const PLCode = ref();
+        showCBMTransfer.value = false;
         if (_pid === 6) {
           //Ocean Freight Charge
           getChargeCodeSettingResult(qid.value, _pid);
           handleProductLineChange();
           PLCode.value = "OMS";
+          showCBMTransfer.value = true;
         } else if (_pid === 2) {
           PLCode.value = "AMS";
         }
@@ -276,109 +293,110 @@ const quoteDetailColumns: PlusColumn[] = [
                 });
               }
             });
-          } else {
-            //new quote, forEach all FreightCharge setting to bind local charge
-            const uniqueExportCities = freightChargeResult.value.filter(
-              (item, index, self) =>
-                index === self.findIndex(t => t.pReceipt === item.pReceipt)
-            );
-
-            const uniqueImportCities = freightChargeResult.value.filter(
-              (item, index, self) =>
-                index === self.findIndex(t => t.pDelivery === item.pDelivery)
-            );
-            console.log("uniqueExportCities", uniqueExportCities);
-            console.log("uniqueImportCities", uniqueImportCities);
-
-            uniqueExportCities.forEach(item => {
-              exportPromise = getLocalChargeResult(
-                quotationDetailResult.value.quoteid as number,
-                quotationDetailResult.value.pid,
-                true,
-                quotationDetailResult.value.quoteid ? "" : item.pReceipt
-              ).then(() => {
-                if (
-                  localChargeResult.value &&
-                  localChargeResult.value.length > 0
-                ) {
-                  localChargeResult.value.forEach(localCharge => {
-                    exportLocationResult.value.push({
-                      cityID: localCharge.cityID,
-                      city: localCharge.city,
-                      detail: [],
-                      hotTableSetting: {
-                        data: localCharge.detail || [],
-                        colHeaders: localCharge.colHeaders || [],
-                        rowHeaders: false,
-                        dropdownMenu: true,
-                        width: "100%",
-                        height: "auto",
-                        columns: localCharge.columns.map(column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })),
-                        autoWrapRow: true,
-                        autoWrapCol: true,
-                        allowInsertColumn: true,
-                        allowInsertRow: true,
-                        allowInvalid: true,
-                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                        contextMenu: true,
-                        afterChange: handleAfterChange,
-                        afterSelection: handleAfterSelection,
-                        afterRemoveRow: handleRemoveRow
-                      }
-                    });
-                  });
-                }
-              });
-            });
-            uniqueImportCities.forEach(item => {
-              importPromise = getLocalChargeResult(
-                quotationDetailResult.value.quoteid as number,
-                quotationDetailResult.value.pid,
-                false,
-                quotationDetailResult.value.quoteid ? "" : item.pDelivery
-              ).then(() => {
-                if (
-                  localChargeResult.value &&
-                  localChargeResult.value.length > 0
-                ) {
-                  localChargeResult.value.forEach(localCharge => {
-                    importLocationResult.value.push({
-                      cityID: localCharge.cityID,
-                      city: localCharge.city,
-                      detail: [],
-                      hotTableSetting: {
-                        data: localCharge.detail || [],
-                        colHeaders: localCharge.colHeaders || [],
-                        rowHeaders: false,
-                        dropdownMenu: true,
-                        width: "100%",
-                        height: "auto",
-                        columns: localCharge.columns.map(column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })),
-                        autoWrapRow: true,
-                        autoWrapCol: true,
-                        allowInsertColumn: true,
-                        allowInsertRow: true,
-                        allowInvalid: true,
-                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                        contextMenu: true,
-                        afterChange: handleAfterChange,
-                        afterSelection: handleAfterSelection,
-                        afterRemoveRow: handleRemoveRow
-                      }
-                    });
-                  });
-                }
-              });
-            });
           }
+          // else {
+          //   //new quote, forEach all FreightCharge setting to bind local charge
+          //   const uniqueExportCities = freightChargeResult.value.filter(
+          //     (item, index, self) =>
+          //       index === self.findIndex(t => t.pReceipt === item.pReceipt)
+          //   );
+
+          //   const uniqueImportCities = freightChargeResult.value.filter(
+          //     (item, index, self) =>
+          //       index === self.findIndex(t => t.pDelivery === item.pDelivery)
+          //   );
+          //   console.log("uniqueExportCities", uniqueExportCities);
+          //   console.log("uniqueImportCities", uniqueImportCities);
+
+          //   uniqueExportCities.forEach(item => {
+          //     exportPromise = getLocalChargeResult(
+          //       quotationDetailResult.value.quoteid as number,
+          //       quotationDetailResult.value.pid,
+          //       true,
+          //       quotationDetailResult.value.quoteid ? "" : item.pReceipt
+          //     ).then(() => {
+          //       if (
+          //         localChargeResult.value &&
+          //         localChargeResult.value.length > 0
+          //       ) {
+          //         localChargeResult.value.forEach(localCharge => {
+          //           exportLocationResult.value.push({
+          //             cityID: localCharge.cityID,
+          //             city: localCharge.city,
+          //             detail: [],
+          //             hotTableSetting: {
+          //               data: localCharge.detail || [],
+          //               colHeaders: localCharge.colHeaders || [],
+          //               rowHeaders: false,
+          //               dropdownMenu: true,
+          //               width: "100%",
+          //               height: "auto",
+          //               columns: localCharge.columns.map(column => ({
+          //                 data: column.data,
+          //                 type: column.type,
+          //                 source: column.source || []
+          //               })),
+          //               autoWrapRow: true,
+          //               autoWrapCol: true,
+          //               allowInsertColumn: true,
+          //               allowInsertRow: true,
+          //               allowInvalid: true,
+          //               licenseKey: "524eb-e5423-11952-44a09-e7a22",
+          //               contextMenu: true,
+          //               afterChange: handleAfterChange,
+          //               afterSelection: handleAfterSelection,
+          //               afterRemoveRow: handleRemoveRow
+          //             }
+          //           });
+          //         });
+          //       }
+          //     });
+          //   });
+          //   uniqueImportCities.forEach(item => {
+          //     importPromise = getLocalChargeResult(
+          //       quotationDetailResult.value.quoteid as number,
+          //       quotationDetailResult.value.pid,
+          //       false,
+          //       quotationDetailResult.value.quoteid ? "" : item.pDelivery
+          //     ).then(() => {
+          //       if (
+          //         localChargeResult.value &&
+          //         localChargeResult.value.length > 0
+          //       ) {
+          //         localChargeResult.value.forEach(localCharge => {
+          //           importLocationResult.value.push({
+          //             cityID: localCharge.cityID,
+          //             city: localCharge.city,
+          //             detail: [],
+          //             hotTableSetting: {
+          //               data: localCharge.detail || [],
+          //               colHeaders: localCharge.colHeaders || [],
+          //               rowHeaders: false,
+          //               dropdownMenu: true,
+          //               width: "100%",
+          //               height: "auto",
+          //               columns: localCharge.columns.map(column => ({
+          //                 data: column.data,
+          //                 type: column.type,
+          //                 source: column.source || []
+          //               })),
+          //               autoWrapRow: true,
+          //               autoWrapCol: true,
+          //               allowInsertColumn: true,
+          //               allowInsertRow: true,
+          //               allowInvalid: true,
+          //               licenseKey: "524eb-e5423-11952-44a09-e7a22",
+          //               contextMenu: true,
+          //               afterChange: handleAfterChange,
+          //               afterSelection: handleAfterSelection,
+          //               afterRemoveRow: handleRemoveRow
+          //             }
+          //           });
+          //         });
+          //       }
+          //     });
+          //   });
+          // }
           Promise.all([exportPromise, importPromise]).then(() => {
             disabledExportLocalChargeBtn.value = false;
             disabledImportLocalChargeBtn.value = false;
@@ -409,12 +427,6 @@ const quoteDetailColumns: PlusColumn[] = [
     options: shippingTermResult,
     colProps: {
       span: 8
-    },
-    fieldProps: {
-      // onChange: (value: string) => {
-      //   getTradeTermResult(value);
-      //   quotationDetailResult.value.tradeTermId = null;
-      // }
     }
   },
   {
@@ -451,7 +463,8 @@ const quoteDetailColumns: PlusColumn[] = [
         const selectTT = tradeTermResult.value.find(
           col => col.value === item
         ) as any;
-        quotationDetailResult.value.shippingTerm = selectTT;
+        console.log(selectTT);
+        quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
       }
     }
   },
@@ -618,20 +631,36 @@ const saveData = () => {
     quotationDetailResult.value.quoteid = 0;
   }
 
+  quotationDetailResult.value.attentionToId =
+    quotationDetailResult.value.attentionTo;
+
   const detailStatus = saveQuoteDetailResult(quotationDetailResult.value).then(
     res => {
       if (res && res.isSuccess) {
-        //save Charge Items.
-        frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
+        frightChargeParams.value.quoteID = res.returnValue;
         frightChargeParams.value.pid = quotationDetailResult.value.pid;
         frightChargeParams.value.quoteFreights =
           freightChargeSettings.value.data;
-        saveFreightChargeResult(frightChargeParams).then(() => {});
-
-        ElNotification({
-          title: "successfully",
-          message: "Quotation save successfully!",
-          type: "success"
+        saveFreightChargeResult(frightChargeParams.value).then(res => {
+          const exportLocalChargeParam = {
+            quoteID: frightChargeParams.value.quoteID,
+            pid: quotationDetailResult.value.pid,
+            isExport: true,
+            detail: exportLocationResult.value
+          };
+          const importLocalChargeParam = {
+            quoteID: frightChargeParams.value.quoteID,
+            pid: quotationDetailResult.value.pid,
+            isExport: false,
+            detail: importLocationResult.value
+          };
+          saveLocalChargeResult(exportLocalChargeParam);
+          saveLocalChargeResult(importLocalChargeParam);
+          ElNotification({
+            title: "successfully",
+            message: "Quotation save successfully!",
+            type: "success"
+          });
         });
       } else {
         ElNotification({
@@ -894,6 +923,7 @@ onBeforeUnmount(() => {
               />
 
               <div
+                v-if="showCBMTransfer"
                 class="el-form-item asterisk-left el-form-item--label-left plus-form-item"
               >
                 <div class="el-form-item__label-wrap" style="width: 138px">
@@ -1006,8 +1036,6 @@ onBeforeUnmount(() => {
                   <div class="checkbox-wrapper">
                     <el-checkbox
                       v-model="term.isSelected"
-                      :true-label="'Yes'"
-                      :false-label="'No'"
                       class="checkbox-content"
                     />
                     <span class="checkbox-label">{{ term.contents }}</span>
@@ -1033,10 +1061,6 @@ onBeforeUnmount(() => {
               <template #title>
                 <span class="text-orange-500">SALES INFO</span>
               </template>
-              <div
-                class="flex flex-col ..."
-                v-html="quotationDetailResult.salesInfo"
-              />
               <div class="flex flex-col ...">
                 <div v-html="quotationDetailResult.signature" />
               </div>

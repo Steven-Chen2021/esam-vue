@@ -1,11 +1,17 @@
 import API from "../interceptor";
 
 class QuoteDetailService {
-  async getQuoteDetailResult(QID) {
+  async getQuoteDetailResult(QID, PL, HQID) {
     try {
-      const response = await API.get(
-        `/api/Quote/QuoteDetailResult?QuoteID=${QID}`
-      );
+      const url = "/api/Quote/QuoteDetailResult";
+      let fullUrl = `${url}?QuoteID=${QID}`;
+      if (PL) {
+        fullUrl = `${fullUrl}&PID=${PL}`;
+      }
+      if (HQID) {
+        fullUrl = `${fullUrl}&CustomerHQID=${HQID}`;
+      }
+      const response = await API.get(fullUrl);
       return response;
     } catch (error) {
       console.error(error);

@@ -94,9 +94,17 @@ export function QuoteDetailHooks() {
 
   const chargeCodeSettingValues = ref([]);
 
-  async function getQuotationDetailResult(QuoteID: number) {
+  async function getQuotationDetailResult(
+    QuoteID: number,
+    PL?: number,
+    CustomerHQID?: number
+  ) {
     try {
-      const response = await quoteDetailService.getQuoteDetailResult(QuoteID);
+      const response = await quoteDetailService.getQuoteDetailResult(
+        QuoteID,
+        PL,
+        CustomerHQID
+      );
       if (response && response.returnValue) {
         quotationDetailResult.value = { ...response.returnValue };
       } else {
