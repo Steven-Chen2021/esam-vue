@@ -418,8 +418,10 @@ export function quickFilterCTL() {
         Array.isArray(result3) &&
         result3.length === quickFilterFormInitData.filters.length
       ) {
+        console.log("result3");
         advancedFilterForm.filters = deepClone(result3);
       } else {
+        console.log("result1", quickFilterFormInitData.filters);
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
       // advancedFilterForm.filters.forEach(a => {
@@ -559,15 +561,14 @@ export function quickFilterCTL() {
       default:
         break;
     }
-    CustomerQuickFilterService.getAdvancedFilterSetting(p1)
+    QuickFilterService.getColumnSetting(p1)
       .then(data => {
         if (
           data &&
-          data.returnValue &&
-          Array.isArray(data.returnValue) &&
-          data.returnValue.length === quickFilterFormInitData.filters.length
+          Array.isArray(data) &&
+          data.length === quickFilterFormInitData.filters.length
         ) {
-          advancedFilterForm.filters = deepClone(data.returnValue);
+          advancedFilterForm.filters = deepClone(data);
         } else {
           advancedFilterForm.filters = deepClone(
             quickFilterFormInitData.filters

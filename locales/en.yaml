@@ -243,21 +243,21 @@ login:
   purePassWordUpdateReg: Password has been updated
 contact:
   quickfilter:
-    Names: Gender
-    FullName: Name
-    VIP: VIP
-    Company: Company
-    Titles: Title
-    Role: Role
-    Department: Department
-    Location: Location
-    Assistant: Assistant
-    Boss: Report To
-    Language: Language
-    Fax: Fax
-    ContactID: Hubspot ID
-    JoinedCompany: Joined Company Date
-    JoinedIndustry: Joined Industry Date
+    names: Gender
+    fullName: Name
+    vip: VIP
+    company: Company
+    titles: Title
+    role: Role
+    department: Department
+    location: Location
+    assistant: Assistant
+    boss: Report To
+    language: Language
+    fax: Fax
+    contactID: Hubspot ID
+    joinedCompany: Joined Company Date
+    joinedIndustry: Joined Industry Date
 customer:
   add: Add New
   quickfilter:

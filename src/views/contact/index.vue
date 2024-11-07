@@ -56,9 +56,11 @@ const {
   showBasicFilterForm,
   formattedDateRange,
   handleBasicFilterBtnClick,
-  activePanelNames
+  activePanelNames,
+  filterRequestType
 } = quickFilterCTL();
 const {
+  fetchListData,
   tableData,
   tableRowClassName,
   currentPage,
@@ -69,7 +71,8 @@ const {
   handleSizeChange,
   handleConditionalSearch,
   handleResetConditionalSearch,
-  loading
+  loading,
+  requestType
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -150,7 +153,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 2;
+      quickFilterForm.filterAppliedPage = 22;
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -183,6 +186,8 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
         );
       });
 
+      console.log("submitQuickFilterForm quickFilterForm", quickFilterForm);
+      return;
       console.log("submit! quickFilterForm", quickFilterForm);
       if (quickFilterForm.id === 0) {
         // const res = updateQuickFilter(quickFilterForm);
@@ -194,7 +199,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
               message: t("customer.list.quickFilter.addSucText"),
               type: "success"
             });
-            fetchQuickFilterData(contact);
+            fetchQuickFilterData();
             setTimeout(() => {
               setTourStep();
             }, 800);
@@ -211,7 +216,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
               message: t("customer.list.quickFilter.updateSucText"),
               type: "success"
             });
-            fetchData(contact);
+            fetchData();
           })
           .catch(err => {
             console.log("updateQuickFilter error", err);
@@ -244,7 +249,7 @@ const deleteQuickFilter = () => {
         message: t("customer.list.quickFilter.delSucText"),
         type: "success"
       });
-      fetchData(contact);
+      fetchData();
     })
     .catch(err => {
       console.log("deleteQuickFilter error", err);
@@ -274,7 +279,8 @@ const initQuickFilter = () => {
     allowSorting: filter.allowSorting,
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
-    controlTypeOnDetail: ""
+    controlTypeOnDetail: "",
+    enableOnSearchView: filter.enableOnSearchView
   }));
   console.log("initQuickFilter", quickFilterForm);
 };
@@ -306,7 +312,8 @@ const handleEditQuickFilter = (item: QuickFilter) => {
     allowSorting: filter.allowSorting,
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
-    controlTypeOnDetail: ""
+    controlTypeOnDetail: "",
+    enableOnSearchView: filter.enableOnSearchView
   }));
 };
 const dialogVisible = ref(false);
@@ -403,8 +410,11 @@ const calculateMaxHeight = () => {
 const maxHeight = ref(null);
 
 onMounted(async () => {
-  fetchData(contact);
-  fetchAdvancedFilterData(contact);
+  requestType.value = contact;
+  filterRequestType.value = contact;
+  fetchListData();
+  fetchData();
+  fetchAdvancedFilterData();
   await nextTick(); // 等待 DOM 更新完成
   setTimeout(() => {
     // 在这里决定是否显示 el-tour
@@ -431,38 +441,36 @@ watch(
 
 <template>
   <div class="containerC">
-    <el-card shadow="never" class="max-h-12 p-0">
-      <div class="flex flex-row">
-        <div class="basis-4/5">
-          <el-button ref="refBtnAddFilter" @click="handleQuickFilterOpen">{{
-            t("customer.list.quickFilter.addFilterbtn")
-          }}</el-button>
-          <el-dropdown
-            v-for="(item, index) in quickFilterList"
-            v-bind:key="item.id"
-            :ref="el => (refsQuickFilterBtn[index] = el)"
-            loading
-            split-button
-            :plain="!item.clicked"
-            :type="item.clicked ? 'primary' : ''"
-            style="margin-left: 10px"
-            @click="handleFilterClick(item)"
-          >
-            {{ item.filterName }}
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="handleEditQuickFilter(item)">{{
-                  t("customer.list.quickFilter.editBtnText")
-                }}</el-dropdown-item>
-                <el-dropdown-item @click="handleDeleteQuickFilter(item)">{{
-                  t("customer.list.quickFilter.delBtnText")
-                }}</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+    <div class="flex flex-row">
+      <div class="basis-4/5">
+        <el-button ref="refBtnAddFilter" @click="handleQuickFilterOpen">{{
+          t("customer.list.quickFilter.addFilterbtn")
+        }}</el-button>
+        <el-dropdown
+          v-for="(item, index) in quickFilterList"
+          v-bind:key="item.id"
+          :ref="el => (refsQuickFilterBtn[index] = el)"
+          loading
+          split-button
+          :plain="!item.clicked"
+          :type="item.clicked ? 'primary' : ''"
+          style="margin-left: 10px"
+          @click="handleFilterClick(item)"
+        >
+          {{ item.filterName }}
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleEditQuickFilter(item)">{{
+                t("customer.list.quickFilter.editBtnText")
+              }}</el-dropdown-item>
+              <el-dropdown-item @click="handleDeleteQuickFilter(item)">{{
+                t("customer.list.quickFilter.delBtnText")
+              }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
-    </el-card>
+    </div>
     <el-divider />
     <div>
       <el-form
@@ -674,6 +682,12 @@ watch(
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
                   />
+                  <el-checkbox
+                    v-else-if="filterItem.filterType === 'checkbox'"
+                    v-model="filterItem.value"
+                    :checked="filterItem.value ? true : false"
+                    label=""
+                  />
                 </el-form-item>
                 <el-form-item>
                   <el-button
@@ -816,7 +830,8 @@ watch(
             </el-form-item>
             <el-form-item
               v-for="filterItem in quickFilterForm.filters.filter(
-                c => c.filterType !== 'cascadingdropdown'
+                c =>
+                  c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
               )"
               :key="filterItem.filterKey"
               :label="t(filterItem.langethKey)"
@@ -889,6 +904,12 @@ watch(
                 v-else-if="filterItem.filterType === 'input'"
                 v-model="filterItem.value"
                 :placeholder="t('customer.list.quickFilter.holderKeyinText')"
+              />
+              <el-checkbox
+                v-else-if="filterItem.filterType === 'checkbox'"
+                v-model="filterItem.value"
+                :checked="filterItem.value ? true : false"
+                label=""
               />
               <!-- <el-date-picker
                 v-else-if="filterItem.filterType === 'daterange'"
@@ -983,7 +1004,7 @@ watch(
         <tbody>
           <tr
             v-for="settingItem in advancedFilterForm.filters.filter(
-              c => c.filterType !== 'cascadingdropdown'
+              c => c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
             )"
             v-bind:key="settingItem.filterKey"
           >

@@ -48,7 +48,8 @@ const {
   disableStatus,
   LeadID,
   checkedPL,
-  handleCheckedPLChange
+  handleCheckedPLChange,
+  loadDimOrgOptions
 } = customerProfileCTL();
 // const { fetchMembersData } = leadmemberctl();
 defineOptions({
@@ -489,6 +490,7 @@ onMounted(() => {
   LeadID.value = LID;
   fetchProfileData();
   fetchPLData(0);
+  loadDimOrgOptions();
 });
 const returnPL = ref({
   id: "",

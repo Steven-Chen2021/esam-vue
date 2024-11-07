@@ -55,7 +55,8 @@ const {
   showBasicFilterForm,
   formattedDateRange,
   handleBasicFilterBtnClick,
-  activePanelNames
+  activePanelNames,
+  filterRequestType
 } = quickFilterCTL();
 const {
   fetchListData,
@@ -212,7 +213,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
               message: t("customer.list.quickFilter.updateSucText"),
               type: "success"
             });
-            fetchData(customer);
+            fetchData();
           })
           .catch(err => {
             console.log("updateQuickFilter error", err);
@@ -245,7 +246,7 @@ const deleteQuickFilter = () => {
         message: t("customer.list.quickFilter.delSucText"),
         type: "success"
       });
-      fetchData(customer);
+      fetchData();
     })
     .catch(err => {
       console.log("deleteQuickFilter error", err);
@@ -407,9 +408,10 @@ const maxHeight = ref(null);
 
 onMounted(async () => {
   requestType.value = customer;
+  filterRequestType.value = customer;
   fetchListData();
-  fetchData(customer);
-  fetchAdvancedFilterData(customer);
+  fetchData();
+  fetchAdvancedFilterData();
   await nextTick(); // 等待 DOM 更新完成
   setTimeout(() => {
     // 在这里决定是否显示 el-tour
@@ -719,7 +721,6 @@ watch(
       class="flex-table"
       :data="tableData"
       style="width: 100%; min-height: 200px"
-      :row-class-name="tableRowClassName"
       :max-height="maxHeight"
       @sort-change="handleSortChange"
     >

@@ -63,17 +63,7 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
-  async getAdvancedFilterSetting() {
-    try {
-      const response = await API.get(
-        "/api/Common/ColumnSetting?APIRequestType=3"
-      );
-      return response;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-  async getAdvancedFilterSettingByRequestType(requestTypeID) {
+  async getAdvancedFilterSetting(requestTypeID) {
     try {
       const response = await API.get(
         `/api/Common/ColumnSetting?APIRequestType=${requestTypeID}`
@@ -83,6 +73,16 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
+  // async getAdvancedFilterSettingByRequestType(requestTypeID) {
+  //   try {
+  //     const response = await API.get(
+  //       `/api/Common/ColumnSetting?APIRequestType=${requestTypeID}`
+  //     );
+  //     return response;
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }
   async updateAdvancedFilter(params) {
     try {
       const response = await API.post("/api/Common/ColumnSetting", params);
