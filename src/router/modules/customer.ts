@@ -19,7 +19,7 @@ export default {
       }
     },
     {
-      path: "/customer/members/:id/:qname/:pl",
+      path: "/customer/members/:id/:plid/:pl",
       name: "CustomerMembers",
       component: () => import("@/views/customer/profile/members.vue"),
       meta: {

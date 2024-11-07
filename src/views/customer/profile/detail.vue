@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { customerProfileCTL } from "../profilectl";
-import { ElNotification, FormInstance } from "element-plus";
+// import { leadmemberctl } from "../leadmemberctl";
+import {
+  ElNotification,
+  FormInstance,
+  ElMessageBox,
+  ElMessage
+} from "element-plus";
 import { useUserStoreHook } from "@/store/modules/user";
 import CustomerProfileService from "@/services/customer/CustomerProfileService";
 import { useDetail } from "../hooks";
+import CommonService from "@/services/commonService";
 const { initToDetail, getParameter, router } = useDetail();
 const {
   profileDataInit,
@@ -19,7 +26,6 @@ const {
   formDataMap,
   activeTabPID,
   fetchPLFormData,
-  handleDropDownChange,
   handleClickPLHistory,
   dialogPLUpdateHistoryVisible,
   PLUpdateHistoryList,
@@ -38,9 +44,14 @@ const {
   filterOptions,
   leadSourceDisable,
   handleAgentROCheckChange,
-  querySearchAsync,
-  fetchData
+  userAuth,
+  disableStatus,
+  LeadID,
+  checkedPL,
+  handleCheckedPLChange,
+  loadDimOrgOptions
 } = customerProfileCTL();
+// const { fetchMembersData } = leadmemberctl();
 defineOptions({
   name: "CustomerDetail"
 });
@@ -63,26 +74,319 @@ const handleMembersEdit = (PLDetail, PLTab) => {
     name: "CustomerMembers",
     params: {
       id: LID,
-      qname: profileData.value["customerName"],
+      plid: PLDetail["id"],
       pl: PLDetail["plName"]
     }
   });
 };
 const profileFormRef = ref<FormInstance>();
 const refCity = ref(null);
+const refAgent = ref(null);
 const refLeadSourceDetail = ref(null);
-const submitForm = async (formEl: FormInstance | undefined, disable) => {
-  console.log("submitForm", profileData.value);
-  if (!formEl) return;
-  if (disable) return;
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      const profileNew = ref({});
+const handleDropDownChange = async (
+  formEl: FormInstance | undefined,
+  v,
+  filterItem,
+  subValue
+) => {
+  console.log("handleDropDownChange value", v);
+  console.log("handleDropDownChange filterItem", filterItem);
+  const data = profileData.value;
+  const dataInit = profileDataInit.value;
+  switch (filterItem.filterKey) {
+    case "country": {
+      const response =
+        // TODO: 跨域问题
+        await CommonService.getAutoCompleteList({
+          OptionsResourceType: 15,
+          ParentParams: [v],
+          Paginator: false
+        });
+      filterOptions.value["state"] = {};
+      filterOptions.value["state"].list = response;
+      filterOptions.value["city"].list = [];
+      profileData.value["city"] = "";
+      profileData.value["state"] = "";
+      break;
+    }
+    case "state": {
+      const response =
+        // TODO: 跨域问题
+        await CommonService.getAutoCompleteList({
+          OptionsResourceType: 16,
+          ParentParams: profileData.value["country"] + "," + v,
+          Paginator: false
+        });
+      console.log("dropdown change api para", {
+        OptionsResourceType: 16,
+        ParentParams: profileData.value["country"] + "," + v,
+        Paginator: false
+      });
+      filterOptions.value["city"] = {};
+      filterOptions.value["city"].list = response;
+      profileData.value["city"] = "";
 
+      if (data["country"] !== dataInit["country"]) {
+        autoSaveForm(formEl, { filterKey: "country" }, data["country"]);
+      }
+      if (data["cityText"] !== dataInit["cityText"]) {
+        autoSaveForm(formEl, { filterKey: "cityText" }, data["cityText"]);
+      }
+      break;
+    }
+    case "city": {
+      if (data["state"] !== dataInit["state"]) {
+        autoSaveForm(formEl, { filterKey: "state" }, data["state"]);
+      }
+      if (data["country"] !== dataInit["country"]) {
+        autoSaveForm(formEl, { filterKey: "country" }, data["country"]);
+      }
+      break;
+    }
+    case "leadSourceGroupID": {
+      const subParam = {
+        OptionsResourceType: 100,
+        ParentParams: v,
+        Paginator: false
+      };
+      CommonService.getAutoCompleteList(subParam).then(data => {
+        filterOptions.value["leadSource"] = {};
+        filterOptions.value["leadSource"].list = data;
+        filterOptions.value["leadSourceDetail"].list = [];
+        profileData.value["leadSourceDetail"] = "";
+        profileData.value["leadSourceID"] = "";
+        if (subValue) {
+          profileData.value["leadSourceID"] = subValue;
+        }
+      });
+      break;
+    }
+    case "leadSourceID": {
+      const response =
+        // TODO: 跨域问题
+        await CommonService.getAutoCompleteList({
+          OptionsResourceType: 101,
+          ParentParams: [v],
+          Paginator: false
+        });
+      filterOptions.value["leadSourceDetail"] = {};
+      filterOptions.value["leadSourceDetail"].list = response;
+      profileData.value["leadSourceDetail"] = "";
+      break;
+    }
+    case "leadSourceDetail": {
+      if (data["leadSourceID"] !== dataInit["leadSourceID"]) {
+        autoSaveForm(
+          formEl,
+          { filterKey: "leadSourceID" },
+          data["leadSourceID"]
+        );
+      }
+      break;
+    }
+    case "industryGroupID": {
+      const response =
+        // TODO: 跨域问题
+        await CommonService.getAutoCompleteList({
+          OptionsResourceType: 102,
+          ParentParams: v,
+          Paginator: false
+        });
+      filterOptions.value["industry"] = {};
+      filterOptions.value["industry"].list = response;
+      profileData.value["industryID"] = "";
+      break;
+    }
+  }
+  autoSaveForm(formEl, filterItem, v);
+};
+//formEl: FormInstance | undefined,
+const autoSaveForm = async (
+  formEl: FormInstance | undefined,
+  filterItem,
+  v
+) => {
+  if (LID === "0" || !userAuth.value["isWrite"]) return;
+  console.log("autoSaveForm", profileData.value);
+  if (!formEl) return;
+  if (disableStatus(filterItem)) return;
+  await formEl.validate((valid, fields) => {
+    console.log("validate fields:", fields);
+    let fieldValid = true;
+    if (fields) {
+      fieldValid = !fields.hasOwnProperty(filterItem.filterKey);
+    }
+    console.log("fieldValid:", fieldValid);
+    if (!fields || fieldValid) {
       const data = profileData.value;
       const dataInit = profileDataInit.value;
       console.log("dataInit", dataInit);
       console.log("data", data);
+      const param = {
+        tableName: "smcustomer",
+        fieldName: filterItem.filterKey,
+        id: LID,
+        custID: LID,
+        oldValue: dataInit[filterItem.filterKey],
+        value: v,
+        oldEntity: "string",
+        newEntity: "string"
+      };
+      console.log("autosave param", param);
+      const profileNew = ref({});
+      switch (filterItem.filterKey) {
+        case "customerName":
+        case "localName":
+        case "mainAddress":
+        case "country":
+        case "state":
+        case "zip":
+        case "phone":
+        case "phoneExt":
+        case "fax":
+        case "faxExt":
+        case "industryID":
+        case "establishedDate":
+        case "capitalCurrencyID":
+        case "capitalAmount":
+        case "commodity":
+        case "webSite":
+        case "customerAnnualRevenue":
+        case "customerEstRevenue":
+        case "remark": {
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "city":
+        case "cityText": {
+          if (
+            (!data["city"] || data["city"] === "" || data["city"] === null) &&
+            (!data["cityText"] ||
+              data["cityText"] === "" ||
+              data["cityText"] === null)
+          ) {
+            if (refCity.value && refCity.value.length === 1) {
+              setTimeout(() => {
+                refCity.value[0].toggleMenu();
+              }, 500);
+              ElMessage({
+                message: t("customer.profile.cityAlert"),
+                grouping: true,
+                type: "warning"
+              });
+              return;
+            }
+          }
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "leadSourceID":
+        case "leadSourceDetail": {
+          console.log("leadID", data["leadSourceID"]);
+          console.log("leadDetail", data["leadSourceDetail"]);
+          if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
+            if (
+              refLeadSourceDetail.value &&
+              refLeadSourceDetail.value.length === 1
+            ) {
+              setTimeout(() => {
+                refLeadSourceDetail.value[0].toggleMenu();
+              }, 500);
+              ElMessage({
+                message: t("customer.profile.leadSourceAlert"),
+                grouping: true,
+                type: "warning"
+              });
+              return;
+            }
+          }
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        default:
+          break;
+      }
+    } else {
+      console.log("error submit!", fields);
+    }
+  });
+};
+const submitForm = async (formEl: FormInstance | undefined, disable) => {
+  profileData.value["PlList"] = checkedPL.value;
+  if (!formEl) return;
+  if (disable) return;
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      const data = profileData.value;
+      if (data["agentROCheck"] && (!data["agentId"] || data["agentId"] === 0)) {
+        ElMessage({
+          message: t("customer.profile.agentRO"),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+        // console.log("refAgent", refAgent);
+        // console.log("refCity", refCity);
+        // if (refAgent.value && refAgent.value.length === 1) {
+        //   setTimeout(() => {
+        //     refAgent.value[0].toggleMenu();
+        //   }, 500);
+        //   ElMessage({
+        //     message: t("customer.profile.agentRO"),
+        //     grouping: true,
+        //     type: "warning"
+        //   });
+        //   return;
+        // }
+      }
       if (
         (!data["city"] || data["city"] === "" || data["city"] === null) &&
         (!data["cityText"] ||
@@ -90,10 +394,12 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           data["cityText"] === null)
       ) {
         if (refCity.value && refCity.value.length === 1) {
-          refCity.value[0].toggleMenu();
-          ElNotification({
-            title: t("customer.profile.alertTilte"),
+          setTimeout(() => {
+            refCity.value[0].toggleMenu();
+          }, 500);
+          ElMessage({
             message: t("customer.profile.cityAlert"),
+            grouping: true,
             type: "warning"
           });
           return;
@@ -104,91 +410,87 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           refLeadSourceDetail.value &&
           refLeadSourceDetail.value.length === 1
         ) {
-          refLeadSourceDetail.value[0].toggleMenu();
-          ElNotification({
-            title: t("customer.profile.alertTilte"),
+          setTimeout(() => {
+            refLeadSourceDetail.value[0].toggleMenu();
+          }, 500);
+          ElMessage({
             message: t("customer.profile.leadSourceAlert"),
+            grouping: true,
             type: "warning"
           });
           return;
         }
       }
-      for (const key in data) {
-        // console.log("key", key);
-        // console.log("data[key]", data[key]);
-        // console.log("dataInit[key]", dataInit[key]);
-        if (data[key] !== dataInit[key]) {
-          profileNew.value[key] = data[key];
-        }
-      }
-      profileNew.value["hqid"] = LID;
-      console.log("submit! profileNew:", profileNew.value);
-      CustomerProfileService.updateCustomerProfile(profileNew.value)
+      // const profileNew = ref({});
+
+      // const dataInit = profileDataInit.value;
+      // console.log("dataInit", dataInit);
+      // console.log("data", data);
+
+      // for (const key in data) {
+      //   // console.log("key", key);
+      //   // console.log("data[key]", data[key]);
+      //   // console.log("dataInit[key]", dataInit[key]);
+      //   if (data[key] !== dataInit[key]) {
+      //     profileNew.value[key] = data[key];
+      //   }
+      // }
+      profileData.value["hqid"] = LID;
+      console.log("submit! profileData:", profileData.value);
+      CustomerProfileService.updateCustomerProfile(profileData.value)
         .then(data => {
           console.log("updateCustomerProfile data", data);
-          // ElNotification({
-          //   title: t("customer.list.quickFilter.alertTitle"),
-          //   message: t("customer.list.quickFilter.updateSucText"),
-          //   type: "success"
-          // });
+          ElMessage({
+            message: t("customer.profile.fullSaveSucAlert"),
+            grouping: true,
+            type: "success"
+          });
+          if (data.isSuccess && data.returnValue) {
+            router.replace({
+              name: "CustomerDetail",
+              params: {
+                id: data.returnValue,
+                qname: profileData.value["customerName"]
+              }
+            });
+          }
         })
         .catch(err => {
           console.log("updateCustomerProfile error", err);
+          ElMessage({
+            message: t("customer.profile.fullSaveFailAlert"),
+            grouping: true,
+            type: "warning"
+          });
         });
     } else {
       console.log("error submit!", fields);
     }
   });
 };
-const disableStatus = filterItem => {
-  const arr = ["read", "NA"];
-  if (filterItem.visibilityLevel === 1) {
-    return arr.includes(basicRole);
-  } else {
-    if (
-      filterItem.filterKey === "leadSourceGroupID" ||
-      filterItem.filterKey === "leadSourceID"
-    ) {
-      return leadSourceDisable.value;
-    } else {
-      return arr.includes(advRole);
-    }
-  }
-};
-const basicRole = (() => {
-  const username = useUserStoreHook()?.username;
-  if (username === "C1231") {
-    return "read";
-  } else if (username === "B1231") {
-    return "read";
-  } else {
-    // Handle other cases or return a default value
-    return "write"; // Replace with the actual default role or handling
-  }
-})();
+// const disableStatus = filterItem => {
+//   const arr = ["read", "NA"];
+//   if (filterItem.visibilityLevel === 1) {
+//     return arr.includes(basicRole);
+//   } else {
+//     if (
+//       filterItem.filterKey === "leadSourceGroupID" ||
+//       filterItem.filterKey === "leadSourceID"
+//     ) {
+//       return leadSourceDisable.value;
+//     } else {
+//       return arr.includes(advRole);
+//     }
+//   }
+// };
 const username = useUserStoreHook()?.username;
-const advRole = (() => {
-  if (username === "C1231") {
-    return "NA";
-  } else if (username === "B1231") {
-    return "read";
-  } else {
-    // Handle other cases or return a default value
-    return "write"; // Replace with the actual default role or handling
-  }
-})();
 const dialogVisible = ref(false);
 const LID = getParameter.id;
 onMounted(() => {
-  console.log("LID", LID);
-  // fetchData();
-  fetchProfileData(
-    LID,
-    basicRole,
-    advRole,
-    t("customer.profile.general.unauthorized")
-  );
-  fetchPLData(LID, 0);
+  LeadID.value = LID;
+  fetchProfileData();
+  fetchPLData(0);
+  loadDimOrgOptions();
 });
 const returnPL = ref({
   id: "",
@@ -364,6 +666,60 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
       console.log("addQuickFilter error", err);
     });
 };
+// #region Disqualify
+const disQualifyLoading = ref(false);
+const disQualifyDialog = ref(false);
+const disQualifyForm = reactive({
+  reason: ""
+});
+const handleClose = done => {
+  if (disQualifyLoading.value) {
+    return;
+  }
+  ElMessageBox.confirm(t("customer.profile.warningAlert"))
+    .then(() => {
+      onDisQualifyConfirmClick();
+    })
+    .catch(() => {
+      // catch error
+    });
+};
+const onDisQualifyConfirmClick = () => {
+  disQualifyLoading.value = true;
+  const param = {
+    LID: LID,
+    Reason: disQualifyForm.reason
+  };
+  console.log("disqualifyLead param", param);
+  CustomerProfileService.disqualifyLead(param)
+    .then(d => {
+      console.log("disqualifyLead data", d);
+      ElMessage({
+        message: t("customer.profile.disQualifySucAlert"),
+        grouping: true,
+        type: "success"
+      });
+      disQualifyDialog.value = false;
+      fetchProfileData();
+      fetchPLData(0);
+    })
+    .catch(err => {
+      console.log("autosave error", err);
+      ElMessage({
+        message: t("customer.profile.disQualifyFailAlert"),
+        grouping: true,
+        type: "warning"
+      });
+    })
+    .finally(() => {
+      disQualifyLoading.value = false;
+    });
+};
+const cancelForm = () => {
+  disQualifyLoading.value = false;
+  disQualifyDialog.value = false;
+};
+// #endregion
 </script>
 
 <template>
@@ -386,7 +742,8 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
             :loading-icon="useRenderIcon('ep:eleme')"
             :loading="size !== 'disabled'"
             :icon="useRenderIcon('ri:save-line')"
-            :disabled="basicRole === 'read'"
+            :disabled="!userAuth['isWrite'] && LID !== '0'"
+            @click="disQualifyDialog = true"
           >
             {{ t("customer.profile.disqualify") }}
           </el-button>
@@ -397,7 +754,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
             :loading-icon="useRenderIcon('ep:eleme')"
             :loading="size !== 'disabled'"
             :icon="useRenderIcon('ri:save-line')"
-            :disabled="basicRole === 'read'"
+            :disabled="!userAuth['isWrite'] && LID !== '0'"
             @click="submitForm(profileFormRef, false)"
           >
             {{ size === "disabled" ? "Save" : "Processing" }}
@@ -440,7 +797,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                           v-if="LID === '0'"
                           :style="{ width: '390px' }"
                           :label="t('customer.profile.general.agentRO')"
-                          prop="agentRO"
+                          prop="agentId"
                         >
                           <div style="display: flex">
                             <el-checkbox
@@ -454,7 +811,8 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                 profileData.agentROCheck &&
                                 filterOptions['agentRO']
                               "
-                              v-model="profileData['agentRO']"
+                              ref="refAgent"
+                              v-model="profileData['agentId']"
                               :placeholder="
                                 t('customer.list.quickFilter.holderSelectText')
                               "
@@ -462,9 +820,14 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                               filterable
                               @change="
                                 v =>
-                                  handleDropDownChange(v, {
-                                    filterKey: 'agentRO'
-                                  })
+                                  handleDropDownChange(
+                                    profileFormRef,
+                                    v,
+                                    {
+                                      filterKey: 'agentId'
+                                    },
+                                    null
+                                  )
                               "
                             >
                               <el-option
@@ -486,79 +849,12 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                           <el-text
                             v-if="
                               filterItem.readOnlyOnDetail ||
-                              filterItem.filterType === 'lable'
+                              filterItem.filterType === 'lable' ||
+                              (filterItem.filterKey === 'customerName' &&
+                                LID !== '0')
                             "
                             >{{ profileData[filterItem.filterKey] }}</el-text
                           >
-                          <el-select
-                            v-else-if="
-                              filterItem.filterType === 'dropdown' &&
-                              filterItem.filterSourceType === 'data'
-                            "
-                            v-model="filterItem.selectValue"
-                            :disabled="disableStatus(filterItem)"
-                            :placeholder="
-                              t('customer.list.quickFilter.holderSelectText')
-                            "
-                            style="width: 338px"
-                          >
-                            <el-option
-                              v-for="option in getOptions(
-                                filterItem.filterSource
-                              )"
-                              :key="option.value"
-                              :label="option.text"
-                              :placeholder="
-                                t('customer.list.quickFilter.holderKeyinText')
-                              "
-                              :value="option.value"
-                            />
-                          </el-select>
-                          <el-select
-                            v-else-if="
-                              filterOptions[filterItem.filterKey] &&
-                              filterItem.filterType === 'select' &&
-                              filterItem.filterSourceType === 'API'
-                            "
-                            v-model="filterItem.value"
-                            :disabled="disableStatus(filterItem)"
-                            :placeholder="
-                              t('customer.list.quickFilter.holderSelectText')
-                            "
-                            style="width: 338px"
-                          >
-                            <el-option
-                              v-for="option in filterOptions[
-                                filterItem.filterKey
-                              ].list"
-                              :key="option.value"
-                              :label="option.text"
-                              :value="option.value"
-                            />
-                          </el-select>
-                          <el-select
-                            v-else-if="
-                              filterOptions[filterItem.filterKey] &&
-                              filterItem.filterType === 'dropdown' &&
-                              filterItem.filterSourceType === 'api'
-                            "
-                            v-model="filterItem.value"
-                            :disabled="disableStatus(filterItem)"
-                            :placeholder="
-                              t('customer.list.quickFilter.holderSelectText')
-                            "
-                            style="width: 338px"
-                            filterable
-                          >
-                            <el-option
-                              v-for="option in filterOptions[
-                                filterItem.filterKey
-                              ].list"
-                              :key="option.value"
-                              :label="option.text"
-                              :value="option.value"
-                            />
-                          </el-select>
                           <div
                             v-else-if="
                               filterOptions[filterItem.filterKey] &&
@@ -583,7 +879,13 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                               style="width: 240px"
                               filterable
                               @change="
-                                v => handleDropDownChange(v, filterItem, null)
+                                v =>
+                                  handleDropDownChange(
+                                    profileFormRef,
+                                    v,
+                                    filterItem,
+                                    null
+                                  )
                               "
                             >
                               <el-option
@@ -607,9 +909,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                               "
                               style="width: 240px"
                               @blur="
-                                submitForm(
+                                autoSaveForm(
                                   profileFormRef,
-                                  disableStatus(filterItem)
+                                  { filterKey: 'cityText' },
+                                  profileData['cityText']
                                 )
                               "
                             />
@@ -631,7 +934,15 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                             "
                             style="width: 240px"
                             filterable
-                            @change="v => handleDropDownChange(v, filterItem)"
+                            @change="
+                              v =>
+                                handleDropDownChange(
+                                  profileFormRef,
+                                  v,
+                                  filterItem,
+                                  null
+                                )
+                            "
                           >
                             <el-option
                               v-for="option in filterOptions[
@@ -671,6 +982,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                 @change="
                                   v =>
                                     handleDropDownChange(
+                                      profileFormRef,
                                       v,
                                       {
                                         filterKey: 'leadSourceGroupID'
@@ -710,9 +1022,14 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                 filterable
                                 @change="
                                   v =>
-                                    handleDropDownChange(v, {
-                                      filterKey: 'leadSourceID'
-                                    })
+                                    handleDropDownChange(
+                                      profileFormRef,
+                                      v,
+                                      {
+                                        filterKey: 'leadSourceID'
+                                      },
+                                      null
+                                    )
                                 "
                               >
                                 <el-option
@@ -721,6 +1038,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                   :key="option.value"
                                   :label="option.text"
                                   :value="option.value"
+                                  :disabled="option.disabled"
                                 />
                               </el-select>
                             </el-form-item>
@@ -743,7 +1061,15 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                 style="width: 240px"
                                 filterable
                                 @change="
-                                  v => handleDropDownChange(v, filterItem)
+                                  v =>
+                                    handleDropDownChange(
+                                      profileFormRef,
+                                      v,
+                                      {
+                                        filterKey: 'leadSourceDetail'
+                                      },
+                                      null
+                                    )
                                 "
                               >
                                 <el-option
@@ -780,9 +1106,14 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                 filterable
                                 @change="
                                   v =>
-                                    handleDropDownChange(v, {
-                                      filterKey: 'industryGroupID'
-                                    })
+                                    handleDropDownChange(
+                                      profileFormRef,
+                                      v,
+                                      {
+                                        filterKey: 'industryGroupID'
+                                      },
+                                      null
+                                    )
                                 "
                               >
                                 <el-option
@@ -814,6 +1145,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                 @change="
                                   v =>
                                     handleDropDownChange(
+                                      profileFormRef,
                                       v,
                                       {
                                         filterKey: 'industryID'
@@ -863,9 +1195,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                               "
                               style="width: 126px"
                               @blur="
-                                submitForm(
+                                autoSaveForm(
                                   profileFormRef,
-                                  disableStatus(filterItem)
+                                  filterItem,
+                                  profileData[filterItem.filterKey]
                                 )
                               "
                             />
@@ -879,9 +1212,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                 vertical-align: middle;
                               "
                               @blur="
-                                submitForm(
+                                autoSaveForm(
                                   profileFormRef,
-                                  disableStatus(filterItem)
+                                  { filterKey: 'phoneExt' },
+                                  profileData['phoneExt']
                                 )
                               "
                               ><template #prepend
@@ -900,9 +1234,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                 vertical-align: middle;
                               "
                               @blur="
-                                submitForm(
+                                autoSaveForm(
                                   profileFormRef,
-                                  disableStatus(filterItem)
+                                  { filterKey: 'faxExt' },
+                                  profileData['faxExt']
                                 )
                               "
                               ><template #prepend
@@ -929,9 +1264,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                               "
                               style="width: 240px"
                               @blur="
-                                submitForm(
+                                autoSaveForm(
                                   profileFormRef,
-                                  disableStatus(filterItem)
+                                  filterItem,
+                                  profileData[filterItem.filterKey]
                                 )
                               "
                             />
@@ -960,9 +1296,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                               style="width: 240px"
                               class="input-with-select"
                               @blur="
-                                submitForm(
+                                autoSaveForm(
                                   profileFormRef,
-                                  disableStatus(filterItem)
+                                  filterItem,
+                                  profileData[filterItem.filterKey]
                                 )
                               "
                             >
@@ -978,9 +1315,14 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                                   filterable
                                   @change="
                                     v =>
-                                      handleDropDownChange(v, {
-                                        filterKey: 'capitalCurrencyID'
-                                      })
+                                      handleDropDownChange(
+                                        profileFormRef,
+                                        v,
+                                        {
+                                          filterKey: 'capitalCurrencyID'
+                                        },
+                                        null
+                                      )
                                   "
                                 >
                                   <el-option
@@ -1009,9 +1351,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                             "
                             style="width: 318px"
                             @blur="
-                              submitForm(
+                              autoSaveForm(
                                 profileFormRef,
-                                disableStatus(filterItem)
+                                filterItem,
+                                profileData[filterItem.filterKey]
                               )
                             "
                           />
@@ -1025,9 +1368,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                             style="width: 338px"
                             type="textarea"
                             @focusout="
-                              submitForm(
+                              autoSaveForm(
                                 profileFormRef,
-                                disableStatus(filterItem)
+                                filterItem,
+                                profileData[filterItem.filterKey]
                               )
                             "
                           />
@@ -1049,6 +1393,13 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                             format="MMM DD, YYYY"
                             value-format="YYYY-MM-DD"
                             style="width: 338px"
+                            @blur="
+                              autoSaveForm(
+                                profileFormRef,
+                                filterItem,
+                                profileData[filterItem.filterKey]
+                              )
+                            "
                           />
                         </el-form-item>
                         <el-form-item
@@ -1068,6 +1419,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                             @change="
                               v =>
                                 handleDropDownChange(
+                                  profileFormRef,
                                   v,
                                   {
                                     filterKey: 'agentRO'
@@ -1086,6 +1438,20 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                         </el-form-item>
                       </div>
                     </el-form>
+                    <el-checkbox-group
+                      v-if="LID === '0'"
+                      v-model="checkedPL"
+                      @change="handleCheckedPLChange"
+                    >
+                      <el-checkbox
+                        v-for="PLItem in tabsPLList"
+                        :key="PLItem.smhqid"
+                        :label="PLItem.plName"
+                        :value="PLItem.smhqid"
+                      >
+                        {{ PLItem.plName }}
+                      </el-checkbox>
+                    </el-checkbox-group>
                   </div>
                 </el-collapse-item>
                 <el-collapse-item
@@ -1276,8 +1642,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                           </el-select>
                           <el-tooltip
                             v-if="
-                              formDataMap[tabItem.plName].ownerName === '' &&
-                              formDataMap[tabItem.plName].ownerStation !== ''
+                              (formDataMap[tabItem.plName].ownerName === '' &&
+                                formDataMap[tabItem.plName].ownerStation !==
+                                  '') ||
+                              !formDataMap[tabItem.plName].ownerName
                             "
                             class="box-item"
                             effect="dark"
@@ -1314,9 +1682,9 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                         </el-form-item>
                         <el-form-item :label="t('customer.profile.pl.members')">
                           <el-button
-                            style="margin-left: 6px"
                             type="primary"
                             plain
+                            :disabled="!userAuth['isWrite']"
                             @click="
                               handleMembersEdit(
                                 formDataMap[tabItem.plName],
@@ -1327,6 +1695,9 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                               t("customer.profile.pl.editMembers")
                             }}</el-button
                           >
+                          <span style="margin-left: 8px">{{
+                            formDataMap[tabItem.plName].members
+                          }}</span>
                         </el-form-item>
                       </el-form>
                     </el-tab-pane>
@@ -1334,7 +1705,42 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                 </el-collapse-item>
               </el-collapse>
             </div>
-          </el-scrollbar></el-tab-pane
+          </el-scrollbar>
+          <el-drawer
+            v-model="disQualifyDialog"
+            :title="t('customer.profile.disqualifyReason')"
+            :before-close="handleClose"
+            direction="rtl"
+            class="demo-drawer"
+          >
+            <div class="demo-drawer__content">
+              <el-form :model="disQualifyForm">
+                <el-form-item>
+                  <el-input
+                    v-model="disQualifyForm.reason"
+                    type="textarea"
+                    autocomplete="off"
+                  />
+                </el-form-item>
+              </el-form>
+              <div class="demo-drawer__footer">
+                <el-button @click="cancelForm">{{
+                  t("customer.profile.cancel")
+                }}</el-button>
+                <el-button
+                  type="primary"
+                  :loading="disQualifyLoading"
+                  @click="onDisQualifyConfirmClick"
+                >
+                  {{
+                    disQualifyLoading
+                      ? t("customer.profile.submitting")
+                      : t("customer.profile.submit")
+                  }}
+                </el-button>
+              </div>
+            </div>
+          </el-drawer></el-tab-pane
         >
         <el-tab-pane :label="t('customer.deal.title')"
           ><div class="flex justify-center items-center h-[640px]">

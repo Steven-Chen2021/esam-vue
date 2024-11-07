@@ -20,6 +20,7 @@ import { listCTL } from "../customer/listctl";
 import { key } from "localforage";
 import { message, closeAllMessage } from "@/utils/message";
 import { useTourStore } from "@/store/modules/tour";
+import { customer } from "@/router/enums";
 import {
   ElNotification,
   ButtonInstance,
@@ -44,6 +45,7 @@ const {
   querySearchAsync,
   handleQuickFilterClick,
   fetchData,
+  fetchQuickFilterData,
   fetchAdvancedFilterData,
   advancedFilterForm,
   basicFilterTopForm,
@@ -53,12 +55,13 @@ const {
   showBasicFilterForm,
   formattedDateRange,
   handleBasicFilterBtnClick,
-  activePanelNames
+  activePanelNames,
+  filterRequestType
 } = quickFilterCTL();
 const {
+  fetchListData,
   tableData,
   tableRowClassName,
-  columnfilterHandler,
   currentPage,
   pageSize,
   total,
@@ -67,7 +70,8 @@ const {
   handleSizeChange,
   handleConditionalSearch,
   handleResetConditionalSearch,
-  loading
+  loading,
+  requestType
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -192,7 +196,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
               message: t("customer.list.quickFilter.addSucText"),
               type: "success"
             });
-            fetchData();
+            fetchQuickFilterData(customer);
             setTimeout(() => {
               setTourStep();
             }, 800);
@@ -272,7 +276,8 @@ const initQuickFilter = () => {
     allowSorting: filter.allowSorting,
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
-    controlTypeOnDetail: ""
+    controlTypeOnDetail: "",
+    enableOnSearchView: filter.enableOnSearchView
   }));
   console.log("initQuickFilter", quickFilterForm);
 };
@@ -304,7 +309,8 @@ const handleEditQuickFilter = (item: QuickFilter) => {
     allowSorting: filter.allowSorting,
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
-    controlTypeOnDetail: ""
+    controlTypeOnDetail: "",
+    enableOnSearchView: filter.enableOnSearchView
   }));
 };
 const dialogVisible = ref(false);
@@ -401,6 +407,9 @@ const calculateMaxHeight = () => {
 const maxHeight = ref(null);
 
 onMounted(async () => {
+  requestType.value = customer;
+  filterRequestType.value = customer;
+  fetchListData();
   fetchData();
   fetchAdvancedFilterData();
   await nextTick(); // 等待 DOM 更新完成
@@ -429,38 +438,36 @@ watch(
 
 <template>
   <div class="containerC">
-    <el-card shadow="never" class="max-h-12 p-0">
-      <div class="flex flex-row">
-        <div class="basis-4/5">
-          <el-button ref="refBtnAddFilter" @click="handleQuickFilterOpen">{{
-            t("customer.list.quickFilter.addFilterbtn")
-          }}</el-button>
-          <el-dropdown
-            v-for="(item, index) in quickFilterList"
-            v-bind:key="item.id"
-            :ref="el => (refsQuickFilterBtn[index] = el)"
-            loading
-            split-button
-            :plain="!item.clicked"
-            :type="item.clicked ? 'primary' : ''"
-            style="margin-left: 10px"
-            @click="handleFilterClick(item)"
-          >
-            {{ item.filterName }}
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="handleEditQuickFilter(item)">{{
-                  t("customer.list.quickFilter.editBtnText")
-                }}</el-dropdown-item>
-                <el-dropdown-item @click="handleDeleteQuickFilter(item)">{{
-                  t("customer.list.quickFilter.delBtnText")
-                }}</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+    <div class="flex flex-row">
+      <div class="basis-4/5">
+        <el-button ref="refBtnAddFilter" @click="handleQuickFilterOpen">{{
+          t("customer.list.quickFilter.addFilterbtn")
+        }}</el-button>
+        <el-dropdown
+          v-for="(item, index) in quickFilterList"
+          v-bind:key="item.id"
+          :ref="el => (refsQuickFilterBtn[index] = el)"
+          loading
+          split-button
+          :plain="!item.clicked"
+          :type="item.clicked ? 'primary' : ''"
+          style="margin-left: 10px"
+          @click="handleFilterClick(item)"
+        >
+          {{ item.filterName }}
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleEditQuickFilter(item)">{{
+                t("customer.list.quickFilter.editBtnText")
+              }}</el-dropdown-item>
+              <el-dropdown-item @click="handleDeleteQuickFilter(item)">{{
+                t("customer.list.quickFilter.delBtnText")
+              }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
-    </el-card>
+    </div>
     <el-divider />
     <div>
       <el-form
@@ -535,12 +542,14 @@ watch(
               label-width="auto"
               class="demo-form-inline"
               status-icon
+              label-position="left"
             >
               <div>
                 <el-form-item
                   v-for="filterItem in advancedFilterForm.filters.filter(
                     c =>
-                      c.showOnFilter === true &&
+                      c.showOnFilter &&
+                      c.enableOnSearchView &&
                       c.filterType !== 'cascadingdropdown' &&
                       c.filterKey !== 'capitalAmount'
                   )"
@@ -711,14 +720,16 @@ watch(
       border
       class="flex-table"
       :data="tableData"
-      style="width: 100%"
-      :row-class-name="tableRowClassName"
+      style="width: 100%; min-height: 200px"
       :max-height="maxHeight"
       @sort-change="handleSortChange"
     >
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
-          c => c.filterType !== 'cascadingdropdown' && c.showOnGrid
+          c =>
+            c.filterType !== 'cascadingdropdown' &&
+            c.showOnGrid &&
+            c.enableOnSearchView
         )"
         :key="col.filterKey"
         :prop="col.filterKey"
@@ -808,7 +819,8 @@ watch(
             </el-form-item>
             <el-form-item
               v-for="filterItem in quickFilterForm.filters.filter(
-                c => c.filterType !== 'cascadingdropdown'
+                c =>
+                  c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
               )"
               :key="filterItem.filterKey"
               :label="t(filterItem.langethKey)"
@@ -975,7 +987,7 @@ watch(
         <tbody>
           <tr
             v-for="settingItem in advancedFilterForm.filters.filter(
-              c => c.filterType !== 'cascadingdropdown'
+              c => c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
             )"
             v-bind:key="settingItem.filterKey"
           >
@@ -1135,7 +1147,8 @@ watch(
 .containerC {
   display: flex;
   flex-direction: column;
-  height: 90vh; /* 或者其它固定高度 */
+  height: calc(100vh - 81px - 81px);
+  overflow-y: auto; /* 允许垂直滚动 */
 }
 
 .flex-table {
