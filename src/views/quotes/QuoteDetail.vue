@@ -6,27 +6,27 @@ import {
   type FieldValues,
   PlusForm
 } from "plus-pro-components";
+import { ElNotification } from "element-plus";
 /*handsontable*/
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
 import "handsontable/dist/handsontable.full.css";
 registerAllModules();
-
 defineComponent({
   components: {
     HotTable
   }
 });
-
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import QuoteDetailService from "@/services/quote/QuoteDetailService";
 
 // RouterHooks
 import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
-
 import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
+import { HistoryComponentHooks } from "./details/historyHooks";
+import { VxeTableBar } from "@/components/ReVxeTableBar";
 
 const {
   getCustomerByOwnerUserResult,
@@ -50,14 +50,23 @@ const {
   attentionToResult,
   tradeTermResult,
   creditTermResult,
-  freightChargeResult
+  freightChargeResult,
+  deleteQuotation
 } = QuoteDetailHooks();
 
 const {
   exportLocalChargeResult,
   newExportLocalChargeItem,
-  addColumnHeaderItem
+  addColumnHeaderItem,
+  removeItem,
+  exportLocationResult,
+  importLocationResult,
+  exportLocalChargeHotTableSetting,
+  importLocalChargeHotTableSetting
 } = LocalChargeHooks();
+
+const { historyColumns, historyResult, getHistoryResult } =
+  HistoryComponentHooks();
 
 defineOptions({
   name: "QuoteDetail"
@@ -65,12 +74,20 @@ defineOptions({
 initToDetail("params");
 
 const hotTableRef = ref(null);
+const importHotTableRef = ref(null);
+const exportHotTableRef = ref(null);
 const freightVisible = ref(false);
 const localVisible = ref(false);
+const historyVisible = ref(false);
 const activeName = ref("1");
 const dynamicSize = ref();
-const size = ref("disabled");
+const saveLoading = ref("disabled");
+const deleteLoading = ref("disabled");
+const historyLoading = ref(true);
 const qid = ref(0);
+const disabledExportLocalChargeBtn = ref(true);
+const disabledImportLocalChargeBtn = ref(true);
+const vxeTableRef = ref();
 
 const result = ref<FieldValues>({
   ShippingTerm: null,
@@ -235,6 +252,47 @@ const handleAfterChange = (changes, source) => {
       console.log(
         `資料變更 - 列: ${row}, 欄位: ${prop}, 舊值: ${oldValue}, 新值: ${newValue}`
       );
+      if (
+        ["poreceipt", "poloading", "podelivery", "podischarge"].includes(prop)
+      ) {
+        exportLocationResult.value.splice(0, exportLocationResult.value.length);
+        importLocationResult.value.splice(0, importLocationResult.value.length);
+
+        freightChargeSettings.value.data.forEach(rowData => {
+          if (rowData.poreceipt) {
+            exportLocationResult.value.push(rowData.poreceipt);
+          }
+          if (rowData.poloading) {
+            exportLocationResult.value.push(rowData.poloading);
+          }
+        });
+        freightChargeSettings.value.data.forEach(rowData => {
+          if (rowData.podelivery) {
+            importLocationResult.value.push(rowData.podelivery);
+          }
+          if (rowData.podischarge) {
+            importLocationResult.value.push(rowData.podischarge);
+          }
+        });
+        console.log("exportLocationResult", exportLocationResult);
+        console.log("importLocationResult", importLocationResult);
+      }
+      if (exportLocationResult.value.length > 0) {
+        exportLocalChargeHotTableSetting.value.columns.forEach(column => {
+          if (column.data === "location") {
+            column.source = exportLocationResult.value;
+          }
+        });
+        disabledExportLocalChargeBtn.value = false;
+      }
+      if (importLocationResult.value.length > 0) {
+        importLocalChargeHotTableSetting.value.columns.forEach(column => {
+          if (column.data === "location") {
+            column.source = importLocationResult.value;
+          }
+        });
+        disabledImportLocalChargeBtn.value = false;
+      }
     });
   }
 };
@@ -264,46 +322,46 @@ const freightChargeSettings = ref({
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection
 });
-const localChargeExport = {
-  data: [],
-  colHeaders: [],
-  columns: [],
-  rowHeaders: false,
-  dropdownMenu: true,
-  width: "100%",
-  height: "auto",
-  autoWrapRow: true,
-  autoWrapCol: true,
-  allowInsertColumn: true,
-  allowInsertRow: true,
-  licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  contextMenu: true
-};
-const localChargeImport = {
-  data: [],
-  colHeaders: [],
-  columns: [],
-  rowHeaders: false,
-  dropdownMenu: true,
-  width: "100%",
-  height: "auto",
-  autoWrapRow: true,
-  autoWrapCol: true,
-  allowInsertColumn: true,
-  allowInsertRow: true,
-  licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  contextMenu: true
-};
 
 const saveData = () => {
-  size.value = "default";
+  saveLoading.value = "default";
   setTimeout(() => {
-    size.value = "disabled";
+    saveLoading.value = "disabled";
   }, 3000);
 
   console.log("result", result);
   console.log("freightChargeSettings-data", freightChargeSettings.value.data);
   console.log("freightChargeSettings", freightChargeSettings);
+};
+
+const deleteData = () => {
+  deleteLoading.value = "default";
+  if (qid.value > 0) {
+    const isDeleted = deleteQuotation(qid.value);
+    console.log(isDeleted);
+    if (isDeleted) {
+      ElNotification({
+        title: "successfully",
+        message: "Quotation deleted successfully!",
+        type: "success"
+      });
+      router.push("/quotes/index");
+    } else {
+      ElNotification({
+        title: "Error",
+        message: "Failed to delete the quotation.",
+        type: "error"
+      });
+    }
+  }
+  setTimeout(() => {
+    deleteLoading.value = "disabled";
+  }, 3000);
+};
+
+const viewHistory = () => {
+  historyVisible.value = true;
+  getHistoryResult();
 };
 
 const handleCheckboxGroupChange = (values: string[]) => {
@@ -361,6 +419,9 @@ watchEffect(() => {
     );
     console.log("sourceData", sourceData); // 最後打印出篩選結果
   }
+  if (historyResult.value.length > 0) {
+    historyLoading.value = false;
+  }
 });
 
 onMounted(() => {
@@ -377,65 +438,6 @@ onMounted(() => {
   getShippingTermResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
 });
-
-// const timelineItems = ref([
-//   {
-//     timestamp: "",
-//     header: "Update Github template",
-//     description: "Tom committed 2018/4/12 20:46",
-//     checked1: false,
-//     checked2: false,
-//     parsedNumber: 0
-//   },
-//   {
-//     timestamp: "2000",
-//     header: "Update Github template",
-//     description: "Tom committed 2018/4/3 20:46",
-//     checked1: false,
-//     checked2: false,
-//     parsedNumber: 2000
-//   }
-// ]);
-
-// // 新增的 Timeline 項目
-// const newTimelineItem = ref({
-//   timestamp: "",
-//   header: "",
-//   description: "自動產生的描述...",
-//   checked1: false,
-//   checked2: false,
-//   parsedNumber: 0
-// });
-// // 將符號與數字分開
-// const parseTimestamp = timestamp => {
-//   const symbol = timestamp.charAt(0); // 取得第一個字元符號
-//   const number = parseInt(timestamp.slice(1), 10); // 解析後面的數字
-//   return { symbol, number };
-// };
-// // 新增 Timeline 項目的函數
-// const addTimelineItem = () => {
-//   if (newTimelineItem.value.timestamp) {
-//     // 解析 timestamp，並加入到 timelineItems 中
-//     const { symbol, number } = parseTimestamp(newTimelineItem.value.timestamp);
-
-//     timelineItems.value.push({
-//       ...newTimelineItem.value,
-//       parsedNumber: number // 把解析出來的數字存下來，方便後續排序
-//     });
-
-//     // 清空輸入欄位
-//     newTimelineItem.value.timestamp = "";
-//     newTimelineItem.value.header = "";
-//     newTimelineItem.value.checked1 = false;
-//     newTimelineItem.value.checked2 = false;
-
-//     // 對 timelineItems 進行排序，依照 parsedNumber 由小到大排列
-//     timelineItems.value = timelineItems.value.sort(
-//       (a, b) => a.parsedNumber - b.parsedNumber
-//     );
-//     console.log(timelineItems);
-//   }
-// };
 </script>
 
 <template>
@@ -454,53 +456,50 @@ onMounted(() => {
             plain
             :size="dynamicSize"
             :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
+            :loading="saveLoading !== 'disabled'"
             :icon="useRenderIcon('ri:save-line')"
             @click="saveData"
           >
-            {{ size === "disabled" ? "Save" : "Processing" }}
+            {{ saveLoading === "disabled" ? "Save" : "Processing" }}
           </el-button>
           <el-button
             type="primary"
             plain
             :size="dynamicSize"
             :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
+            :loading="saveLoading !== 'disabled'"
             :icon="useRenderIcon('ep:edit')"
             @click="saveData"
           >
-            {{ size === "disabled" ? "Save as Draft" : "Processing" }}
+            {{ saveLoading === "disabled" ? "Save as Draft" : "Processing" }}
           </el-button>
           <el-button
             type="primary"
             plain
             :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
             :icon="useRenderIcon('ep:view')"
             @click="saveData"
           >
-            {{ size === "disabled" ? "Preview" : "Processing" }}
+            {{ "Preview" }}
           </el-button>
           <el-button
+            v-if="qid > 0"
             type="primary"
             plain
             :size="dynamicSize"
             :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
+            :loading="deleteLoading !== 'disabled'"
             :icon="useRenderIcon('ep:delete')"
-            @click="saveData"
+            @click="deleteData"
           >
-            {{ size === "disabled" ? "Delete" : "Processing" }}
+            {{ deleteLoading === "disabled" ? "Delete" : "Processing" }}
           </el-button>
           <el-button
             type="primary"
             plain
             :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
             :icon="useRenderIcon('ri:list-view')"
-            @click="saveData"
+            @click="viewHistory"
           >
             {{ $t("buttons.pureHistoryLog") }}
           </el-button>
@@ -570,41 +569,35 @@ onMounted(() => {
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Export)</span>
               </template>
-              <el-tooltip
-                class="box-item"
-                effect="dark"
-                content="Customized Columns"
-                placement="bottom"
-              >
-                <el-button
-                  class="mb-1"
-                  :icon="useRenderIcon('ep:setting')"
-                  size="small"
-                  circle
-                  @click="handleOpen('LOCAL')"
-                />
-              </el-tooltip>
-              <HotTable :settings="localChargeExport" />
+
+              <el-tabs v-if="!disabledExportLocalChargeBtn" type="border-card">
+                <el-tab-pane label="User">User</el-tab-pane>
+                <el-tab-pane label="Config">Config</el-tab-pane>
+                <el-tab-pane label="Role">Role</el-tab-pane>
+                <el-tab-pane label="Task">Task</el-tab-pane>
+              </el-tabs>
+
+              <HotTable
+                v-if="!disabledExportLocalChargeBtn"
+                ref="exportHotTableRef"
+                :settings="exportLocalChargeHotTableSetting"
+              />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Import)</span>
               </template>
-              <el-tooltip
-                class="box-item"
-                effect="dark"
-                content="Customized Columns"
-                placement="bottom"
-              >
-                <el-button
-                  class="mb-1"
-                  :icon="useRenderIcon('ep:setting')"
-                  size="small"
-                  circle
-                  @click="handleOpen('LOCAL')"
-                />
-              </el-tooltip>
-              <HotTable :settings="localChargeImport" />
+              <el-tabs v-if="!disabledImportLocalChargeBtn" type="border-card">
+                <el-tab-pane label="User">User</el-tab-pane>
+                <el-tab-pane label="Config">Config</el-tab-pane>
+                <el-tab-pane label="Role">Role</el-tab-pane>
+                <el-tab-pane label="Task">Task</el-tab-pane>
+              </el-tabs>
+              <HotTable
+                v-if="!disabledImportLocalChargeBtn"
+                ref="importHotTableRef"
+                :settings="importLocalChargeHotTableSetting"
+              />
             </el-collapse-item>
             <el-collapse-item title="REMARK " name="6">
               <template #title>
@@ -653,6 +646,7 @@ onMounted(() => {
         </div>
       </el-checkbox-group>
     </el-drawer>
+    <!--
     <el-drawer v-model="localVisible" title="Local Charge Settings">
       <div>
         <el-form
@@ -664,6 +658,10 @@ onMounted(() => {
               v-model="newExportLocalChargeItem.columnHeader"
               placeholder="Break Point"
             />
+          </el-form-item>
+          <el-form-item>
+            <label>{{ tmpvalue }}</label>
+            <el-slider v-model="tmpvalue" range :max="100" @change="test" />
           </el-form-item>
           <el-button type="primary" @click="addColumnHeaderItem">{{
             $t("buttons.pureAdd")
@@ -678,16 +676,54 @@ onMounted(() => {
             placement="top"
           >
             <el-card class="local-charge-setting-card">
-              <!-- <h4>{{ item.header }}</h4>
-              <p>{{ item.description }}</p> -->
-
-              <!-- 兩個 Checkbox 供使用者勾選 -->
-              <el-checkbox v-model="item.sellingRate">Selling Rate</el-checkbox>
-              <el-checkbox v-model="item.Cost">Cost</el-checkbox>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                "
+              >
+                <div style="display: flex; align-items: center">
+                  <el-checkbox v-model="item.sellingRate"
+                    >Selling Rate</el-checkbox
+                  >
+                  <el-checkbox v-model="item.Cost" style="margin-left: 20px"
+                    >Cost</el-checkbox
+                  >
+                </div>
+                <el-button
+                  :icon="useRenderIcon('ep:delete')"
+                  circle
+                  @click="removeItem(index)"
+                />
+              </div>
             </el-card>
           </el-timeline-item>
         </el-timeline>
       </div>
+    </el-drawer>
+    -->
+    <el-drawer v-model="historyVisible" size="60%" title="History">
+      <VxeTableBar
+        :vxeTableRef="vxeTableRef"
+        :columns="historyColumns"
+        title=""
+        @refresh="getHistoryResult"
+      >
+        <template v-slot="{ size, dynamicColumns }">
+          <vxe-grid
+            ref="vxeTableRef"
+            v-loading="historyLoading"
+            show-overflow
+            height="500"
+            :size="size"
+            :row-config="{ isHover: true }"
+            :scroll-y="{ enabled: true }"
+            :columns="dynamicColumns"
+            :data="historyResult"
+          />
+        </template>
+      </VxeTableBar>
     </el-drawer>
   </div>
 </template>

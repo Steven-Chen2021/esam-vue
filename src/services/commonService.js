@@ -99,6 +99,19 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
+
+  async getHistoryResult(params) {
+    try {
+      const url = "/api/Common/HistoryResult";
+      const queryString = new URLSearchParams(params).toString();
+      const fullUrl = `${url}?${queryString}`;
+      const response = await API.get(fullUrl);
+      return response.returnValue;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
   async autoSave(params) {
     try {
       const response = await API.post("/api/AutoSave/AutoSave", params);

@@ -97,6 +97,7 @@ export function QuoteDetailHooks() {
       console.error("getChargeCodeSettingResult Error", error);
     }
   }
+
   async function getProductLineByCustomerResult(customerHQID: number) {
     try {
       const response =
@@ -205,6 +206,15 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function deleteQuotation(QuoteID: number) {
+    try {
+      const response = await quoteDetailService.deleteQuotation(QuoteID);
+      return response.returnValue;
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -227,6 +237,7 @@ export function QuoteDetailHooks() {
     attentionToResult,
     tradeTermResult,
     creditTermResult,
-    freightChargeResult
+    freightChargeResult,
+    deleteQuotation
   };
 }
