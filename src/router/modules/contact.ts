@@ -12,7 +12,7 @@ export default {
   children: [
     {
       path: "/contact/index",
-      name: "Contact",
+      name: "ContactList",
       component: () => import("@/views/contact/index.vue"),
       meta: {
         title: $t("menus.dimercoContact")

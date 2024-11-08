@@ -765,168 +765,111 @@ const cancelForm = () => {
         <h1>{{ profileDataInit.customerName }}</h1>
       </div>
       <el-tabs type="border-card" style="margin-top: 16px">
-        <el-tab-pane :label="t('customer.profile.title')"
-          ><el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
-            <div class="pb-2">
-              <el-alert
-                v-if="showAutoSaveAlert && LID !== '0'"
-                :title="t('customer.profile.autoSaveAlert')"
-                type="success"
-                show-icon
-                style="margin-bottom: 10px"
-              />
-              <el-collapse v-model="activeName" class="mb-2">
-                <el-collapse-item
-                  :title="t('customer.profile.general.title')"
-                  name="general"
-                  class="custom-collapse-title"
-                >
-                  <div style="padding: 8px">
-                    <el-form
-                      ref="profileFormRef"
-                      :inline="true"
-                      :model="profileData"
-                      :rules="rules"
-                      label-width="auto"
-                      class="demo-form-inline top-align-form-item"
-                      status-icon
-                      label-position="left"
-                    >
-                      <div>
-                        <el-form-item
-                          v-if="LID === '0'"
-                          :style="{ width: '390px' }"
-                          :label="t('customer.profile.general.agentRO')"
-                          prop="agentId"
-                        >
-                          <div style="display: flex">
-                            <el-checkbox
-                              v-if="filterOptions['agentRO']"
-                              v-model="profileData.agentROCheck"
-                              label=""
-                              @change="handleAgentROCheckChange"
-                            />
-                            <el-select
-                              v-if="
-                                profileData.agentROCheck &&
-                                filterOptions['agentRO']
-                              "
-                              ref="refAgent"
-                              v-model="profileData['agentId']"
-                              :placeholder="
-                                t('customer.list.quickFilter.holderSelectText')
-                              "
-                              style="width: 232px"
-                              filterable
-                              @change="
-                                v =>
-                                  handleDropDownChange(
-                                    profileFormRef,
-                                    v,
-                                    {
-                                      filterKey: 'agentId'
-                                    },
-                                    null
-                                  )
-                              "
-                            >
-                              <el-option
-                                v-for="option in filterOptions['agentRO'].list"
-                                :key="option.value"
-                                :label="option.text"
-                                :value="option.value"
-                              />
-                            </el-select>
-                          </div>
-                        </el-form-item>
-                        <el-form-item
-                          v-for="filterItem in profileFormData"
-                          :key="filterItem.filterKey"
-                          :style="{ width: '390px' }"
-                          :label="getFormItemLabel(filterItem)"
-                          :prop="filterItem.filterKey"
-                        >
-                          <el-text
+        <el-tab-pane :label="t('customer.profile.title')">
+          <div class="pb-2">
+            <el-alert
+              v-if="showAutoSaveAlert && LID !== '0'"
+              :title="t('customer.profile.autoSaveAlert')"
+              type="success"
+              show-icon
+              style="margin-bottom: 10px"
+            />
+            <el-collapse v-model="activeName" class="mb-2">
+              <el-collapse-item
+                :title="t('customer.profile.general.title')"
+                name="general"
+                class="custom-collapse-title"
+              >
+                <div style="padding: 8px">
+                  <el-form
+                    ref="profileFormRef"
+                    :inline="true"
+                    :model="profileData"
+                    :rules="rules"
+                    label-width="auto"
+                    class="demo-form-inline top-align-form-item"
+                    status-icon
+                    label-position="left"
+                  >
+                    <div>
+                      <el-form-item
+                        v-if="LID === '0'"
+                        :style="{ width: '390px' }"
+                        :label="t('customer.profile.general.agentRO')"
+                        prop="agentId"
+                      >
+                        <div style="display: flex">
+                          <el-checkbox
+                            v-if="filterOptions['agentRO']"
+                            v-model="profileData.agentROCheck"
+                            label=""
+                            @change="handleAgentROCheckChange"
+                          />
+                          <el-select
                             v-if="
-                              filterItem.readOnlyOnDetail ||
-                              filterItem.filterType === 'lable' ||
-                              (filterItem.filterKey === 'customerName' &&
-                                LID !== '0')
+                              profileData.agentROCheck &&
+                              filterOptions['agentRO']
                             "
-                            >{{ profileData[filterItem.filterKey] }}</el-text
+                            ref="refAgent"
+                            v-model="profileData['agentId']"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderSelectText')
+                            "
+                            style="width: 232px"
+                            filterable
+                            @change="
+                              v =>
+                                handleDropDownChange(
+                                  profileFormRef,
+                                  v,
+                                  {
+                                    filterKey: 'agentId'
+                                  },
+                                  null
+                                )
+                            "
                           >
-                          <div
-                            v-else-if="
+                            <el-option
+                              v-for="option in filterOptions['agentRO'].list"
+                              :key="option.value"
+                              :label="option.text"
+                              :value="option.value"
+                            />
+                          </el-select>
+                        </div>
+                      </el-form-item>
+                      <el-form-item
+                        v-for="filterItem in profileFormData"
+                        :key="filterItem.filterKey"
+                        :style="{ width: '390px' }"
+                        :label="getFormItemLabel(filterItem)"
+                        :prop="filterItem.filterKey"
+                      >
+                        <el-text
+                          v-if="
+                            filterItem.readOnlyOnDetail ||
+                            filterItem.filterType === 'lable' ||
+                            (filterItem.filterKey === 'customerName' &&
+                              LID !== '0')
+                          "
+                          >{{ profileData[filterItem.filterKey] }}</el-text
+                        >
+                        <div
+                          v-else-if="
+                            filterOptions[filterItem.filterKey] &&
+                            filterItem.filterType === 'cascadingdropdown' &&
+                            filterItem.filterSourceType === 'api' &&
+                            ddlNeedExtraList.includes(filterItem.filterKey)
+                          "
+                        >
+                          <el-select
+                            v-if="
                               filterOptions[filterItem.filterKey] &&
                               filterItem.filterType === 'cascadingdropdown' &&
                               filterItem.filterSourceType === 'api' &&
                               ddlNeedExtraList.includes(filterItem.filterKey)
                             "
-                          >
-                            <el-select
-                              v-if="
-                                filterOptions[filterItem.filterKey] &&
-                                filterItem.filterType === 'cascadingdropdown' &&
-                                filterItem.filterSourceType === 'api' &&
-                                ddlNeedExtraList.includes(filterItem.filterKey)
-                              "
-                              ref="refCity"
-                              v-model="profileData[filterItem.filterKey]"
-                              :disabled="disableStatus(filterItem)"
-                              :placeholder="
-                                t('customer.list.quickFilter.holderSelectText')
-                              "
-                              style="width: 240px"
-                              filterable
-                              @change="
-                                v =>
-                                  handleDropDownChange(
-                                    profileFormRef,
-                                    v,
-                                    filterItem,
-                                    null
-                                  )
-                              "
-                            >
-                              <el-option
-                                v-for="option in filterOptions[
-                                  filterItem.filterKey
-                                ].list"
-                                :key="option.value"
-                                :label="option.text"
-                                :value="option.value"
-                              />
-                            </el-select>
-                            <el-input
-                              v-if="
-                                profileData['city'] === '' ||
-                                profileData['city'] === null
-                              "
-                              v-model="profileData['cityText']"
-                              :disabled="disableStatus(filterItem)"
-                              :placeholder="
-                                t('customer.list.quickFilter.holderKeyinText')
-                              "
-                              style="width: 240px"
-                              @blur="
-                                autoSaveForm(
-                                  profileFormRef,
-                                  { filterKey: 'cityText' },
-                                  profileData['cityText']
-                                )
-                              "
-                            />
-                          </div>
-                          <el-select
-                            v-else-if="
-                              filterOptions[filterItem.filterKey] &&
-                              filterItem.filterType === 'cascadingdropdown' &&
-                              filterItem.filterSourceType === 'api' &&
-                              !ddlNeedExtraList.includes(
-                                filterItem.filterKey
-                              ) &&
-                              !ddlCasList.includes(filterItem.filterKey)
-                            "
+                            ref="refCity"
                             v-model="profileData[filterItem.filterKey]"
                             :disabled="disableStatus(filterItem)"
                             :placeholder="
@@ -953,218 +896,259 @@ const cancelForm = () => {
                               :value="option.value"
                             />
                           </el-select>
-                          <div
-                            v-else-if="
-                              filterOptions[filterItem.filterKey] &&
-                              filterItem.filterType === 'cascadingdropdown' &&
-                              filterItem.filterSourceType === 'api' &&
-                              filterItem.filterKey === 'leadSourceGroup'
+                          <el-input
+                            v-if="
+                              profileData['city'] === '' ||
+                              profileData['city'] === null
                             "
+                            v-model="profileData['cityText']"
+                            :disabled="disableStatus(filterItem)"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderKeyinText')
+                            "
+                            style="width: 240px"
+                            @blur="
+                              autoSaveForm(
+                                profileFormRef,
+                                { filterKey: 'cityText' },
+                                profileData['cityText']
+                              )
+                            "
+                          />
+                        </div>
+                        <el-select
+                          v-else-if="
+                            filterOptions[filterItem.filterKey] &&
+                            filterItem.filterType === 'cascadingdropdown' &&
+                            filterItem.filterSourceType === 'api' &&
+                            !ddlNeedExtraList.includes(filterItem.filterKey) &&
+                            !ddlCasList.includes(filterItem.filterKey)
+                          "
+                          v-model="profileData[filterItem.filterKey]"
+                          :disabled="disableStatus(filterItem)"
+                          :placeholder="
+                            t('customer.list.quickFilter.holderSelectText')
+                          "
+                          style="width: 240px"
+                          filterable
+                          @change="
+                            v =>
+                              handleDropDownChange(
+                                profileFormRef,
+                                v,
+                                filterItem,
+                                null
+                              )
+                          "
+                        >
+                          <el-option
+                            v-for="option in filterOptions[filterItem.filterKey]
+                              .list"
+                            :key="option.value"
+                            :label="option.text"
+                            :value="option.value"
+                          />
+                        </el-select>
+                        <div
+                          v-else-if="
+                            filterOptions[filterItem.filterKey] &&
+                            filterItem.filterType === 'cascadingdropdown' &&
+                            filterItem.filterSourceType === 'api' &&
+                            filterItem.filterKey === 'leadSourceGroup'
+                          "
+                        >
+                          <el-form-item
+                            prop="leadSourceGroupID"
+                            :label="t(filterItem.langethKey)"
                           >
-                            <el-form-item
-                              prop="leadSourceGroupID"
-                              :label="t(filterItem.langethKey)"
-                            >
-                              <el-select
-                                v-model="profileData['leadSourceGroupID']"
-                                :disabled="
-                                  disableStatus({
-                                    filterKey: 'leadSourceGroupID'
-                                  })
-                                "
-                                :placeholder="
-                                  t(
-                                    'customer.list.quickFilter.holderSelectText'
-                                  )
-                                "
-                                style="width: 240px"
-                                filterable
-                                @change="
-                                  v =>
-                                    handleDropDownChange(
-                                      profileFormRef,
-                                      v,
-                                      {
-                                        filterKey: 'leadSourceGroupID'
-                                      },
-                                      null
-                                    )
-                                "
-                              >
-                                <el-option
-                                  v-for="option in filterOptions[
-                                    'leadSourceGroup'
-                                  ].list"
-                                  :key="option.value"
-                                  :label="option.text"
-                                  :value="option.value"
-                                />
-                              </el-select>
-                            </el-form-item>
-                            <el-form-item
-                              v-if="filterOptions['leadSource']"
-                              label=" "
-                              style="margin-top: 18px"
-                              prop="leadSourceID"
-                              ><el-select
-                                v-model="profileData['leadSourceID']"
-                                :disabled="
-                                  disableStatus({
-                                    filterKey: 'leadSourceID'
-                                  })
-                                "
-                                :placeholder="
-                                  t(
-                                    'customer.list.quickFilter.holderSelectText'
-                                  )
-                                "
-                                style="width: 240px"
-                                filterable
-                                @change="
-                                  v =>
-                                    handleDropDownChange(
-                                      profileFormRef,
-                                      v,
-                                      {
-                                        filterKey: 'leadSourceID'
-                                      },
-                                      null
-                                    )
-                                "
-                              >
-                                <el-option
-                                  v-for="option in filterOptions['leadSource']
-                                    .list"
-                                  :key="option.value"
-                                  :label="option.text"
-                                  :value="option.value"
-                                  :disabled="option.disabled"
-                                />
-                              </el-select>
-                            </el-form-item>
-                            <el-form-item
-                              v-if="
-                                filterOptions['leadSourceDetail'] &&
-                                profileData['leadSourceID'] === 16
+                            <el-select
+                              v-model="profileData['leadSourceGroupID']"
+                              :disabled="
+                                disableStatus({
+                                  filterKey: 'leadSourceGroupID'
+                                })
                               "
-                              label=" "
-                              style="margin-top: 18px"
-                              ><el-select
-                                ref="refLeadSourceDetail"
-                                v-model="profileData['leadSourceDetail']"
-                                :disabled="disableStatus(filterItem)"
-                                :placeholder="
-                                  t(
-                                    'customer.list.quickFilter.holderSelectText'
+                              :placeholder="
+                                t('customer.list.quickFilter.holderSelectText')
+                              "
+                              style="width: 240px"
+                              filterable
+                              @change="
+                                v =>
+                                  handleDropDownChange(
+                                    profileFormRef,
+                                    v,
+                                    {
+                                      filterKey: 'leadSourceGroupID'
+                                    },
+                                    null
                                   )
-                                "
-                                style="width: 240px"
-                                filterable
-                                @change="
-                                  v =>
-                                    handleDropDownChange(
-                                      profileFormRef,
-                                      v,
-                                      {
-                                        filterKey: 'leadSourceDetail'
-                                      },
-                                      null
-                                    )
-                                "
-                              >
-                                <el-option
-                                  v-for="option in filterOptions[
-                                    'leadSourceDetail'
-                                  ].list"
-                                  :key="option.value"
-                                  :label="option.text"
-                                  :value="option.value"
-                                /> </el-select
-                            ></el-form-item>
-                          </div>
-                          <div
-                            v-else-if="
-                              filterOptions[filterItem.filterKey] &&
-                              filterItem.filterType === 'cascadingdropdown' &&
-                              filterItem.filterSourceType === 'api' &&
-                              filterItem.filterKey === 'industryGroup'
+                              "
+                            >
+                              <el-option
+                                v-for="option in filterOptions[
+                                  'leadSourceGroup'
+                                ].list"
+                                :key="option.value"
+                                :label="option.text"
+                                :value="option.value"
+                              />
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item
+                            v-if="filterOptions['leadSource']"
+                            label=" "
+                            style="margin-top: 18px"
+                            prop="leadSourceID"
+                            ><el-select
+                              v-model="profileData['leadSourceID']"
+                              :disabled="
+                                disableStatus({
+                                  filterKey: 'leadSourceID'
+                                })
+                              "
+                              :placeholder="
+                                t('customer.list.quickFilter.holderSelectText')
+                              "
+                              style="width: 240px"
+                              filterable
+                              @change="
+                                v =>
+                                  handleDropDownChange(
+                                    profileFormRef,
+                                    v,
+                                    {
+                                      filterKey: 'leadSourceID'
+                                    },
+                                    null
+                                  )
+                              "
+                            >
+                              <el-option
+                                v-for="option in filterOptions['leadSource']
+                                  .list"
+                                :key="option.value"
+                                :label="option.text"
+                                :value="option.value"
+                                :disabled="option.disabled"
+                              />
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item
+                            v-if="
+                              filterOptions['leadSourceDetail'] &&
+                              profileData['leadSourceID'] === 16
                             "
+                            label=" "
+                            style="margin-top: 18px"
+                            ><el-select
+                              ref="refLeadSourceDetail"
+                              v-model="profileData['leadSourceDetail']"
+                              :disabled="disableStatus(filterItem)"
+                              :placeholder="
+                                t('customer.list.quickFilter.holderSelectText')
+                              "
+                              style="width: 240px"
+                              filterable
+                              @change="
+                                v =>
+                                  handleDropDownChange(
+                                    profileFormRef,
+                                    v,
+                                    {
+                                      filterKey: 'leadSourceDetail'
+                                    },
+                                    null
+                                  )
+                              "
+                            >
+                              <el-option
+                                v-for="option in filterOptions[
+                                  'leadSourceDetail'
+                                ].list"
+                                :key="option.value"
+                                :label="option.text"
+                                :value="option.value"
+                              /> </el-select
+                          ></el-form-item>
+                        </div>
+                        <div
+                          v-else-if="
+                            filterOptions[filterItem.filterKey] &&
+                            filterItem.filterType === 'cascadingdropdown' &&
+                            filterItem.filterSourceType === 'api' &&
+                            filterItem.filterKey === 'industryGroup'
+                          "
+                        >
+                          <el-form-item
+                            :label="t(filterItem.langethKey)"
+                            prop="industryGroupID"
                           >
-                            <el-form-item
-                              :label="t(filterItem.langethKey)"
-                              prop="industryGroupID"
-                            >
-                              <el-select
-                                v-model="profileData['industryGroupID']"
-                                :disabled="disableStatus(filterItem)"
-                                :placeholder="
-                                  t(
-                                    'customer.list.quickFilter.holderSelectText'
+                            <el-select
+                              v-model="profileData['industryGroupID']"
+                              :disabled="disableStatus(filterItem)"
+                              :placeholder="
+                                t('customer.list.quickFilter.holderSelectText')
+                              "
+                              style="width: 240px"
+                              filterable
+                              @change="
+                                v =>
+                                  handleDropDownChange(
+                                    profileFormRef,
+                                    v,
+                                    {
+                                      filterKey: 'industryGroupID'
+                                    },
+                                    null
                                   )
-                                "
-                                style="width: 240px"
-                                filterable
-                                @change="
-                                  v =>
-                                    handleDropDownChange(
-                                      profileFormRef,
-                                      v,
-                                      {
-                                        filterKey: 'industryGroupID'
-                                      },
-                                      null
-                                    )
-                                "
-                              >
-                                <el-option
-                                  v-for="option in filterOptions[
-                                    'industryGroup'
-                                  ].list"
-                                  :key="option.value"
-                                  :label="option.text"
-                                  :value="option.value"
-                                />
-                              </el-select>
-                            </el-form-item>
-                            <el-form-item
-                              v-if="filterOptions['industry']"
-                              label=" "
-                              style="margin-top: 18px"
-                              prop="industryID"
+                              "
                             >
-                              <el-select
-                                v-model="profileData['industryID']"
-                                :disabled="disableStatus(filterItem)"
-                                :placeholder="
-                                  t(
-                                    'customer.list.quickFilter.holderSelectText'
+                              <el-option
+                                v-for="option in filterOptions['industryGroup']
+                                  .list"
+                                :key="option.value"
+                                :label="option.text"
+                                :value="option.value"
+                              />
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item
+                            v-if="filterOptions['industry']"
+                            label=" "
+                            style="margin-top: 18px"
+                            prop="industryID"
+                          >
+                            <el-select
+                              v-model="profileData['industryID']"
+                              :disabled="disableStatus(filterItem)"
+                              :placeholder="
+                                t('customer.list.quickFilter.holderSelectText')
+                              "
+                              style="width: 240px"
+                              filterable
+                              @change="
+                                v =>
+                                  handleDropDownChange(
+                                    profileFormRef,
+                                    v,
+                                    {
+                                      filterKey: 'industryID'
+                                    },
+                                    null
                                   )
-                                "
-                                style="width: 240px"
-                                filterable
-                                @change="
-                                  v =>
-                                    handleDropDownChange(
-                                      profileFormRef,
-                                      v,
-                                      {
-                                        filterKey: 'industryID'
-                                      },
-                                      null
-                                    )
-                                "
-                              >
-                                <el-option
-                                  v-for="option in filterOptions['industry']
-                                    .list"
-                                  :key="option.value"
-                                  :label="option.text"
-                                  :value="option.value"
-                                />
-                              </el-select>
-                            </el-form-item>
-                          </div>
-                          <!-- <el-autocomplete
+                              "
+                            >
+                              <el-option
+                                v-for="option in filterOptions['industry'].list"
+                                :key="option.value"
+                                :label="option.text"
+                                :value="option.value"
+                              />
+                            </el-select>
+                          </el-form-item>
+                        </div>
+                        <!-- <el-autocomplete
                             v-else-if="
                               filterItem.filterType === 'autocomplete' &&
                               filterItem.filterSourceType === 'api'
@@ -1180,342 +1164,338 @@ const cancelForm = () => {
                             "
                             style="width: 338px"
                           /> -->
-                          <div
-                            v-else-if="
-                              filterItem.filterType === 'input' &&
-                              inputNeedExtraList.includes(filterItem.filterKey)
-                            "
-                            class="selectInputDiv"
-                          >
-                            <el-input
-                              v-model="profileData[filterItem.filterKey]"
-                              :disabled="disableStatus(filterItem)"
-                              :placeholder="
-                                t('customer.list.quickFilter.holderKeyinText')
-                              "
-                              style="width: 126px"
-                              @blur="
-                                autoSaveForm(
-                                  profileFormRef,
-                                  filterItem,
-                                  profileData[filterItem.filterKey]
-                                )
-                              "
-                            />
-                            <el-input
-                              v-if="filterItem.filterKey === 'phone'"
-                              v-model="profileData['phoneExt']"
-                              :disabled="disableStatus(filterItem)"
-                              style="
-                                width: 104px;
-                                margin-left: 6px;
-                                vertical-align: middle;
-                              "
-                              @blur="
-                                autoSaveForm(
-                                  profileFormRef,
-                                  { filterKey: 'phoneExt' },
-                                  profileData['phoneExt']
-                                )
-                              "
-                              ><template #prepend
-                                ><span>{{
-                                  t("customer.profile.general.ext")
-                                }}</span></template
-                              >
-                            </el-input>
-                            <el-input
-                              v-else-if="filterItem.filterKey === 'fax'"
-                              v-model="profileData['faxExt']"
-                              :disabled="disableStatus(filterItem)"
-                              style="
-                                width: 104px;
-                                margin-left: 6px;
-                                vertical-align: middle;
-                              "
-                              @blur="
-                                autoSaveForm(
-                                  profileFormRef,
-                                  { filterKey: 'faxExt' },
-                                  profileData['faxExt']
-                                )
-                              "
-                              ><template #prepend
-                                ><span>{{
-                                  t("customer.profile.general.ext")
-                                }}</span></template
-                              >
-                            </el-input>
-                          </div>
-                          <div
-                            v-else-if="
-                              filterItem.filterType === 'input' &&
-                              !inputNeedExtraList.includes(
-                                filterItem.filterKey
-                              ) &&
-                              filterItem.filterKey === 'localName'
-                            "
-                          >
-                            <el-input
-                              v-model="profileData[filterItem.filterKey]"
-                              :disabled="disableStatus(filterItem)"
-                              :placeholder="
-                                t('customer.list.quickFilter.holderKeyinText')
-                              "
-                              style="width: 240px"
-                              @blur="
-                                autoSaveForm(
-                                  profileFormRef,
-                                  filterItem,
-                                  profileData[filterItem.filterKey]
-                                )
-                              "
-                            />
-                            <el-alert
-                              :title="
-                                t('customer.profile.general.localNameAlert')
-                              "
-                              type="warning"
-                              show-icon
-                            />
-                          </div>
-                          <div
-                            v-else-if="
-                              filterOptions['currency'] &&
-                              filterItem.filterType === 'input' &&
-                              filterItem.filterKey === 'capitalAmount'
-                            "
-                          >
-                            <el-input
-                              v-if="filterOptions['currency']"
-                              v-model="profileData[filterItem.filterKey]"
-                              :disabled="disableStatus(filterItem)"
-                              :placeholder="
-                                t('customer.list.quickFilter.holderKeyinText')
-                              "
-                              style="width: 240px"
-                              class="input-with-select"
-                              @blur="
-                                autoSaveForm(
-                                  profileFormRef,
-                                  filterItem,
-                                  profileData[filterItem.filterKey]
-                                )
-                              "
-                            >
-                              <template #prepend>
-                                <el-select
-                                  v-if="filterOptions['currency']"
-                                  v-model="profileData['capitalCurrencyID']"
-                                  :disabled="disableStatus(filterItem)"
-                                  :placeholder="
-                                    t('customer.profile.general.currency')
-                                  "
-                                  style="width: 105px"
-                                  filterable
-                                  @change="
-                                    v =>
-                                      handleDropDownChange(
-                                        profileFormRef,
-                                        v,
-                                        {
-                                          filterKey: 'capitalCurrencyID'
-                                        },
-                                        null
-                                      )
-                                  "
-                                >
-                                  <el-option
-                                    v-for="option in filterOptions['currency']
-                                      .list"
-                                    :key="option.value"
-                                    :label="option.text"
-                                    :value="option.value"
-                                  />
-                                </el-select>
-                              </template>
-                            </el-input>
-                          </div>
-                          <el-input
-                            v-else-if="
-                              filterItem.filterType === 'input' &&
-                              !inputNeedExtraList.includes(
-                                filterItem.filterKey
-                              ) &&
-                              filterItem.filterKey !== 'localName'
-                            "
-                            v-model="profileData[filterItem.filterKey]"
-                            :disabled="disableStatus(filterItem)"
-                            :placeholder="
-                              t('customer.list.quickFilter.holderKeyinText')
-                            "
-                            style="width: 318px"
-                            @blur="
-                              autoSaveForm(
-                                profileFormRef,
-                                filterItem,
-                                profileData[filterItem.filterKey]
-                              )
-                            "
-                          />
-                          <el-input
-                            v-else-if="filterItem.filterType === 'inputarea'"
-                            v-model="profileData[filterItem.filterKey]"
-                            :disabled="disableStatus(filterItem)"
-                            :placeholder="
-                              t('customer.list.quickFilter.holderKeyinText')
-                            "
-                            style="width: 338px"
-                            type="textarea"
-                            @focusout="
-                              autoSaveForm(
-                                profileFormRef,
-                                filterItem,
-                                profileData[filterItem.filterKey]
-                              )
-                            "
-                          />
-                          <el-date-picker
-                            v-else-if="filterItem.filterType === 'daterange'"
-                            v-model="profileData[filterItem.filterKey]"
-                            :disabled="disableStatus(filterItem)"
-                            :range-separator="
-                              $t('customer.list.quickFilter.dateSeparator')
-                            "
-                            :start-placeholder="
-                              $t(
-                                'customer.list.quickFilter.startDateHolderText'
-                              )
-                            "
-                            :end-placeholder="
-                              $t('customer.list.quickFilter.endDateHolderText')
-                            "
-                            format="MMM DD, YYYY"
-                            value-format="YYYY-MM-DD"
-                            style="width: 338px"
-                            @blur="
-                              autoSaveForm(
-                                profileFormRef,
-                                filterItem,
-                                profileData[filterItem.filterKey]
-                              )
-                            "
-                          />
-                        </el-form-item>
-                        <el-form-item
-                          v-if="LID === '0'"
-                          :style="{ width: '390px' }"
-                          :label="t('customer.profile.general.createdFor')"
-                          prop="createdFor"
+                        <div
+                          v-else-if="
+                            filterItem.filterType === 'input' &&
+                            inputNeedExtraList.includes(filterItem.filterKey)
+                          "
+                          class="selectInputDiv"
                         >
-                          <el-select
-                            v-if="filterOptions['createdFor']"
-                            v-model="profileData['createdFor']"
+                          <el-input
+                            v-model="profileData[filterItem.filterKey]"
+                            :disabled="disableStatus(filterItem)"
                             :placeholder="
-                              t('customer.list.quickFilter.holderSelectText')
+                              t('customer.list.quickFilter.holderKeyinText')
+                            "
+                            style="width: 126px"
+                            @blur="
+                              autoSaveForm(
+                                profileFormRef,
+                                filterItem,
+                                profileData[filterItem.filterKey]
+                              )
+                            "
+                          />
+                          <el-input
+                            v-if="filterItem.filterKey === 'phone'"
+                            v-model="profileData['phoneExt']"
+                            :disabled="disableStatus(filterItem)"
+                            style="
+                              width: 104px;
+                              margin-left: 6px;
+                              vertical-align: middle;
+                            "
+                            @blur="
+                              autoSaveForm(
+                                profileFormRef,
+                                { filterKey: 'phoneExt' },
+                                profileData['phoneExt']
+                              )
+                            "
+                            ><template #prepend
+                              ><span>{{
+                                t("customer.profile.general.ext")
+                              }}</span></template
+                            >
+                          </el-input>
+                          <el-input
+                            v-else-if="filterItem.filterKey === 'fax'"
+                            v-model="profileData['faxExt']"
+                            :disabled="disableStatus(filterItem)"
+                            style="
+                              width: 104px;
+                              margin-left: 6px;
+                              vertical-align: middle;
+                            "
+                            @blur="
+                              autoSaveForm(
+                                profileFormRef,
+                                { filterKey: 'faxExt' },
+                                profileData['faxExt']
+                              )
+                            "
+                            ><template #prepend
+                              ><span>{{
+                                t("customer.profile.general.ext")
+                              }}</span></template
+                            >
+                          </el-input>
+                        </div>
+                        <div
+                          v-else-if="
+                            filterItem.filterType === 'input' &&
+                            !inputNeedExtraList.includes(
+                              filterItem.filterKey
+                            ) &&
+                            filterItem.filterKey === 'localName'
+                          "
+                        >
+                          <el-input
+                            v-model="profileData[filterItem.filterKey]"
+                            :disabled="disableStatus(filterItem)"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderKeyinText')
                             "
                             style="width: 240px"
-                            filterable
-                            @change="
-                              v =>
-                                handleDropDownChange(
-                                  profileFormRef,
-                                  v,
-                                  {
-                                    filterKey: 'agentRO'
-                                  },
-                                  null
-                                )
-                            "
-                          >
-                            <el-option
-                              v-for="option in filterOptions['createdFor'].list"
-                              :key="option.value"
-                              :label="option.text"
-                              :value="option.value"
-                            />
-                          </el-select>
-                        </el-form-item>
-                      </div>
-                    </el-form>
-                    <el-checkbox-group
-                      v-if="LID === '0'"
-                      v-model="checkedPL"
-                      @change="handleCheckedPLChange"
-                    >
-                      <el-checkbox
-                        v-for="PLItem in tabsPLList"
-                        :key="PLItem.smhqid"
-                        :label="PLItem.plName"
-                        :value="PLItem.smhqid"
-                      >
-                        {{ PLItem.plName }}
-                      </el-checkbox>
-                    </el-checkbox-group>
-                  </div>
-                </el-collapse-item>
-                <el-collapse-item
-                  v-if="LID !== '0'"
-                  :title="t('customer.profile.pl.title')"
-                  name="comments"
-                  class="custom-collapse-title"
-                >
-                  <el-tabs v-model="activeTabPID" type="border-card">
-                    <el-tab-pane
-                      v-for="tabItem in tabsPLList"
-                      :key="tabItem.smhqid"
-                      :label="tabItem.plName"
-                      :name="`${tabItem.smhqid}_${tabItem.pid}_${LID}_${tabItem.plName}`"
-                      ><el-form
-                        v-if="formDataMap[tabItem.plName]"
-                        :model="formDataMap[tabItem.plName]"
-                        label-width="auto"
-                        style="max-width: 600px"
-                        label-position="left"
-                      >
-                        <el-form-item
-                          v-if="
-                            formDataMap[tabItem.plName].ownerName === '' &&
-                            formDataMap[tabItem.plName].ownerStation !== ''
-                          "
-                          label=""
-                          ><el-alert
-                            :title="t('customer.profile.pl.coodinateAlert')"
-                            type="warning"
-                            show-icon
-                        /></el-form-item>
-                        <el-form-item
-                          :label="t('customer.profile.pl.leadOwner')"
-                        >
-                          <el-text style="white-space: nowrap">{{
-                            `${formDataMap[tabItem.plName].ownerName && formDataMap[tabItem.plName].ownerName !== "" ? (formDataMap[tabItem.plName].ownerStation !== "" ? formDataMap[tabItem.plName].ownerName + " @ " + formDataMap[tabItem.plName].ownerStation : "") : formDataMap[tabItem.plName].ownerStation && formDataMap[tabItem.plName].ownerStation !== "" ? formDataMap[tabItem.plName].ownerStation + " (" + t("customer.profile.pl.unassigned") + ")" : t("customer.profile.pl.unassigned")}`
-                          }}</el-text>
-
-                          <el-button
-                            v-if="
-                              (!formDataMap[tabItem.plName].ownerName ||
-                                formDataMap[tabItem.plName].ownerName === '') &&
-                              (!formDataMap[tabItem.plName].ownerStation ||
-                                formDataMap[tabItem.plName].ownerStation === '')
-                            "
-                            style="margin-left: 6px"
-                            type="primary"
-                            plain
-                            @click="
-                              handleAssignClick(
-                                formDataMap[tabItem.plName],
-                                tabItem
+                            @blur="
+                              autoSaveForm(
+                                profileFormRef,
+                                filterItem,
+                                profileData[filterItem.filterKey]
                               )
                             "
-                            >{{ t("customer.profile.pl.assign") }}</el-button
+                          />
+                          <el-alert
+                            :title="
+                              t('customer.profile.general.localNameAlert')
+                            "
+                            type="warning"
+                            show-icon
+                          />
+                        </div>
+                        <div
+                          v-else-if="
+                            filterOptions['currency'] &&
+                            filterItem.filterType === 'input' &&
+                            filterItem.filterKey === 'capitalAmount'
+                          "
+                        >
+                          <el-input
+                            v-if="filterOptions['currency']"
+                            v-model="profileData[filterItem.filterKey]"
+                            :disabled="disableStatus(filterItem)"
+                            :placeholder="
+                              t('customer.list.quickFilter.holderKeyinText')
+                            "
+                            style="width: 240px"
+                            class="input-with-select"
+                            @blur="
+                              autoSaveForm(
+                                profileFormRef,
+                                filterItem,
+                                profileData[filterItem.filterKey]
+                              )
+                            "
                           >
-                        </el-form-item>
-                        <el-form-item :label="t('customer.profile.pl.status')">
-                          <div>
-                            <el-text>{{
-                              formDataMap[tabItem.plName].status
-                            }}</el-text>
-                            <!-- <el-button
+                            <template #prepend>
+                              <el-select
+                                v-if="filterOptions['currency']"
+                                v-model="profileData['capitalCurrencyID']"
+                                :disabled="disableStatus(filterItem)"
+                                :placeholder="
+                                  t('customer.profile.general.currency')
+                                "
+                                style="width: 105px"
+                                filterable
+                                @change="
+                                  v =>
+                                    handleDropDownChange(
+                                      profileFormRef,
+                                      v,
+                                      {
+                                        filterKey: 'capitalCurrencyID'
+                                      },
+                                      null
+                                    )
+                                "
+                              >
+                                <el-option
+                                  v-for="option in filterOptions['currency']
+                                    .list"
+                                  :key="option.value"
+                                  :label="option.text"
+                                  :value="option.value"
+                                />
+                              </el-select>
+                            </template>
+                          </el-input>
+                        </div>
+                        <el-input
+                          v-else-if="
+                            filterItem.filterType === 'input' &&
+                            !inputNeedExtraList.includes(
+                              filterItem.filterKey
+                            ) &&
+                            filterItem.filterKey !== 'localName'
+                          "
+                          v-model="profileData[filterItem.filterKey]"
+                          :disabled="disableStatus(filterItem)"
+                          :placeholder="
+                            t('customer.list.quickFilter.holderKeyinText')
+                          "
+                          style="width: 318px"
+                          @blur="
+                            autoSaveForm(
+                              profileFormRef,
+                              filterItem,
+                              profileData[filterItem.filterKey]
+                            )
+                          "
+                        />
+                        <el-input
+                          v-else-if="filterItem.filterType === 'inputarea'"
+                          v-model="profileData[filterItem.filterKey]"
+                          :disabled="disableStatus(filterItem)"
+                          :placeholder="
+                            t('customer.list.quickFilter.holderKeyinText')
+                          "
+                          style="width: 338px"
+                          type="textarea"
+                          @focusout="
+                            autoSaveForm(
+                              profileFormRef,
+                              filterItem,
+                              profileData[filterItem.filterKey]
+                            )
+                          "
+                        />
+                        <el-date-picker
+                          v-else-if="filterItem.filterType === 'daterange'"
+                          v-model="profileData[filterItem.filterKey]"
+                          :disabled="disableStatus(filterItem)"
+                          :range-separator="
+                            $t('customer.list.quickFilter.dateSeparator')
+                          "
+                          :start-placeholder="
+                            $t('customer.list.quickFilter.startDateHolderText')
+                          "
+                          :end-placeholder="
+                            $t('customer.list.quickFilter.endDateHolderText')
+                          "
+                          format="MMM DD, YYYY"
+                          value-format="YYYY-MM-DD"
+                          style="width: 338px"
+                          @blur="
+                            autoSaveForm(
+                              profileFormRef,
+                              filterItem,
+                              profileData[filterItem.filterKey]
+                            )
+                          "
+                        />
+                      </el-form-item>
+                      <el-form-item
+                        v-if="LID === '0'"
+                        :style="{ width: '390px' }"
+                        :label="t('customer.profile.general.createdFor')"
+                        prop="createdFor"
+                      >
+                        <el-select
+                          v-if="filterOptions['createdFor']"
+                          v-model="profileData['createdFor']"
+                          :placeholder="
+                            t('customer.list.quickFilter.holderSelectText')
+                          "
+                          style="width: 240px"
+                          filterable
+                          @change="
+                            v =>
+                              handleDropDownChange(
+                                profileFormRef,
+                                v,
+                                {
+                                  filterKey: 'agentRO'
+                                },
+                                null
+                              )
+                          "
+                        >
+                          <el-option
+                            v-for="option in filterOptions['createdFor'].list"
+                            :key="option.value"
+                            :label="option.text"
+                            :value="option.value"
+                          />
+                        </el-select>
+                      </el-form-item>
+                    </div>
+                  </el-form>
+                  <el-checkbox-group
+                    v-if="LID === '0'"
+                    v-model="checkedPL"
+                    @change="handleCheckedPLChange"
+                  >
+                    <el-checkbox
+                      v-for="PLItem in tabsPLList"
+                      :key="PLItem.smhqid"
+                      :label="PLItem.plName"
+                      :value="PLItem.smhqid"
+                    >
+                      {{ PLItem.plName }}
+                    </el-checkbox>
+                  </el-checkbox-group>
+                </div>
+              </el-collapse-item>
+              <el-collapse-item
+                v-if="LID !== '0'"
+                :title="t('customer.profile.pl.title')"
+                name="comments"
+                class="custom-collapse-title"
+              >
+                <el-tabs v-model="activeTabPID" type="border-card">
+                  <el-tab-pane
+                    v-for="tabItem in tabsPLList"
+                    :key="tabItem.smhqid"
+                    :label="tabItem.plName"
+                    :name="`${tabItem.smhqid}_${tabItem.pid}_${LID}_${tabItem.plName}`"
+                    ><el-form
+                      v-if="formDataMap[tabItem.plName]"
+                      :model="formDataMap[tabItem.plName]"
+                      label-width="auto"
+                      style="max-width: 600px"
+                      label-position="left"
+                    >
+                      <el-form-item
+                        v-if="
+                          formDataMap[tabItem.plName].ownerName === '' &&
+                          formDataMap[tabItem.plName].ownerStation !== ''
+                        "
+                        label=""
+                        ><el-alert
+                          :title="t('customer.profile.pl.coodinateAlert')"
+                          type="warning"
+                          show-icon
+                      /></el-form-item>
+                      <el-form-item :label="t('customer.profile.pl.leadOwner')">
+                        <el-text style="white-space: nowrap">{{
+                          `${formDataMap[tabItem.plName].ownerName && formDataMap[tabItem.plName].ownerName !== "" ? (formDataMap[tabItem.plName].ownerStation !== "" ? formDataMap[tabItem.plName].ownerName + " @ " + formDataMap[tabItem.plName].ownerStation : "") : formDataMap[tabItem.plName].ownerStation && formDataMap[tabItem.plName].ownerStation !== "" ? formDataMap[tabItem.plName].ownerStation + " (" + t("customer.profile.pl.unassigned") + ")" : t("customer.profile.pl.unassigned")}`
+                        }}</el-text>
+
+                        <el-button
+                          v-if="
+                            (!formDataMap[tabItem.plName].ownerName ||
+                              formDataMap[tabItem.plName].ownerName === '') &&
+                            (!formDataMap[tabItem.plName].ownerStation ||
+                              formDataMap[tabItem.plName].ownerStation === '')
+                          "
+                          style="margin-left: 6px"
+                          type="primary"
+                          plain
+                          @click="
+                            handleAssignClick(
+                              formDataMap[tabItem.plName],
+                              tabItem
+                            )
+                          "
+                          >{{ t("customer.profile.pl.assign") }}</el-button
+                        >
+                      </el-form-item>
+                      <el-form-item :label="t('customer.profile.pl.status')">
+                        <div>
+                          <el-text>{{
+                            formDataMap[tabItem.plName].status
+                          }}</el-text>
+                          <!-- <el-button
                               v-if="
                                 formDataMap[tabItem.plName] &&
                                 formDataMap[tabItem.plName].id
@@ -1531,146 +1511,126 @@ const cancelForm = () => {
                                 )
                               "
                             /> -->
-                          </div>
-                        </el-form-item>
-                        <el-form-item
-                          v-if="formDataMap[tabItem.plName].plName === 'OMS'"
-                          :label="
-                            t('customer.profile.pl.bookingConfirmRequired')
+                        </div>
+                      </el-form-item>
+                      <el-form-item
+                        v-if="formDataMap[tabItem.plName].plName === 'OMS'"
+                        :label="t('customer.profile.pl.bookingConfirmRequired')"
+                      >
+                        <el-checkbox
+                          :v-model="formDataMap[tabItem.plName].needBookConfirm"
+                          :checked="
+                            formDataMap[tabItem.plName].needBookConfirm
+                              ? true
+                              : false
                           "
+                          label=""
+                          @change="
+                            v =>
+                              handleBookingConfirmChange(
+                                v,
+                                'needBookConfirm',
+                                formDataMap[tabItem.plName]
+                              )
+                          "
+                        />
+                      </el-form-item>
+                      <el-form-item
+                        v-if="formDataMap[tabItem.plName].plName === 'OMS'"
+                        :label="t('customer.profile.pl.isf')"
+                      >
+                        <el-checkbox
+                          :v-model="formDataMap[tabItem.plName].poa"
+                          :checked="
+                            formDataMap[tabItem.plName].poa ? true : false
+                          "
+                          label=""
+                          @change="
+                            v =>
+                              handleBookingConfirmChange(
+                                v,
+                                'poa',
+                                formDataMap[tabItem.plName]
+                              )
+                          "
+                        />
+                      </el-form-item>
+                      <el-form-item
+                        v-if="formDataMap[tabItem.plName].plName === 'OMS'"
+                        :label="t('customer.profile.pl.sendAMS')"
+                      >
+                        <el-checkbox
+                          :v-model="
+                            formDataMap[tabItem.plName].amS_ISF_SendBroker
+                          "
+                          :checked="
+                            formDataMap[tabItem.plName].amS_ISF_SendBroker
+                              ? true
+                              : false
+                          "
+                          label=""
+                          @change="
+                            v =>
+                              handleBookingConfirmChange(
+                                v,
+                                'amS_ISF_SendBroker',
+                                formDataMap[tabItem.plName]
+                              )
+                          "
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('customer.profile.pl.action')">
+                        <el-select
+                          v-model="formDataMap[tabItem.plName].action"
+                          placeholder="Select"
+                          style="width: 140px"
+                          :disabled="
+                            formDataMap[tabItem.plName].ownerName === '' &&
+                            formDataMap[tabItem.plName].ownerStation !== ''
+                          "
+                          @change="v => handleActionChange(v, tabItem.plName)"
                         >
-                          <el-checkbox
-                            :v-model="
-                              formDataMap[tabItem.plName].needBookConfirm
-                            "
-                            :checked="
-                              formDataMap[tabItem.plName].needBookConfirm
-                                ? true
-                                : false
-                            "
-                            label=""
-                            @change="
-                              v =>
-                                handleBookingConfirmChange(
-                                  v,
-                                  'needBookConfirm',
-                                  formDataMap[tabItem.plName]
-                                )
-                            "
+                          <el-option
+                            v-for="item in actionOptions(
+                              username,
+                              formDataMap[tabItem.plName].ownerUserID
+                            )"
+                            :key="item.value"
+                            :label="item.text"
+                            :value="item.value"
                           />
-                        </el-form-item>
-                        <el-form-item
-                          v-if="formDataMap[tabItem.plName].plName === 'OMS'"
-                          :label="t('customer.profile.pl.isf')"
+                        </el-select>
+                        <el-select
+                          v-if="formDataMap[tabItem.plName].showDimOrg"
+                          v-model="formDataMap[tabItem.plName].sendToStationID"
+                          placeholder="Select"
+                          style="width: 140px"
+                          filterable
                         >
-                          <el-checkbox
-                            :v-model="formDataMap[tabItem.plName].poa"
-                            :checked="
-                              formDataMap[tabItem.plName].poa ? true : false
-                            "
-                            label=""
-                            @change="
-                              v =>
-                                handleBookingConfirmChange(
-                                  v,
-                                  'poa',
-                                  formDataMap[tabItem.plName]
-                                )
-                            "
+                          <el-option
+                            v-for="item in dimOrgOptions"
+                            :key="item.value"
+                            :label="item.text"
+                            :value="item.value"
                           />
-                        </el-form-item>
-                        <el-form-item
-                          v-if="formDataMap[tabItem.plName].plName === 'OMS'"
-                          :label="t('customer.profile.pl.sendAMS')"
+                        </el-select>
+                        <el-tooltip
+                          v-if="
+                            (formDataMap[tabItem.plName].ownerName === '' &&
+                              formDataMap[tabItem.plName].ownerStation !==
+                                '') ||
+                            !formDataMap[tabItem.plName].ownerName
+                          "
+                          class="box-item"
+                          effect="dark"
+                          :content="t('customer.profile.pl.returnAlert')"
+                          placement="top-start"
                         >
-                          <el-checkbox
-                            :v-model="
-                              formDataMap[tabItem.plName].amS_ISF_SendBroker
-                            "
-                            :checked="
-                              formDataMap[tabItem.plName].amS_ISF_SendBroker
-                                ? true
-                                : false
-                            "
-                            label=""
-                            @change="
-                              v =>
-                                handleBookingConfirmChange(
-                                  v,
-                                  'amS_ISF_SendBroker',
-                                  formDataMap[tabItem.plName]
-                                )
-                            "
-                          />
-                        </el-form-item>
-                        <el-form-item :label="t('customer.profile.pl.action')">
-                          <el-select
-                            v-model="formDataMap[tabItem.plName].action"
-                            placeholder="Select"
-                            style="width: 140px"
-                            :disabled="
-                              formDataMap[tabItem.plName].ownerName === '' &&
-                              formDataMap[tabItem.plName].ownerStation !== ''
-                            "
-                            @change="v => handleActionChange(v, tabItem.plName)"
-                          >
-                            <el-option
-                              v-for="item in actionOptions(
-                                username,
-                                formDataMap[tabItem.plName].ownerUserID
-                              )"
-                              :key="item.value"
-                              :label="item.text"
-                              :value="item.value"
-                            />
-                          </el-select>
-                          <el-select
-                            v-if="formDataMap[tabItem.plName].showDimOrg"
-                            v-model="
-                              formDataMap[tabItem.plName].sendToStationID
-                            "
-                            placeholder="Select"
-                            style="width: 140px"
-                            filterable
-                          >
-                            <el-option
-                              v-for="item in dimOrgOptions"
-                              :key="item.value"
-                              :label="item.text"
-                              :value="item.value"
-                            />
-                          </el-select>
-                          <el-tooltip
-                            v-if="
-                              (formDataMap[tabItem.plName].ownerName === '' &&
-                                formDataMap[tabItem.plName].ownerStation !==
-                                  '') ||
-                              !formDataMap[tabItem.plName].ownerName
-                            "
-                            class="box-item"
-                            effect="dark"
-                            :content="t('customer.profile.pl.returnAlert')"
-                            placement="top-start"
-                          >
-                            <el-button
-                              style="margin-left: 6px"
-                              type="primary"
-                              plain
-                              disabled
-                              @click="
-                                handleReturnClick(
-                                  formDataMap[tabItem.plName],
-                                  tabItem
-                                )
-                              "
-                              >{{ t("customer.profile.pl.confirm") }}</el-button
-                            >
-                          </el-tooltip>
                           <el-button
-                            v-else
                             style="margin-left: 6px"
                             type="primary"
                             plain
+                            disabled
                             @click="
                               handleReturnClick(
                                 formDataMap[tabItem.plName],
@@ -1679,33 +1639,45 @@ const cancelForm = () => {
                             "
                             >{{ t("customer.profile.pl.confirm") }}</el-button
                           >
-                        </el-form-item>
-                        <el-form-item :label="t('customer.profile.pl.members')">
-                          <el-button
-                            type="primary"
-                            plain
-                            :disabled="!userAuth['isWrite']"
-                            @click="
-                              handleMembersEdit(
-                                formDataMap[tabItem.plName],
-                                tabItem
-                              )
-                            "
-                            >{{
-                              t("customer.profile.pl.editMembers")
-                            }}</el-button
-                          >
-                          <span style="margin-left: 8px">{{
-                            formDataMap[tabItem.plName].members
-                          }}</span>
-                        </el-form-item>
-                      </el-form>
-                    </el-tab-pane>
-                  </el-tabs>
-                </el-collapse-item>
-              </el-collapse>
-            </div>
-          </el-scrollbar>
+                        </el-tooltip>
+                        <el-button
+                          v-else
+                          style="margin-left: 6px"
+                          type="primary"
+                          plain
+                          @click="
+                            handleReturnClick(
+                              formDataMap[tabItem.plName],
+                              tabItem
+                            )
+                          "
+                          >{{ t("customer.profile.pl.confirm") }}</el-button
+                        >
+                      </el-form-item>
+                      <el-form-item :label="t('customer.profile.pl.members')">
+                        <el-button
+                          type="primary"
+                          plain
+                          :disabled="!userAuth['isWrite']"
+                          @click="
+                            handleMembersEdit(
+                              formDataMap[tabItem.plName],
+                              tabItem
+                            )
+                          "
+                          >{{ t("customer.profile.pl.editMembers") }}</el-button
+                        >
+                        <span style="margin-left: 8px">{{
+                          formDataMap[tabItem.plName].members
+                        }}</span>
+                      </el-form-item>
+                    </el-form>
+                  </el-tab-pane>
+                </el-tabs>
+              </el-collapse-item>
+            </el-collapse>
+          </div>
+
           <el-drawer
             v-model="disQualifyDialog"
             :title="t('customer.profile.disqualifyReason')"

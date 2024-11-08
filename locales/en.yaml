@@ -256,8 +256,8 @@ contact:
     language: Language
     fax: Fax
     contactID: Hubspot ID
-    joinedCompany: Joined Company Date
-    joinedIndustry: Joined Industry Date
+    joinedCompany: Joined Company
+    joinedIndustry: Joined Industry
 customer:
   add: Add New
   quickfilter:

@@ -8,9 +8,11 @@ const tourStore = useTourStore();
 const route = useRoute();
 
 function showTour() {
-  console.log("showTour path:", route.path);
-  if (route.path === "/customer/index") {
+  console.log("showTour path:", route.name);
+  if (route.name === "CustomerList") {
     tourStore.setCustomerListTour(true);
+  } else if (route.name === "ContactList") {
+    tourStore.setContactListTour(true);
   }
 }
 </script>
