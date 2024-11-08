@@ -15,7 +15,7 @@ import { Plus } from "@element-plus/icons-vue";
 import { useDetail } from "./hooks";
 const { toDetail, router } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { ContactQuickFilterCTL } from "../contact/quickfilterctl";
+// import { ContactQuickFilterCTL } from "../contact/quickfilterctl";
 import { QuickFilter, quickFilterCTL } from "../customer/quickfilterctl";
 import { listCTL } from "../customer/listctl";
 import { key } from "localforage";
@@ -34,7 +34,7 @@ import {
 import CommonService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
 const quickFilterShow = ref(false);
-const { fetchContactData } = ContactQuickFilterCTL();
+// const { fetchContactData } = ContactQuickFilterCTL();
 const {
   getOptions,
   convertDropDownValue,
@@ -57,7 +57,8 @@ const {
   formattedDateRange,
   handleBasicFilterBtnClick,
   activePanelNames,
-  filterRequestType
+  filterRequestType,
+  monthDatePickerList
 } = quickFilterCTL();
 const {
   fetchListData,
@@ -645,6 +646,11 @@ watch(
                   <el-date-picker
                     v-if="filterItem.filterType === 'daterange'"
                     v-model="filterItem.ValueBegin"
+                    :type="
+                      monthDatePickerList.includes(filterItem.filterKey)
+                        ? 'month'
+                        : 'date'
+                    "
                     :range-separator="
                       $t('customer.list.quickFilter.dateSeparator')
                     "
@@ -654,7 +660,11 @@ watch(
                     :end-placeholder="
                       $t('customer.list.quickFilter.endDateHolderText')
                     "
-                    format="MMM DD"
+                    :format="
+                      monthDatePickerList.includes(filterItem.filterKey)
+                        ? 'MMM, YYYY'
+                        : 'MMM DD'
+                    "
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
                   />
@@ -666,6 +676,11 @@ watch(
                   <el-date-picker
                     v-if="filterItem.filterType === 'daterange'"
                     v-model="filterItem.ValueEnd"
+                    :type="
+                      monthDatePickerList.includes(filterItem.filterKey)
+                        ? 'month'
+                        : 'date'
+                    "
                     :range-separator="
                       $t('customer.list.quickFilter.dateSeparator')
                     "
@@ -675,7 +690,11 @@ watch(
                     :end-placeholder="
                       $t('customer.list.quickFilter.endDateHolderText')
                     "
-                    format="MMM DD"
+                    :format="
+                      monthDatePickerList.includes(filterItem.filterKey)
+                        ? 'MMM, YYYY'
+                        : 'MMM DD'
+                    "
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
                   />

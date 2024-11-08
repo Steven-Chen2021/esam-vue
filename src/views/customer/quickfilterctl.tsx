@@ -34,6 +34,7 @@ export interface QuickFilter {
   filters: QuickFilterDetail[];
 }
 export function quickFilterCTL() {
+  const monthDatePickerList = ["joinedCompany", "joinedIndustry"];
   const filterRequestType = ref(1);
   const quickFilterFormRef = ref<FormInstance>();
   // const quickFilterFormInitData: QuickFilter = {
@@ -728,6 +729,7 @@ export function quickFilterCTL() {
     formattedDateRange,
     handleBasicFilterBtnClick,
     activePanelNames,
-    filterRequestType
+    filterRequestType,
+    monthDatePickerList
   };
 }
