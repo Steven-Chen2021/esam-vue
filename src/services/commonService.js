@@ -63,16 +63,26 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
-  async getAdvancedFilterSetting() {
+  async getAdvancedFilterSetting(requestTypeID) {
     try {
       const response = await API.get(
-        "/api/Common/ColumnSetting?APIRequestType=3"
+        `/api/Common/ColumnSetting?APIRequestType=${requestTypeID}`
       );
       return response;
     } catch (error) {
       console.error(error);
     }
   }
+  // async getAdvancedFilterSettingByRequestType(requestTypeID) {
+  //   try {
+  //     const response = await API.get(
+  //       `/api/Common/ColumnSetting?APIRequestType=${requestTypeID}`
+  //     );
+  //     return response;
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }
   async updateAdvancedFilter(params) {
     try {
       const response = await API.post("/api/Common/ColumnSetting", params);
@@ -111,6 +121,14 @@ class CustomerQuickFilterService {
     } catch (error) {
       console.error(error);
       return [];
+    }
+  }
+  async autoSave(params) {
+    try {
+      const response = await API.post("/api/AutoSave/AutoSave", params);
+      return response;
+    } catch (error) {
+      console.error(error);
     }
   }
 }

@@ -1,19 +1,7 @@
 import CustomerSearchService from "@/services/customer/CustomerSearchService";
-import type { TableColumnCtx } from "element-plus";
-// import Sortable from "sortablejs";
-// import { gridResultData } from "./data";
-// import { clone, delay } from "@pureadmin/utils";
-// import {
-//   ref,
-//   nextTick,
-//   onMounted,
-//   reactive,
-//   watchEffect,
-//   computed,
-//   watch
-// } from "vue";
-// import type { PaginationProps, LoadingConfig, Align } from "@pureadmin/table";
-// import { message } from "@/utils/message";
+import ContactSearchService from "@/services/contact/ContactSearchService";
+import { ElMessage } from "element-plus";
+import { contact, customer } from "@/router/enums";
 
 import { reactive, ref } from "vue";
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
@@ -45,20 +33,78 @@ export function listCTL() {
   const sortOrder = ref("asc");
   const tableData = ref([]);
   const loading = ref(true);
-  const fetchData = async () => {
-    loading.value = true;
-    CustomerSearchService.getCustomerList(searchParams)
-      .then(data => {
-        // console.log("getCustomerList params", searchParams);
-        console.log("getCustomerList result", data);
-        tableData.value = data.returnValue.results;
-        if (data) total.value = data.returnValue.totalRecord;
-        loading.value = false;
-      })
-      .catch(err => {
-        console.log("getCustomerList error", err);
-        loading.value = false;
-      });
+  const requestType = ref(1);
+  const fetchListData = async () => {
+    switch (requestType.value) {
+      case customer: {
+        loading.value = true;
+        CustomerSearchService.getCustomerList(searchParams)
+          .then(data => {
+            if (data.isSuccess) {
+              tableData.value = data.returnValue.results;
+              if (
+                data &&
+                data.returnValue &&
+                Array.isArray(data.returnValue.results)
+              ) {
+                total.value = data.returnValue.totalRecord;
+              } else {
+                total.value = 0;
+              }
+            } else {
+              tableData.value = [];
+              total.value = 0;
+              ElMessage({
+                message: data.errorMessage,
+                grouping: true,
+                type: "warning"
+              });
+            }
+            loading.value = false;
+          })
+          .catch(err => {
+            tableData.value = [];
+            console.log("getCustomerList error", err);
+            loading.value = false;
+          });
+        break;
+      }
+      case contact: {
+        loading.value = true;
+        ContactSearchService.getContactList(searchParams)
+          .then(data => {
+            if (data.isSuccess) {
+              tableData.value = data.returnValue.results;
+              if (
+                data &&
+                data.returnValue &&
+                Array.isArray(data.returnValue.results)
+              ) {
+                total.value = data.returnValue.totalRecord;
+              } else {
+                total.value = 0;
+              }
+            } else {
+              tableData.value = [];
+              total.value = 0;
+              ElMessage({
+                message: data.errorMessage,
+                grouping: true,
+                type: "warning"
+              });
+            }
+            loading.value = false;
+          })
+          .catch(err => {
+            tableData.value = [];
+            console.log("getContactList error", err);
+            loading.value = false;
+          });
+        break;
+      }
+      default:
+        break;
+    }
   };
   const searchParams = reactive({
     APIRequestType: 4,
@@ -72,29 +118,29 @@ export function listCTL() {
   const handleSortChange = ({ prop, order }) => {
     sortField.value = prop;
     sortOrder.value = order === "ascending" ? "asc" : "desc";
-    fetchData(); // 重新获取排序后的数据
+    fetchListData(); // 重新获取排序后的数据
   };
 
   const handlePageChange = page => {
     currentPage.value = page;
-    fetchData(); // 重新获取当前页数据
+    fetchListData(); // 重新获取当前页数据
   };
 
   const handleSizeChange = size => {
     pageSize.value = size;
-    fetchData(); // 重新获取数据，可能会包含更多项
+    fetchListData(); // 重新获取数据，可能会包含更多项
   };
 
   const handleConditionalSearch = filterForm => {
     searchParams.ConditionalSettings = filterForm.filters;
     currentPage.value = 1;
-    fetchData(); // 重新获取排序后的数据
+    fetchListData(); // 重新获取排序后的数据
   };
 
   const handleResetConditionalSearch = () => {
     searchParams.ConditionalSettings = null;
     currentPage.value = 1;
-    fetchData(); // 重新获取排序后的数据
+    fetchListData(); // 重新获取排序后的数据
     // handleAdvancedReset();
   };
 
@@ -113,24 +159,24 @@ export function listCTL() {
     }
     return "";
   };
-  const columnfilterHandler = (
-    value: string,
-    row: any,
-    column: TableColumnCtx<any>
-  ) => {
-    const property = column["property"];
-    // console.log("columnfilterHandler property", property);
-    // console.log("columnfilterHandler value", value);
-    // searchParams[property] = value;
-    // fetchData();
-    return row[property].toString().indexOf(value) !== -1;
-  };
+  // const columnfilterHandler = (
+  //   value: string,
+  //   row: any,
+  //   column: TableColumnCtx<any>
+  // ) => {
+  //   const property = column["property"];
+  //   // console.log("columnfilterHandler property", property);
+  //   // console.log("columnfilterHandler value", value);
+  //   // searchParams[property] = value;
+  //   // fetchData();
+  //   return row[property].toString().indexOf(value) !== -1;
+  // };
   // 初始加载数据
-  fetchData();
+  // fetchData();
   return {
+    fetchListData,
     tableData,
     tableRowClassName,
-    columnfilterHandler,
     currentPage,
     pageSize,
     total,
@@ -140,6 +186,7 @@ export function listCTL() {
     handleConditionalSearch,
     searchParams,
     handleResetConditionalSearch,
-    loading
+    loading,
+    requestType
   };
 }

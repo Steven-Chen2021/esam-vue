@@ -241,6 +241,23 @@ login:
   purePassWordSureReg: Please enter confirm password
   purePassWordDifferentReg: The two passwords do not match!
   purePassWordUpdateReg: Password has been updated
+contact:
+  quickfilter:
+    names: Gender
+    fullName: Name
+    vip: VIP
+    company: Company
+    titles: Title
+    role: Role
+    department: Department
+    location: Location
+    assistant: Assistant
+    boss: Report To
+    language: Language
+    fax: Fax
+    contactID: Hubspot ID
+    joinedCompany: Joined Company
+    joinedIndustry: Joined Industry
 customer:
   add: Add New
   quickfilter:
@@ -282,6 +299,7 @@ customer:
     leadSourceGroup: Lead Source Group
     leadSourceDetail: Lead Source Detail
     industryGroup: Industry Group
+    agent: Agent RO
   tour:
       tourQF1Title: Quick Filter
       tourQF1Text: Click to create a quick query and boost your work efficiency.
@@ -329,9 +347,21 @@ customer:
     title: Profile
     autoSaveAlert: The system will automatically save when you make changes.
     cityAlert: Please select or enter City
+    agentRO: Please select Agent
     alertTilte: Alert
     leadSourceAlert: Please select Event Code
     disqualify: Disqualify
+    disqualifyReason: Disqualify Reason
+    autoSaveSucAlert: Auto Save Successfully.
+    autoSaveFailAlert: Auto Save Failed.
+    cancel: Cancel
+    submit: Submit
+    submitting: Submitting...
+    warningAlert: Are you sure to DisQualify?
+    disQualifySucAlert: DisQualify Successfully.
+    disQualifyFailAlert: DisQualify Failed.
+    fullSaveFailAlert: Save Failed.
+    fullSaveSucAlert: Save Successfully.
     general: 
       title: General Information
       unauthorized: No permission to view
@@ -383,6 +413,7 @@ customer:
       rightTitle: Existed members
       addTooltip: Add to Combat team
       removeTooltip: Remove from Combat team
+      searchAlert: Please select staiton or input UserName
   deal:
     title: Deal
   contact:

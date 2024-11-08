@@ -1,7 +1,8 @@
 import { useI18n } from "vue-i18n";
 import CustomerQuickFilterService from "@/services/commonService";
 import CustomerProfileService from "@/services/customer/CustomerProfileService";
-import QuickFilterService from "@/services/quickFilterService";
+import LeadMemberService from "@/services/customer/LeadMemberService";
+import { ElMessage } from "element-plus";
 // import Sortable from "sortablejs";
 // import { clone, delay } from "@pureadmin/utils";
 import { ref, onMounted, reactive, watch, computed } from "vue";
@@ -36,21 +37,25 @@ export interface QuickFilter {
 }
 export function customerProfileCTL() {
   const { t } = useI18n();
+  const userAuth = ref({});
   const profileDataInit = ref({ customerName: "" });
   const profileFormData = ref([]);
   const profileData = ref({ agentRO: null, agentROCheck: null });
   // TODO: 补全所有栏位
-  async function fetchProfileData(HQID, basicRole, advRole, warnMsg) {
+  async function fetchProfileData() {
     try {
-      const [result1, result2] = await Promise.all([
+      const [result1, result2, result3] = await Promise.all([
         // axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
         // axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
         CustomerProfileService.getCustomerProfileColumnList(5),
-        CustomerProfileService.getCustomerProfileResult(HQID)
+        CustomerProfileService.getCustomerProfileResult(LeadID.value),
+        CustomerProfileService.getUserAuthByCustomerResult(LeadID.value)
       ]);
+      console.log("getUserAuthByCustomerResult", result3.returnValue);
+      userAuth.value = deepClone(result3.returnValue);
       loadAgentROList();
       profileData.value = deepClone(result2.returnValue);
-      if (HQID === "0") {
+      if (LeadID.value === "0") {
         profileFormData.value = deepClone(
           result1.returnValue.filter(c => c.showOnDetailAdd === true)
         );
@@ -58,28 +63,42 @@ export function customerProfileCTL() {
         profileFormData.value = deepClone(result1.returnValue);
       }
       profileData.value["agentROCheck"] = false;
+      console.log("profileData.value", profileData.value);
+      if (
+        !profileData.value["agentId"] ||
+        profileData.value["agentId"] <= 0 ||
+        !profileData.value["agent"] ||
+        profileData.value["agent"] === ""
+      ) {
+        profileFormData.value = profileFormData.value.filter(
+          c => c.filterKey !== "agent"
+        );
+      }
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
         // column.value = result2.data.returnValue[column.filterKey];
-        if (column.visibilityLevel === 1) {
-          if (basicRole === "NA") {
-            // column.value = warnMsg;
-            profileData.value[column.filterKey] = warnMsg;
-            profileDataInit.value[column.filterKey] = warnMsg;
-          }
-        } else if (column.visibilityLevel === 2) {
-          if (advRole === "NA") {
-            // column.value = warnMsg;
-            profileData.value[column.filterKey] = warnMsg;
-            profileDataInit.value[column.filterKey] = warnMsg;
+        // if (column.visibilityLevel === 1) {
+        //   if (basicRole === "NA") {
+        //     profileData.value[column.filterKey] = warnMsg;
+        //     profileDataInit.value[column.filterKey] = warnMsg;
+        //   }
+        // } else
+        if (column.visibilityLevel === 2) {
+          if (!userAuth.value["isReadAdvanceColumn"] && LeadID.value !== "0") {
+            profileData.value[column.filterKey] = t(
+              "customer.profile.general.unauthorized"
+            );
+            profileDataInit.value[column.filterKey] = t(
+              "customer.profile.general.unauthorized"
+            );
           }
         }
       });
       console.log("profileData", profileData.value);
       console.log("profileFormData", profileFormData.value);
       // profileDataInit.value = ref(deepClone(profileData.value));
-      if (result1.returnValue) {
-        fetchOptionsNeedParam(result1.returnValue);
+      if (result1.returnValue && result2.returnValue) {
+        fetchOptionsNeedParam(result1.returnValue, result2.returnValue);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -103,7 +122,8 @@ export function customerProfileCTL() {
     ownerName: "",
     pid: null,
     smhqid: null,
-    plName: null
+    plName: null,
+    members: null
   });
   const activeTabPID = ref();
   const LeadID = ref(null);
@@ -118,25 +138,37 @@ export function customerProfileCTL() {
       return [{ value: "Return", text: "Return" }];
     }
   };
-  async function fetchPLData(LID, PID) {
+  const checkedPL = ref([]);
+  const handleCheckedPLChange = (value: string[]) => {
+    console.log("handleCheckedPLChange", value);
+  };
+  async function fetchPLData(PID) {
     try {
-      LeadID.value = LID;
+      console.log("fetchPLData", `LID:${LeadID.value} PID:${PID}`);
+      // LeadID.value = LID;
       const [result1, result2] = await Promise.all([
-        // axios.get("/api/Customer/GetPLDetailData?LID=" + LID + "&PID=" + PID),
-        // axios.get("/api/Customer/GetPLListData?LID=" + LID)
-        CustomerProfileService.getPLDetailData(LID, PID),
-        CustomerProfileService.getPLListData(LID)
+        CustomerProfileService.getPLDetailData(LeadID.value, PID),
+        CustomerProfileService.getPLListData(LeadID.value)
       ]);
-      tabsPLList.value = deepClone(result2.returnValue);
       PLFormData.value = deepClone(result1.returnValue);
-      console.log("PLFormData", PLFormData.value);
+      tabsPLList.value = deepClone(result2.returnValue);
       // if (PLFormData.value && PLFormData.value.pid) {
       //   activeTabPID.value = `${PLFormData.value.pid}_${PLFormData.value.pid}_${LID}_${PLFormData.value.plName}`;
       // } else {
       //   activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LID}_${tabsPLList.value[0].plName}`;
       // }
-      activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LID}_${tabsPLList.value[0].plName}`;
+      activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LeadID.value}_${tabsPLList.value[0].plName}`;
       formDataMap.value[PLFormData.value.plName] = deepClone(PLFormData.value);
+      console.log("PLFormData.value", PLFormData.value);
+      if (LeadID.value !== "0" && PLFormData.value["id"]) {
+        LeadMemberService.getLeadMembersResult(PLFormData.value["id"]).then(
+          data => {
+            console.log("getLeadMembersResult data", data);
+            formDataMap.value[PLFormData.value.plName]["members"] =
+              data.returnValue;
+          }
+        );
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -147,12 +179,17 @@ export function customerProfileCTL() {
       return;
     }
     try {
-      const param = {
-        LID: LID,
-        PID: PID
-      };
-      const response = await CustomerProfileService.getPLDetailData(param);
+      console.log("fetchPLFormData", `LID:${LID} PID:${PID}`);
+      const response = await CustomerProfileService.getPLDetailData(LID, PID);
       formDataMap.value[plName] = deepClone(response.returnValue);
+      if (formDataMap.value[plName] && formDataMap.value[plName].id) {
+        LeadMemberService.getLeadMembersResult(
+          formDataMap.value[plName].id
+        ).then(data => {
+          console.log("getLeadMembersResult data", data);
+          formDataMap.value[plName]["members"] = data.returnValue;
+        });
+      }
     } catch (error) {
       console.error("Error fetching form data:", error);
     }
@@ -161,8 +198,11 @@ export function customerProfileCTL() {
     const lid = newVal.split("_")[2]; // 从 tab 名称中提取 pid
     const pid = newVal.split("_")[1]; // 从 tab 名称中提取 pid
     const plName = newVal.split("_")[3]; // 从 tab 名称中提取 pid
+    console.log("watch(activeTabPID newVal", newVal);
     fetchPLFormData(lid, pid, plName, false); // 根据 pid 获取表单数据
   });
+  //#region Lead Members
+  //#endregion
   const rules = {
     customerName: [
       {
@@ -186,13 +226,6 @@ export function customerProfileCTL() {
       }
     ],
     country: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
-    state: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
@@ -486,30 +519,34 @@ export function customerProfileCTL() {
       filterOptions.value["agentRO"].loading = false;
     });
   };
-  const fetchOptions = async (filterItems: QuickFilterDetail[]) => {
+  // const fetchOptions = async (filterItems: QuickFilterDetail[]) => {
+  //   try {
+  //     const selectFilterList: QuickFilterDetail[] = filterItems.filter(
+  //       a =>
+  //         a.filterType === "select" &&
+  //         a.filterSourceType === "API" &&
+  //         a.filterSource
+  //     );
+  //     // console.log("selectFilterList", selectFilterList);
+  //     selectFilterList.forEach(async item => {
+  //       const response = await CustomerQuickFilterService.getStatusList(
+  //         item.filterSource
+  //       );
+  //       filterOptions.value[item.filterKey] = {};
+  //       filterOptions.value[item.filterKey].list = response;
+  //       filterOptions.value[item.filterKey].loading = false;
+  //     });
+  //   } catch (error) {
+  //     console.error("Failed to fetch list:", error);
+  //     return [];
+  //   }
+  // };
+  const fetchOptionsNeedParam = async (
+    filterItems: QuickFilterDetail[],
+    formData
+  ) => {
     try {
-      const selectFilterList: QuickFilterDetail[] = filterItems.filter(
-        a =>
-          a.filterType === "select" &&
-          a.filterSourceType === "API" &&
-          a.filterSource
-      );
-      // console.log("selectFilterList", selectFilterList);
-      selectFilterList.forEach(async item => {
-        const response = await CustomerQuickFilterService.getStatusList(
-          item.filterSource
-        );
-        filterOptions.value[item.filterKey] = {};
-        filterOptions.value[item.filterKey].list = response;
-        filterOptions.value[item.filterKey].loading = false;
-      });
-    } catch (error) {
-      console.error("Failed to fetch list:", error);
-      return [];
-    }
-  };
-  const fetchOptionsNeedParam = async (filterItems: QuickFilterDetail[]) => {
-    try {
+      console.log("fetchOptionsNeedParam formData", formData);
       const selectFilterList: QuickFilterDetail[] = filterItems.filter(
         a =>
           (a.filterType === "dropdown" &&
@@ -523,6 +560,9 @@ export function customerProfileCTL() {
         let resourceType = 0;
         const subParam = {
           OptionsResourceType: resourceType,
+          SelectID: profileData.value[item.filterKey]
+            ? profileData.value[item.filterKey]
+            : "",
           Paginator: false
         };
         switch (item.filterKey) {
@@ -534,6 +574,9 @@ export function customerProfileCTL() {
             break;
           case "state": {
             resourceType = 15;
+            subParam.SelectID = profileData.value["state"]
+              ? profileData.value["state"]
+              : "";
             if (profileData) {
               subParam["ParentParams"] = profileData.value["country"];
               break;
@@ -549,9 +592,15 @@ export function customerProfileCTL() {
           }
           case "leadSourceGroup":
             resourceType = 17;
+            subParam.SelectID = profileData.value["leadSourceGroupID"]
+              ? profileData.value["leadSourceGroupID"]
+              : "";
             break;
           case "industryGroup":
             resourceType = 18;
+            subParam.SelectID = profileData.value["industryGroupID"]
+              ? profileData.value["industryGroupID"]
+              : "";
             break;
           default:
             resourceType = 0;
@@ -571,7 +620,10 @@ export function customerProfileCTL() {
             CustomerQuickFilterService.getAutoCompleteList({
               OptionsResourceType: 100,
               Paginator: false,
-              ParentParams: profileData.value["leadSourceGroupID"]
+              ParentParams: profileData.value["leadSourceGroupID"],
+              SelectID: profileData.value["leadSourceID"]
+                ? profileData.value["leadSourceID"]
+                : ""
             }).then(data => {
               filterOptions.value["leadSource"] = {};
               filterOptions.value["leadSource"].list = data;
@@ -580,7 +632,10 @@ export function customerProfileCTL() {
             CustomerQuickFilterService.getAutoCompleteList({
               OptionsResourceType: 101,
               Paginator: false,
-              ParentParams: profileData.value["leadSourceID"]
+              ParentParams: profileData.value["leadSourceID"],
+              SelectValue: profileData.value["leadSourceDetail"]
+                ? profileData.value["leadSourceDetail"]
+                : ""
             }).then(data => {
               filterOptions.value["leadSourceDetail"] = {};
               filterOptions.value["leadSourceDetail"].list = data;
@@ -592,7 +647,10 @@ export function customerProfileCTL() {
             CustomerQuickFilterService.getAutoCompleteList({
               OptionsResourceType: 102,
               Paginator: false,
-              ParentParams: profileData.value["industryGroupID"]
+              ParentParams: profileData.value["industryGroupID"],
+              SelectID: profileData.value["industry"]
+                ? profileData.value["industry"]
+                : ""
             }).then(data => {
               filterOptions.value["industry"] = {};
               filterOptions.value["industry"].list = data;
@@ -619,18 +677,47 @@ export function customerProfileCTL() {
         filterOptions.value["createdFor"].list = data;
         filterOptions.value["createdFor"].loading = false;
       });
-      console.log("filterOptions", filterOptions.value);
+      // console.log("filterOptions", filterOptions.value);
     } catch (error) {
       console.error("Failed to fetch list:", error);
       return [];
     }
+  };
+  const saveCustomerProfile = data => {
+    const param = {
+      tableName: "smcustomer",
+      fieldName: data.fieldName,
+      id: data.LID,
+      custID: data.LID,
+      oldValue: data.oldValue,
+      value: data.value,
+      oldEntity: "string",
+      newEntity: "string"
+    };
+    CustomerQuickFilterService.autoSave(param)
+      .then(d => {
+        console.log("autosave data", d);
+        ElMessage({
+          message: t("customer.profile.autoSaveSucAlert"),
+          grouping: true,
+          type: "success"
+        });
+      })
+      .catch(err => {
+        console.log("autosave error", err);
+        ElMessage({
+          message: t("customer.profile.autoSaveFailAlert"),
+          grouping: true,
+          type: "warning"
+        });
+      });
   };
   const dimOrgOptions = ref([]);
   const userNameOptions = ref([]);
   async function loadDimOrgOptions() {
     try {
       const response = await CustomerQuickFilterService.getAutoCompleteList({
-        OptionsResourceType: 20,
+        OptionsResourceType: 22,
         Paginator: false
       });
       dimOrgOptions.value = response; // 将获取的选项赋值给 dimOrgOptions
@@ -638,21 +725,30 @@ export function customerProfileCTL() {
       console.error("获取选项时出错:", error);
     }
   }
-  function loadUserNameOptions() {
+  async function loadUserNameOptions(stationID) {
     try {
-      //TODO: API
-      // const response = await CustomerQuickFilterService.getAutoCompleteList({
-      //   OptionsResourceType: 20,
-      //   Paginator: false
-      // });
-      userNameOptions.value = [
-        { text: "Andy Kang", value: "Andy Kang" },
-        { text: "Amy Chen", value: "Amy Chen" }
-      ]; // 将获取的选项赋值给 dimOrgOptions
+      const response = await CustomerQuickFilterService.getAutoCompleteList({
+        OptionsResourceType: 112,
+        Paginator: false,
+        ParentParams: stationID
+      });
+      userNameOptions.value = response;
     } catch (error) {
       console.error("获取选项时出错:", error);
     }
   }
+  const stationOptions = ref([]);
+  const loadStationOptions = async () => {
+    try {
+      const response = await CustomerQuickFilterService.getAutoCompleteList({
+        OptionsResourceType: 117,
+        Paginator: false
+      });
+      stationOptions.value = response; // 将获取的选项赋值给 dimOrgOptions
+    } catch (error) {
+      console.error("获取选项时出错:", error);
+    }
+  };
   // 监听 filters 的变化
   // watch(
   //   () => profileData.value,
@@ -759,50 +855,50 @@ export function customerProfileCTL() {
       return [];
     }
   };
-  const getDropDownValue = (values: any) => {
-    try {
-      if (values && values !== "" && Array.isArray(values) && values.length > 0)
-        return values[0];
-      else return "";
-    } catch (e) {
-      console.error("Invalid option value", e);
-      return "";
-    }
-  };
-  const getDateBeginValue = (values: any) => {
-    try {
-      if (values && values !== "" && Array.isArray(values) && values.length > 0)
-        return values[0];
-      else return "";
-    } catch (e) {
-      console.error("Invalid option value", e);
-      return "";
-    }
-  };
-  const getDateEndValue = (values: any) => {
-    try {
-      if (values && values !== "" && Array.isArray(values) && values.length > 1)
-        return values[1];
-      else return "";
-    } catch (e) {
-      console.error("Invalid option value", e);
-      return "";
-    }
-  };
-  const convertDropDownValue = item => {
-    try {
-      if (!Array.isArray(item)) {
-        let stringArray = [];
-        stringArray.push(item);
-        return stringArray;
-      } else {
-        return item;
-      }
-    } catch (e) {
-      console.error("Invalid option value", e);
-      return [];
-    }
-  };
+  // const getDropDownValue = (values: any) => {
+  //   try {
+  //     if (values && values !== "" && Array.isArray(values) && values.length > 0)
+  //       return values[0];
+  //     else return "";
+  //   } catch (e) {
+  //     console.error("Invalid option value", e);
+  //     return "";
+  //   }
+  // };
+  // const getDateBeginValue = (values: any) => {
+  //   try {
+  //     if (values && values !== "" && Array.isArray(values) && values.length > 0)
+  //       return values[0];
+  //     else return "";
+  //   } catch (e) {
+  //     console.error("Invalid option value", e);
+  //     return "";
+  //   }
+  // };
+  // const getDateEndValue = (values: any) => {
+  //   try {
+  //     if (values && values !== "" && Array.isArray(values) && values.length > 1)
+  //       return values[1];
+  //     else return "";
+  //   } catch (e) {
+  //     console.error("Invalid option value", e);
+  //     return "";
+  //   }
+  // };
+  // const convertDropDownValue = item => {
+  //   try {
+  //     if (!Array.isArray(item)) {
+  //       let stringArray = [];
+  //       stringArray.push(item);
+  //       return stringArray;
+  //     } else {
+  //       return item;
+  //     }
+  //   } catch (e) {
+  //     console.error("Invalid option value", e);
+  //     return [];
+  //   }
+  // };
   const updateQuickFilter = (formData: QuickFilter) => {
     // const response =
     //   await CustomerQuickFilterService.updateQuickFilter(formData);
@@ -833,84 +929,84 @@ export function customerProfileCTL() {
     }
     return clone;
   }
-  async function fetchData() {
-    try {
-      const [result1, result2, result3] = await Promise.all([
-        // axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
-        // axios.get(
-        //   "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2"
-        // ),
-        // axios.get("/api/Common/ColumnSetting?APIRequestType=3")
-        CustomerProfileService.getCustomerProfileColumnList(5),
-        QuickFilterService.getCustomizeQuickFilterSetting(2),
-        QuickFilterService.getColumnSetting(3)
-      ]);
+  // async function fetchData() {
+  //   try {
+  //     const [result1, result2, result3] = await Promise.all([
+  //       // axios.get("/api/Common/QuickFilterColumnList?requestType=1"),
+  //       // axios.get(
+  //       //   "/api/Common/CustomizeQuickFilterSetting?filterAppliedPage=2"
+  //       // ),
+  //       // axios.get("/api/Common/ColumnSetting?APIRequestType=3")
+  //       CustomerProfileService.getCustomerProfileColumnList(5),
+  //       QuickFilterService.getCustomizeQuickFilterSetting(2),
+  //       QuickFilterService.getColumnSetting(3)
+  //     ]);
 
-      // quickFilterFormInitData.filters = deepClone(
-      //   result1.filter(c => c.showOnDetailAdd === true)
-      // );
-      quickFilterFormInitData.filters.forEach(a => {
-        a.showOnGrid = true;
-        a.showOnFilter = true;
-        a.allowSorting = true;
-        a.allowGridHeaderFilter = true;
-        a.value = "";
-        a.selectValue = "";
-        a.ValueBegin = "";
-        a.ValueEnd = "";
-        a.filterType = a.controlTypeOnDetail;
-      });
-      if (
-        result3 &&
-        result3 &&
-        Array.isArray(result3) &&
-        result3.length === quickFilterFormInitData.filters.length
-      ) {
-        advancedFilterForm.filters = deepClone(result3);
-      } else {
-        advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
-      }
-      advancedFilterForm.filters.forEach(a => {
-        // a.showOnGrid = true;
-        // a.showOnFilter = true;
-        // a.allowSorting = true;
-        // a.allowGridHeaderFilter = true;
-        if (a.width && a.width === 70) {
-          a.width = 140;
-        }
-      });
-      const filterColumns = result1;
-      fetchOptions(quickFilterFormInitData.filters);
-      fetchOptionsNeedParam(quickFilterFormInitData.filters);
-      loadAgentROList();
+  //     // quickFilterFormInitData.filters = deepClone(
+  //     //   result1.filter(c => c.showOnDetailAdd === true)
+  //     // );
+  //     quickFilterFormInitData.filters.forEach(a => {
+  //       a.showOnGrid = true;
+  //       a.showOnFilter = true;
+  //       a.allowSorting = true;
+  //       a.allowGridHeaderFilter = true;
+  //       a.value = "";
+  //       a.selectValue = "";
+  //       a.ValueBegin = "";
+  //       a.ValueEnd = "";
+  //       a.filterType = a.controlTypeOnDetail;
+  //     });
+  //     if (
+  //       result3 &&
+  //       result3 &&
+  //       Array.isArray(result3) &&
+  //       result3.length === quickFilterFormInitData.filters.length
+  //     ) {
+  //       advancedFilterForm.filters = deepClone(result3);
+  //     } else {
+  //       advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
+  //     }
+  //     advancedFilterForm.filters.forEach(a => {
+  //       // a.showOnGrid = true;
+  //       // a.showOnFilter = true;
+  //       // a.allowSorting = true;
+  //       // a.allowGridHeaderFilter = true;
+  //       if (a.width && a.width === 70) {
+  //         a.width = 140;
+  //       }
+  //     });
+  //     const filterColumns = result1;
+  //     fetchOptions(quickFilterFormInitData.filters);
+  //     fetchOptionsNeedParam(quickFilterFormInitData.filters);
+  //     loadAgentROList();
 
-      const customizedFilters = result2;
-      // console.log("filterColumns", filterColumns);
-      // console.log("filters", customizedFilters);
-      customizedFilters.forEach(filterSetting => {
-        const filterColumnsClone = deepClone(filterColumns);
-        filterColumnsClone.forEach(filter => {
-          const matchedMainFilter = filterSetting.filters.find(
-            column => column.filterKey === filter.filterKey
-          );
-          if (matchedMainFilter) {
-            filter.value = matchedMainFilter.value;
-            if (filter.filterType === "dropdown") {
-              filter.selectValue = getDropDownValue(filter.value);
-            } else if (filter.filterType === "daterange") {
-              filter.ValueBegin = getDateBeginValue(filter.value);
-              filter.ValueEnd = getDateEndValue(filter.value);
-            }
-          }
-        });
-        filterSetting.filters = filterColumnsClone;
-      });
+  //     const customizedFilters = result2;
+  //     // console.log("filterColumns", filterColumns);
+  //     // console.log("filters", customizedFilters);
+  //     customizedFilters.forEach(filterSetting => {
+  //       const filterColumnsClone = deepClone(filterColumns);
+  //       filterColumnsClone.forEach(filter => {
+  //         const matchedMainFilter = filterSetting.filters.find(
+  //           column => column.filterKey === filter.filterKey
+  //         );
+  //         if (matchedMainFilter) {
+  //           filter.value = matchedMainFilter.value;
+  //           if (filter.filterType === "dropdown") {
+  //             filter.selectValue = getDropDownValue(filter.value);
+  //           } else if (filter.filterType === "daterange") {
+  //             filter.ValueBegin = getDateBeginValue(filter.value);
+  //             filter.ValueEnd = getDateEndValue(filter.value);
+  //           }
+  //         }
+  //       });
+  //       filterSetting.filters = filterColumnsClone;
+  //     });
 
-      quickFilterList.value = customizedFilters;
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  }
+  //     quickFilterList.value = customizedFilters;
+  //   } catch (error) {
+  //     console.error("Error fetching data:", error);
+  //   }
+  // }
   const initAdvancedFilter = () => {
     console.log("initAdvancedFilter");
     console.log(
@@ -992,6 +1088,26 @@ export function customerProfileCTL() {
     }
   });
   const activePanelNames = ref(["BasicFilterForm"]);
+  const disableStatus = filterItem => {
+    if (filterItem.visibilityLevel === 2) {
+      return !userAuth.value["isWrite"] && LeadID.value !== "0";
+    } else {
+      if (
+        filterItem.filterKey === "leadSourceGroupID" ||
+        filterItem.filterKey === "leadSourceID"
+      ) {
+        return (
+          leadSourceDisable.value ||
+          ((!userAuth.value["isWrite"] ||
+            (profileData.value["agent"] &&
+              profileData.value["agent"] !== "")) &&
+            LeadID.value !== "0")
+        );
+      } else {
+        return !userAuth.value["isWrite"] && LeadID.value !== "0";
+      }
+    }
+  };
   return {
     membersFormData,
     loadDimOrgOptions,
@@ -1022,7 +1138,6 @@ export function customerProfileCTL() {
     fetchProfileData,
     fetchPLData,
     getOptions,
-    convertDropDownValue,
     getFormItemLabel,
     filterOptions,
     quickFilterForm,
@@ -1032,7 +1147,6 @@ export function customerProfileCTL() {
     querySearchAsync,
     handleQuickFilterClick,
     updateQuickFilter,
-    fetchData,
     advancedFilterForm,
     basicFilterTopForm,
     initAdvancedFilter,
@@ -1044,6 +1158,14 @@ export function customerProfileCTL() {
     formattedDateRange,
     handleBasicFilterBtnClick,
     activePanelNames,
-    leadSourceDisable
+    leadSourceDisable,
+    saveCustomerProfile,
+    stationOptions,
+    loadStationOptions,
+    userAuth,
+    disableStatus,
+    LeadID,
+    checkedPL,
+    handleCheckedPLChange
   };
 }

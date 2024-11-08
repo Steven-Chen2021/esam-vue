@@ -58,5 +58,5 @@ export function useDetail() {
     small: false
   });
 
-  return { toDetail, initToDetail, getParameter, route, router, pagination };
+  return { toDetail, initToDetail, getParameter, router, pagination };
 }

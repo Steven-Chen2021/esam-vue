@@ -7,14 +7,19 @@ import { useDetail } from "../hooks";
 const { initToDetail, getParameter, router } = useDetail();
 import { customerProfileCTL } from "../profilectl";
 import { DArrowRight, DArrowLeft } from "@element-plus/icons-vue";
+// import { leadmemberctl } from "../leadmemberctl";
+import LeadMemberService from "@/services/customer/LeadMemberService";
+import { quickFilterCTL } from "../quickfilterctl";
+import { ElMessage } from "element-plus";
 const {
   membersFormData,
   dimOrgOptions,
-  querySearchAsync,
   loadDimOrgOptions,
   loadUserNameOptions,
   userNameOptions
 } = customerProfileCTL();
+const { querySearchAsync } = quickFilterCTL();
+// const { getLeadMemberListResult } = leadmemberctl();
 const buttonList = [
   {
     type: "",
@@ -26,70 +31,84 @@ const goBack = () => {
   router.go(-1);
 };
 onMounted(() => {
-  console.log("pl", getParameter.pl);
+  console.log("plid", getParameter.plid);
   loadDimOrgOptions();
-  loadUserNameOptions();
+  getLeadMemberListResult(getParameter.plid);
 });
-//TODO: API
-interface User {
-  name: string;
-  station: string;
-  address: string;
-}
-const tableData = [
-  {
-    name: "Aleyna Kutzner",
-    station: "DIMMAR",
-    address: "Lohrbergstr. 86c, Süd Lilli, Saarland"
-  },
-  {
-    name: "Helen Jacobi",
-    station: "DIMMAR",
-    address: "760 A Street, South Frankfield, Illinois"
-  },
-  {
-    name: "Brandon Deckert",
-    station: "DIMMAR",
-    address: "Arnold-Ohletz-Str. 41a, Alt Malinascheid, Thüringen"
-  },
-  {
-    name: "Margie Smith",
-    station: "DIMMAR",
-    address: "23618 Windsor Drive, West Ricardoview, Idaho"
-  },
-  {
-    name: "Largie Smith",
-    station: "DIMMAR",
-    address: "23618 Windsor Drive, West Ricardoview, Idaho"
-  },
-  {
-    name: "Sargie Smith",
-    station: "DIMMAR",
-    address: "23618 Windsor Drive, West Ricardoview, Idaho"
+const handleStationChange = async v => {
+  console.log("handleStationChange membersFormData", membersFormData.value);
+  loadUserNameOptions(v);
+};
+const handleSearch = async () => {
+  if (
+    !membersFormData.value["userName"] &&
+    !membersFormData.value["stationID"]
+  ) {
+    ElMessage({
+      message: t("customer.profile.members.searchAlert"),
+      grouping: true,
+      type: "warning"
+    });
+    return;
   }
-];
-const tableDataR = [
-  {
-    name: "Steven Chen",
-    station: "BIT",
-    address: "Lohrbergstr. 86c, Süd Lilli, Saarland"
-  },
-  {
-    name: "Andy Kang",
-    station: "BIT",
-    address: "760 A Street, South Frankfield, Illinois"
-  },
-  {
-    name: "Amy Chen",
-    station: "CSC",
-    address: "Arnold-Ohletz-Str. 41a, Alt Malinascheid, Thüringen"
-  },
-  {
-    name: "Wilson Huang",
-    station: "BIT",
-    address: "23618 Windsor Drive, West Ricardoview, Idaho"
+  const param = {
+    CustPLid: getParameter.plid
+  };
+  if (membersFormData.value["userName"]) {
+    const inputString = membersFormData.value["userName"];
+    const atIndex = inputString.indexOf(" @ ");
+    param["UserName"] =
+      atIndex !== -1 ? inputString.slice(0, atIndex) : inputString;
   }
-];
+  if (membersFormData.value["stationID"]) {
+    param["StationId"] = membersFormData.value["stationID"];
+  }
+  console.log("handleSearch parap", param);
+  LeadMemberService.getUserListbyMemberResult(param).then(data => {
+    console.log("getUserListbyMemberResult data", data);
+    userList.value = data.returnValue;
+  });
+};
+const multipleSelection = ref([]);
+const handleUserSelectionChange = val => {
+  multipleSelection.value = val;
+  console.log("handleUserSelectionChange", val);
+};
+const handleAddMember = async () => {
+  const param = {
+    CustPLid: getParameter.plid,
+    UserList: multipleSelection.value
+  };
+  console.log("saveLeadMemberResult param", param);
+  LeadMemberService.saveLeadMemberResult(param).then(data => {
+    handleSearch();
+    getLeadMemberListResult(getParameter.plid);
+  });
+};
+const multipleMemberSelection = ref([]);
+const handleMemberSelectionChange = val => {
+  multipleMemberSelection.value = val;
+  console.log("handleMemberSelectionChange", val);
+};
+const handleRemoveMember = async () => {
+  const param = {
+    CustPLid: getParameter.plid,
+    UserList: multipleMemberSelection.value
+  };
+  console.log("handleRemoveMember param", param);
+  LeadMemberService.removeLeadMemberResult(param).then(data => {
+    handleSearch();
+    getLeadMemberListResult(getParameter.plid);
+  });
+};
+const memberList = ref([]);
+const userList = ref([]);
+const getLeadMemberListResult = CustPLid => {
+  LeadMemberService.getLeadMemberListResult(CustPLid).then(data => {
+    console.log("getLeadMemberListResult data", data);
+    memberList.value = data.returnValue;
+  });
+};
 </script>
 
 <template>
@@ -121,10 +140,12 @@ const tableDataR = [
         >
           <el-form-item :label="t('customer.profile.members.station')">
             <el-select
-              v-model="membersFormData['station']"
+              v-model="membersFormData['stationID']"
               placeholder="Select"
               style="width: 140px"
               filterable
+              clearable
+              @change="v => handleStationChange(v)"
             >
               <el-option
                 v-for="item in dimOrgOptions"
@@ -135,7 +156,16 @@ const tableDataR = [
             </el-select>
           </el-form-item>
           <el-form-item :label="t('customer.profile.members.userName')">
-            <el-select
+            <el-autocomplete
+              v-model="membersFormData['userName']"
+              :fetch-suggestions="
+                (queryString, cb) =>
+                  querySearchAsync(queryString, cb, { filterKey: 'userName' })
+              "
+              :placeholder="t('customer.list.quickFilter.holderKeyinText')"
+              style="width: 256px"
+            />
+            <!-- <el-select
               v-model="membersFormData['userName']"
               :placeholder="t('customer.list.quickFilter.holderSelectText')"
               style="width: 256px"
@@ -147,17 +177,20 @@ const tableDataR = [
                 :label="option.text"
                 :value="option.value"
               />
-            </el-select>
+            </el-select> -->
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :icon="useRenderIcon('ri:search-line')">{{
-              $t("customer.list.advancedSetting.searchBtn")
-            }}</el-button>
+            <el-button
+              type="primary"
+              :icon="useRenderIcon('ri:search-line')"
+              @click="handleSearch"
+              >{{ $t("customer.list.advancedSetting.searchBtn") }}</el-button
+            >
           </el-form-item>
         </el-form>
       </div>
       <div style="display: flex; align-items: center">
-        <div style="width: 400px">
+        <div style="width: 500px">
           <el-alert
             :title="t('customer.profile.members.leftTitle')"
             type="info"
@@ -166,17 +199,18 @@ const tableDataR = [
           />
           <el-table
             stripe
-            :data="tableData"
+            :data="userList"
             style="width: 100%"
             max-height="500"
+            @selection-change="handleUserSelectionChange"
           >
             <el-table-column type="selection" width="55" />
             <el-table-column
-              property="name"
+              property="userName"
               :label="t('customer.profile.members.userName')"
             />
             <el-table-column
-              property="station"
+              property="stationCode"
               :label="t('customer.profile.members.station')"
             />
           </el-table>
@@ -188,7 +222,11 @@ const tableDataR = [
               effect="dark"
               :content="t('customer.profile.members.addTooltip')"
               placement="top-start"
-              ><el-button type="primary" :icon="DArrowRight" circle
+              ><el-button
+                type="primary"
+                :icon="DArrowRight"
+                circle
+                @click="handleAddMember"
             /></el-tooltip>
           </div>
           <div>
@@ -197,7 +235,11 @@ const tableDataR = [
               effect="dark"
               :content="t('customer.profile.members.removeTooltip')"
               placement="top-start"
-              ><el-button type="warning" :icon="DArrowLeft" circle
+              ><el-button
+                type="warning"
+                :icon="DArrowLeft"
+                circle
+                @click="handleRemoveMember"
             /></el-tooltip>
           </div>
         </div>
@@ -210,17 +252,18 @@ const tableDataR = [
           />
           <el-table
             stripe
-            :data="tableDataR"
+            :data="memberList"
             style="width: 100%"
             max-height="500"
+            @selection-change="handleMemberSelectionChange"
           >
             <el-table-column type="selection" width="55" />
             <el-table-column
-              property="name"
+              property="userName"
               :label="t('customer.profile.members.userName')"
             />
             <el-table-column
-              property="station"
+              property="stationCode"
               :label="t('customer.profile.members.station')"
             />
           </el-table>

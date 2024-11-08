@@ -3,6 +3,7 @@ import API from "../interceptor";
 class CustomerProfileService {
   async getPLDetailData(LID, PID) {
     try {
+      console.log("getPLDetailData", `LID:${LID} PID:${PID}`);
       const url = `/api/Customer/GetPLDetailData?LID=${LID}&PID=${PID}`;
       const response = await API.get(url);
       return response;
@@ -42,6 +43,17 @@ class CustomerProfileService {
       return [];
     }
   }
+  async getUserAuthByCustomerResult(LID) {
+    try {
+      const url = `/api/Utility/GetUserAuthByCustomerResult?CustID=${LID}`;
+      const response = await API.get(url);
+      console.log("GetUserAuthByCustomerResult response", response);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
   async updateCustomerProfile(params) {
     try {
       const response = await API.post(
@@ -53,17 +65,25 @@ class CustomerProfileService {
       console.error(error);
     }
   }
-  async getPLDetailData(params) {
+  async disqualifyLead(params) {
     try {
-      const url = "/api/Customer/GetPLDetailData";
-      const queryString = new URLSearchParams(params).toString();
-      const fullUrl = `${url}?${queryString}`;
-      const response = await API.get(fullUrl);
+      const response = await API.post("/api/Customer/DisqualifyLead", params);
       return response;
     } catch (error) {
       console.error(error);
     }
   }
+  // async getPLDetailData(params) {
+  //   try {
+  //     const url = "/api/Customer/GetPLDetailData";
+  //     const queryString = new URLSearchParams(params).toString();
+  //     const fullUrl = `${url}?${queryString}`;
+  //     const response = await API.get(fullUrl);
+  //     return response;
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }
   async getPLUpdateHistoryListData(params) {
     try {
       const url = "/api/Customer/GetPLUpdateHistoryListData";
