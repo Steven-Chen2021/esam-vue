@@ -294,109 +294,6 @@ const quoteDetailColumns: PlusColumn[] = [
               }
             });
           }
-          // else {
-          //   //new quote, forEach all FreightCharge setting to bind local charge
-          //   const uniqueExportCities = freightChargeResult.value.filter(
-          //     (item, index, self) =>
-          //       index === self.findIndex(t => t.pReceipt === item.pReceipt)
-          //   );
-
-          //   const uniqueImportCities = freightChargeResult.value.filter(
-          //     (item, index, self) =>
-          //       index === self.findIndex(t => t.pDelivery === item.pDelivery)
-          //   );
-          //   console.log("uniqueExportCities", uniqueExportCities);
-          //   console.log("uniqueImportCities", uniqueImportCities);
-
-          //   uniqueExportCities.forEach(item => {
-          //     exportPromise = getLocalChargeResult(
-          //       quotationDetailResult.value.quoteid as number,
-          //       quotationDetailResult.value.pid,
-          //       true,
-          //       quotationDetailResult.value.quoteid ? "" : item.pReceipt
-          //     ).then(() => {
-          //       if (
-          //         localChargeResult.value &&
-          //         localChargeResult.value.length > 0
-          //       ) {
-          //         localChargeResult.value.forEach(localCharge => {
-          //           exportLocationResult.value.push({
-          //             cityID: localCharge.cityID,
-          //             city: localCharge.city,
-          //             detail: [],
-          //             hotTableSetting: {
-          //               data: localCharge.detail || [],
-          //               colHeaders: localCharge.colHeaders || [],
-          //               rowHeaders: false,
-          //               dropdownMenu: true,
-          //               width: "100%",
-          //               height: "auto",
-          //               columns: localCharge.columns.map(column => ({
-          //                 data: column.data,
-          //                 type: column.type,
-          //                 source: column.source || []
-          //               })),
-          //               autoWrapRow: true,
-          //               autoWrapCol: true,
-          //               allowInsertColumn: true,
-          //               allowInsertRow: true,
-          //               allowInvalid: true,
-          //               licenseKey: "524eb-e5423-11952-44a09-e7a22",
-          //               contextMenu: true,
-          //               afterChange: handleAfterChange,
-          //               afterSelection: handleAfterSelection,
-          //               afterRemoveRow: handleRemoveRow
-          //             }
-          //           });
-          //         });
-          //       }
-          //     });
-          //   });
-          //   uniqueImportCities.forEach(item => {
-          //     importPromise = getLocalChargeResult(
-          //       quotationDetailResult.value.quoteid as number,
-          //       quotationDetailResult.value.pid,
-          //       false,
-          //       quotationDetailResult.value.quoteid ? "" : item.pDelivery
-          //     ).then(() => {
-          //       if (
-          //         localChargeResult.value &&
-          //         localChargeResult.value.length > 0
-          //       ) {
-          //         localChargeResult.value.forEach(localCharge => {
-          //           importLocationResult.value.push({
-          //             cityID: localCharge.cityID,
-          //             city: localCharge.city,
-          //             detail: [],
-          //             hotTableSetting: {
-          //               data: localCharge.detail || [],
-          //               colHeaders: localCharge.colHeaders || [],
-          //               rowHeaders: false,
-          //               dropdownMenu: true,
-          //               width: "100%",
-          //               height: "auto",
-          //               columns: localCharge.columns.map(column => ({
-          //                 data: column.data,
-          //                 type: column.type,
-          //                 source: column.source || []
-          //               })),
-          //               autoWrapRow: true,
-          //               autoWrapCol: true,
-          //               allowInsertColumn: true,
-          //               allowInsertRow: true,
-          //               allowInvalid: true,
-          //               licenseKey: "524eb-e5423-11952-44a09-e7a22",
-          //               contextMenu: true,
-          //               afterChange: handleAfterChange,
-          //               afterSelection: handleAfterSelection,
-          //               afterRemoveRow: handleRemoveRow
-          //             }
-          //           });
-          //         });
-          //       }
-          //     });
-          //   });
-          // }
           Promise.all([exportPromise, importPromise]).then(() => {
             disabledExportLocalChargeBtn.value = false;
             disabledImportLocalChargeBtn.value = false;
@@ -436,7 +333,17 @@ const quoteDetailColumns: PlusColumn[] = [
     options: quoteTypeResult,
     hideInForm: hideQuotationType,
     colProps: {
-      span: 16
+      span: 8
+    }
+  },
+  {
+    label: "OTP Code",
+    prop: "typeCode",
+    valueType: "radio",
+    options: quoteTypeResult,
+    hideInForm: hideQuotationType,
+    colProps: {
+      span: 8
     }
   },
   {
