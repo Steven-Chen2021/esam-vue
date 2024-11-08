@@ -132,11 +132,11 @@ export function quickFilterCTL() {
           case "status":
             resourceType = 19;
             break;
-          case "Names":
+          case "names":
             resourceType = 118;
             break;
-          default:
-            resourceType = 0;
+          case "role":
+            resourceType = 120;
             break;
         }
         const response =
@@ -220,6 +220,12 @@ export function quickFilterCTL() {
         break;
       case "userName":
         OptionsResourceType = 112;
+        break;
+      case "fullName":
+        OptionsResourceType = 119;
+        break;
+      case "boss":
+        OptionsResourceType = 121;
         break;
     }
     const searchKey = !queryString || queryString === "null" ? "" : queryString;
