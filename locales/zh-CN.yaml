@@ -326,5 +326,5 @@ quote:
       hqid: HQID
       customerName: Customer
   quotedetail:
-    cbm: type of CBM
+    cbm: Type of CBM
     WeightBreak: 重量區間

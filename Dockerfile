@@ -10,7 +10,10 @@ COPY .npmrc package.json pnpm-lock.yaml .env.staging ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN pnpm build --mode staging
+
+ARG BUILD_ENV
+
+RUN pnpm build --mode ${BUILD_ENV}
 
 FROM nginx:stable-alpine as production-stage
 
