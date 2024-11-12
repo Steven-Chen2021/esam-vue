@@ -79,7 +79,8 @@ const {
   importLocationResult,
   getLocalChargeResult,
   localChargeResult,
-  handleSaveLocalCharge
+  getQuoteLCPOptions,
+  getQuoteLCPDetail
 } = LocalChargeHooks();
 
 const { historyColumns, historyResult, getHistoryResult } =
@@ -334,13 +335,17 @@ const quoteDetailColumns: PlusColumn[] = [
     hideInForm: hideQuotationType,
     colProps: {
       span: 8
+    },
+    fieldProps: {
+      onChange: item => {
+        console.log("type Code onChange", item);
+      }
     }
   },
   {
     label: "OTP Code",
     prop: "typeCode",
-    valueType: "radio",
-    options: quoteTypeResult,
+    valueType: "input-number",
     hideInForm: hideQuotationType,
     colProps: {
       span: 8
@@ -734,7 +739,7 @@ onMounted(() => {
   getShippingTermResult();
   getCBMTransferUOMRsult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
-  console.log(quotationDetailResult);
+  console.log("quotationDetailResult", quotationDetailResult);
 });
 
 onBeforeUnmount(() => {

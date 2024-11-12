@@ -187,6 +187,27 @@ class QuoteDetailService {
       console.error(error);
     }
   }
+  async getQuoteLCPResult(PLCode, IsExport, cityID) {
+    try {
+      const url = "/api/Quote/QuoteLCPList";
+      const fullUrl = `${url}?productLineCode=${PLCode}&IsExport=${IsExport}&cityID=${cityID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getQuoteLCPDetailResult(PID, IsExport, LCPID) {
+    try {
+      const url = "/api/Quote/QuoteLCPDetailResult";
+      const fullUrl = `${url}?PLID=${PID}&IsExport=${IsExport}&LCPID=${LCPID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new QuoteDetailService();
