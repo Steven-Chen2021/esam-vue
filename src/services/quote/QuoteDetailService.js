@@ -201,7 +201,7 @@ class QuoteDetailService {
   async getQuoteLCPDetailResult(PID, IsExport, LCPID) {
     try {
       const url = "/api/Quote/QuoteLCPDetailResult";
-      const fullUrl = `${url}?PLID=${PID}&IsExport=${IsExport}&LCPID=${LCPID}`;
+      const fullUrl = `${url}?PID=${PID}&IsExport=${IsExport}&LCPID=${LCPID}`;
       const response = await API.get(fullUrl);
       return response;
     } catch (error) {

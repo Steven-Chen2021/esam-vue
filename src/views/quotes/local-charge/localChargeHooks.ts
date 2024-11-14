@@ -7,6 +7,12 @@ export function LocalChargeHooks() {
     city: string;
     detail: iLocalChargeDetailResult[] | null;
     hotTableSetting: iLocalChargeHotTableSetting | null;
+    localChargePackageList: {
+      text: string;
+      text1: string;
+      value: string;
+    }[];
+    localChargePackageSelector: {};
   }
 
   interface iLocalChargeDetailResult {
@@ -101,16 +107,15 @@ export function LocalChargeHooks() {
     }
   }
 
-  async function getQuoteLCPOptions(PLCode, IsExport, cityID) {
+  async function getLocalChargePackageResult(PLCode, IsExport, cityID) {
     try {
-      localChargeResult.value = [];
       const response = await quoteDetailService.getQuoteLCPResult(
         PLCode,
         IsExport,
         cityID
       );
       if (response && response.returnValue) {
-        localChargeResult.value = response.returnValue;
+        return response.returnValue;
       } else {
         throw new Error("Quotation Detail not found.");
       }
@@ -119,16 +124,15 @@ export function LocalChargeHooks() {
     }
   }
 
-  async function getQuoteLCPDetail(PID, IsExport, LCPID) {
+  async function getLocalChargePackageDetailResult(PID, IsExport, LCPID) {
     try {
-      localChargeResult.value = [];
       const response = await quoteDetailService.getQuoteLCPDetailResult(
         PID,
         IsExport,
         LCPID
       );
       if (response && response.returnValue) {
-        localChargeResult.value = response.returnValue;
+        return response.returnValue;
       } else {
         throw new Error("Quotation Detail not found.");
       }
@@ -143,7 +147,7 @@ export function LocalChargeHooks() {
     getLocalChargeResult,
     localChargeResult,
     handleSaveLocalCharge,
-    getQuoteLCPOptions,
-    getQuoteLCPDetail
+    getLocalChargePackageResult,
+    getLocalChargePackageDetailResult
   };
 }

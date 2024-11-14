@@ -79,8 +79,8 @@ const {
   importLocationResult,
   getLocalChargeResult,
   localChargeResult,
-  getQuoteLCPOptions,
-  getQuoteLCPDetail
+  getLocalChargePackageResult,
+  getLocalChargePackageDetailResult
 } = LocalChargeHooks();
 
 const { historyColumns, historyResult, getHistoryResult } =
@@ -121,6 +121,29 @@ const handleCreated = editor => {
   // 记录 editor 实例，重要！
   editorRef.value = editor;
 };
+
+const options = [
+  {
+    value: "Option1",
+    label: "Option1"
+  },
+  {
+    value: "Option2",
+    label: "Option2"
+  },
+  {
+    value: "Option3",
+    label: "Option3"
+  },
+  {
+    value: "Option4",
+    label: "Option4"
+  },
+  {
+    value: "Option5",
+    label: "Option5"
+  }
+];
 
 const rules = {
   name: [
@@ -246,7 +269,9 @@ const quoteDetailColumns: PlusColumn[] = [
                       afterChange: handleAfterChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow
-                    }
+                    },
+                    localChargePackageList: null,
+                    localChargePackageSelector: []
                   });
                 });
               }
@@ -289,7 +314,9 @@ const quoteDetailColumns: PlusColumn[] = [
                       afterChange: handleAfterChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow
-                    }
+                    },
+                    localChargePackageList: null,
+                    localChargePackageSelector: []
                   });
                 });
               }
@@ -375,7 +402,6 @@ const quoteDetailColumns: PlusColumn[] = [
         const selectTT = tradeTermResult.value.find(
           col => col.value === item
         ) as any;
-        console.log(selectTT);
         quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
       }
     }
@@ -395,16 +421,11 @@ const quoteDetailColumns: PlusColumn[] = [
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     changes.forEach(([row, prop, oldValue, newValue]) => {
-      console.log(prop);
       if (prop === "pReceipt") {
         const cityExists = exportLocationResult.value.some(
           item => item.city === newValue
         );
         if (!cityExists) {
-          console.log(
-            `City ${newValue} 不存在於 exportLocationResult.value 中，執行相應操作`
-          );
-
           getLocalChargeResult(
             0,
             quotationDetailResult.value.pid,
@@ -413,33 +434,43 @@ const handleAfterChange = (changes, source) => {
           ).then(() => {
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
-                exportLocationResult.value.push({
-                  cityID: localCharge.cityID,
-                  city: localCharge.city,
-                  detail: [],
-                  hotTableSetting: {
-                    data: localCharge.detail || [],
-                    colHeaders: localCharge.colHeaders || [],
-                    rowHeaders: false,
-                    dropdownMenu: true,
-                    width: "100%",
-                    height: "auto",
-                    columns: localCharge.columns.map(column => ({
-                      data: column.data,
-                      type: column.type,
-                      source: column.source || []
-                    })),
-                    autoWrapRow: true,
-                    autoWrapCol: true,
-                    allowInsertColumn: true,
-                    allowInsertRow: true,
-                    allowInvalid: true,
-                    licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                    contextMenu: true,
-                    afterChange: handleAfterChange,
-                    afterSelection: handleAfterSelection,
-                    afterRemoveRow: handleRemoveRow
-                  }
+                //針對每個City 先抓對應的LCP放到Data Result
+                let exportLCPData = [];
+                getLocalChargePackageResult(
+                  quotationDetailResult.value.pid,
+                  true,
+                  localCharge.cityID
+                ).then(res => {
+                  exportLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true,
+                      afterChange: handleAfterChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow
+                    },
+                    localChargePackageList: res,
+                    localChargePackageSelector: []
+                  });
                 });
               });
             }
@@ -451,7 +482,7 @@ const handleAfterChange = (changes, source) => {
           item => item.city === newValue
         );
         if (!cityExists) {
-          console.log(
+          console.debug(
             `City ${newValue} 不存在於 exportLocationResult.value 中，執行相應操作`
           );
 
@@ -489,7 +520,9 @@ const handleAfterChange = (changes, source) => {
                     afterChange: handleAfterChange,
                     afterSelection: handleAfterSelection,
                     afterRemoveRow: handleRemoveRow
-                  }
+                  },
+                  localChargePackageList: null,
+                  localChargePackageSelector: []
                 });
               });
             }
@@ -501,14 +534,14 @@ const handleAfterChange = (changes, source) => {
 };
 
 const handleAfterSelection = (row, column, row2, column2) => {
-  console.log(
+  console.debug(
     "handleAfterSelection",
     `選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`
   );
 };
 
 const handleRemoveRow = (index, amount) => {
-  console.log("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
+  console.debug("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
 };
 
 const freightChargeSettings = ref({
@@ -583,12 +616,12 @@ const saveData = () => {
       }
     }
   );
-  console.log(detailStatus);
-  console.log("result", quotationDetailResult.value);
-  console.log("freightChargeSettings-data", freightChargeSettings.value.data);
-  console.log("frightChargeParams", frightChargeParams.value);
-  console.log("exportLocationResult", exportLocationResult);
-  console.log("importLocationResult", importLocationResult);
+  console.debug(detailStatus);
+  console.debug("result", quotationDetailResult.value);
+  console.debug("freightChargeSettings-data", freightChargeSettings.value.data);
+  console.debug("frightChargeParams", frightChargeParams.value);
+  console.debug("exportLocationResult", exportLocationResult);
+  console.debug("importLocationResult", importLocationResult);
 };
 
 const deleteData = () => {
@@ -653,6 +686,17 @@ const createFilter = (queryString: string) => {
   return (customer: { text: string; value: number }) => {
     return customer.text.toLowerCase().includes(queryString.toLowerCase());
   };
+};
+
+const AddLCPItems = (source, isExport) => {
+  getLocalChargePackageDetailResult(
+    quotationDetailResult.value.pid,
+    isExport,
+    source.localChargePackageSelector
+  ).then(res => {
+    console.log(source);
+    console.log(res);
+  });
 };
 
 watchEffect(() => {
@@ -733,13 +777,13 @@ onMounted(() => {
   }
   getCustomerByOwnerUserResult();
   getTradeTermResult().then(itme => {
-    console.log("getTradeTermResult", tradeTermResult);
+    console.debug("getTradeTermResult", tradeTermResult);
   });
 
   getShippingTermResult();
   getCBMTransferUOMRsult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
-  console.log("quotationDetailResult", quotationDetailResult);
+  console.debug("quotationDetailResult", quotationDetailResult);
 });
 
 onBeforeUnmount(() => {
@@ -913,6 +957,21 @@ onBeforeUnmount(() => {
                   :key="index"
                   :label="item.city"
                 >
+                  {{ $t("quote.quotedetail.lcp") }}：
+                  <el-select
+                    v-model="item.localChargePackageSelector"
+                    filterable
+                    placeholder="Select"
+                    style="width: 280px; padding-bottom: 5px"
+                    @change="AddLCPItems(item, true)"
+                  >
+                    <el-option
+                      v-for="c in item.localChargePackageList"
+                      :key="c.value"
+                      :label="c.text"
+                      :value="c.value"
+                    />
+                  </el-select>
                   <HotTable :settings="item.hotTableSetting" />
                 </el-tab-pane>
               </el-tabs>
