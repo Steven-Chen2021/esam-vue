@@ -122,6 +122,23 @@ const handleCreated = editor => {
   editorRef.value = editor;
 };
 
+// 用於存放所有 HotTable 的 refs
+const hotTableRefs = ref({});
+
+// 方法來動態設置 HotTable 的 ref
+const setHotTableRef = city => el => {
+  if (el) {
+    hotTableRefs.value[city] = el.hotInstance;
+  }
+};
+
+// 示例：在需要的時候更新某個 HotTable 的數據
+const updateHotTableData = (city, data) => {
+  if (hotTableRefs.value[city]) {
+    hotTableRefs.value[city].loadData(data);
+  }
+};
+
 const options = [
   {
     value: "Option1",
@@ -254,10 +271,10 @@ const quoteDetailColumns: PlusColumn[] = [
                       dropdownMenu: true,
                       width: "100%",
                       height: "auto",
-                      columns: localCharge.columns.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
+                      columns: localCharge?.columns?.map(column => ({
+                        data: column?.data,
+                        type: column?.type,
+                        source: column?.source || []
                       })),
                       autoWrapRow: true,
                       autoWrapCol: true,
@@ -266,7 +283,7 @@ const quoteDetailColumns: PlusColumn[] = [
                       allowInvalid: true,
                       licenseKey: "524eb-e5423-11952-44a09-e7a22",
                       contextMenu: true,
-                      afterChange: handleAfterChange,
+                      afterChange: handleLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow
                     },
@@ -311,7 +328,7 @@ const quoteDetailColumns: PlusColumn[] = [
                       allowInvalid: true,
                       licenseKey: "524eb-e5423-11952-44a09-e7a22",
                       contextMenu: true,
-                      afterChange: handleAfterChange,
+                      afterChange: handleLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow
                     },
@@ -420,6 +437,7 @@ const quoteDetailColumns: PlusColumn[] = [
 
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
+    console.log(changes, source);
     changes.forEach(([row, prop, oldValue, newValue]) => {
       if (prop === "pReceipt") {
         const cityExists = exportLocationResult.value.some(
@@ -434,8 +452,8 @@ const handleAfterChange = (changes, source) => {
           ).then(() => {
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
-                //針對每個City 先抓對應的LCP放到Data Result
-                let exportLCPData = [];
+                console.log(localChargeResult);
+                console.log(localCharge);
                 getLocalChargePackageResult(
                   quotationDetailResult.value.pid,
                   true,
@@ -464,7 +482,7 @@ const handleAfterChange = (changes, source) => {
                       allowInvalid: true,
                       licenseKey: "524eb-e5423-11952-44a09-e7a22",
                       contextMenu: true,
-                      afterChange: handleAfterChange,
+                      afterChange: handleLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow
                     },
@@ -494,6 +512,8 @@ const handleAfterChange = (changes, source) => {
           ).then(() => {
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
+                console.log(localChargeResult);
+                console.log(localCharge);
                 importLocationResult.value.push({
                   cityID: localCharge.cityID,
                   city: localCharge.city,
@@ -517,7 +537,7 @@ const handleAfterChange = (changes, source) => {
                     allowInvalid: true,
                     licenseKey: "524eb-e5423-11952-44a09-e7a22",
                     contextMenu: true,
-                    afterChange: handleAfterChange,
+                    afterChange: handleLocalChargeChange,
                     afterSelection: handleAfterSelection,
                     afterRemoveRow: handleRemoveRow
                   },
@@ -530,6 +550,12 @@ const handleAfterChange = (changes, source) => {
         }
       }
     });
+  }
+};
+
+const handleLocalChargeChange = (changes, source) => {
+  if (source === "edit") {
+    console.log(changes, source);
   }
 };
 
@@ -689,13 +715,20 @@ const createFilter = (queryString: string) => {
 };
 
 const AddLCPItems = (source, isExport) => {
+  console.log(exportLocationResult.value);
   getLocalChargePackageDetailResult(
     quotationDetailResult.value.pid,
     isExport,
     source.localChargePackageSelector
   ).then(res => {
+    exportLocationResult.value.forEach(f => {
+      if (f.cityID === source.cityID) {
+        // f.hotTableSetting.data = res;
+        updateHotTableData(source.cityID, res);
+      }
+    });
+
     console.log(source);
-    console.log(res);
   });
 };
 
@@ -972,7 +1005,10 @@ onBeforeUnmount(() => {
                       :value="c.value"
                     />
                   </el-select>
-                  <HotTable :settings="item.hotTableSetting" />
+                  <HotTable
+                    :ref="setHotTableRef(item.cityID)"
+                    :settings="item.hotTableSetting"
+                  />
                 </el-tab-pane>
               </el-tabs>
             </el-collapse-item>
@@ -986,7 +1022,25 @@ onBeforeUnmount(() => {
                   :key="index"
                   :label="item.city"
                 >
-                  <HotTable :settings="item.hotTableSetting" />
+                  {{ $t("quote.quotedetail.lcp") }}：
+                  <el-select
+                    v-model="item.localChargePackageSelector"
+                    filterable
+                    placeholder="Select"
+                    style="width: 280px; padding-bottom: 5px"
+                    @change="AddLCPItems(item, true)"
+                  >
+                    <el-option
+                      v-for="c in item.localChargePackageList"
+                      :key="c.value"
+                      :label="c.text"
+                      :value="c.value"
+                    />
+                  </el-select>
+                  <HotTable
+                    :ref="setHotTableRef(item.cityID)"
+                    :settings="item.hotTableSetting"
+                  />
                 </el-tab-pane>
               </el-tabs>
             </el-collapse-item>
