@@ -466,3 +466,4 @@ quote:
   quotedetail:
     cbm: Type of CBM
     WeightBreak: Weight Break
+    lcp: Local Charge Package

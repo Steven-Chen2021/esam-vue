@@ -103,6 +103,18 @@ export function listCTL() {
     const property = column["property"];
     return row[property].toString().indexOf(value) !== -1;
   };
+
+  const copyQuote = async params => {
+    loading.value = true;
+    console.log(params);
+    try {
+      const response = QuoteSearchService.copyQuotation(params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   // 初始加载数据
   fetchData();
   return {
@@ -118,6 +130,7 @@ export function listCTL() {
     handleConditionalSearch,
     searchParams,
     handleResetConditionalSearch,
-    loading
+    loading,
+    copyQuote
   };
 }

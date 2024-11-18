@@ -7,6 +7,12 @@ export function LocalChargeHooks() {
     city: string;
     detail: iLocalChargeDetailResult[] | null;
     hotTableSetting: iLocalChargeHotTableSetting | null;
+    localChargePackageList: {
+      text: string;
+      text1: string;
+      value: string;
+    }[];
+    localChargePackageSelector: {};
   }
 
   interface iLocalChargeDetailResult {
@@ -18,6 +24,17 @@ export function LocalChargeHooks() {
     sellingRate: number;
     cost: number;
     remark: string;
+  }
+  interface iLocalChargeSetting {
+    cityID: number;
+    city: string;
+    colHeaders: [];
+    columns: Array<{
+      data: string;
+      type: string;
+      source?: string[];
+    }>;
+    detail: [];
   }
 
   interface iLocalChargeHotTableSetting {
@@ -50,155 +67,9 @@ export function LocalChargeHooks() {
     afterRemoveRow?: (index: number, amount: number) => void;
   }
 
-  // const exportLocalChargeHotTableSetting = ref({
-  //   data: [],
-  //   colHeaders: [
-  //     "Charge Code",
-  //     "Display Name",
-  //     "Condition",
-  //     "Unit",
-  //     "UOM",
-  //     "Amount",
-  //     "Cost",
-  //     "Remark"
-  //   ],
-  //   columns: [
-  //     { data: "chargeCode", type: "dropdown", source: ["", ""] },
-  //     { data: "displayName", type: "text" },
-  //     {
-  //       data: "condition",
-  //       type: "dropdown",
-  //       source: ["MIN", "FLAT", ">", ">=", "=", "<=", "<"]
-  //     },
-  //     { data: "Unit", type: "numeric" },
-  //     { data: "uom", type: "dropdown", source: ["KG", "LB", "CBM", "TON"] },
-  //     { data: "sellingRate", type: "numeric" },
-  //     { data: "cost", type: "numeric" },
-  //     { data: "remark", type: "text" }
-  //   ],
-  //   rowHeaders: false,
-  //   dropdownMenu: true,
-  //   width: "100%",
-  //   height: "auto",
-  //   autoWrapRow: true,
-  //   autoWrapCol: true,
-  //   allowInsertColumn: true,
-  //   allowInsertRow: true,
-  //   licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  //   contextMenu: true
-  // });
-
-  // const importLocalChargeHotTableSetting = ref({
-  //   data: [
-  //     {
-  //       chargeID: null,
-  //       location: null,
-  //       chargeCode: null,
-  //       displayName: null,
-  //       condition: null,
-  //       Unit: null,
-  //       sellingRate: null,
-  //       cost: null,
-  //       uom: null,
-  //       remark: null
-  //     },
-  //     {
-  //       chargeID: null,
-  //       location: null,
-  //       chargeCode: null,
-  //       displayName: null,
-  //       condition: null,
-  //       Unit: null,
-  //       sellingRate: null,
-  //       cost: null,
-  //       uom: null,
-  //       remark: null
-  //     },
-  //     {
-  //       chargeID: null,
-  //       location: null,
-  //       chargeCode: null,
-  //       displayName: null,
-  //       condition: null,
-  //       Unit: null,
-  //       sellingRate: null,
-  //       cost: null,
-  //       uom: null,
-  //       remark: null
-  //     },
-  //     {
-  //       chargeID: null,
-  //       location: null,
-  //       chargeCode: null,
-  //       displayName: null,
-  //       condition: null,
-  //       Unit: null,
-  //       sellingRate: null,
-  //       cost: null,
-  //       uom: null,
-  //       remark: null
-  //     },
-  //     {
-  //       chargeID: null,
-  //       location: null,
-  //       chargeCode: null,
-  //       displayName: null,
-  //       condition: null,
-  //       Unit: null,
-  //       sellingRate: null,
-  //       cost: null,
-  //       uom: null,
-  //       remark: null
-  //     }
-  //   ],
-  //   colHeaders: [
-  //     "Location",
-  //     "Charge Code",
-  //     "Display Name",
-  //     "Condition",
-  //     "Unit",
-  //     "UOM",
-  //     "Amount",
-  //     "Cost",
-  //     "Remark"
-  //   ],
-  //   columns: [
-  //     { data: "location", type: "dropdown", source: [] },
-  //     { data: "chargeCode", type: "dropdown", source: [] },
-  //     { data: "displayName", type: "text" },
-  //     {
-  //       data: "condition",
-  //       type: "dropdown",
-  //       source: ["MIN", "FLAT", ">", ">=", "=", "<=", "<"]
-  //     },
-  //     { data: "Unit", type: "numeric" },
-  //     { data: "uom", type: "dropdown", source: ["KG", "LB", "CBM", "TON"] },
-  //     { data: "sellingRate", type: "numeric" },
-  //     { data: "cost", type: "numeric" },
-  //     { data: "remark", type: "text" }
-  //   ],
-  //   rowHeaders: false,
-  //   dropdownMenu: true,
-  //   width: "100%",
-  //   height: "auto",
-  //   autoWrapRow: true,
-  //   autoWrapCol: true,
-  //   allowInsertColumn: true,
-  //   allowInsertRow: true,
-  //   licenseKey: "524eb-e5423-11952-44a09-e7a22",
-  //   contextMenu: true
-  // });
-
   const exportLocationResult = ref<iLocalChargeResult[]>([]);
   const importLocationResult = ref<iLocalChargeResult[]>([]);
 
-  interface iLocalChargeSetting {
-    cityID: number;
-    city: string;
-    colHeaders: [];
-    columns: [];
-    detail: [];
-  }
   const localChargeResult = ref<iLocalChargeSetting[] | null>([]);
   async function getLocalChargeResult(
     QuoteID: number,
@@ -215,6 +86,7 @@ export function LocalChargeHooks() {
         location
       );
       if (response && response.returnValue) {
+        console.log(response);
         localChargeResult.value = response.returnValue;
       } else {
         throw new Error("Quotation Detail not found.");
@@ -230,9 +102,6 @@ export function LocalChargeHooks() {
     IsExport: boolean
   ) {
     try {
-      console.log(QuoteID);
-      console.log(PID);
-      console.log(IsExport);
       if (IsExport) {
         console.log("exportLocationResult", exportLocationResult);
       } else {
@@ -243,11 +112,47 @@ export function LocalChargeHooks() {
     }
   }
 
+  async function getLocalChargePackageResult(PLCode, IsExport, cityID) {
+    try {
+      const response = await quoteDetailService.getQuoteLCPResult(
+        PLCode,
+        IsExport,
+        cityID
+      );
+      if (response && response.returnValue) {
+        return response.returnValue;
+      } else {
+        throw new Error("Quotation Detail not found.");
+      }
+    } catch (error) {
+      console.error("getLocalChargeLCPOptions Error:", error);
+    }
+  }
+
+  async function getLocalChargePackageDetailResult(PID, IsExport, LCPID) {
+    try {
+      const response = await quoteDetailService.getQuoteLCPDetailResult(
+        PID,
+        IsExport,
+        LCPID
+      );
+      if (response && response.returnValue) {
+        return response.returnValue;
+      } else {
+        throw new Error("Quotation Detail not found.");
+      }
+    } catch (error) {
+      console.error("getLocalChargeLCPOptions Error:", error);
+    }
+  }
+
   return {
     exportLocationResult,
     importLocationResult,
     getLocalChargeResult,
     localChargeResult,
-    handleSaveLocalCharge
+    handleSaveLocalCharge,
+    getLocalChargePackageResult,
+    getLocalChargePackageDetailResult
   };
 }

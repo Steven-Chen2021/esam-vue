@@ -138,17 +138,6 @@ class QuoteDetailService {
     }
   }
 
-  // async getFreightChargeResult(QuoteID, PID) {
-  //   try {
-  //     const url = "/api/Quote/QuoteFreightChargeResult";
-  //     const fullUrl = `${url}?QuoteID=${QuoteID}&PID=${PID}`;
-  //     const response = await API.get(fullUrl);
-  //     return response;
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // }
-
   async getLocalChargeResult(QuoteID, PID, IsExport, location) {
     try {
       const url = "/api/Quote/QuoteLocalChargegResult";
@@ -182,6 +171,27 @@ class QuoteDetailService {
     try {
       const url = "/api/Quote/QuoteLocalChargeResult";
       const response = await API.post(url, params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async getQuoteLCPResult(PLCode, IsExport, cityID) {
+    try {
+      const url = "/api/Quote/QuoteLCPList";
+      const fullUrl = `${url}?productLineCode=${PLCode}&IsExport=${IsExport}&cityID=${cityID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getQuoteLCPDetailResult(PID, IsExport, LCPID) {
+    try {
+      const url = "/api/Quote/QuoteLCPDetailResult";
+      const fullUrl = `${url}?PID=${PID}&IsExport=${IsExport}&LCPID=${LCPID}`;
+      const response = await API.get(fullUrl);
       return response;
     } catch (error) {
       console.error(error);
