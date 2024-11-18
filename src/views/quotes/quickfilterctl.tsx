@@ -365,7 +365,7 @@ export function quickFilterCTL() {
     }
   }
   const fetchAdvancedFilterData = () => {
-    CustomerQuickFilterService.getAdvancedFilterSetting()
+    CustomerQuickFilterService.getAdvancedFilterSetting(5)
       .then(data => {
         if (
           data &&
