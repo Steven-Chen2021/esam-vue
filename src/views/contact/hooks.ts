@@ -27,19 +27,19 @@ export function useDetail() {
     });
     if (model === "params") {
       useMultiTagsStoreHook().handleTags("push", {
-        path: `/customer/detail/:id`,
-        name: "CustomerDetail",
+        path: `/contact/detail/:id`,
+        name: "ContactDetail",
         params: parameter,
         meta: {
           title: {
-            zh: `${parameter.id === "0" ? "Create Customer" : parameter.qname}`,
-            en: `${parameter.id === "0" ? "Create Customer" : parameter.qname}`
+            zh: `${parameter.id === "0" ? "Create Contact" : parameter.qname}`,
+            en: `${parameter.id === "0" ? "Create Contact" : parameter.qname}`
           }
           // 如果使用的是非国际化精简版title可以像下面这么写
           // title: `No.${index} - 详情信息`,
         }
       });
-      router.push({ name: "CustomerDetail", params: parameter });
+      router.push({ name: "ContactDetail", params: parameter });
     }
   }
 

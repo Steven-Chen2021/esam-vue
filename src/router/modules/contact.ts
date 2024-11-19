@@ -17,6 +17,15 @@ export default {
       meta: {
         title: $t("menus.dimercoContact")
       }
+    },
+    {
+      path: "/contact/detail/:id/:lid/:qname",
+      name: "ContactDetail",
+      component: () => import("@/views/contact/detail.vue"),
+      meta: {
+        title: $t("menus.dimercoContact"),
+        showLink: false
+      }
     }
   ]
 } satisfies RouteConfigsTable;

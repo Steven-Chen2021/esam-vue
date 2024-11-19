@@ -108,7 +108,6 @@ export function quickFilterCTL() {
       const selectFilterList: QuickFilterDetail[] = filterItems.filter(
         a => a.filterType === "dropdown" && a.filterSourceType === "api"
       );
-      console.log("fetchOptionsNeedParam filterItems", filterItems);
       selectFilterList.forEach(async item => {
         let resourceType = 0;
         switch (item.filterKey) {
@@ -153,7 +152,6 @@ export function quickFilterCTL() {
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;
-        console.log("filterOptions", filterOptions.value);
       });
     } catch (error) {
       console.error("Failed to fetch list:", error);
@@ -187,6 +185,7 @@ export function quickFilterCTL() {
     let OptionsResourceType;
     switch (filterItem.filterKey) {
       case "customerName":
+      case "company":
         OptionsResourceType = 0;
         break;
       case "country":

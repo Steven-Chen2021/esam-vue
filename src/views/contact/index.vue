@@ -96,14 +96,9 @@ const handleFilterEnable = (obj: any) => {
 // const Router = useRouter();
 const handleViewClick = row => {
   console.log("handleViewClick row", row);
-  // Router.push({
-  //   path: "/customer/detail",
-  //   query: { LID: row.hqid }
-  // });
-  // toDetail({ id: row.hqid, qname: row.customerName }, "params");
   router.push({
-    name: "CustomerDetail",
-    params: { id: row.hqid, qname: row.customerName }
+    name: "ContactDetail",
+    params: { id: row.id, lid: row.hqid, qname: row.fullName }
   });
 };
 const handleAddCustomer = () => {
@@ -731,9 +726,6 @@ watch(
                       $t("customer.list.advancedSetting.settingBtn")
                     }}</el-button
                   >
-                  <el-button disabled :icon="Plus" @click="handleAddCustomer">{{
-                    $t("customer.add")
-                  }}</el-button>
                 </el-form-item>
               </div>
             </el-form>
@@ -796,7 +788,7 @@ watch(
           </div>
         </template>
       </el-table-column>
-      <!-- <el-table-column fixed="right" label="Operations" min-width="120">
+      <el-table-column fixed="right" label="Operations" min-width="120">
         <template #default="scope">
           <el-button
             link
@@ -807,7 +799,7 @@ watch(
             View
           </el-button>
         </template>
-      </el-table-column> -->
+      </el-table-column>
     </el-table>
     <el-pagination
       style="margin: 0.5rem"

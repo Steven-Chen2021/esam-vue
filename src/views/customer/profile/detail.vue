@@ -49,14 +49,16 @@ const {
   LeadID,
   checkedPL,
   handleCheckedPLChange,
-  loadDimOrgOptions
+  loadDimOrgOptions,
+  fetchDCUrl,
+  DCUrl
 } = customerProfileCTL();
 // const { fetchMembersData } = leadmemberctl();
 defineOptions({
   name: "CustomerDetail"
 });
 initToDetail("params");
-const activeName = ref(["general", "comments"]);
+const activeName = ref(["general", "pl", "documents"]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
 const size = ref("disabled");
@@ -491,6 +493,7 @@ onMounted(() => {
   fetchProfileData();
   fetchPLData(0);
   loadDimOrgOptions();
+  fetchDCUrl();
 });
 const returnPL = ref({
   id: "",
@@ -1375,7 +1378,7 @@ const cancelForm = () => {
                           format="MMM DD, YYYY"
                           value-format="YYYY-MM-DD"
                           style="width: 338px"
-                          @blur="
+                          @change="
                             autoSaveForm(
                               profileFormRef,
                               filterItem,
@@ -1439,7 +1442,7 @@ const cancelForm = () => {
               <el-collapse-item
                 v-if="LID !== '0'"
                 :title="t('customer.profile.pl.title')"
-                name="comments"
+                name="pl"
                 class="custom-collapse-title"
               >
                 <el-tabs v-model="activeTabPID" type="border-card">
@@ -1674,6 +1677,23 @@ const cancelForm = () => {
                     </el-form>
                   </el-tab-pane>
                 </el-tabs>
+              </el-collapse-item>
+              <el-collapse-item
+                v-if="LID !== '0'"
+                :title="t('common.dc')"
+                name="documents"
+                class="custom-collapse-title"
+              >
+                <el-main>
+                  <div class="iframe-container">
+                    <iframe
+                      :src="DCUrl"
+                      frameborder="0"
+                      width="100%"
+                      height="600px"
+                    />
+                  </div>
+                </el-main>
               </el-collapse-item>
             </el-collapse>
           </div>
