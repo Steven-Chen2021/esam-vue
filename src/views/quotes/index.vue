@@ -53,7 +53,8 @@ const {
   handleSizeChange,
   handleConditionalSearch,
   handleResetConditionalSearch,
-  loading
+  loading,
+  copyQuote
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -348,6 +349,20 @@ const handleFilterBtnClick = item => {
   handleConditionalSearch(advancedFilterForm);
 };
 // #endregion
+
+const handleCopyQuote = quoteID => {
+  const params = {
+    quoteid: quoteID
+  };
+  copyQuote(params)
+    .then(res => {
+      if (res.isSuccess && res.returnValue > 0)
+        toDetail({ id: res.returnValue, qname: "Copy Quote" }, "params");
+    })
+    .catch(ex => {
+      console.log(ex);
+    });
+};
 
 const calculateMaxHeight = () => {
   const windowHeight = window.innerHeight;
@@ -748,7 +763,7 @@ onMounted(() => {
           </div>
         </template>
       </el-table-column>
-      <el-table-column fixed="right" label="Operations" min-width="120">
+      <el-table-column fixed="right" label="Operations" min-width="150">
         <template #default="scope">
           <el-button
             link
@@ -764,11 +779,18 @@ onMounted(() => {
             size="small"
             @click="
               toDetail(
-                { id: scope.row.hqid, qname: scope.row.quoteNo },
+                { id: scope.row.qid, qname: scope.row.quoteNo },
                 'params'
               )
             "
             >Edit</el-button
+          >
+          <el-button
+            link
+            type="primary"
+            size="small"
+            @click="handleCopyQuote(scope.row.qid)"
+            >Copy</el-button
           >
         </template>
       </el-table-column>
@@ -883,21 +905,6 @@ onMounted(() => {
                 v-model="filterItem.value"
                 :placeholder="t('customer.list.quickFilter.holderKeyinText')"
               />
-              <!-- <el-date-picker
-                v-else-if="filterItem.filterType === 'daterange'"
-                v-model="filterItem.value"
-                type="daterange"
-                :range-separator="$t('customer.list.quickFilter.dateSeparator')"
-                :start-placeholder="
-                  $t('customer.list.quickFilter.startDateHolderText')
-                "
-                :end-placeholder="
-                  $t('customer.list.quickFilter.endDateHolderText')
-                "
-                format="MMM DD, YYYY"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              /> -->
               <el-row
                 v-else-if="filterItem.filterType === 'daterange'"
                 :gutter="20"

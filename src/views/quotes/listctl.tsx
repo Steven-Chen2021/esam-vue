@@ -33,9 +33,8 @@ export function listCTL() {
     loading.value = true;
     QuoteSearchService.getQuoteList(searchParams)
       .then(data => {
-        // console.log("getCustomerList params", searchParams);
-        console.log("getCustomerList result", data);
         tableData.value = data.returnValue.results;
+        console.log(data);
         if (data) total.value = data.returnValue.totalRecord;
         loading.value = false;
       })
@@ -89,13 +88,10 @@ export function listCTL() {
     row: any;
     rowIndex: number;
   }) => {
-    // console.log("tableRowClassName rowIndex", rowIndex);
     if (row && rowIndex === 1) {
       console.log("warning-row sample", row);
-      // return "warning-row";
     } else if (rowIndex === 3) {
       console.log("success-row sample", row);
-      // return "success-row";
     }
     return "";
   };
@@ -107,6 +103,18 @@ export function listCTL() {
     const property = column["property"];
     return row[property].toString().indexOf(value) !== -1;
   };
+
+  const copyQuote = async params => {
+    loading.value = true;
+    console.log(params);
+    try {
+      const response = QuoteSearchService.copyQuotation(params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   // 初始加载数据
   fetchData();
   return {
@@ -122,6 +130,7 @@ export function listCTL() {
     handleConditionalSearch,
     searchParams,
     handleResetConditionalSearch,
-    loading
+    loading,
+    copyQuote
   };
 }

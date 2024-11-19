@@ -326,5 +326,6 @@ quote:
       hqid: HQID
       customerName: Customer
   quotedetail:
-    cbm: type of CBM
+    cbm: Type of CBM
     WeightBreak: 重量區間
+    lcp: 本地收费套餐

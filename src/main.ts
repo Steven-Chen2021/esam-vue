@@ -52,10 +52,6 @@ import "tippy.js/themes/light.css";
 import VueTippy from "vue-tippy";
 app.use(VueTippy);
 
-console.log("VITE_OIDC_AUTHORITY:", import.meta.env.VITE_OIDC_AUTHORITY);
-console.log("VITE_OIDC_CLIENT_ID:", import.meta.env.VITE_OIDC_CLIENT_ID);
-console.log("VITE_OIDC_REDIRECT_URI:", import.meta.env.VITE_OIDC_REDIRECT_URI);
-
 getPlatformConfig(app).then(async config => {
   setupStore(app);
   app.use(router);

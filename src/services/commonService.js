@@ -73,16 +73,7 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
-  // async getAdvancedFilterSettingByRequestType(requestTypeID) {
-  //   try {
-  //     const response = await API.get(
-  //       `/api/Common/ColumnSetting?APIRequestType=${requestTypeID}`
-  //     );
-  //     return response;
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // }
+
   async updateAdvancedFilter(params) {
     try {
       const response = await API.post("/api/Common/ColumnSetting", params);
@@ -112,9 +103,30 @@ class CustomerQuickFilterService {
       return [];
     }
   }
+
+  async getCBMTransferUOMResult() {
+    try {
+      const url = "/api/Common/CBMToWTUOM";
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
   async autoSave(params) {
     try {
       const response = await API.post("/api/AutoSave/AutoSave", params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async getUserAccessByCustomer(CustID, PlID) {
+    try {
+      const url = "/api/Utility/GetUserAuthByCustomerResult";
+      const fullUrl = `${url}?CustID=${CustID}&PlID=${PlID}`;
+      const response = await API.get(fullUrl);
       return response;
     } catch (error) {
       console.error(error);

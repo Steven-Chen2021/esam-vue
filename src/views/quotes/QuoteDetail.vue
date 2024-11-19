@@ -1,6 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, defineComponent, toRaw, watchEffect } from "vue";
+//CSS Import
 import "plus-pro-components/es/components/drawer-form/style/css";
+import "handsontable/dist/handsontable.full.css";
+import "@wangeditor/editor/dist/css/style.css";
+
+import {
+  onBeforeUnmount,
+  ref,
+  shallowRef,
+  onMounted,
+  defineComponent,
+  nextTick,
+  watchEffect
+} from "vue";
+
 import {
   type PlusColumn,
   type FieldValues,
@@ -10,7 +23,6 @@ import { ElNotification } from "element-plus";
 /*handsontable*/
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
-import "handsontable/dist/handsontable.full.css";
 registerAllModules();
 defineComponent({
   components: {
@@ -18,25 +30,25 @@ defineComponent({
   }
 });
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import QuoteDetailService from "@/services/quote/QuoteDetailService";
 
-// RouterHooks
+// Hooks Import
 import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
 import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
 import { HistoryComponentHooks } from "./details/historyHooks";
 import { VxeTableBar } from "@/components/ReVxeTableBar";
+import { AutoSaveHelper } from "@/utils/autoSaveHelper";
+
+//Editor
+import { Editor, Toolbar } from "@wangeditor/editor-for-vue";
 
 const {
   getCustomerByOwnerUserResult,
   customerResult,
-  productLineOptions,
   getChargeCodeSettingResult,
   ChargeCodeSettingResult,
   chargeCodeSettingValues,
-  FreightChargeSettings,
-  freightChargeHotTableKey,
   getProductLineByCustomerResult,
   getShippingTermResult,
   getAttentionToResult,
@@ -51,19 +63,28 @@ const {
   tradeTermResult,
   creditTermResult,
   freightChargeResult,
-  deleteQuotation
+  deleteQuotation,
+  quotationDetailResult,
+  getQuotationDetailResult,
+  getCBMTransferUOMRsult,
+  cbmTransferUOMResult,
+  saveQuoteDetailResult,
+  getLocalCharge,
+  saveFreightChargeResult,
+  saveLocalChargeResult,
+  frightChargeParams
 } = QuoteDetailHooks();
 
 const {
-  exportLocalChargeResult,
-  newExportLocalChargeItem,
-  addColumnHeaderItem,
-  removeItem,
   exportLocationResult,
   importLocationResult,
-  exportLocalChargeHotTableSetting,
-  importLocalChargeHotTableSetting
+  getLocalChargeResult,
+  localChargeResult,
+  getLocalChargePackageResult,
+  getLocalChargePackageDetailResult
 } = LocalChargeHooks();
+
+const { AutoSaveItem, AutoSave } = AutoSaveHelper();
 
 const { historyColumns, historyResult, getHistoryResult } =
   HistoryComponentHooks();
@@ -75,10 +96,15 @@ initToDetail("params");
 
 const hotTableRef = ref(null);
 const importHotTableRef = ref(null);
-const exportHotTableRef = ref(null);
+// const exportHotTableRef = ref(null);
 const freightVisible = ref(false);
 const localVisible = ref(false);
 const historyVisible = ref(false);
+const deleteVisible = ref(false);
+const historyBtnVisible = ref(false);
+const deleteBtnVisible = ref(false);
+const previewBtnVisible = ref(false);
+const showCBMTransfer = ref(false);
 const activeName = ref("1");
 const dynamicSize = ref();
 const saveLoading = ref("disabled");
@@ -88,29 +114,57 @@ const qid = ref(0);
 const disabledExportLocalChargeBtn = ref(true);
 const disabledImportLocalChargeBtn = ref(true);
 const vxeTableRef = ref();
+const hideQuotationType = ref(true);
+//Editor Parameters
+const mode = "default";
+const editorRef = shallowRef();
+const toolbarConfig: any = { excludeKeys: "fullScreen" };
+const editorConfig = { placeholder: "请输入内容..." };
+const handleCreated = editor => {
+  // 记录 editor 实例，重要！
+  editorRef.value = editor;
+};
 
-const result = ref<FieldValues>({
-  ShippingTerm: null,
-  TradeTerm: null,
-  CreditTerm: null,
-  CustomerLead: null,
-  CustomerHQID: null as number,
-  AttentionTo: null,
-  status: null,
-  PL: null,
-  name: null,
-  remark: null,
-  TermsAndConditions: null,
-  salesName: null,
-  saleseMail: null,
-  saleseTel: null,
-  salesMobile: null,
-  currency: null,
-  shipmentMode: null,
-  quoteType: null,
-  cbm: 1000,
-  cbmUOM: "KG"
-});
+// 用於存放所有 HotTable 的 refs
+const hotTableRefs = ref({});
+const previousValue = ref<any>();
+// 方法來動態設置 HotTable 的 ref
+const setHotTableRef = city => el => {
+  if (el) {
+    hotTableRefs.value[city] = el.hotInstance;
+  }
+};
+
+// 示例：在需要的時候更新某個 HotTable 的數據
+const updateHotTableData = (city, data) => {
+  if (hotTableRefs.value[city]) {
+    hotTableRefs.value[city].loadData(data);
+  }
+};
+
+const options = [
+  {
+    value: "Option1",
+    label: "Option1"
+  },
+  {
+    value: "Option2",
+    label: "Option2"
+  },
+  {
+    value: "Option3",
+    label: "Option3"
+  },
+  {
+    value: "Option4",
+    label: "Option4"
+  },
+  {
+    value: "Option5",
+    label: "Option5"
+  }
+];
+
 const rules = {
   name: [
     {
@@ -125,11 +179,12 @@ const rules = {
     }
   ]
 };
+
 const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
     width: 120,
-    prop: "CustomerLead",
+    prop: "customerName",
     valueType: "autocomplete",
     fieldProps: {
       valueKey: "text",
@@ -139,50 +194,197 @@ const quoteDetailColumns: PlusColumn[] = [
           : customerResult.customers;
         cb(results);
       },
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.customerHQID;
+      },
       onSelect: (item: { text: string; value: number }) => {
-        result.value.CustomerHQID = item.value;
+        quotationDetailResult.value.customerHQID = item.value;
         getProductLineByCustomerResult(item.value);
         getAttentionToResult(item.value);
+        autoSaveTrigger(item.value, "customerName");
       }
     }
   },
   {
     label: "Product Line",
     width: 360,
-    prop: "PL",
+    prop: "productLineCode",
     valueType: "select",
     options: productLineResult,
     colProps: {
       span: 8
     },
     fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.productLineCode;
+      },
       onChange: (value: number) => {
+        if (qid.value < 1) {
+          const _customerHQID = quotationDetailResult.value.customerHQID;
+          const _customerName = quotationDetailResult.value.customerName;
+          const _productLineCode = quotationDetailResult.value.productLineCode;
+          getQuotationDetailResult(
+            qid.value,
+            _productLineCode as number,
+            _customerHQID as number
+          ).then(res => {
+            quotationDetailResult.value.customerHQID = _customerHQID;
+            quotationDetailResult.value.customerName = _customerName;
+            quotationDetailResult.value.productLineCode = _productLineCode;
+          });
+        }
+        hideQuotationType.value = !(value > 0);
+        const _pid = value ?? (quotationDetailResult.value.pid as number);
         const PLCode = ref();
-        if (value === 6) {
+        showCBMTransfer.value = false;
+        if (_pid === 6) {
           //Ocean Freight Charge
-          getChargeCodeSettingResult(1);
+          getChargeCodeSettingResult(qid.value, _pid);
           handleProductLineChange();
           PLCode.value = "OMS";
-        } else if (value === 2) {
+          showCBMTransfer.value = true;
+        } else if (_pid === 2) {
           PLCode.value = "AMS";
         }
         getQuoteTypeResult("Lead", "Type", PLCode.value);
-        getCreditTermResult(result.value.CustomerHQID as number, value);
-        getQuoteFreightChargeResult(qid.value, value);
-        console.log(freightChargeResult.value);
-        freightChargeSettings.value.data = freightChargeResult.value;
+
+        getCreditTermResult(
+          quotationDetailResult.value.customerHQID as number,
+          _pid
+        );
+        getQuoteFreightChargeResult(qid.value, _pid).then(() => {
+          freightChargeSettings.value.data = freightChargeResult.value;
+          let exportPromise = Promise.resolve();
+          let importPromise = Promise.resolve();
+
+          if ((quotationDetailResult.value.quoteid as number) > 0) {
+            //don't forEach, just use quoteID to find out all data
+            exportPromise = getLocalChargeResult(
+              quotationDetailResult.value.quoteid as number,
+              quotationDetailResult.value.pid,
+              true,
+              ""
+            ).then(() => {
+              if (
+                localChargeResult.value &&
+                localChargeResult.value.length > 0
+              ) {
+                localChargeResult.value.forEach(localCharge => {
+                  exportLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge?.columns?.map(column => ({
+                        data: column?.data,
+                        type: column?.type,
+                        source: column?.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true,
+                      afterChange: handleLocalChargeChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow
+                    },
+                    localChargePackageList: null,
+                    localChargePackageSelector: []
+                  });
+                });
+              }
+            });
+
+            importPromise = getLocalChargeResult(
+              quotationDetailResult.value.quoteid as number,
+              quotationDetailResult.value.pid,
+              false,
+              ""
+            ).then(() => {
+              if (
+                localChargeResult.value &&
+                localChargeResult.value.length > 0
+              ) {
+                localChargeResult.value.forEach(localCharge => {
+                  importLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true,
+                      afterChange: handleLocalChargeChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow
+                    },
+                    localChargePackageList: null,
+                    localChargePackageSelector: []
+                  });
+                });
+              }
+            });
+          }
+          Promise.all([exportPromise, importPromise]).then(() => {
+            disabledExportLocalChargeBtn.value = false;
+            disabledImportLocalChargeBtn.value = false;
+          });
+        });
+        autoSaveTrigger(value, "pid");
       }
     }
   },
   {
     label: "Effective - Expired",
-    prop: "endTime",
+    prop: "period",
     valueType: "date-picker",
     fieldProps: {
-      type: "datetimerange",
+      type: "daterange",
       startPlaceholder: "Effective",
       endPlaceholder: "Expired",
-      format: "YYYY-MMM-DD"
+      format: "YYYY-MMM-DD",
+      onFocus: () => {
+        const period = quotationDetailResult.value.period || [];
+        if (Array.isArray(period) && period.length === 2) {
+          const [effective, expired] = period;
+          previousValue.value = `effective: ${effective || ""}, expired: ${expired || ""}`;
+        } else {
+          previousValue.value = ""; // 預設為空字串
+        }
+      },
+      onChange: (value: [string, string]) => {
+        if (Array.isArray(value) && value.length === 2) {
+          const [effective, expired] = value;
+          const formattedString = `effective: ${effective}, expired: ${expired}`;
+          autoSaveTrigger(formattedString, "period");
+        } else {
+          console.error("Invalid value format:", value);
+        }
+      }
     },
     colProps: {
       span: 16
@@ -191,115 +393,242 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Shipping Term",
     width: 120,
-    prop: "ShippingTerm",
+    prop: "shippingTerm",
     valueType: "select",
     options: shippingTermResult,
     colProps: {
       span: 8
     },
     fieldProps: {
-      onChange: (value: string) => {
-        getTradeTermResult(value);
-        result.value.TradeTerm = null;
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.shippingTerm;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "shippingTerm");
       }
     }
   },
   {
     label: "Type",
-    prop: "quoteType",
+    prop: "typeCode",
     valueType: "radio",
     options: quoteTypeResult,
+    hideInForm: hideQuotationType,
     colProps: {
-      span: 16
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.typeCode;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "typeCode");
+      }
+    }
+  },
+  {
+    label: "OTP Code",
+    prop: "typeCode",
+    valueType: "input-number",
+    hideInForm: hideQuotationType,
+    colProps: {
+      span: 8
     }
   },
   {
     label: "Attention To",
     width: 360,
-    prop: "AttentionTo",
+    prop: "attentionTo",
     valueType: "select",
     options: attentionToResult,
     colProps: {
       span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.attentionTo;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "attentionTo");
+      }
     }
   },
   {
     label: "Trade Term",
     width: 120,
-    prop: "TradeTerm",
+    prop: "tradeTermId",
     valueType: "select",
     options: tradeTermResult,
     colProps: {
       span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.tradeTermId;
+      },
+      onChange: value => {
+        const selectTT = tradeTermResult.value.find(
+          col => col.value === value
+        ) as any;
+        quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
+        autoSaveTrigger(value, "tradeTermId");
+      }
     }
   },
   {
     label: "Credit Term",
     width: 120,
-    prop: "CreditTerm",
+    prop: "creditTermId",
     valueType: "select",
     options: creditTermResult,
     colProps: {
       span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.creditTermId;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "creditTermId");
+      }
     }
   }
 ];
 
-// 處理資料變更事件
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     changes.forEach(([row, prop, oldValue, newValue]) => {
-      console.log(
-        `資料變更 - 列: ${row}, 欄位: ${prop}, 舊值: ${oldValue}, 新值: ${newValue}`
-      );
-      if (
-        ["poreceipt", "poloading", "podelivery", "podischarge"].includes(prop)
-      ) {
-        exportLocationResult.value.splice(0, exportLocationResult.value.length);
-        importLocationResult.value.splice(0, importLocationResult.value.length);
+      if (prop === "pReceipt") {
+        const cityExists = exportLocationResult.value.some(
+          item => item.city === newValue
+        );
+        if (!cityExists) {
+          getLocalChargeResult(
+            0,
+            quotationDetailResult.value.pid,
+            true,
+            newValue
+          ).then(() => {
+            if (localChargeResult.value && localChargeResult.value.length > 0) {
+              localChargeResult.value.forEach(localCharge => {
+                getLocalChargePackageResult(
+                  quotationDetailResult.value.pid,
+                  true,
+                  localCharge.cityID
+                ).then(res => {
+                  exportLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true,
+                      afterChange: handleLocalChargeChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow
+                    },
+                    localChargePackageList: res,
+                    localChargePackageSelector: []
+                  });
+                });
+              });
+            }
+          });
+        }
+      }
+      if (prop === "pDelivery") {
+        const cityExists = importLocationResult.value.some(
+          item => item.city === newValue
+        );
+        if (!cityExists) {
+          console.debug(
+            `City ${newValue} 不存在於 exportLocationResult.value 中，執行相應操作`
+          );
 
-        freightChargeSettings.value.data.forEach(rowData => {
-          if (rowData.poreceipt) {
-            exportLocationResult.value.push(rowData.poreceipt);
-          }
-          if (rowData.poloading) {
-            exportLocationResult.value.push(rowData.poloading);
-          }
-        });
-        freightChargeSettings.value.data.forEach(rowData => {
-          if (rowData.podelivery) {
-            importLocationResult.value.push(rowData.podelivery);
-          }
-          if (rowData.podischarge) {
-            importLocationResult.value.push(rowData.podischarge);
-          }
-        });
-        console.log("exportLocationResult", exportLocationResult);
-        console.log("importLocationResult", importLocationResult);
-      }
-      if (exportLocationResult.value.length > 0) {
-        exportLocalChargeHotTableSetting.value.columns.forEach(column => {
-          if (column.data === "location") {
-            column.source = exportLocationResult.value;
-          }
-        });
-        disabledExportLocalChargeBtn.value = false;
-      }
-      if (importLocationResult.value.length > 0) {
-        importLocalChargeHotTableSetting.value.columns.forEach(column => {
-          if (column.data === "location") {
-            column.source = importLocationResult.value;
-          }
-        });
-        disabledImportLocalChargeBtn.value = false;
+          getLocalChargeResult(
+            0,
+            quotationDetailResult.value.pid,
+            false,
+            newValue
+          ).then(() => {
+            if (localChargeResult.value && localChargeResult.value.length > 0) {
+              localChargeResult.value.forEach(localCharge => {
+                getLocalChargePackageResult(
+                  quotationDetailResult.value.pid,
+                  true,
+                  localCharge.cityID
+                ).then(res => {
+                  importLocationResult.value.push({
+                    cityID: localCharge.cityID,
+                    city: localCharge.city,
+                    detail: [],
+                    hotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true,
+                      afterChange: handleLocalChargeChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow
+                    },
+                    localChargePackageList: res,
+                    localChargePackageSelector: []
+                  });
+                });
+              });
+            }
+          });
+        }
       }
     });
   }
 };
 
-// 處理選擇事件
+const handleLocalChargeChange = (changes, source) => {
+  if (source === "edit") {
+    console.log(changes, source);
+  }
+};
+
 const handleAfterSelection = (row, column, row2, column2) => {
-  console.log(`選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`);
+  console.debug(
+    "handleAfterSelection",
+    `選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`
+  );
+};
+
+const handleRemoveRow = (index, amount) => {
+  console.debug("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
 };
 
 const freightChargeSettings = ref({
@@ -320,7 +649,8 @@ const freightChargeSettings = ref({
   contextMenu: true,
   // 添加事件監聽器
   afterChange: handleAfterChange,
-  afterSelection: handleAfterSelection
+  afterSelection: handleAfterSelection,
+  afterRemoveRow: handleRemoveRow
 });
 
 const saveData = () => {
@@ -329,16 +659,71 @@ const saveData = () => {
     saveLoading.value = "disabled";
   }, 3000);
 
-  console.log("result", result);
-  console.log("freightChargeSettings-data", freightChargeSettings.value.data);
-  console.log("freightChargeSettings", freightChargeSettings);
+  if (!quotationDetailResult.value.quoteid) {
+    quotationDetailResult.value.quoteid = 0;
+  }
+
+  quotationDetailResult.value.attentionToId =
+    quotationDetailResult.value.attentionTo;
+
+  const detailStatus = saveQuoteDetailResult(quotationDetailResult.value).then(
+    res => {
+      if (res && res.isSuccess) {
+        frightChargeParams.value.quoteID = res.returnValue;
+        frightChargeParams.value.pid = quotationDetailResult.value.pid;
+        frightChargeParams.value.quoteFreights =
+          freightChargeSettings.value.data;
+        saveFreightChargeResult(frightChargeParams.value).then(res => {
+          const exportLocalChargeParam = {
+            quoteID: frightChargeParams.value.quoteID,
+            pid: quotationDetailResult.value.pid,
+            isExport: true,
+            detail: exportLocationResult.value
+          };
+          const importLocalChargeParam = {
+            quoteID: frightChargeParams.value.quoteID,
+            pid: quotationDetailResult.value.pid,
+            isExport: false,
+            detail: importLocationResult.value
+          };
+          saveLocalChargeResult(exportLocalChargeParam);
+          saveLocalChargeResult(importLocalChargeParam);
+          ElNotification({
+            title: "successfully",
+            message: "Quotation save successfully!",
+            type: "success"
+          });
+        });
+      } else {
+        ElNotification({
+          title: "Error",
+          message: "Failed to save the quotation.",
+          type: "error"
+        });
+      }
+    }
+  );
+  console.debug(detailStatus);
+  console.debug("result", quotationDetailResult.value);
+  console.debug("freightChargeSettings-data", freightChargeSettings.value.data);
+  console.debug("frightChargeParams", frightChargeParams.value);
+  console.debug("exportLocationResult", exportLocationResult);
+  console.debug("importLocationResult", importLocationResult);
+};
+
+const handleFocusOut = (event: FocusEvent) => {
+  console.log(event);
+  const hotContainer = document.querySelector(".handsontable-container");
+  if (hotContainer && hotContainer.contains(event.relatedTarget as Node)) {
+    return;
+  }
+  console.log(handleFocusOut);
 };
 
 const deleteData = () => {
   deleteLoading.value = "default";
   if (qid.value > 0) {
     const isDeleted = deleteQuotation(qid.value);
-    console.log(isDeleted);
     if (isDeleted) {
       ElNotification({
         title: "successfully",
@@ -380,7 +765,6 @@ const handleCheckboxGroupChange = (values: string[]) => {
 };
 
 const handleProductLineChange = () => {
-  console.log(freightChargeSettings);
   freightChargeSettings.value.colHeaders = ChargeCodeSettingResult.map(
     item => item.headerName
   );
@@ -400,6 +784,48 @@ const createFilter = (queryString: string) => {
   };
 };
 
+const AddLCPItems = (source, isExport) => {
+  getLocalChargePackageDetailResult(
+    quotationDetailResult.value.pid,
+    isExport,
+    source.localChargePackageSelector
+  ).then(res => {
+    if (isExport) {
+      exportLocationResult.value.forEach(f => {
+        if (f.cityID === source.cityID) {
+          // f.hotTableSetting.data = res;
+          updateHotTableData(source.cityID, res);
+        }
+      });
+    } else {
+      importLocationResult.value.forEach(f => {
+        if (f.cityID === source.cityID) {
+          console.log(res);
+          // f.hotTableSetting.data = res;
+          updateHotTableData(source.cityID, res);
+        }
+      });
+    }
+  });
+};
+
+const autoSaveTrigger = (newValue, columnName) => {
+  console.log(
+    `${columnName} save log`,
+    `oldV:${previousValue.value}, newV:${newValue}`
+  );
+  if (newValue != previousValue.value && getParameter.id != "0") {
+    AutoSaveItem.value.tableName = "saquotes";
+    AutoSaveItem.value.fieldName = columnName;
+    AutoSaveItem.value.id = quotationDetailResult.value.qid as number;
+    AutoSaveItem.value.custID =
+      quotationDetailResult.value.customerHQID.toString();
+    AutoSaveItem.value.oldValue = previousValue.value;
+    AutoSaveItem.value.value = newValue;
+    AutoSave(AutoSaveItem);
+  }
+};
+
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
@@ -417,7 +843,6 @@ watchEffect(() => {
     freightChargeSettings.value.colWidths = sourceData.map(
       item => item.columnWidth
     );
-    console.log("sourceData", sourceData); // 最後打印出篩選結果
   }
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
@@ -426,17 +851,72 @@ watchEffect(() => {
 
 onMounted(() => {
   if (getParameter.id != "0") {
-    QuoteDetailService.getQuoteDetailResult(getParameter.id);
     const id = Array.isArray(getParameter.id)
       ? parseInt(getParameter.id[0], 10)
       : parseInt(getParameter.id, 10);
     if (!isNaN(id)) {
       qid.value = id;
     }
+    getQuotationDetailResult(qid.value).then(() => {
+      historyBtnVisible.value = true;
+      deleteBtnVisible.value = true;
+      previewBtnVisible.value = true;
+      nextTick(() => {
+        const selectedItem = {
+          text: quotationDetailResult.value.customerName,
+          value: quotationDetailResult.value.customerHQID
+        }; // 模擬選中的公司
+
+        const fieldProps = quoteDetailColumns[0].fieldProps as any;
+        if (fieldProps.onSelect) {
+          fieldProps.onSelect(selectedItem);
+        } else {
+          console.warn("onSelect is not defined in fieldProps.");
+        }
+
+        const companyNameColumn = quoteDetailColumns.find(
+          col => col.prop === "customerName"
+        ) as any;
+        if (companyNameColumn?.fieldProps?.onSelect) {
+          companyNameColumn.fieldProps.onSelect(selectedItem);
+        } else {
+          console.warn("onSelect is not defined for Company Name.");
+        }
+
+        const productLineCodeColumn = quoteDetailColumns.find(
+          col => col.prop === "productLineCode"
+        ) as any;
+        if (productLineCodeColumn?.fieldProps?.onChange) {
+          productLineCodeColumn.fieldProps.onChange(
+            quotationDetailResult.value.pid
+          );
+        }
+        const shippingTermColumn = quoteDetailColumns.find(
+          col => col.prop === "shippingTerm"
+        ) as any;
+        if (shippingTermColumn?.fieldProps?.onChange) {
+          shippingTermColumn.fieldProps.onChange(
+            quotationDetailResult.value.shippingTerm
+          );
+        }
+      });
+    });
   }
   getCustomerByOwnerUserResult();
+  getTradeTermResult().then(itme => {
+    console.debug("getTradeTermResult", tradeTermResult);
+  });
+
   getShippingTermResult();
+  getCBMTransferUOMRsult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+  console.debug("quotationDetailResult", quotationDetailResult);
+});
+
+onBeforeUnmount(() => {
+  const editor = editorRef.value;
+  if (editor == null) return;
+  editor.destroy();
 });
 </script>
 
@@ -445,8 +925,8 @@ onMounted(() => {
     <el-card shadow="never" class="relative h-96 overflow-hidden">
       <div class="flex justify-between items-center">
         <!-- 左側 Label 和 Icon 按鈕 -->
-        <div class="flex items-center space-x-2">
-          <span class="text-gray-700">QA123456789</span>
+        <div class="flex items-center space-x-2 pt-3 pl-3 font-bold">
+          <span class="text-gray-700">{{ quotationDetailResult.quoteNo }}</span>
         </div>
 
         <!-- 右側按鈕群組 -->
@@ -471,9 +951,10 @@ onMounted(() => {
             :icon="useRenderIcon('ep:edit')"
             @click="saveData"
           >
-            {{ saveLoading === "disabled" ? "Save as Draft" : "Processing" }}
+            {{ saveLoading === "disabled" ? "Send to Approval" : "Processing" }}
           </el-button>
           <el-button
+            v-if="previewBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -483,7 +964,7 @@ onMounted(() => {
             {{ "Preview" }}
           </el-button>
           <el-button
-            v-if="qid > 0"
+            v-if="deleteBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -495,6 +976,7 @@ onMounted(() => {
             {{ deleteLoading === "disabled" ? "Delete" : "Processing" }}
           </el-button>
           <el-button
+            v-if="historyBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -508,14 +990,14 @@ onMounted(() => {
 
       <!-- Content Section -->
       <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
-        <div class="p-4">
+        <div class="p-1">
           <el-collapse v-model="activeName" class="mb-2">
             <el-collapse-item title="QUOTE DETAIL" name="1">
               <template #title>
                 <span class="text-orange-500">QUOTE DETAIL</span>
               </template>
               <PlusForm
-                v-model="result"
+                v-model="quotationDetailResult"
                 :columns="quoteDetailColumns"
                 :rules="rules"
                 :row-props="{ gutter: 20 }"
@@ -524,6 +1006,7 @@ onMounted(() => {
               />
 
               <div
+                v-if="showCBMTransfer"
                 class="el-form-item asterisk-left el-form-item--label-left plus-form-item"
               >
                 <div class="el-form-item__label-wrap" style="width: 138px">
@@ -532,17 +1015,43 @@ onMounted(() => {
                   >
                 </div>
                 <div class="el-form-item__content">
-                  <el-input-number v-model="result.cbm" :min="0" />
+                  <el-input-number
+                    v-model="quotationDetailResult.cbmToWT"
+                    :min="0"
+                  />
                   <el-select
-                    v-model="result.cbmUOM"
+                    v-model="quotationDetailResult.cbmToWTUOMID"
                     placeholder="Select"
                     style="width: 80px; height: 32px; margin-left: 5px"
                   >
-                    <el-option key="KG" label="KG" value="KG" />
-                    <el-option key="LB" label="LB" value="LB" />
+                    <el-option
+                      v-for="item in cbmTransferUOMResult"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
                   </el-select>
                 </div>
               </div>
+            </el-collapse-item>
+            <el-collapse-item title="GREETINGS" name="2">
+              <template #title>
+                <span class="text-orange-500">GREETINGS</span>
+              </template>
+              <Toolbar
+                :editor="editorRef"
+                :defaultConfig="toolbarConfig"
+                :mode="mode"
+                style="border-bottom: 1px solid #ccc"
+              />
+              <Editor
+                v-model="quotationDetailResult.greeting"
+                :defaultConfig="editorConfig"
+                :mode="mode"
+                style="height: 500px; overflow-y: hidden"
+                @onCreated="handleCreated"
+              />
+              <EditorBase />
             </el-collapse-item>
             <el-collapse-item title="FREIGHT CHARGE" name="3">
               <template #title>
@@ -562,53 +1071,112 @@ onMounted(() => {
                   @click="handleOpen('FREIGHT')"
                 />
               </el-tooltip>
-
-              <HotTable ref="hotTableRef" :settings="freightChargeSettings" />
+              <div
+                ref="handsontableWrapper"
+                class="handsontable-wrapper"
+                @focusout="handleFocusOut"
+              >
+                <HotTable ref="hotTableRef" :settings="freightChargeSettings" />
+              </div>
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Export)</span>
               </template>
-
               <el-tabs v-if="!disabledExportLocalChargeBtn" type="border-card">
-                <el-tab-pane label="User">User</el-tab-pane>
-                <el-tab-pane label="Config">Config</el-tab-pane>
-                <el-tab-pane label="Role">Role</el-tab-pane>
-                <el-tab-pane label="Task">Task</el-tab-pane>
+                <el-tab-pane
+                  v-for="(item, index) in exportLocationResult"
+                  :key="index"
+                  :label="item.city"
+                >
+                  {{ $t("quote.quotedetail.lcp") }}：
+                  <el-select
+                    v-model="item.localChargePackageSelector"
+                    filterable
+                    placeholder="Select"
+                    style="width: 280px; padding-bottom: 5px"
+                    @change="AddLCPItems(item, true)"
+                  >
+                    <el-option
+                      v-for="c in item.localChargePackageList"
+                      :key="c.value"
+                      :label="c.text"
+                      :value="c.value"
+                    />
+                  </el-select>
+                  <HotTable
+                    :ref="setHotTableRef(item.cityID)"
+                    :settings="item.hotTableSetting"
+                  />
+                </el-tab-pane>
               </el-tabs>
-
-              <HotTable
-                v-if="!disabledExportLocalChargeBtn"
-                ref="exportHotTableRef"
-                :settings="exportLocalChargeHotTableSetting"
-              />
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Import)</span>
               </template>
               <el-tabs v-if="!disabledImportLocalChargeBtn" type="border-card">
-                <el-tab-pane label="User">User</el-tab-pane>
-                <el-tab-pane label="Config">Config</el-tab-pane>
-                <el-tab-pane label="Role">Role</el-tab-pane>
-                <el-tab-pane label="Task">Task</el-tab-pane>
+                <el-tab-pane
+                  v-for="(item, index) in importLocationResult"
+                  :key="index"
+                  :label="item.city"
+                >
+                  {{ $t("quote.quotedetail.lcp") }}：
+                  <el-select
+                    v-model="item.localChargePackageSelector"
+                    filterable
+                    placeholder="Select"
+                    style="width: 280px; padding-bottom: 5px"
+                    @change="AddLCPItems(item, false)"
+                  >
+                    <el-option
+                      v-for="c in item.localChargePackageList"
+                      :key="c.value"
+                      :label="c.text"
+                      :value="c.value"
+                    />
+                  </el-select>
+                  <HotTable
+                    :ref="setHotTableRef(item.cityID)"
+                    :settings="item.hotTableSetting"
+                  />
+                </el-tab-pane>
               </el-tabs>
-              <HotTable
-                v-if="!disabledImportLocalChargeBtn"
-                ref="importHotTableRef"
-                :settings="importLocalChargeHotTableSetting"
-              />
             </el-collapse-item>
-            <el-collapse-item title="REMARK " name="6">
+            <el-collapse-item
+              title="TERMS & CONDITIONS"
+              name="6"
+              class="collapse-item"
+            >
+              <template #title>
+                <span class="text-orange-500">TERMS & CONDITIONS</span>
+              </template>
+              <ol class="term-list">
+                <li
+                  v-for="term in quotationDetailResult.terms"
+                  :key="term.termOrder"
+                  class="term-item"
+                >
+                  <div class="checkbox-wrapper">
+                    <el-checkbox
+                      v-model="term.isSelected"
+                      class="checkbox-content"
+                    />
+                    <span class="checkbox-label">{{ term.contents }}</span>
+                  </div>
+                </li>
+              </ol>
+            </el-collapse-item>
+            <el-collapse-item title="REMARK " name="7">
               <template #title>
                 <span class="text-orange-500">REMARK</span>
               </template>
               <el-input
-                v-model="result.remark"
+                v-model="quotationDetailResult.remark"
                 style="width: 440px"
                 placeholder="Please input"
                 clearable
-                maxlength="30"
+                maxlength="500"
                 show-word-limit
                 type="textarea"
               />
@@ -618,10 +1186,7 @@ onMounted(() => {
                 <span class="text-orange-500">SALES INFO</span>
               </template>
               <div class="flex flex-col ...">
-                <div>Name : {{ result.salesName }}</div>
-                <div>EMAIL : {{ result.saleseMail }}</div>
-                <div>Mobile : {{ result.salesMobile }}</div>
-                <div>Tel : {{ result.saleseTel }}</div>
+                <div v-html="quotationDetailResult.signature" />
               </div>
             </el-collapse-item>
           </el-collapse>
@@ -646,63 +1211,6 @@ onMounted(() => {
         </div>
       </el-checkbox-group>
     </el-drawer>
-    <!--
-    <el-drawer v-model="localVisible" title="Local Charge Settings">
-      <div>
-        <el-form
-          :model="newExportLocalChargeItem"
-          @submit.prevent="addColumnHeaderItem"
-        >
-          <el-form-item :label="$t('quote.quotedetail.WeightBreak')">
-            <el-input
-              v-model="newExportLocalChargeItem.columnHeader"
-              placeholder="Break Point"
-            />
-          </el-form-item>
-          <el-form-item>
-            <label>{{ tmpvalue }}</label>
-            <el-slider v-model="tmpvalue" range :max="100" @change="test" />
-          </el-form-item>
-          <el-button type="primary" @click="addColumnHeaderItem">{{
-            $t("buttons.pureAdd")
-          }}</el-button>
-        </el-form>
-        <ElDivider />
-        <el-timeline style="max-width: 600px">
-          <el-timeline-item
-            v-for="(item, index) in exportLocalChargeResult"
-            :key="index"
-            :timestamp="item.columnHeader"
-            placement="top"
-          >
-            <el-card class="local-charge-setting-card">
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: space-between;
-                "
-              >
-                <div style="display: flex; align-items: center">
-                  <el-checkbox v-model="item.sellingRate"
-                    >Selling Rate</el-checkbox
-                  >
-                  <el-checkbox v-model="item.Cost" style="margin-left: 20px"
-                    >Cost</el-checkbox
-                  >
-                </div>
-                <el-button
-                  :icon="useRenderIcon('ep:delete')"
-                  circle
-                  @click="removeItem(index)"
-                />
-              </div>
-            </el-card>
-          </el-timeline-item>
-        </el-timeline>
-      </div>
-    </el-drawer>
-    -->
     <el-drawer v-model="historyVisible" size="60%" title="History">
       <VxeTableBar
         :vxeTableRef="vxeTableRef"
@@ -756,5 +1264,40 @@ onMounted(() => {
 
 :deep(.el-card__body) {
   padding: 6px;
+}
+
+.collapse-item {
+  height: auto;
+  overflow: visible;
+}
+
+.term-list {
+  padding: 0;
+  list-style-type: none;
+}
+
+.term-item {
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* 包裝 checkbox 和文字的容器 */
+.checkbox-wrapper {
+  display: flex;
+  align-items: flex-start; /* 頂部對齊 */
+}
+
+/* 調整 checkbox 的位置靠左上 */
+.checkbox-content {
+  top: -5px;
+  align-self: flex-start; /* 讓 checkbox 自身靠左上 */
+  margin-right: 8px; /* 與文字間隔 */
+}
+
+.checkbox-label {
+  max-width: 100%; /* 避免內容溢出 */
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: normal;
 }
 </style>

@@ -1,6 +1,8 @@
 import quoteDetailService from "@/services/quote/QuoteDetailService";
-
+import commonService from "@/services/commonService";
 import { reactive, ref } from "vue";
+import type { FieldValues } from "plus-pro-components";
+
 export function QuoteDetailHooks() {
   interface dropdownCtl {
     text: string;
@@ -20,6 +22,58 @@ export function QuoteDetailHooks() {
     type: string;
     source: [];
   }
+  const quotationDetailResult = ref<FieldValues>({
+    quoteid: null,
+    quoteNo: null,
+    plid: null,
+    productLineCode: null,
+    attentionToId: null,
+    attentionTo: null,
+    effectiveDate: null,
+    expiredDate: null,
+    issueDate: null,
+    issueById: null,
+    issueBy: null,
+    status: null,
+    statusCode: null,
+    tradeTermId: null,
+    creditTermId: null,
+    shippingTerm: null,
+    typeCode: null,
+    type: null,
+    moveType: null,
+    reference: null,
+    laneSegment: null,
+    nra: null,
+    period: [],
+    customerName: null,
+    customerHQID: null,
+    cbmToWT: null,
+    cbmToWTUOMID: null,
+    creditTermCode: null,
+    tradeTermCode: null,
+    salesId: null,
+    salesName: null,
+    salesMail: null,
+    salesTel: null,
+    salesMobile: null,
+    onePWD: null,
+    greeting: null,
+    signature: null,
+    lclDetails: null,
+    fclDetails: null,
+    exportCharge: null,
+    importCharge: null,
+    terms: [] as any[],
+    salesInOffice: null,
+    salesOverseaOffice: null
+  });
+
+  const frightChargeParams = ref({
+    quoteID: null,
+    pid: null,
+    quoteFreights: [] as any[]
+  });
 
   const customerResult = reactive({
     customers: [] as Array<dropdownCtl>,
@@ -34,31 +88,32 @@ export function QuoteDetailHooks() {
   const attentionToResult = ref([]);
   const tradeTermResult = ref([]);
   const creditTermResult = ref([]);
+  const cbmTransferUOMResult = ref([]);
 
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
 
-  const productLineOptions = reactive<dropdownCtl[]>(null);
-
   const chargeCodeSettingValues = ref([]);
 
-  const freightChargeHotTableKey = ref(0);
-
-  const FreightChargeSettings = reactive({
-    data: [],
-    colHeaders: [],
-    rowHeaders: false,
-    dropdownMenu: true,
-    width: "100%",
-    height: "auto",
-    columns: [],
-    autoWrapRow: true,
-    autoWrapCol: true,
-    allowInsertColumn: true,
-    allowInsertRow: true,
-    allowInvalid: true,
-    licenseKey: "524eb-e5423-11952-44a09-e7a22",
-    contextMenu: true
-  });
+  async function getQuotationDetailResult(
+    QuoteID: number,
+    PL?: number,
+    CustomerHQID?: number
+  ) {
+    try {
+      const response = await quoteDetailService.getQuoteDetailResult(
+        QuoteID,
+        PL,
+        CustomerHQID
+      );
+      if (response && response.returnValue) {
+        quotationDetailResult.value = { ...response.returnValue };
+      } else {
+        throw new Error("Quotation Detail not found.");
+      }
+    } catch (error) {
+      console.error("getQuotationDetailResult Error:", error);
+    }
+  }
 
   async function getCustomerByOwnerUserResult() {
     customerResult.loading = true; // 開始撈取資料，設置 loading 為 true
@@ -78,10 +133,12 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function getChargeCodeSettingResult(ChargeCodeType: number) {
+  async function getChargeCodeSettingResult(QuoteID, PID) {
     try {
-      const response =
-        await quoteDetailService.ChargeCodeSettingResult(ChargeCodeType);
+      const response = await quoteDetailService.ChargeCodeSettingResult(
+        QuoteID,
+        PID
+      );
       if (response != null) {
         ChargeCodeSettingResult.splice(0);
         ChargeCodeSettingResult.push(...response.returnValue);
@@ -163,13 +220,14 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function getTradeTermResult(ShippingTerm: string) {
+  async function getTradeTermResult() {
     try {
-      const response = await quoteDetailService.getTradeTerm(ShippingTerm);
+      const response = await quoteDetailService.getTradeTerm();
       if (response != null) {
         tradeTermResult.value = response.returnValue.map((item: any) => ({
           label: item.text,
-          value: item.value
+          value: item.value,
+          shippingTerm: item.shippingTerm
         }));
       }
     } catch (error) {
@@ -215,15 +273,68 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getCBMTransferUOMRsult() {
+    try {
+      const response = await commonService.getCBMTransferUOMResult();
+      if (response != null) {
+        cbmTransferUOMResult.value = response.map((item: any) => ({
+          label: item.text,
+          value: item.value
+        }));
+      }
+      return response;
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
+  async function getLocalCharge(QuoteID, PID, IsExport, location) {
+    try {
+      const response = await quoteDetailService.getLocalChargeResult(
+        QuoteID,
+        PID,
+        IsExport,
+        location
+      );
+      return response;
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
+  async function saveQuoteDetailResult(params) {
+    try {
+      const response = await quoteDetailService.saveQuoteDetail(params);
+      return response;
+    } catch (error) {
+      console.log("getCreditTermResult", error);
+    }
+  }
+
+  async function saveFreightChargeResult(params) {
+    try {
+      const response = await quoteDetailService.saveFreightCharge(params);
+      return response;
+    } catch (error) {
+      console.log("saveFreightChargeResult", error);
+    }
+  }
+
+  async function saveLocalChargeResult(params) {
+    try {
+      const response = await quoteDetailService.saveLocalCharge(params);
+      return response;
+    } catch (error) {
+      console.log("saveLocalChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
-    productLineOptions,
     getChargeCodeSettingResult,
     ChargeCodeSettingResult,
     chargeCodeSettingValues,
-    FreightChargeSettings,
-    freightChargeHotTableKey,
     getProductLineByCustomerResult,
     getShippingTermResult,
     getAttentionToResult,
@@ -238,6 +349,15 @@ export function QuoteDetailHooks() {
     tradeTermResult,
     creditTermResult,
     freightChargeResult,
-    deleteQuotation
+    deleteQuotation,
+    quotationDetailResult,
+    getQuotationDetailResult,
+    getCBMTransferUOMRsult,
+    cbmTransferUOMResult,
+    saveQuoteDetailResult,
+    getLocalCharge,
+    saveFreightChargeResult,
+    saveLocalChargeResult,
+    frightChargeParams
   };
 }
