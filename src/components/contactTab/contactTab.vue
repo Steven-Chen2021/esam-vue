@@ -12,15 +12,13 @@ import {
   nextTick
 } from "vue";
 import { Plus } from "@element-plus/icons-vue";
-import { useDetail } from "./hooks";
+import { useDetail } from "@/views/customer/hooks";
 const { toDetail, router } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { QuickFilter, quickFilterCTL } from "../customer/quickfilterctl";
-import { listCTL } from "../customer/listctl";
-import { key } from "localforage";
-import { message, closeAllMessage } from "@/utils/message";
+import { QuickFilter, quickFilterCTL } from "@/views/customer/quickfilterctl";
+import { listCTL } from "@/views/customer/listctl";
 import { useTourStore } from "@/store/modules/tour";
-import { customer } from "@/router/enums";
+import { contact } from "@/router/enums";
 import {
   ElNotification,
   ButtonInstance,
@@ -30,10 +28,15 @@ import {
   FormInstance,
   FormRules
 } from "element-plus";
-import CustomerQuickFilterService from "@/services/commonService";
+import CommonService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
-import { useUserStoreHook } from "@/store/modules/user";
 const quickFilterShow = ref(false);
+const props = defineProps({
+  SearchLeadID: {
+    type: String,
+    required: true
+  }
+});
 const {
   getOptions,
   convertDropDownValue,
@@ -56,7 +59,8 @@ const {
   formattedDateRange,
   handleBasicFilterBtnClick,
   activePanelNames,
-  filterRequestType
+  filterRequestType,
+  monthDatePickerList
 } = quickFilterCTL();
 const {
   fetchListData,
@@ -71,7 +75,8 @@ const {
   handleConditionalSearch,
   handleResetConditionalSearch,
   loading,
-  requestType
+  requestType,
+  FilterLeadID
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -94,20 +99,15 @@ const handleFilterEnable = (obj: any) => {
 // const Router = useRouter();
 const handleViewClick = row => {
   console.log("handleViewClick row", row);
-  // Router.push({
-  //   path: "/customer/detail",
-  //   query: { LID: row.hqid }
-  // });
-  // toDetail({ id: row.hqid, qname: row.customerName }, "params");
   router.push({
-    name: "CustomerDetail",
-    params: { id: row.hqid, qname: row.customerName }
+    name: "ContactDetail",
+    params: { id: row.id, lid: row.hqid, qname: row.fullName }
   });
 };
-const handleAddCustomer = () => {
+const handleAddContact = () => {
   router.push({
-    name: "CustomerDetail",
-    params: { id: 0, qname: "Create Customer" }
+    name: "ContactDetail",
+    params: { id: 0, lid: props.SearchLeadID, qname: "Create Contact" }
   });
 };
 // #region Quick Filter
@@ -152,7 +152,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 2;
+      quickFilterForm.filterAppliedPage = 22;
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -177,6 +177,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
           a.value = stringArray;
         }
       });
+      // console.log("submitQuickFilterForm quickFilterForm", quickFilterForm.filters);
       quickFilterForm.filters = quickFilterForm.filters.filter(item => {
         return (
           item.value &&
@@ -184,11 +185,9 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
           (Array.isArray(item.value) ? item.value.length > 0 : true)
         );
       });
-
       console.log("submit! quickFilterForm", quickFilterForm);
       if (quickFilterForm.id === 0) {
-        // const res = updateQuickFilter(quickFilterForm);
-        CustomerQuickFilterService.addQuickFilter(quickFilterForm)
+        CommonService.addQuickFilter(quickFilterForm)
           .then(data => {
             console.log("addQuickFilter data", data);
             ElNotification({
@@ -196,7 +195,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
               message: t("customer.list.quickFilter.addSucText"),
               type: "success"
             });
-            fetchQuickFilterData(customer);
+            fetchQuickFilterData();
             setTimeout(() => {
               setTourStep();
             }, 800);
@@ -205,7 +204,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
             console.log("addQuickFilter error", err);
           });
       } else {
-        CustomerQuickFilterService.updateQuickFilter(quickFilterForm)
+        CommonService.updateQuickFilter(quickFilterForm)
           .then(data => {
             console.log("updateQuickFilter data", data);
             ElNotification({
@@ -236,9 +235,9 @@ const deleteQuickFilter = () => {
   dialogVisible.value = false;
   const params = {
     filterID: deleteQuickFilterID.value,
-    filterAppliedPage: 2
+    filterAppliedPage: 22
   };
-  CustomerQuickFilterService.deleteQuickFilter(params)
+  CommonService.deleteQuickFilter(params)
     .then(data => {
       console.log("deleteQuickFilter data", data);
       ElNotification({
@@ -319,11 +318,11 @@ const dialogVisible = ref(false);
 const showTour = ref(false);
 const tourStore = useTourStore();
 const openTour = computed({
-  get: () => tourStore.customerListShow,
-  set: value => tourStore.setCustomerListTour(value)
+  get: () => tourStore.contactListShow,
+  set: value => tourStore.setContactListTour(value)
 });
 function handlefinishTour() {
-  useTourStoreHook().setCustomerListTour(false);
+  useTourStoreHook().setContactListTour(false);
   tourStep.value = 0;
 }
 const refBtnAddFilter = ref<ButtonInstance>();
@@ -356,10 +355,10 @@ const resetAdvancedFilterForm = (formEl: FormInstance | undefined) => {
 const submitAdvancedFilterForm = () => {
   const advancedFilterParam = reactive({
     GridColumnSettings: advancedFilterForm.filters,
-    APIRequestType: 3
+    APIRequestType: 23
   });
   console.log("handleFilterEnable param", advancedFilterParam);
-  CustomerQuickFilterService.updateAdvancedFilter(advancedFilterParam)
+  CommonService.updateAdvancedFilter(advancedFilterParam)
     .then(data => {
       console.log("updateAdvancedFilter data:", data);
       ElNotification({
@@ -389,29 +388,48 @@ const handleFilterBtnClick = item => {
 };
 // #endregion
 
+const calculateMaxHeight = () => {
+  const windowHeight = window.innerHeight;
+  let newMaxHeight;
+
+  // 根据窗口高度计算最大高度，可以自定义计算逻辑
+  if (windowHeight > 768) {
+    newMaxHeight = windowHeight * 0.7; // 窗口高度的70%
+  } else {
+    newMaxHeight = windowHeight * 0.8; // 窗口高度的80%
+  }
+
+  // 更新 maxHeight 的值
+  maxHeight.value = newMaxHeight;
+};
+
 const maxHeight = ref(null);
 
 onMounted(async () => {
-  requestType.value = customer;
-  filterRequestType.value = customer;
+  console.log("onMounted SearchLeadID", props.SearchLeadID);
+  if (props.SearchLeadID && props.SearchLeadID !== "0") {
+    FilterLeadID.value = props.SearchLeadID;
+  }
+  requestType.value = contact;
+  filterRequestType.value = contact;
   fetchListData();
   fetchData();
   fetchAdvancedFilterData();
   await nextTick(); // 等待 DOM 更新完成
   setTimeout(() => {
     // 在这里决定是否显示 el-tour
-    if (tourStore.customerListShow) {
+    if (tourStore.contactListShow) {
       // 这里可以添加你的逻辑决定是否显示
       showTour.value = true; // 或者根据其他条件来决定
     }
   }, 2000);
 });
 watch(
-  () => tourStore.customerListShow,
+  () => tourStore.contactListShow,
   () => {
     setTimeout(() => {
       // 在这里决定是否显示 el-tour
-      if (tourStore.customerListShow) {
+      if (tourStore.contactListShow) {
         // 这里可以添加你的逻辑决定是否显示
         showTour.value = true; // 或者根据其他条件来决定
       }
@@ -423,37 +441,6 @@ watch(
 
 <template>
   <div class="containerC">
-    <div class="flex flex-row">
-      <div class="basis-4/5">
-        <el-button ref="refBtnAddFilter" @click="handleQuickFilterOpen">{{
-          t("customer.list.quickFilter.addFilterbtn")
-        }}</el-button>
-        <el-dropdown
-          v-for="(item, index) in quickFilterList"
-          v-bind:key="item.id"
-          :ref="el => (refsQuickFilterBtn[index] = el)"
-          loading
-          split-button
-          :plain="!item.clicked"
-          :type="item.clicked ? 'primary' : ''"
-          style="margin-left: 10px"
-          @click="handleFilterClick(item)"
-        >
-          {{ item.filterName }}
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="handleEditQuickFilter(item)">{{
-                t("customer.list.quickFilter.editBtnText")
-              }}</el-dropdown-item>
-              <el-dropdown-item @click="handleDeleteQuickFilter(item)">{{
-                t("customer.list.quickFilter.delBtnText")
-              }}</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </div>
-    <el-divider />
     <div>
       <el-form
         v-show="showBasicFilterTopForm"
@@ -533,8 +520,8 @@ watch(
                 <el-form-item
                   v-for="filterItem in advancedFilterForm.filters.filter(
                     c =>
-                      c.showOnFilter &&
                       c.enableOnSearchView &&
+                      c.showOnFilter &&
                       c.filterType !== 'cascadingdropdown' &&
                       c.filterKey !== 'capitalAmount'
                   )"
@@ -595,6 +582,7 @@ watch(
                     "
                     style="width: 338px"
                     filterable
+                    clearable
                   >
                     <el-option
                       v-for="option in filterOptions[filterItem.filterKey].list"
@@ -629,6 +617,11 @@ watch(
                   <el-date-picker
                     v-if="filterItem.filterType === 'daterange'"
                     v-model="filterItem.ValueBegin"
+                    :type="
+                      monthDatePickerList.includes(filterItem.filterKey)
+                        ? 'month'
+                        : 'date'
+                    "
                     :range-separator="
                       $t('customer.list.quickFilter.dateSeparator')
                     "
@@ -638,7 +631,11 @@ watch(
                     :end-placeholder="
                       $t('customer.list.quickFilter.endDateHolderText')
                     "
-                    format="MMM DD"
+                    :format="
+                      monthDatePickerList.includes(filterItem.filterKey)
+                        ? 'MMM, YYYY'
+                        : 'MMM DD'
+                    "
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
                   />
@@ -650,6 +647,11 @@ watch(
                   <el-date-picker
                     v-if="filterItem.filterType === 'daterange'"
                     v-model="filterItem.ValueEnd"
+                    :type="
+                      monthDatePickerList.includes(filterItem.filterKey)
+                        ? 'month'
+                        : 'date'
+                    "
                     :range-separator="
                       $t('customer.list.quickFilter.dateSeparator')
                     "
@@ -659,9 +661,19 @@ watch(
                     :end-placeholder="
                       $t('customer.list.quickFilter.endDateHolderText')
                     "
-                    format="MMM DD"
+                    :format="
+                      monthDatePickerList.includes(filterItem.filterKey)
+                        ? 'MMM, YYYY'
+                        : 'MMM DD'
+                    "
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
+                  />
+                  <el-checkbox
+                    v-else-if="filterItem.filterType === 'checkbox'"
+                    v-model="filterItem.value"
+                    :checked="filterItem.value ? true : false"
+                    label=""
                   />
                 </el-form-item>
                 <el-form-item>
@@ -682,15 +694,7 @@ watch(
                       $t("customer.list.advancedSetting.clearBtn")
                     }}</el-button
                   >
-                  <el-button
-                    ref="refBtnAdvancedFilterSetting"
-                    :icon="useRenderIcon('ep:setting')"
-                    @click="handleAdvancedSettings"
-                    >{{
-                      $t("customer.list.advancedSetting.settingBtn")
-                    }}</el-button
-                  >
-                  <el-button :icon="Plus" @click="handleAddCustomer">{{
+                  <el-button :icon="Plus" @click="handleAddContact">{{
                     $t("customer.add")
                   }}</el-button>
                 </el-form-item>
@@ -712,9 +716,9 @@ watch(
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
           c =>
+            c.enableOnSearchView &&
             c.filterType !== 'cascadingdropdown' &&
-            c.showOnGrid &&
-            c.enableOnSearchView
+            c.showOnGrid
         )"
         :key="col.filterKey"
         :prop="col.filterKey"
@@ -805,7 +809,7 @@ watch(
             <el-form-item
               v-for="filterItem in quickFilterForm.filters.filter(
                 c =>
-                  c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
+                  c.enableOnSearchView && c.filterType !== 'cascadingdropdown'
               )"
               :key="filterItem.filterKey"
               :label="t(filterItem.langethKey)"
@@ -879,21 +883,12 @@ watch(
                 v-model="filterItem.value"
                 :placeholder="t('customer.list.quickFilter.holderKeyinText')"
               />
-              <!-- <el-date-picker
-                v-else-if="filterItem.filterType === 'daterange'"
+              <el-checkbox
+                v-else-if="filterItem.filterType === 'checkbox'"
                 v-model="filterItem.value"
-                type="daterange"
-                :range-separator="$t('customer.list.quickFilter.dateSeparator')"
-                :start-placeholder="
-                  $t('customer.list.quickFilter.startDateHolderText')
-                "
-                :end-placeholder="
-                  $t('customer.list.quickFilter.endDateHolderText')
-                "
-                format="MMM DD, YYYY"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              /> -->
+                :checked="filterItem.value ? true : false"
+                label=""
+              />
               <el-row
                 v-else-if="filterItem.filterType === 'daterange'"
                 :gutter="20"
@@ -972,7 +967,7 @@ watch(
         <tbody>
           <tr
             v-for="settingItem in advancedFilterForm.filters.filter(
-              c => c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
+              c => c.enableOnSearchView && c.filterType !== 'cascadingdropdown'
             )"
             v-bind:key="settingItem.filterKey"
           >

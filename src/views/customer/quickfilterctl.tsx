@@ -674,19 +674,21 @@ export function quickFilterCTL() {
   const basicFilterTopForm = computed(() => {
     return advancedFilterForm.filters.filter(
       a =>
-        (a.value && a.value !== "") ||
-        (a.selectValue && a.selectValue !== "") ||
-        (a.ValueBegin && a.ValueBegin !== "") ||
-        (a.ValueEnd && a.ValueEnd !== "")
+        a.enableOnSearchView &&
+        ((a.value && a.value !== "") ||
+          (a.selectValue && a.selectValue !== "") ||
+          (a.ValueBegin && a.ValueBegin !== "") ||
+          (a.ValueEnd && a.ValueEnd !== ""))
     );
   });
   const showBasicFilterTopForm = computed(() => {
     const c = advancedFilterForm.filters.filter(
       a =>
-        (a.value && a.value !== "") ||
-        (a.selectValue && a.selectValue !== "") ||
-        (a.ValueBegin && a.ValueBegin !== "") ||
-        (a.ValueEnd && a.ValueEnd !== "")
+        a.enableOnSearchView &&
+        ((a.value && a.value !== "") ||
+          (a.selectValue && a.selectValue !== "") ||
+          (a.ValueBegin && a.ValueBegin !== "") ||
+          (a.ValueEnd && a.ValueEnd !== ""))
     );
     if (c && c.length > 0) {
       return true;

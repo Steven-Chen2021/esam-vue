@@ -276,6 +276,7 @@ contact:
     relationship: Relationship
     remark: Remark
   profile:
+    active: Active
     inActive: Inactive
     maintain: Contact Maintain
     updatedBy: "Last Contact By :"

@@ -35,7 +35,7 @@ export interface QuickFilter {
   clicked: boolean;
   filters: QuickFilterDetail[];
 }
-export function customerProfileCTL() {
+export function contactProfileCTL() {
   const { t } = useI18n();
   const userAuth = ref({});
   const profileDataInit = ref({ customerName: "" });
@@ -44,12 +44,13 @@ export function customerProfileCTL() {
   // TODO: 补全所有栏位
   const fetchProfileData = async () => {
     try {
-      const [result1, result2, result3] = await Promise.all([
+      const [result1, result2, result3, plList] = await Promise.all([
         CommonService.getProfileColumnList(25),
         ContactProfileService.getContactProfileResult(ProfileID.value),
-        ContactProfileService.getUserAuthByCustomerResult(LeadID.value)
+        ContactProfileService.getUserAuthByCustomerResult(LeadID.value),
+        CommonService.getPLList()
       ]);
-      formLoading.value = false;
+      PLModuleList.value = deepClone(plList.returnValue);
       userAuth.value = deepClone(result3.returnValue);
       profileData.value = deepClone(result2.returnValue);
       if (profileData.value["boss"]) {
@@ -64,35 +65,20 @@ export function customerProfileCTL() {
           .map(item => item.trim())
           .filter(a => a !== "");
       }
-      console.log("profileData.value", profileData.value);
+
       if (ProfileID.value === "0") {
         profileFormData.value = deepClone(
           result1.returnValue.filter(c => c.showOnDetailAdd === true)
         );
+        profileData.value["plList"] = plList.returnValue
+          .filter(item => item.status === "Active")
+          .map(item => item.description);
       } else {
         profileFormData.value = deepClone(result1.returnValue);
       }
-      profileData.value["agentROCheck"] = false;
       console.log("profileData.value", profileData.value);
-      if (
-        !profileData.value["agentId"] ||
-        profileData.value["agentId"] <= 0 ||
-        !profileData.value["agent"] ||
-        profileData.value["agent"] === ""
-      ) {
-        profileFormData.value = profileFormData.value.filter(
-          c => c.filterKey !== "agent"
-        );
-      }
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
-        // column.value = result2.data.returnValue[column.filterKey];
-        // if (column.visibilityLevel === 1) {
-        //   if (basicRole === "NA") {
-        //     profileData.value[column.filterKey] = warnMsg;
-        //     profileDataInit.value[column.filterKey] = warnMsg;
-        //   }
-        // } else
         if (column.visibilityLevel === 2) {
           if (
             !userAuth.value["isReadAdvanceColumn"] &&
@@ -113,6 +99,7 @@ export function customerProfileCTL() {
       if (result1.returnValue && result2.returnValue) {
         fetchOptionsNeedParam(result1.returnValue, result2.returnValue);
       }
+      formLoading.value = false;
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -1100,6 +1087,20 @@ export function customerProfileCTL() {
       }
     }
   };
+  const inActiveContact = async () => {
+    formLoading.value = true;
+    ContactProfileService.inactiveContactResult(ProfileID.value).then(data => {
+      console.log("inactiveContactResult data", data);
+      fetchProfileData();
+    });
+  };
+  const activeContact = async () => {
+    formLoading.value = true;
+    ContactProfileService.activeContactResult(ProfileID.value).then(data => {
+      console.log("activeContactResult data", data);
+      fetchProfileData();
+    });
+  };
   return {
     membersFormData,
     loadDimOrgOptions,
@@ -1164,6 +1165,8 @@ export function customerProfileCTL() {
     fetchPLModuleList,
     PLModuleList,
     fetchDCUrl,
-    DCUrl
+    DCUrl,
+    inActiveContact,
+    activeContact
   };
 }

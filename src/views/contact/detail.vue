@@ -3,7 +3,7 @@ import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 import { ref, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { customerProfileCTL } from "./profilectl";
+import { contactProfileCTL } from "./profilectl";
 import dayjs from "dayjs";
 import {
   ElNotification,
@@ -54,10 +54,11 @@ const {
   loadDimOrgOptions,
   formLoading,
   PLModuleList,
-  fetchPLModuleList,
   fetchDCUrl,
-  DCUrl
-} = customerProfileCTL();
+  DCUrl,
+  inActiveContact,
+  activeContact
+} = contactProfileCTL();
 // const { fetchMembersData } = leadmemberctl();
 defineOptions({
   name: "ContactDetail"
@@ -592,7 +593,7 @@ onMounted(() => {
   ProfileID.value = CID;
   LeadID.value = LID;
   fetchProfileData();
-  fetchPLModuleList();
+  // fetchPLModuleList();
   fetchDCUrl();
   // fetchPLData(0);
   // loadDimOrgOptions();
@@ -771,60 +772,6 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
       console.log("addQuickFilter error", err);
     });
 };
-// #region Disqualify
-const disQualifyLoading = ref(false);
-const disQualifyDialog = ref(false);
-const disQualifyForm = reactive({
-  reason: ""
-});
-const handleClose = done => {
-  if (disQualifyLoading.value) {
-    return;
-  }
-  ElMessageBox.confirm(t("customer.profile.warningAlert"))
-    .then(() => {
-      onDisQualifyConfirmClick();
-    })
-    .catch(() => {
-      // catch error
-    });
-};
-const onDisQualifyConfirmClick = () => {
-  disQualifyLoading.value = true;
-  const param = {
-    LID: LID,
-    Reason: disQualifyForm.reason
-  };
-  console.log("disqualifyLead param", param);
-  CustomerProfileService.disqualifyLead(param)
-    .then(d => {
-      console.log("disqualifyLead data", d);
-      ElMessage({
-        message: t("customer.profile.disQualifySucAlert"),
-        grouping: true,
-        type: "success"
-      });
-      disQualifyDialog.value = false;
-      fetchProfileData();
-      fetchPLData(0);
-    })
-    .catch(err => {
-      console.log("autosave error", err);
-      ElMessage({
-        message: t("customer.profile.disQualifyFailAlert"),
-        grouping: true,
-        type: "warning"
-      });
-    })
-    .finally(() => {
-      disQualifyLoading.value = false;
-    });
-};
-const cancelForm = () => {
-  disQualifyLoading.value = false;
-  disQualifyDialog.value = false;
-};
-// #endregion
 </script>
 
 <template>
@@ -840,23 +787,38 @@ const cancelForm = () => {
         </div>
         <div class="grow-0 h-8 ...">
           <el-button
+            v-if="
+              ProfileID !== '0' && profileData['btnStatusTitle'] === 'Inactive'
+            "
             type="primary"
             plain
             :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
+            :loading="formLoading"
             :icon="useRenderIcon('ri:save-line')"
-            :disabled="!userAuth['isWrite'] && LID !== '0'"
-            @click="disQualifyDialog = true"
+            :disabled="!userAuth['isWrite'] && ProfileID !== '0'"
+            @click="inActiveContact()"
           >
             {{ t("contact.profile.inActive") }}
+          </el-button>
+          <el-button
+            v-else-if="
+              ProfileID !== '0' && profileData['btnStatusTitle'] === 'Active'
+            "
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading="formLoading"
+            :icon="useRenderIcon('ri:save-line')"
+            :disabled="!userAuth['isWrite'] && ProfileID !== '0'"
+            @click="activeContact()"
+          >
+            {{ t("contact.profile.active") }}
           </el-button>
           <el-button
             type="primary"
             plain
             :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
+            :loading="formLoading"
             :icon="useRenderIcon('ri:save-line')"
             :disabled="!userAuth['isWrite'] && LID !== '0'"
             @click="submitForm(profileFormRef, false)"
@@ -1858,90 +1820,6 @@ const cancelForm = () => {
           </el-collapse-item>
         </el-collapse>
       </div>
-
-      <el-drawer
-        v-model="disQualifyDialog"
-        :title="t('customer.profile.disqualifyReason')"
-        :before-close="handleClose"
-        direction="rtl"
-        class="demo-drawer"
-      >
-        <div class="demo-drawer__content">
-          <el-form :model="disQualifyForm">
-            <el-form-item>
-              <el-input
-                v-model="disQualifyForm.reason"
-                type="textarea"
-                autocomplete="off"
-              />
-            </el-form-item>
-          </el-form>
-          <div class="demo-drawer__footer">
-            <el-button @click="cancelForm">{{
-              t("customer.profile.cancel")
-            }}</el-button>
-            <el-button
-              type="primary"
-              :loading="disQualifyLoading"
-              @click="onDisQualifyConfirmClick"
-            >
-              {{
-                disQualifyLoading
-                  ? t("customer.profile.submitting")
-                  : t("customer.profile.submit")
-              }}
-            </el-button>
-          </div>
-        </div>
-      </el-drawer>
-      <el-dialog
-        v-model="dialogPLUpdateHistoryVisible"
-        :title="`${t('customer.profile.pl.historyTitle')} - ${PLHistoryTitle}`"
-        width="900"
-      >
-        <el-table :data="PLUpdateHistoryList">
-          <el-table-column
-            property="createdDate"
-            :label="t('customer.profile.pl.date')"
-            width="160"
-          />
-          <el-table-column
-            property="status"
-            :label="t('customer.profile.pl.leadStatus')"
-            width="190"
-          />
-          <el-table-column
-            property="ownerStation"
-            :label="t('customer.profile.pl.ownerStation')"
-            width="160"
-          />
-          <el-table-column
-            property="owner"
-            :label="t('customer.profile.pl.owner')"
-            width="180"
-          />
-          <el-table-column
-            property="createdBy"
-            :label="t('customer.profile.pl.assigner')"
-            width="180"
-          />
-        </el-table>
-      </el-dialog>
-      <el-dialog
-        v-model="dialogReturnVisible"
-        :title="t('customer.list.quickFilter.warnTitle')"
-        width="500"
-      >
-        <span>{{ t("customer.list.quickFilter.delWarnText") }}</span>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button @click="dialogReturnVisible = false">Cancel</el-button>
-            <el-button type="primary" @click="handleDialogConfirm">
-              Confirm
-            </el-button>
-          </div>
-        </template>
-      </el-dialog>
     </el-card>
   </div>
 </template>

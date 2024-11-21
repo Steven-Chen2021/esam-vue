@@ -70,6 +70,24 @@ export function listCTL() {
         break;
       }
       case contact: {
+        console.log("contact search", searchParams.ConditionalSettings);
+        if (FilterLeadID && FilterLeadID.value !== "0") {
+          if (!searchParams.ConditionalSettings) {
+            searchParams.ConditionalSettings = [
+              {
+                enableOnSearchView: false,
+                filterKey: "hqid",
+                value: FilterLeadID.value
+              }
+            ];
+          } else {
+            searchParams.ConditionalSettings.push({
+              enableOnSearchView: false,
+              filterKey: "hqid",
+              value: FilterLeadID.value
+            });
+          }
+        }
         loading.value = true;
         ContactSearchService.getContactList(searchParams)
           .then(data => {
@@ -159,20 +177,7 @@ export function listCTL() {
     }
     return "";
   };
-  // const columnfilterHandler = (
-  //   value: string,
-  //   row: any,
-  //   column: TableColumnCtx<any>
-  // ) => {
-  //   const property = column["property"];
-  //   // console.log("columnfilterHandler property", property);
-  //   // console.log("columnfilterHandler value", value);
-  //   // searchParams[property] = value;
-  //   // fetchData();
-  //   return row[property].toString().indexOf(value) !== -1;
-  // };
-  // 初始加载数据
-  // fetchData();
+  const FilterLeadID = ref(null);
   return {
     fetchListData,
     tableData,
@@ -187,6 +192,7 @@ export function listCTL() {
     searchParams,
     handleResetConditionalSearch,
     loading,
-    requestType
+    requestType,
+    FilterLeadID
   };
 }

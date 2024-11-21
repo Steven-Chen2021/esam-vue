@@ -23,6 +23,26 @@ class ContactProfileService {
       return [];
     }
   }
+  async inactiveContactResult(contactID) {
+    try {
+      const response = await API.post(
+        `/api/Contact/InactiveContactResult?ContactID=${contactID}`
+      );
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async activeContactResult(contactID) {
+    try {
+      const response = await API.post(
+        `/api/Contact/ActiveContactResult?ContactID=${contactID}`
+      );
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
   async updateCustomerProfile(params) {
     try {
       const response = await API.post(
