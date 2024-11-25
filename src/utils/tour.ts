@@ -4,6 +4,7 @@ export interface TourInfo {
   customerListShow?: boolean;
   customerListRead?: boolean;
   contactListShow?: boolean;
+  taskListShow?: boolean;
 }
 export function setTourStatus(tourInfo) {
   // useUserStoreHook().SET_AVATAR(avatar);

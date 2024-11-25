@@ -241,7 +241,29 @@ login:
   purePassWordSureReg: Please enter confirm password
   purePassWordDifferentReg: The two passwords are difference!
   purePassWordUpdateReg: Password has been updated
+common:
+  dc: Documents
+task:
+  quickfilter:
+    priority: Priority
+    logType: Log Type
+    taskStatus: Status
+    contact: Contact
+    attendees: Attendees
+    taskOwner: Owner
+    ownerBranch: Owner Branch
+    groupRepName: Group Rep
+    notifyParty: Notify Party
+    appointmentStartDate: Appointment Date
+    dueDate: Due Date
+    locationCity: Location
+    subjectCategory: Subject Category
+    subject: Subject
+    description: Description
+    actionItem: Action Item
 contact:
+  tabTitle: Contact Search
+  cancel: Cancel
   quickfilter:
     names: Gender
     fullName: Name
@@ -258,6 +280,27 @@ contact:
     contactID: Hubspot ID
     joinedCompany: Joined Company
     joinedIndustry: Joined Industry
+    firstName: FirstName
+    lastName: LastName
+    fax2: Fax2
+    birthday: Birthday
+    hobby: Hobby
+    email: eMail
+    tel_O: Tel(O)
+    tel_M: Tel(M)
+    tel_H: Tel(H)
+    familyMembers: Family Member
+    address: Address
+    city: Location
+    zip: Postal Code
+    relationship: Relationship
+    remark: Remark
+  profile:
+    active: Active
+    inActive: Inactive
+    maintain: Contact Maintain
+    updatedBy: "Last Contact By :"
+    status: "Status :"
 customer:
   add: Add New
   quickfilter:

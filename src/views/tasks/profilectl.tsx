@@ -1,6 +1,6 @@
 import { useI18n } from "vue-i18n";
-import CustomerQuickFilterService from "@/services/commonService";
-import CustomerProfileService from "@/services/customer/CustomerProfileService";
+import CommonService from "@/services/commonService";
+import ContactProfileService from "@/services/contact/ContactProfileService";
 import LeadMemberService from "@/services/customer/LeadMemberService";
 import { ElMessage } from "element-plus";
 // import Sortable from "sortablejs";
@@ -35,56 +35,55 @@ export interface QuickFilter {
   clicked: boolean;
   filters: QuickFilterDetail[];
 }
-export function customerProfileCTL() {
+export function contactProfileCTL() {
   const { t } = useI18n();
   const userAuth = ref({});
   const profileDataInit = ref({ customerName: "" });
   const profileFormData = ref([]);
-  const profileData = ref({ agentRO: null, agentROCheck: null });
+  const profileData = ref({});
   // TODO: 补全所有栏位
-  async function fetchProfileData() {
+  const fetchProfileData = async () => {
     try {
-      const [result1, result2, result3] = await Promise.all([
-        // axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
-        // axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
-        CustomerQuickFilterService.getProfileColumnList(5),
-        CustomerProfileService.getCustomerProfileResult(LeadID.value),
-        CustomerProfileService.getUserAuthByCustomerResult(LeadID.value)
+      const [result1, result2, result3, plList] = await Promise.all([
+        CommonService.getProfileColumnList(25),
+        ContactProfileService.getContactProfileResult(ProfileID.value),
+        ContactProfileService.getUserAuthByCustomerResult(LeadID.value),
+        CommonService.getPLList()
       ]);
-      console.log("getUserAuthByCustomerResult", result3.returnValue);
+      PLModuleList.value = deepClone(plList.returnValue);
       userAuth.value = deepClone(result3.returnValue);
-      loadAgentROList();
       profileData.value = deepClone(result2.returnValue);
-      if (LeadID.value === "0") {
+      if (profileData.value["boss"]) {
+        profileData.value["bossArray"] = profileData.value["boss"]
+          .split(/[,;]/)
+          .map(item => item.trim())
+          .filter(a => a !== "");
+      }
+      if (profileData.value["hobby"]) {
+        profileData.value["hobbyArray"] = profileData.value["hobby"]
+          .split(/[,;]/)
+          .map(item => item.trim())
+          .filter(a => a !== "");
+      }
+
+      if (ProfileID.value === "0") {
         profileFormData.value = deepClone(
           result1.returnValue.filter(c => c.showOnDetailAdd === true)
         );
+        profileData.value["plList"] = plList.returnValue
+          .filter(item => item.status === "Active")
+          .map(item => item.description);
       } else {
         profileFormData.value = deepClone(result1.returnValue);
       }
-      profileData.value["agentROCheck"] = false;
       console.log("profileData.value", profileData.value);
-      if (
-        !profileData.value["agentId"] ||
-        profileData.value["agentId"] <= 0 ||
-        !profileData.value["agent"] ||
-        profileData.value["agent"] === ""
-      ) {
-        profileFormData.value = profileFormData.value.filter(
-          c => c.filterKey !== "agent"
-        );
-      }
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
-        // column.value = result2.data.returnValue[column.filterKey];
-        // if (column.visibilityLevel === 1) {
-        //   if (basicRole === "NA") {
-        //     profileData.value[column.filterKey] = warnMsg;
-        //     profileDataInit.value[column.filterKey] = warnMsg;
-        //   }
-        // } else
         if (column.visibilityLevel === 2) {
-          if (!userAuth.value["isReadAdvanceColumn"] && LeadID.value !== "0") {
+          if (
+            !userAuth.value["isReadAdvanceColumn"] &&
+            ProfileID.value !== "0"
+          ) {
             profileData.value[column.filterKey] = t(
               "customer.profile.general.unauthorized"
             );
@@ -100,10 +99,51 @@ export function customerProfileCTL() {
       if (result1.returnValue && result2.returnValue) {
         fetchOptionsNeedParam(result1.returnValue, result2.returnValue);
       }
+      formLoading.value = false;
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  }
+  };
+  const PLModuleList = ref([]);
+  const fetchPLModuleList = async () => {
+    try {
+      const [result1] = await Promise.all([CommonService.getPLList()]);
+      PLModuleList.value = deepClone(result1.returnValue);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  // TODO: API
+  const DCUrl = ref("");
+  const fetchDCUrl = async () => {
+    try {
+      const param = {
+        KeyValue: 62326,
+        DCType: "LED"
+      };
+      const [result1] = await Promise.all([
+        CommonService.getDocumentCloudSiteResult(param)
+      ]);
+      const pattern =
+        /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(\/[^\s]*)?(\?[^\s]*)?(#[^\s]*)?$/;
+      console.log("result1.returnValue", result1.returnValue);
+      console.log(
+        "result1.returnValue test",
+        pattern.test(result1.returnValue)
+      );
+      if (
+        result1 &&
+        result1.returnValue &&
+        result1.returnValue !== "" &&
+        pattern.test(result1.returnValue)
+      ) {
+        DCUrl.value = deepClone(result1.returnValue);
+        console.log("DCUrl.value", DCUrl.value);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
   const handleAgentROCheckChange = v => {
     console.log("handleAgentROCheckChange", profileData.value);
     if (v) {
@@ -127,6 +167,7 @@ export function customerProfileCTL() {
   });
   const activeTabPID = ref();
   const LeadID = ref(null);
+  const ProfileID = ref(null);
   // TODO: Login userID check
   const actionOptions = (currentUserID, ownerUserID) => {
     if (currentUserID === ownerUserID) {
@@ -144,23 +185,20 @@ export function customerProfileCTL() {
   };
   async function fetchPLData(PID) {
     try {
-      console.log("fetchPLData", `LID:${LeadID.value} PID:${PID}`);
+      console.log("fetchPLData", `LID:${ProfileID.value} PID:${PID}`);
       // LeadID.value = LID;
-      const [result1, result2] = await Promise.all([
-        CustomerProfileService.getPLDetailData(LeadID.value, PID),
-        CustomerProfileService.getPLListData(LeadID.value)
-      ]);
+      const [result1] = await Promise.all([CommonService.getPLList()]);
       PLFormData.value = deepClone(result1.returnValue);
-      tabsPLList.value = deepClone(result2.returnValue);
+      tabsPLList.value = deepClone(result1.returnValue);
       // if (PLFormData.value && PLFormData.value.pid) {
       //   activeTabPID.value = `${PLFormData.value.pid}_${PLFormData.value.pid}_${LID}_${PLFormData.value.plName}`;
       // } else {
       //   activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LID}_${tabsPLList.value[0].plName}`;
       // }
-      activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${LeadID.value}_${tabsPLList.value[0].plName}`;
+      activeTabPID.value = `${tabsPLList.value[0].smhqid}_${tabsPLList.value[0].pid}_${ProfileID.value}_${tabsPLList.value[0].plName}`;
       formDataMap.value[PLFormData.value.plName] = deepClone(PLFormData.value);
       console.log("PLFormData.value", PLFormData.value);
-      if (LeadID.value !== "0" && PLFormData.value["id"]) {
+      if (ProfileID.value !== "0" && PLFormData.value["id"]) {
         LeadMemberService.getLeadMembersResult(PLFormData.value["id"]).then(
           data => {
             console.log("getLeadMembersResult data", data);
@@ -180,7 +218,7 @@ export function customerProfileCTL() {
     }
     try {
       console.log("fetchPLFormData", `LID:${LID} PID:${PID}`);
-      const response = await CustomerProfileService.getPLDetailData(LID, PID);
+      const response = await ContactProfileService.getPLDetailData(LID, PID);
       formDataMap.value[plName] = deepClone(response.returnValue);
       if (formDataMap.value[plName] && formDataMap.value[plName].id) {
         LeadMemberService.getLeadMembersResult(
@@ -204,100 +242,28 @@ export function customerProfileCTL() {
   //#region Lead Members
   //#endregion
   const rules = {
-    customerName: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "blur"
-      }
-    ],
-    localName: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "blur"
-      }
-    ],
-    mainAddress: [
+    names: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
         trigger: "focusout"
       }
     ],
-    country: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
-    // city: [
-    //   {
-    //     required: true,
-    //     message: t('customer.profile.general.mandatory'),
-    //     trigger: "change"
-    //   }
-    // ],
-    zip: [
+    firstName: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
         trigger: "blur"
       }
     ],
-    leadSourceGroupID: [
+    lastName: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
-    leadSourceID: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
-    industryGroupID: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
-    industryID: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
-    createdFor: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
+        trigger: "blur"
       }
     ]
   };
-  // const getFormItemProp = key => {
-  //   let newKey = "";
-  //   switch (key) {
-  //     case "leadSourceGroup":
-  //       newKey = "leadSourceGroupID";
-  //       break;
-  //     case "industryGroup":
-  //       newKey = "industryGroupID";
-  //       break;
-  //     default:
-  //       newKey = key;
-  //       break;
-  //   }
-  //   console.log("getFormItemProp newKey", newKey);
-  //   return newKey;
-  // };
   const getFormItemLabel = filterItem => {
     let text = "";
     switch (filterItem.filterKey) {
@@ -319,7 +285,7 @@ export function customerProfileCTL() {
       case "country": {
         const response =
           // TODO: 跨域问题
-          await CustomerQuickFilterService.getAutoCompleteList({
+          await CommonService.getAutoCompleteList({
             OptionsResourceType: 15,
             ParentParams: [v],
             Paginator: false
@@ -334,7 +300,7 @@ export function customerProfileCTL() {
       case "state": {
         const response =
           // TODO: 跨域问题
-          await CustomerQuickFilterService.getAutoCompleteList({
+          await CommonService.getAutoCompleteList({
             OptionsResourceType: 16,
             ParentParams: profileData.value["country"] + "," + v,
             Paginator: false
@@ -370,7 +336,7 @@ export function customerProfileCTL() {
           ParentParams: v,
           Paginator: false
         };
-        CustomerQuickFilterService.getAutoCompleteList(subParam).then(data => {
+        CommonService.getAutoCompleteList(subParam).then(data => {
           filterOptions.value["leadSource"] = {};
           filterOptions.value["leadSource"].list = data;
           filterOptions.value["leadSourceDetail"].list = [];
@@ -385,7 +351,7 @@ export function customerProfileCTL() {
       case "leadSourceID": {
         const response =
           // TODO: 跨域问题
-          await CustomerQuickFilterService.getAutoCompleteList({
+          await CommonService.getAutoCompleteList({
             OptionsResourceType: 101,
             ParentParams: [v],
             Paginator: false
@@ -405,7 +371,7 @@ export function customerProfileCTL() {
       case "industryGroupID": {
         const response =
           // TODO: 跨域问题
-          await CustomerQuickFilterService.getAutoCompleteList({
+          await CommonService.getAutoCompleteList({
             OptionsResourceType: 102,
             ParentParams: v,
             Paginator: false
@@ -419,12 +385,12 @@ export function customerProfileCTL() {
   };
   const ddlNeedExtraList = ["city"]; //City dropdownList with extra input textbox
   const ddlCasList = ["industryGroup", "leadSourceGroup"]; //cascading dropdown
-  const inputNeedExtraList = ["phone", "fax"]; //Need extra input textbox
+  const inputNeedExtraList = ["phone"]; //Need extra input textbox
   const handleClickPLHistory = async PLDetail => {
     console.log("handleClickPLHistory PLDetail", PLDetail);
     dialogPLUpdateHistoryVisible.value = true;
     PLHistoryTitle.value = PLDetail.plName;
-    CustomerProfileService.getPLUpdateHistoryListData({
+    ContactProfileService.getPLUpdateHistoryListData({
       SourceID: PLDetail.id,
       SourceType: "LeadNew"
     })
@@ -507,18 +473,8 @@ export function customerProfileCTL() {
   });
   // TODO: API
   //取得下拉选单列表,统一存入filterOptions
+  const formLoading = ref(true);
   const filterOptions = ref({});
-  const loadAgentROList = async () => {
-    const subParam = {
-      OptionsResourceType: 104,
-      Paginator: false
-    };
-    CustomerQuickFilterService.getAutoCompleteList(subParam).then(data => {
-      filterOptions.value["agentRO"] = {};
-      filterOptions.value["agentRO"].list = data;
-      filterOptions.value["agentRO"].loading = false;
-    });
-  };
   // const fetchOptions = async (filterItems: QuickFilterDetail[]) => {
   //   try {
   //     const selectFilterList: QuickFilterDetail[] = filterItems.filter(
@@ -566,6 +522,19 @@ export function customerProfileCTL() {
           Paginator: false
         };
         switch (item.filterKey) {
+          case "names":
+            resourceType = 118;
+            break;
+          case "boss":
+            resourceType = 119;
+            subParam.SelectID = LeadID.value;
+            break;
+          case "role":
+            resourceType = 120;
+            break;
+          case "hobby":
+            resourceType = 122;
+            break;
           case "productLineName":
             resourceType = 2;
             break;
@@ -610,14 +579,25 @@ export function customerProfileCTL() {
           console.log("fetchOptionsNeedParam item", item);
         }
         subParam.OptionsResourceType = resourceType;
-        CustomerQuickFilterService.getAutoCompleteList(subParam).then(data => {
+        CommonService.getAutoCompleteList(subParam).then(data => {
           filterOptions.value[item.filterKey] = {};
           filterOptions.value[item.filterKey].list = data;
           filterOptions.value[item.filterKey].loading = false;
+          // if (
+          //   (!data ||
+          //     !data.find(a => a["text"] === profileData.value["boss"])) &&
+          //   item.filterKey === "boss"
+          // ) {
+          //   filterOptions.value[item.filterKey].list.push({
+          //     text: profileData.value["boss"],
+          //     value: profileData.value["boss"]
+          //   });
+          // }
+          console.log("filterOptions.value", filterOptions.value);
         });
         if (item.filterKey === "leadSourceGroup") {
           if (profileData) {
-            CustomerQuickFilterService.getAutoCompleteList({
+            CommonService.getAutoCompleteList({
               OptionsResourceType: 100,
               Paginator: false,
               ParentParams: profileData.value["leadSourceGroupID"],
@@ -629,7 +609,7 @@ export function customerProfileCTL() {
               filterOptions.value["leadSource"].list = data;
               filterOptions.value["leadSource"].loading = false;
             });
-            CustomerQuickFilterService.getAutoCompleteList({
+            CommonService.getAutoCompleteList({
               OptionsResourceType: 101,
               Paginator: false,
               ParentParams: profileData.value["leadSourceID"],
@@ -644,7 +624,7 @@ export function customerProfileCTL() {
           }
         } else if (item.filterKey === "industryGroup") {
           if (profileData) {
-            CustomerQuickFilterService.getAutoCompleteList({
+            CommonService.getAutoCompleteList({
               OptionsResourceType: 102,
               Paginator: false,
               ParentParams: profileData.value["industryGroupID"],
@@ -660,7 +640,7 @@ export function customerProfileCTL() {
         }
       });
       //Load currency list
-      CustomerQuickFilterService.getAutoCompleteList({
+      CommonService.getAutoCompleteList({
         OptionsResourceType: 103,
         Paginator: false
       }).then(data => {
@@ -669,7 +649,7 @@ export function customerProfileCTL() {
         filterOptions.value["currency"].loading = false;
       });
       //Load createdFor list
-      CustomerQuickFilterService.getAutoCompleteList({
+      CommonService.getAutoCompleteList({
         OptionsResourceType: 105,
         Paginator: false
       }).then(data => {
@@ -694,7 +674,7 @@ export function customerProfileCTL() {
       oldEntity: "string",
       newEntity: "string"
     };
-    CustomerQuickFilterService.autoSave(param)
+    CommonService.autoSave(param)
       .then(d => {
         console.log("autosave data", d);
         ElMessage({
@@ -716,7 +696,7 @@ export function customerProfileCTL() {
   const userNameOptions = ref([]);
   async function loadDimOrgOptions() {
     try {
-      const response = await CustomerQuickFilterService.getAutoCompleteList({
+      const response = await CommonService.getAutoCompleteList({
         OptionsResourceType: 22,
         Paginator: false
       });
@@ -727,7 +707,7 @@ export function customerProfileCTL() {
   }
   async function loadUserNameOptions(stationID) {
     try {
-      const response = await CustomerQuickFilterService.getAutoCompleteList({
+      const response = await CommonService.getAutoCompleteList({
         OptionsResourceType: 112,
         Paginator: false,
         ParentParams: stationID
@@ -740,7 +720,7 @@ export function customerProfileCTL() {
   const stationOptions = ref([]);
   const loadStationOptions = async () => {
     try {
-      const response = await CustomerQuickFilterService.getAutoCompleteList({
+      const response = await CommonService.getAutoCompleteList({
         OptionsResourceType: 117,
         Paginator: false
       });
@@ -788,8 +768,7 @@ export function customerProfileCTL() {
     };
     try {
       // 发送请求并获取响应
-      const response =
-        await CustomerQuickFilterService.getAutoCompleteList(params);
+      const response = await CommonService.getAutoCompleteList(params);
 
       // 根据 queryString 过滤响应结果
       const results = queryString
@@ -904,7 +883,7 @@ export function customerProfileCTL() {
     //   await CustomerQuickFilterService.updateQuickFilter(formData);
     // console.log("updateQuickFilter", response);
 
-    CustomerQuickFilterService.updateQuickFilter(formData)
+    CommonService.updateQuickFilter(formData)
       .then(data => {
         console.log("updateQuickFilter data", data);
       })
@@ -1090,7 +1069,7 @@ export function customerProfileCTL() {
   const activePanelNames = ref(["BasicFilterForm"]);
   const disableStatus = filterItem => {
     if (filterItem.visibilityLevel === 2) {
-      return !userAuth.value["isWrite"] && LeadID.value !== "0";
+      return !userAuth.value["isWrite"] && ProfileID.value !== "0";
     } else {
       if (
         filterItem.filterKey === "leadSourceGroupID" ||
@@ -1101,46 +1080,27 @@ export function customerProfileCTL() {
           ((!userAuth.value["isWrite"] ||
             (profileData.value["agent"] &&
               profileData.value["agent"] !== "")) &&
-            LeadID.value !== "0")
+            ProfileID.value !== "0")
         );
       } else {
-        return !userAuth.value["isWrite"] && LeadID.value !== "0";
+        return !userAuth.value["isWrite"] && ProfileID.value !== "0";
       }
     }
   };
-  //#region DC
-  const DCUrl = ref("");
-  const fetchDCUrl = async () => {
-    try {
-      const param = {
-        KeyValue: LeadID.value,
-        DCType: "LED"
-      };
-      const [result1] = await Promise.all([
-        CustomerQuickFilterService.getDocumentCloudSiteResult(param)
-      ]);
-      const pattern =
-        /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(\/[^\s]*)?(\?[^\s]*)?(#[^\s]*)?$/;
-      console.log("result1.returnValue", result1.returnValue);
-      console.log(
-        "result1.returnValue test",
-        pattern.test(result1.returnValue)
-      );
-      if (
-        result1 &&
-        result1.returnValue &&
-        result1.returnValue !== "" &&
-        pattern.test(result1.returnValue)
-      ) {
-        DCUrl.value = deepClone(result1.returnValue);
-        console.log("DCUrl.value", DCUrl.value);
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
+  const inActiveContact = async () => {
+    formLoading.value = true;
+    ContactProfileService.inactiveContactResult(ProfileID.value).then(data => {
+      console.log("inactiveContactResult data", data);
+      fetchProfileData();
+    });
   };
-  //#endregion
-
+  const activeContact = async () => {
+    formLoading.value = true;
+    ContactProfileService.activeContactResult(ProfileID.value).then(data => {
+      console.log("activeContactResult data", data);
+      fetchProfileData();
+    });
+  };
   return {
     membersFormData,
     loadDimOrgOptions,
@@ -1197,10 +1157,16 @@ export function customerProfileCTL() {
     loadStationOptions,
     userAuth,
     disableStatus,
+    ProfileID,
     LeadID,
     checkedPL,
     handleCheckedPLChange,
+    formLoading,
+    fetchPLModuleList,
+    PLModuleList,
+    fetchDCUrl,
     DCUrl,
-    fetchDCUrl
+    inActiveContact,
+    activeContact
   };
 }

@@ -6,6 +6,7 @@ export type tourInfo = {
   customerListShow?: boolean;
   customerListRead?: boolean;
   contactListShow?: boolean;
+  taskListShow?: boolean;
 };
 export const useTourStore = defineStore("tour", {
   state: (): tourInfo => ({
@@ -14,7 +15,9 @@ export const useTourStore = defineStore("tour", {
     customerListRead:
       storageLocal().getItem<TourInfo>(tourKey)?.customerListRead ?? false,
     contactListShow:
-      storageLocal().getItem<TourInfo>(tourKey)?.contactListShow ?? true
+      storageLocal().getItem<TourInfo>(tourKey)?.contactListShow ?? true,
+    taskListShow:
+      storageLocal().getItem<TourInfo>(tourKey)?.taskListShow ?? true
   }),
   actions: {
     setCustomerListTour(value: boolean) {
@@ -24,6 +27,10 @@ export const useTourStore = defineStore("tour", {
     setContactListTour(value: boolean) {
       this.contactListShow = value;
       setTourStatus({ contactListShow: value });
+    },
+    setTaskListTour(value: boolean) {
+      this.taskListShow = value;
+      setTourStatus({ taskListShow: value });
     }
   }
 });
