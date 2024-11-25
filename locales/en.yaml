@@ -243,7 +243,27 @@ login:
   purePassWordUpdateReg: Password has been updated
 common:
   dc: Documents
+task:
+  quickfilter:
+    priority: Priority
+    logType: Log Type
+    taskStatus: Status
+    contact: Contact
+    attendees: Attendees
+    taskOwner: Owner
+    ownerBranch: Owner Branch
+    groupRepName: Group Rep
+    notifyParty: Notify Party
+    appointmentStartDate: Appointment Date
+    dueDate: Due Date
+    locationCity: Location
+    subjectCategory: Subject Category
+    subject: Subject
+    description: Description
+    actionItem: Action Item
 contact:
+  tabTitle: Contact Search
+  cancel: Cancel
   quickfilter:
     names: Gender
     fullName: Name

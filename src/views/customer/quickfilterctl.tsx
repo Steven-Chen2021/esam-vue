@@ -5,7 +5,7 @@ import QuickFilterService from "@/services/quickFilterService";
 import { ref, onMounted, reactive, watch, computed } from "vue";
 // import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
-import { contact, customer } from "@/router/enums";
+import { contact, customer, tasks } from "@/router/enums";
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;
@@ -138,6 +138,18 @@ export function quickFilterCTL() {
           case "role":
             resourceType = 120;
             break;
+          case "priority":
+            resourceType = 123;
+            break;
+          case "logType":
+            resourceType = 124;
+            break;
+          case "taskStatus":
+            resourceType = 125;
+            break;
+          case "subjectCategory":
+            resourceType = 126;
+            break;
         }
         const response =
           // TODO: 跨域问题
@@ -174,7 +186,7 @@ export function quickFilterCTL() {
   }
   const createFilter = (queryString: string) => {
     return (item: AutoCompleteItem) => {
-      return item.value.toLowerCase().indexOf(queryString.toLowerCase()) !== -1;
+      return item.text.toLowerCase().indexOf(queryString.toLowerCase()) !== -1;
     };
   };
   const querySearchAsync = async (
@@ -226,6 +238,17 @@ export function quickFilterCTL() {
         break;
       case "boss":
         OptionsResourceType = 121;
+        break;
+      case "taskOwner":
+      case "groupRepName":
+      case "notifyParty":
+        OptionsResourceType = 127;
+        break;
+      case "ownerBranch":
+        OptionsResourceType = 117;
+        break;
+      case "locationCity":
+        OptionsResourceType = 128;
         break;
     }
     const searchKey = !queryString || queryString === "null" ? "" : queryString;
@@ -398,6 +421,12 @@ export function quickFilterCTL() {
         p3 = 23;
         break;
       }
+      case tasks: {
+        p1 = 31;
+        p2 = 32;
+        p3 = 33;
+        break;
+      }
       default:
         break;
     }
@@ -497,6 +526,11 @@ export function quickFilterCTL() {
         p2 = 22;
         break;
       }
+      case tasks: {
+        p1 = 31;
+        p2 = 32;
+        break;
+      }
       default:
         break;
     }
@@ -564,6 +598,10 @@ export function quickFilterCTL() {
         p1 = 23;
         break;
       }
+      case tasks: {
+        p1 = 33;
+        break;
+      }
       default:
         break;
     }
@@ -580,15 +618,6 @@ export function quickFilterCTL() {
             quickFilterFormInitData.filters
           );
         }
-        // advancedFilterForm.filters.forEach(a => {
-        //   // a.showOnGrid = true;
-        //   // a.showOnFilter = true;
-        //   // a.allowSorting = true;
-        //   // a.allowGridHeaderFilter = true;
-        //   if (a.width && a.width === 70) {
-        //     a.width = 140;
-        //   }
-        // });
       })
       .catch(err => {
         console.log("getAdvancedFilterSetting error", err);

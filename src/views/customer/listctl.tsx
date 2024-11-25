@@ -1,8 +1,9 @@
 import CustomerSearchService from "@/services/customer/CustomerSearchService";
 import ContactSearchService from "@/services/contact/ContactSearchService";
+import TaskSearchService from "@/services/tasks/TaskSearchService";
 import { ElMessage } from "element-plus";
-import { contact, customer } from "@/router/enums";
-
+import { contact, customer, tasks } from "@/router/enums";
+import dayjs from "dayjs";
 import { reactive, ref } from "vue";
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 export interface ColumnDetailVM {
@@ -116,6 +117,84 @@ export function listCTL() {
           .catch(err => {
             tableData.value = [];
             console.log("getContactList error", err);
+            loading.value = false;
+          });
+        break;
+      }
+      case tasks: {
+        console.log("task search", searchParams.ConditionalSettings);
+        if (FilterLeadID && FilterLeadID.value !== "0") {
+          if (!searchParams.ConditionalSettings) {
+            searchParams.ConditionalSettings = [
+              {
+                enableOnSearchView: false,
+                filterKey: "hqid",
+                value: FilterLeadID.value
+              }
+            ];
+          } else {
+            searchParams.ConditionalSettings.push({
+              enableOnSearchView: false,
+              filterKey: "hqid",
+              value: FilterLeadID.value
+            });
+          }
+        }
+        loading.value = true;
+        TaskSearchService.getTaskList(searchParams)
+          .then(data => {
+            if (data.isSuccess) {
+              data.returnValue.results.forEach(a => {
+                if (
+                  a["appointmentStartDate"] &&
+                  a["appointmentStartDate"] !== ""
+                ) {
+                  if (
+                    a["appointmentEndDate"] &&
+                    a["appointmentEndDate"] !== ""
+                  ) {
+                    const date1 = dayjs(a["appointmentStartDate"]);
+                    const date2 = dayjs(a["appointmentEndDate"]);
+
+                    // 比较两个日期的 date 部分是否相同
+                    const isSameDate = date1.isSame(date2, "date");
+                    if (isSameDate) {
+                      a["appointmentStartDate"] =
+                        `${dayjs(a["appointmentStartDate"]).format("MMM DD, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("HH:mm")}`;
+                    } else {
+                      a["appointmentStartDate"] =
+                        `${dayjs(a["appointmentStartDate"]).format("MMM DD, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("MMM DD, HH:mm")}`;
+                    }
+                  } else {
+                    a["appointmentStartDate"] =
+                      `${dayjs(a["appointmentStartDate"]).format("MMM DD, HH:mm")}`;
+                  }
+                }
+              });
+              tableData.value = data.returnValue.results;
+              if (
+                data &&
+                data.returnValue &&
+                Array.isArray(data.returnValue.results)
+              ) {
+                total.value = data.returnValue.totalRecord;
+              } else {
+                total.value = 0;
+              }
+            } else {
+              tableData.value = [];
+              total.value = 0;
+              ElMessage({
+                message: data.errorMessage,
+                grouping: true,
+                type: "warning"
+              });
+            }
+            loading.value = false;
+          })
+          .catch(err => {
+            tableData.value = [];
+            console.log("getTaskList error", err);
             loading.value = false;
           });
         break;

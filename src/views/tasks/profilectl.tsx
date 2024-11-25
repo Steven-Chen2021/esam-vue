@@ -118,8 +118,8 @@ export function contactProfileCTL() {
   const fetchDCUrl = async () => {
     try {
       const param = {
-        KeyValue: ProfileID.value,
-        DCType: "CON"
+        KeyValue: 62326,
+        DCType: "LED"
       };
       const [result1] = await Promise.all([
         CommonService.getDocumentCloudSiteResult(param)

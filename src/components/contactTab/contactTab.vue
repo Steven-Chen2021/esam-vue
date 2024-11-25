@@ -95,20 +95,22 @@ const handleListEnable = (obj: {
 const handleFilterEnable = (obj: any) => {
   submitAdvancedFilterForm();
 };
-// import { useRouter } from "vue-router";
-// const Router = useRouter();
+const emit = defineEmits(["handleTabEditEvent"]);
 const handleViewClick = row => {
   console.log("handleViewClick row", row);
-  router.push({
-    name: "ContactDetail",
-    params: { id: row.id, lid: row.hqid, qname: row.fullName }
-  });
+  emit("handleTabEditEvent", row.id.toString(), row.hqid);
+  // router.push({
+  //   name: "ContactDetail",
+  //   params: { id: row.id, lid: row.hqid, qname: row.fullName }
+  // });
 };
+
 const handleAddContact = () => {
-  router.push({
-    name: "ContactDetail",
-    params: { id: 0, lid: props.SearchLeadID, qname: "Create Contact" }
-  });
+  emit("handleTabEditEvent", "0", props.SearchLeadID);
+  // router.push({
+  //   name: "ContactDetail",
+  //   params: { id: 0, lid: props.SearchLeadID, qname: "Create Contact" }
+  // });
 };
 // #region Quick Filter
 const handleFilterClick = filter => {
@@ -502,7 +504,7 @@ watch(
       </el-form>
       <el-collapse v-model="activePanelNames">
         <el-collapse-item
-          :title="t('customer.list.advancedSetting.basicFilterTitle')"
+          :title="t('contact.tabTitle')"
           name="BasicFilterForm"
           class="custom-collapse-title"
         >

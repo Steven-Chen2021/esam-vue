@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
-import { isArray } from "@pureadmin/utils";
 import { ref, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { contactProfileCTL } from "./profilectl";
@@ -64,21 +63,7 @@ const {
 defineOptions({
   name: "ContactDetail"
 });
-// initToDetail("params");
-const props = defineProps({
-  ParentID: {
-    type: String,
-    required: false
-  },
-  ID: {
-    type: String,
-    required: false
-  }
-});
-const emit = defineEmits(["handleBackEvent"]);
-const backToIndex = () => {
-  emit("handleBackEvent");
-};
+initToDetail("params");
 const activeName = ref(["general", "documents"]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
@@ -602,18 +587,9 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
 //   }
 // };
 const username = useUserStoreHook()?.username;
-const LID = props.ParentID
-  ? props.ParentID
-  : isArray(getParameter.lid)
-    ? getParameter.lid[0]
-    : getParameter.lid;
-const CID = props.ID
-  ? props.ID
-  : isArray(getParameter.id)
-    ? getParameter.id[0]
-    : getParameter.id;
+const LID = getParameter.lid;
+const CID = getParameter.id;
 onMounted(() => {
-  console.log("contac detail getParameter", getParameter);
   ProfileID.value = CID;
   LeadID.value = LID;
   fetchProfileData();
@@ -849,21 +825,10 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
           >
             {{ size === "disabled" ? "Save" : "Processing" }}
           </el-button>
-          <el-button
-            v-if="props.ParentID && props.ParentID !== ''"
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading="formLoading"
-            :disabled="!userAuth['isWrite'] && LID !== '0'"
-            @click="backToIndex"
-          >
-            {{ t("contact.cancel") }}
-          </el-button>
         </div>
       </div>
       <div style="padding: 10px 10px 0">
-        <h1 v-if="!props.ID">{{ profileDataInit.customerName }}</h1>
+        <h1>{{ profileDataInit.customerName }}</h1>
       </div>
       <div class="pb-2">
         <el-alert
@@ -1837,7 +1802,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
             </div>
           </el-collapse-item>
           <el-collapse-item
-            v-if="CID !== '0'"
+            v-if="LID !== '0'"
             :title="t('common.dc')"
             name="documents"
             class="custom-collapse-title"
