@@ -26,15 +26,6 @@ export default {
         title: $t("menus.dimercoQuotes"),
         showLink: false
       }
-    },
-    {
-      path: "/quotes/detailtest",
-      name: "QuoteDetailTest",
-      component: () => import("@/views/quotes/QuoteDetailTest.vue"),
-      meta: {
-        title: $t("menus.dimercoQuotes"),
-        showLink: false
-      }
     }
   ]
 } satisfies RouteConfigsTable;

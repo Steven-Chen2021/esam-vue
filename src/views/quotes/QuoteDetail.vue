@@ -42,6 +42,9 @@ import { AutoSaveHelper } from "@/utils/autoSaveHelper";
 
 //Editor
 import { Editor, Toolbar } from "@wangeditor/editor-for-vue";
+import { usePreView } from "@/views/commons/hooks";
+
+const { toPreView } = usePreView();
 
 const {
   getCustomerByOwnerUserResult,
@@ -72,7 +75,8 @@ const {
   getLocalCharge,
   saveFreightChargeResult,
   saveLocalChargeResult,
-  frightChargeParams
+  frightChargeParams,
+  getQuotePreviewResult
 } = QuoteDetailHooks();
 
 const {
@@ -711,6 +715,15 @@ const saveData = () => {
   console.debug("importLocationResult", importLocationResult);
 };
 
+const previewQuote = () => {
+  toPreView({
+    category: "quotation",
+    id: quotationDetailResult.value.quoteid as string,
+    displaytitle: quotationDetailResult.value.quoteNo as string,
+    pid: quotationDetailResult.value.pid as string
+  });
+};
+
 const handleFocusOut = (event: FocusEvent) => {
   console.log(event);
   const hotContainer = document.querySelector(".handsontable-container");
@@ -959,7 +972,7 @@ onBeforeUnmount(() => {
             plain
             :size="dynamicSize"
             :icon="useRenderIcon('ep:view')"
-            @click="saveData"
+            @click="previewQuote"
           >
             {{ "Preview" }}
           </el-button>
