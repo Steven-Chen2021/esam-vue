@@ -329,6 +329,15 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getQuotePreviewResult(qid, pid) {
+    try {
+      const response = await quoteDetailService.getQuotePreviewResult(qid, pid);
+      return response;
+    } catch (error) {
+      console.log("saveLocalChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -358,6 +367,7 @@ export function QuoteDetailHooks() {
     getLocalCharge,
     saveFreightChargeResult,
     saveLocalChargeResult,
-    frightChargeParams
+    frightChargeParams,
+    getQuotePreviewResult
   };
 }

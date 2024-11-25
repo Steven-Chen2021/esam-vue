@@ -239,7 +239,7 @@ login:
   purePhoneCorrectReg: Please enter the correct phone number format
   purePassWordRuleReg: The password format should be any combination of 8-18 digits
   purePassWordSureReg: Please enter confirm password
-  purePassWordDifferentReg: The two passwords do not match!
+  purePassWordDifferentReg: The two passwords are difference!
   purePassWordUpdateReg: Password has been updated
 common:
   dc: Documents
@@ -433,8 +433,8 @@ customer:
       assigner: Assigner
       historyTitle: History
       unassigned: UnAssigned
-      coodinateAlert: You could apply to Station Coordinator to take on the role of Lead Owner.
-      returnAlert: There is no longer a Lead Owner, so no further action is needed. 
+      coodinateAlert: You could apply to Station Coordinator to take the role of Lead Owner.
+      returnAlert: There is no longer a Lead Owner assigned, so no further action is needed. 
       returnSuc: Return successfully.
       assignSuc: Assign successfully.
       assignFail: Assign failed.
@@ -497,8 +497,8 @@ quote:
       sellingRate: Selling Rate
       natureOfGoods: Nature Of Goods
       estimatedTonnage: Est. Tonnage
-      estimatedRevenue: Est. Revenus
-      estimatedGP: Est. dGP
+      estimatedRevenue: Est. Revenue
+      estimatedGP: Est. GP
       shipmentQualityType: Shipment Quality Type
       shipper: Shipper
       consignee: Consignee

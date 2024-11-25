@@ -197,6 +197,17 @@ class QuoteDetailService {
       console.error(error);
     }
   }
+
+  async getQuotePreviewResult(QID, PID) {
+    try {
+      const url = "/api/Quote/QuotePreviewResult";
+      const fullUrl = `${url}?QuoteID=${QID}&PID=${PID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new QuoteDetailService();
