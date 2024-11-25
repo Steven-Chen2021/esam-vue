@@ -839,6 +839,10 @@ const autoSaveTrigger = (newValue, columnName) => {
   }
 };
 
+const showQuotationStatusHistory = () => {
+  alert(246346);
+};
+
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
@@ -938,8 +942,12 @@ onBeforeUnmount(() => {
     <el-card shadow="never" class="relative h-96 overflow-hidden">
       <div class="flex justify-between items-center">
         <!-- 左側 Label 和 Icon 按鈕 -->
-        <div class="flex items-center space-x-2 pt-3 pl-3 font-bold">
-          <span class="text-gray-700">{{ quotationDetailResult.quoteNo }}</span>
+        <div class="flex items-center space-x-2 pt-1 pl-3 font-bold">
+          <span class="text-gray-700"> Quote Status: </span
+          ><el-link @click="showQuotationStatusHistory">{{
+            quotationDetailResult.status
+          }}</el-link>
+          <!-- 這邊加上一個icon 顯示Quotation Status & Approval History -->
         </div>
 
         <!-- 右側按鈕群組 -->
@@ -1002,7 +1010,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Content Section -->
-      <el-scrollbar max-height="1000" class="pt-2 h-full overflow-y-auto">
+      <el-scrollbar max-height="1000" class="pt-1 h-full overflow-y-auto">
         <div class="p-1">
           <el-collapse v-model="activeName" class="mb-2">
             <el-collapse-item title="QUOTE DETAIL" name="1">
