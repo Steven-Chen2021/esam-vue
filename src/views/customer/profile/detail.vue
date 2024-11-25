@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { isArray } from "@pureadmin/utils";
 const { t } = useI18n();
 import { ref, computed, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
@@ -16,6 +17,19 @@ import CustomerProfileService from "@/services/customer/CustomerProfileService";
 import { useDetail } from "../hooks";
 import CommonService from "@/services/commonService";
 const { initToDetail, getParameter, router } = useDetail();
+import contactTab from "@/components/contactTab/contactTab.vue";
+import contactDetailTab from "@/views/contact/detail.vue";
+const searchingContact = ref(true);
+const handleBackEvent = () => {
+  searchingContact.value = true;
+};
+const handleTabEditEvent = (ContactID, LeadDetailID) => {
+  console.log(
+    `handleTabEditEvent- ContactID: ${ContactID}, LeadDetailID: ${LeadDetailID}`
+  );
+  searchingContact.value = false;
+  ContactDetailID.value = ContactID;
+};
 const {
   profileDataInit,
   profileFormData,
@@ -49,14 +63,16 @@ const {
   LeadID,
   checkedPL,
   handleCheckedPLChange,
-  loadDimOrgOptions
+  loadDimOrgOptions,
+  fetchDCUrl,
+  DCUrl
 } = customerProfileCTL();
 // const { fetchMembersData } = leadmemberctl();
 defineOptions({
   name: "CustomerDetail"
 });
 initToDetail("params");
-const activeName = ref(["general", "comments"]);
+const activeName = ref(["general", "pl", "documents"]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
 const size = ref("disabled");
@@ -485,12 +501,19 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
 // };
 const username = useUserStoreHook()?.username;
 const dialogVisible = ref(false);
-const LID = getParameter.id;
+const LID = isArray(getParameter.id) ? getParameter.id[0] : getParameter.id;
+const ContactDetailID = ref("0");
 onMounted(() => {
+  // if (isArray(getParameter.id)) {
+  //   console.log("getParameter.id[]", getParameter.id[0]);
+  // } else {
+  //   console.log("getParameter.id", getParameter.id);
+  // }
   LeadID.value = LID;
   fetchProfileData();
   fetchPLData(0);
   loadDimOrgOptions();
+  fetchDCUrl();
 });
 const returnPL = ref({
   id: "",
@@ -583,7 +606,7 @@ const returnLeadOwner = () => {
     });
 };
 const addPL = () => {
-  console.log("addPL returnPL", returnPL.value);
+  console.log("addPL returnP L ", returnPL.value);
   const param = {
     currentUserID: "A2232",
     currentStationID: "018",
@@ -725,47 +748,49 @@ const cancelForm = () => {
 <template>
   <div>
     <el-card shadow="never" class="relative">
-      <div class="flex ...">
-        <div class="grow h-8 ...">
-          <!-- <el-button :icon="useRenderIcon(buttonList[0].icon)" @click="goBack">
-            <template v-if="baseRadio !== 'circle'" #default>
-              <p>{{ buttonList[0].text }}</p>
-            </template>
-          </el-button> -->
-        </div>
-        <div class="grow-0 h-8 ...">
-          <el-button
-            v-if="profileData['showDisqualify'] === 1"
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
-            :icon="useRenderIcon('ri:save-line')"
-            :disabled="!userAuth['isWrite'] && LID !== '0'"
-            @click="disQualifyDialog = true"
-          >
-            {{ t("customer.profile.disqualify") }}
-          </el-button>
-          <el-button
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="size !== 'disabled'"
-            :icon="useRenderIcon('ri:save-line')"
-            :disabled="!userAuth['isWrite'] && LID !== '0'"
-            @click="submitForm(profileFormRef, false)"
-          >
-            {{ size === "disabled" ? "Save" : "Processing" }}
-          </el-button>
-        </div>
-      </div>
-      <div style="padding: 10px 10px 0">
+      <div style="padding: 0 10px">
         <h1>{{ profileDataInit.customerName }}</h1>
       </div>
       <el-tabs type="border-card" style="margin-top: 16px">
         <el-tab-pane :label="t('customer.profile.title')">
+          <div>
+            <div class="flex ...">
+              <div class="grow h-8 ...">
+                <!-- <el-button :icon="useRenderIcon(buttonList[0].icon)" @click="goBack">
+            <template v-if="baseRadio !== 'circle'" #default>
+              <p>{{ buttonList[0].text }}</p>
+            </template>
+          </el-button> -->
+              </div>
+              <div class="grow-0 h-8 ..." style="margin-bottom: 8px">
+                <el-button
+                  v-if="profileData['showDisqualify'] === 1"
+                  type="primary"
+                  plain
+                  :size="dynamicSize"
+                  :loading-icon="useRenderIcon('ep:eleme')"
+                  :loading="size !== 'disabled'"
+                  :icon="useRenderIcon('ri:save-line')"
+                  :disabled="!userAuth['isWrite'] && LID !== '0'"
+                  @click="disQualifyDialog = true"
+                >
+                  {{ t("customer.profile.disqualify") }}
+                </el-button>
+                <el-button
+                  type="primary"
+                  plain
+                  :size="dynamicSize"
+                  :loading-icon="useRenderIcon('ep:eleme')"
+                  :loading="size !== 'disabled'"
+                  :icon="useRenderIcon('ri:save-line')"
+                  :disabled="!userAuth['isWrite'] && LID !== '0'"
+                  @click="submitForm(profileFormRef, false)"
+                >
+                  {{ size === "disabled" ? "Save" : "Processing" }}
+                </el-button>
+              </div>
+            </div>
+          </div>
           <div class="pb-2">
             <el-alert
               v-if="showAutoSaveAlert && LID !== '0'"
@@ -1375,7 +1400,7 @@ const cancelForm = () => {
                           format="MMM DD, YYYY"
                           value-format="YYYY-MM-DD"
                           style="width: 338px"
-                          @blur="
+                          @change="
                             autoSaveForm(
                               profileFormRef,
                               filterItem,
@@ -1439,7 +1464,7 @@ const cancelForm = () => {
               <el-collapse-item
                 v-if="LID !== '0'"
                 :title="t('customer.profile.pl.title')"
-                name="comments"
+                name="pl"
                 class="custom-collapse-title"
               >
                 <el-tabs v-model="activeTabPID" type="border-card">
@@ -1675,6 +1700,23 @@ const cancelForm = () => {
                   </el-tab-pane>
                 </el-tabs>
               </el-collapse-item>
+              <el-collapse-item
+                v-if="LID !== '0'"
+                :title="t('common.dc')"
+                name="documents"
+                class="custom-collapse-title"
+              >
+                <el-main>
+                  <div class="iframe-container">
+                    <iframe
+                      :src="DCUrl"
+                      frameborder="0"
+                      width="100%"
+                      height="600px"
+                    />
+                  </div>
+                </el-main>
+              </el-collapse-item>
             </el-collapse>
           </div>
 
@@ -1737,29 +1779,19 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.contact.title')"
-          ><div class="flex justify-center items-center h-[640px]">
-            <div class="ml-12">
-              <p
-                v-motion
-                class="font-medium text-4xl mb-4 dark:text-white"
-                :initial="{
-                  opacity: 0,
-                  y: 100
-                }"
-                :enter="{
-                  opacity: 1,
-                  y: 0,
-                  transition: {
-                    delay: 80
-                  }
-                }"
-              >
-                Welcome to the contact Page
-              </p>
-            </div>
-          </div></el-tab-pane
-        >
+        <el-tab-pane :label="t('customer.contact.title')">
+          <contactTab
+            v-if="searchingContact"
+            :SearchLeadID="LID"
+            @handleTabEditEvent="handleTabEditEvent"
+          />
+          <contactDetailTab
+            v-else
+            :ParentID="LID"
+            :ID="ContactDetailID"
+            @handleBackEvent="handleBackEvent"
+          />
+        </el-tab-pane>
         <el-tab-pane :label="t('customer.credit.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">

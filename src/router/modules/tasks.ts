@@ -1,4 +1,3 @@
-
 import { $t } from "@/plugins/i18n";
 import { tasks } from "@/router/enums";
 
@@ -13,10 +12,19 @@ export default {
   children: [
     {
       path: "/tasks/index",
-      name: "Tasks",
+      name: "TaskList",
       component: () => import("@/views/tasks/index.vue"),
       meta: {
         title: $t("menus.dimercoTask")
+      }
+    },
+    {
+      path: "/tasks/detail/:id/:lid/:qname",
+      name: "TaskDetail",
+      component: () => import("@/views/tasks/detail.vue"),
+      meta: {
+        title: $t("menus.dimercoTask"),
+        showLink: false
       }
     }
   ]

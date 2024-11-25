@@ -389,21 +389,6 @@ const handleFilterBtnClick = item => {
 };
 // #endregion
 
-const calculateMaxHeight = () => {
-  const windowHeight = window.innerHeight;
-  let newMaxHeight;
-
-  // 根据窗口高度计算最大高度，可以自定义计算逻辑
-  if (windowHeight > 768) {
-    newMaxHeight = windowHeight * 0.7; // 窗口高度的70%
-  } else {
-    newMaxHeight = windowHeight * 0.8; // 窗口高度的80%
-  }
-
-  // 更新 maxHeight 的值
-  maxHeight.value = newMaxHeight;
-};
-
 const maxHeight = ref(null);
 
 onMounted(async () => {

@@ -132,6 +132,36 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
+  async getProfileColumnList(requestType) {
+    try {
+      const url = `/api/Common/GetProfileColumnList?requestType=${requestType}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+  async getPLList() {
+    try {
+      const url = `/api/Common/GetPLList`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+  async getDocumentCloudSiteResult(param) {
+    try {
+      const url = `/api/Utility/GetDocumentCloudSiteResult?KeyValue=${param.KeyValue}&DCType=${param.DCType}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
 }
 
 export default new CustomerQuickFilterService();

@@ -12,14 +12,11 @@ import {
   nextTick
 } from "vue";
 import { Plus } from "@element-plus/icons-vue";
-import { useDetail } from "./hooks";
+import { useDetail } from "@/views/customer/hooks";
 const { toDetail, router } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-// import { ContactQuickFilterCTL } from "../contact/quickfilterctl";
-import { QuickFilter, quickFilterCTL } from "../customer/quickfilterctl";
-import { listCTL } from "../customer/listctl";
-import { key } from "localforage";
-import { message, closeAllMessage } from "@/utils/message";
+import { QuickFilter, quickFilterCTL } from "@/views/customer/quickfilterctl";
+import { listCTL } from "@/views/customer/listctl";
 import { useTourStore } from "@/store/modules/tour";
 import { contact } from "@/router/enums";
 import {
@@ -34,7 +31,12 @@ import {
 import CommonService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
 const quickFilterShow = ref(false);
-// const { fetchContactData } = ContactQuickFilterCTL();
+const props = defineProps({
+  SearchLeadID: {
+    type: String,
+    required: true
+  }
+});
 const {
   getOptions,
   convertDropDownValue,
@@ -73,7 +75,8 @@ const {
   handleConditionalSearch,
   handleResetConditionalSearch,
   loading,
-  requestType
+  requestType,
+  FilterLeadID
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -92,20 +95,22 @@ const handleListEnable = (obj: {
 const handleFilterEnable = (obj: any) => {
   submitAdvancedFilterForm();
 };
-// import { useRouter } from "vue-router";
-// const Router = useRouter();
+const emit = defineEmits(["handleTabEditEvent"]);
 const handleViewClick = row => {
   console.log("handleViewClick row", row);
-  router.push({
-    name: "ContactDetail",
-    params: { id: row.id, lid: row.hqid, qname: row.fullName }
-  });
+  emit("handleTabEditEvent", row.id.toString(), row.hqid);
+  // router.push({
+  //   name: "ContactDetail",
+  //   params: { id: row.id, lid: row.hqid, qname: row.fullName }
+  // });
 };
-const handleAddCustomer = () => {
-  router.push({
-    name: "CustomerDetail",
-    params: { id: 0, qname: "Create Customer" }
-  });
+
+const handleAddContact = () => {
+  emit("handleTabEditEvent", "0", props.SearchLeadID);
+  // router.push({
+  //   name: "ContactDetail",
+  //   params: { id: 0, lid: props.SearchLeadID, qname: "Create Contact" }
+  // });
 };
 // #region Quick Filter
 const handleFilterClick = filter => {
@@ -403,6 +408,10 @@ const calculateMaxHeight = () => {
 const maxHeight = ref(null);
 
 onMounted(async () => {
+  console.log("onMounted SearchLeadID", props.SearchLeadID);
+  if (props.SearchLeadID && props.SearchLeadID !== "0") {
+    FilterLeadID.value = props.SearchLeadID;
+  }
   requestType.value = contact;
   filterRequestType.value = contact;
   fetchListData();
@@ -434,37 +443,6 @@ watch(
 
 <template>
   <div class="containerC">
-    <div class="flex flex-row">
-      <div class="basis-4/5">
-        <el-button ref="refBtnAddFilter" @click="handleQuickFilterOpen">{{
-          t("customer.list.quickFilter.addFilterbtn")
-        }}</el-button>
-        <el-dropdown
-          v-for="(item, index) in quickFilterList"
-          v-bind:key="item.id"
-          :ref="el => (refsQuickFilterBtn[index] = el)"
-          loading
-          split-button
-          :plain="!item.clicked"
-          :type="item.clicked ? 'primary' : ''"
-          style="margin-left: 10px"
-          @click="handleFilterClick(item)"
-        >
-          {{ item.filterName }}
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="handleEditQuickFilter(item)">{{
-                t("customer.list.quickFilter.editBtnText")
-              }}</el-dropdown-item>
-              <el-dropdown-item @click="handleDeleteQuickFilter(item)">{{
-                t("customer.list.quickFilter.delBtnText")
-              }}</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </div>
-    <el-divider />
     <div>
       <el-form
         v-show="showBasicFilterTopForm"
@@ -526,7 +504,7 @@ watch(
       </el-form>
       <el-collapse v-model="activePanelNames">
         <el-collapse-item
-          :title="t('customer.list.advancedSetting.basicFilterTitle')"
+          :title="t('contact.tabTitle')"
           name="BasicFilterForm"
           class="custom-collapse-title"
         >
@@ -544,8 +522,8 @@ watch(
                 <el-form-item
                   v-for="filterItem in advancedFilterForm.filters.filter(
                     c =>
-                      c.showOnFilter &&
                       c.enableOnSearchView &&
+                      c.showOnFilter &&
                       c.filterType !== 'cascadingdropdown' &&
                       c.filterKey !== 'capitalAmount'
                   )"
@@ -718,14 +696,9 @@ watch(
                       $t("customer.list.advancedSetting.clearBtn")
                     }}</el-button
                   >
-                  <el-button
-                    ref="refBtnAdvancedFilterSetting"
-                    :icon="useRenderIcon('ep:setting')"
-                    @click="handleAdvancedSettings"
-                    >{{
-                      $t("customer.list.advancedSetting.settingBtn")
-                    }}</el-button
-                  >
+                  <el-button :icon="Plus" @click="handleAddContact">{{
+                    $t("customer.add")
+                  }}</el-button>
                 </el-form-item>
               </div>
             </el-form>
@@ -745,9 +718,9 @@ watch(
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
           c =>
+            c.enableOnSearchView &&
             c.filterType !== 'cascadingdropdown' &&
-            c.showOnGrid &&
-            c.enableOnSearchView
+            c.showOnGrid
         )"
         :key="col.filterKey"
         :prop="col.filterKey"
@@ -838,7 +811,7 @@ watch(
             <el-form-item
               v-for="filterItem in quickFilterForm.filters.filter(
                 c =>
-                  c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
+                  c.enableOnSearchView && c.filterType !== 'cascadingdropdown'
               )"
               :key="filterItem.filterKey"
               :label="t(filterItem.langethKey)"
@@ -996,7 +969,7 @@ watch(
         <tbody>
           <tr
             v-for="settingItem in advancedFilterForm.filters.filter(
-              c => c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
+              c => c.enableOnSearchView && c.filterType !== 'cascadingdropdown'
             )"
             v-bind:key="settingItem.filterKey"
           >
