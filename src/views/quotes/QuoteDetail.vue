@@ -76,7 +76,7 @@ const {
   saveFreightChargeResult,
   saveLocalChargeResult,
   frightChargeParams,
-  getQuotePreviewResult
+  getQuoteHistoryResult
 } = QuoteDetailHooks();
 
 const {
@@ -119,6 +119,7 @@ const disabledExportLocalChargeBtn = ref(true);
 const disabledImportLocalChargeBtn = ref(true);
 const vxeTableRef = ref();
 const hideQuotationType = ref(true);
+const hideOTPCode = ref(true);
 //Editor Parameters
 const mode = "default";
 const editorRef = shallowRef();
@@ -128,7 +129,7 @@ const handleCreated = editor => {
   // 记录 editor 实例，重要！
   editorRef.value = editor;
 };
-
+const quoteStatusHistory = ref([]);
 // 用於存放所有 HotTable 的 refs
 const hotTableRefs = ref({});
 const previousValue = ref<any>();
@@ -145,29 +146,6 @@ const updateHotTableData = (city, data) => {
     hotTableRefs.value[city].loadData(data);
   }
 };
-
-const options = [
-  {
-    value: "Option1",
-    label: "Option1"
-  },
-  {
-    value: "Option2",
-    label: "Option2"
-  },
-  {
-    value: "Option3",
-    label: "Option3"
-  },
-  {
-    value: "Option4",
-    label: "Option4"
-  },
-  {
-    value: "Option5",
-    label: "Option5"
-  }
-];
 
 const rules = {
   name: [
@@ -426,15 +404,20 @@ const quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.typeCode;
       },
       onChange: value => {
+        const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
+        console.log(quotationDetailResult.value);
+        hideOTPCode.value = showHideCodes.includes(value)
+          ? false
+          : hideOTPCode.value;
         autoSaveTrigger(value, "typeCode");
       }
     }
   },
   {
-    label: "OTP Code",
-    prop: "typeCode",
-    valueType: "input-number",
-    hideInForm: hideQuotationType,
+    label: "One Time Only Code",
+    prop: "onePWD",
+    valueType: "text", // 僅顯示文字
+    hideInForm: hideOTPCode,
     colProps: {
       span: 8
     }
@@ -840,7 +823,9 @@ const autoSaveTrigger = (newValue, columnName) => {
 };
 
 const showQuotationStatusHistory = () => {
-  alert(246346);
+  getQuoteHistoryResult(quotationDetailResult.value.quoteid).then(res => {
+    quoteStatusHistory.value = res;
+  });
 };
 
 watchEffect(() => {
@@ -943,11 +928,34 @@ onBeforeUnmount(() => {
       <div class="flex justify-between items-center">
         <!-- 左側 Label 和 Icon 按鈕 -->
         <div class="flex items-center space-x-2 pt-1 pl-3 font-bold">
-          <span class="text-gray-700"> Quote Status: </span
-          ><el-link @click="showQuotationStatusHistory">{{
-            quotationDetailResult.status
-          }}</el-link>
-          <!-- 這邊加上一個icon 顯示Quotation Status & Approval History -->
+          <span class="text-gray-700"> Quote Status: </span>
+          <el-popover placement="right" :width="400" trigger="click">
+            <template #reference>
+              <!-- <el-button style="margin-right: 16px"
+                >Click to activate</el-button
+              > -->
+              <el-link @click="showQuotationStatusHistory">{{
+                quotationDetailResult.status
+              }}</el-link>
+            </template>
+            <el-table :data="quoteStatusHistory">
+              <el-table-column label="Name" width="180">
+                <template #default="scope">
+                  <el-tag type="primary">{{ scope.row.status }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                width="100"
+                property="createdByName"
+                label="Updated By"
+              />
+              <el-table-column
+                width="300"
+                property="createdDate"
+                label="Updated Date"
+              />
+            </el-table>
+          </el-popover>
         </div>
 
         <!-- 右側按鈕群組 -->
@@ -1036,6 +1044,7 @@ onBeforeUnmount(() => {
                   >
                 </div>
                 <div class="el-form-item__content">
+                  1:
                   <el-input-number
                     v-model="quotationDetailResult.cbmToWT"
                     :min="0"
