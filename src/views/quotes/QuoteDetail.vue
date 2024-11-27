@@ -43,6 +43,7 @@ import { AutoSaveHelper } from "@/utils/autoSaveHelper";
 //Editor
 import { Editor, Toolbar } from "@wangeditor/editor-for-vue";
 import { usePreView } from "@/views/commons/hooks";
+import { UserAccessRightByCustomerProductLine } from "@/utils/auth";
 
 const { toPreView } = usePreView();
 
@@ -76,7 +77,8 @@ const {
   saveFreightChargeResult,
   saveLocalChargeResult,
   frightChargeParams,
-  getQuoteHistoryResult
+  getQuoteHistoryResult,
+  customerProductLineAccessRight
 } = QuoteDetailHooks();
 
 const {
@@ -180,6 +182,7 @@ const quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.customerHQID;
       },
       onSelect: (item: { text: string; value: number }) => {
+        //get access
         quotationDetailResult.value.customerHQID = item.value;
         getProductLineByCustomerResult(item.value);
         getAttentionToResult(item.value);
@@ -247,43 +250,11 @@ const quoteDetailColumns: PlusColumn[] = [
               true,
               ""
             ).then(() => {
-              if (
-                localChargeResult.value &&
-                localChargeResult.value.length > 0
-              ) {
-                localChargeResult.value.forEach(localCharge => {
-                  exportLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    hotTableSetting: {
-                      data: localCharge.detail || [],
-                      colHeaders: localCharge.colHeaders || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      columns: localCharge?.columns?.map(column => ({
-                        data: column?.data,
-                        type: column?.type,
-                        source: column?.source || []
-                      })),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow
-                    },
-                    localChargePackageList: null,
-                    localChargePackageSelector: []
-                  });
-                });
-              }
+              handleLocalChargeResult(
+                localChargeResult,
+                quotationDetailResult.value.pid,
+                exportLocationResult
+              );
             });
 
             importPromise = getLocalChargeResult(
@@ -292,43 +263,11 @@ const quoteDetailColumns: PlusColumn[] = [
               false,
               ""
             ).then(() => {
-              if (
-                localChargeResult.value &&
-                localChargeResult.value.length > 0
-              ) {
-                localChargeResult.value.forEach(localCharge => {
-                  importLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    hotTableSetting: {
-                      data: localCharge.detail || [],
-                      colHeaders: localCharge.colHeaders || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      columns: localCharge.columns.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow
-                    },
-                    localChargePackageList: null,
-                    localChargePackageSelector: []
-                  });
-                });
-              }
+              handleLocalChargeResult(
+                localChargeResult,
+                quotationDetailResult.value.pid,
+                importLocationResult
+              );
             });
           }
           Promise.all([exportPromise, importPromise]).then(() => {
@@ -337,6 +276,13 @@ const quoteDetailColumns: PlusColumn[] = [
           });
         });
         autoSaveTrigger(value, "pid");
+
+        UserAccessRightByCustomerProductLine(
+          quotationDetailResult.value.customerHQID,
+          quotationDetailResult.value.pid
+        ).then(res => {
+          customerProductLineAccessRight.value = res.returnValue;
+        });
       }
     }
   },
@@ -405,10 +351,7 @@ const quoteDetailColumns: PlusColumn[] = [
       },
       onChange: value => {
         const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
-        console.log(quotationDetailResult.value);
-        hideOTPCode.value = showHideCodes.includes(value)
-          ? false
-          : hideOTPCode.value;
+        hideOTPCode.value = showHideCodes.includes(value) ? false : true;
         autoSaveTrigger(value, "typeCode");
       }
     }
@@ -482,6 +425,54 @@ const quoteDetailColumns: PlusColumn[] = [
   }
 ];
 
+const handleLocalChargeResult = (
+  localChargeResult,
+  quotationDetailPid,
+  LocationResult
+) => {
+  if (localChargeResult.value && localChargeResult.value.length > 0) {
+    localChargeResult.value.forEach(localCharge => {
+      getLocalChargePackageResult(
+        quotationDetailPid,
+        true,
+        localCharge.cityID
+      ).then(res => {
+        LocationResult.value.push({
+          cityID: localCharge.cityID,
+          city: localCharge.city,
+          detail: [],
+          hotTableSetting: {
+            data: localCharge.detail || [],
+            colHeaders: localCharge.colHeaders || [],
+            rowHeaders: false,
+            dropdownMenu: true,
+            width: "100%",
+            height: "auto",
+            colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+            columns: localCharge.columns.map(column => ({
+              data: column.data,
+              type: column.type,
+              source: column.source || []
+            })),
+            autoWrapRow: true,
+            autoWrapCol: true,
+            allowInsertColumn: true,
+            allowInsertRow: true,
+            allowInvalid: true,
+            licenseKey: "524eb-e5423-11952-44a09-e7a22",
+            contextMenu: true,
+            afterChange: handleLocalChargeChange,
+            afterSelection: handleAfterSelection,
+            afterRemoveRow: handleRemoveRow
+          },
+          localChargePackageList: res,
+          localChargePackageSelector: []
+        });
+      });
+    });
+  }
+};
+
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     changes.forEach(([row, prop, oldValue, newValue]) => {
@@ -514,6 +505,7 @@ const handleAfterChange = (changes, source) => {
                       dropdownMenu: true,
                       width: "100%",
                       height: "auto",
+                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
                       columns: localCharge.columns.map(column => ({
                         data: column.data,
                         type: column.type,
@@ -572,6 +564,7 @@ const handleAfterChange = (changes, source) => {
                       dropdownMenu: true,
                       width: "100%",
                       height: "auto",
+                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
                       columns: localCharge.columns.map(column => ({
                         data: column.data,
                         type: column.type,
@@ -702,18 +695,17 @@ const previewQuote = () => {
   toPreView({
     category: "quotation",
     id: quotationDetailResult.value.quoteid as string,
-    displaytitle: quotationDetailResult.value.quoteNo as string,
+    displaytitle: (quotationDetailResult.value.quoteNo ??
+      getParameter.qname) as string,
     pid: quotationDetailResult.value.pid as string
   });
 };
 
 const handleFocusOut = (event: FocusEvent) => {
-  console.log(event);
   const hotContainer = document.querySelector(".handsontable-container");
   if (hotContainer && hotContainer.contains(event.relatedTarget as Node)) {
     return;
   }
-  console.log(handleFocusOut);
 };
 
 const deleteData = () => {
@@ -796,8 +788,6 @@ const AddLCPItems = (source, isExport) => {
     } else {
       importLocationResult.value.forEach(f => {
         if (f.cityID === source.cityID) {
-          console.log(res);
-          // f.hotTableSetting.data = res;
           updateHotTableData(source.cityID, res);
         }
       });
@@ -824,7 +814,7 @@ const autoSaveTrigger = (newValue, columnName) => {
 
 const showQuotationStatusHistory = () => {
   getQuoteHistoryResult(quotationDetailResult.value.quoteid).then(res => {
-    quoteStatusHistory.value = res;
+    quoteStatusHistory.value = res.returnValue;
   });
 };
 
@@ -920,6 +910,30 @@ onBeforeUnmount(() => {
   if (editor == null) return;
   editor.destroy();
 });
+const formatDate = dateString => {
+  const date = new Date(dateString);
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ];
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const seconds = date.getSeconds().toString().padStart(2, "0");
+  return `${month} ${day}, ${year}`;
+};
 </script>
 
 <template>
@@ -929,7 +943,7 @@ onBeforeUnmount(() => {
         <!-- 左側 Label 和 Icon 按鈕 -->
         <div class="flex items-center space-x-2 pt-1 pl-3 font-bold">
           <span class="text-gray-700"> Quote Status: </span>
-          <el-popover placement="right" :width="400" trigger="click">
+          <el-popover placement="right" :width="450" trigger="click">
             <template #reference>
               <!-- <el-button style="margin-right: 16px"
                 >Click to activate</el-button
@@ -939,21 +953,25 @@ onBeforeUnmount(() => {
               }}</el-link>
             </template>
             <el-table :data="quoteStatusHistory">
-              <el-table-column label="Name" width="180">
+              <el-table-column label="Status" width="170">
                 <template #default="scope">
                   <el-tag type="primary">{{ scope.row.status }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column
-                width="100"
+                width="120"
                 property="createdByName"
                 label="Updated By"
               />
-              <el-table-column
-                width="300"
-                property="createdDate"
-                label="Updated Date"
-              />
+              <el-table-column label="Updated Date" width="300">
+                <template #default="scope">
+                  <div style="display: flex; align-items: center">
+                    <span style="margin-left: 10px">{{
+                      formatDate(scope.row.createdDate)
+                    }}</span>
+                  </div>
+                </template>
+              </el-table-column>
             </el-table>
           </el-popover>
         </div>
@@ -961,6 +979,7 @@ onBeforeUnmount(() => {
         <!-- 右側按鈕群組 -->
         <div class="flex space-x-1">
           <el-button
+            v-if="customerProductLineAccessRight.isWrite"
             type="primary"
             plain
             :size="dynamicSize"
@@ -972,6 +991,7 @@ onBeforeUnmount(() => {
             {{ saveLoading === "disabled" ? "Save" : "Processing" }}
           </el-button>
           <el-button
+            v-if="customerProductLineAccessRight.isWrite"
             type="primary"
             plain
             :size="dynamicSize"
@@ -983,7 +1003,7 @@ onBeforeUnmount(() => {
             {{ saveLoading === "disabled" ? "Send to Approval" : "Processing" }}
           </el-button>
           <el-button
-            v-if="previewBtnVisible"
+            v-if="customerProductLineAccessRight.isWrite && previewBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -993,7 +1013,7 @@ onBeforeUnmount(() => {
             {{ "Preview" }}
           </el-button>
           <el-button
-            v-if="deleteBtnVisible"
+            v-if="customerProductLineAccessRight.isWrite && deleteBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -1005,7 +1025,7 @@ onBeforeUnmount(() => {
             {{ deleteLoading === "disabled" ? "Delete" : "Processing" }}
           </el-button>
           <el-button
-            v-if="historyBtnVisible"
+            v-if="customerProductLineAccessRight.isWrite && historyBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
@@ -1048,6 +1068,8 @@ onBeforeUnmount(() => {
                   <el-input-number
                     v-model="quotationDetailResult.cbmToWT"
                     :min="0"
+                    controls-position="right"
+                    style=" width: 120px;padding-left: 5px"
                   />
                   <el-select
                     v-model="quotationDetailResult.cbmToWTUOMID"

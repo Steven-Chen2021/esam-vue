@@ -132,9 +132,9 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
-  async getProfileColumnList(requestType) {
+  async getColumnSettingList(requestType) {
     try {
-      const url = `/api/Common/GetProfileColumnList?requestType=${requestType}`;
+      const url = `/api/Common/ColumnSettingList?requestType=${requestType}`;
       const response = await API.get(url);
       return response;
     } catch (error) {

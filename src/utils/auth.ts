@@ -124,7 +124,7 @@ export const formatToken = (token: string): string => {
   return "Bearer " + token;
 };
 
-export const UserAccessRightByCustomerProductLine = (CustomerID, PLID): {} => {
+export const UserAccessRightByCustomerProductLine = (CustomerID, PLID): any => {
   const res = CommonService.getUserAccessByCustomer(CustomerID, PLID);
-  return res.returnValue;
+  return res;
 };

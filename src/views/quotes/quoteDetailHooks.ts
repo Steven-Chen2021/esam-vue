@@ -22,6 +22,12 @@ export function QuoteDetailHooks() {
     type: string;
     source: [];
   }
+
+  interface iAccessRightSetting {
+    isWrite: boolean;
+    isReadAdvanceColumn: boolean;
+  }
+
   const quotationDetailResult = ref<FieldValues>({
     quoteid: null,
     quoteNo: null,
@@ -88,6 +94,10 @@ export function QuoteDetailHooks() {
   const cbmTransferUOMResult = ref([]);
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
   const chargeCodeSettingValues = ref([]);
+  const customerProductLineAccessRight = ref<iAccessRightSetting>({
+    isWrite: false,
+    isReadAdvanceColumn: false
+  });
 
   async function getQuotationDetailResult(
     QuoteID: number,
@@ -373,6 +383,7 @@ export function QuoteDetailHooks() {
     saveLocalChargeResult,
     frightChargeParams,
     getQuotePreviewResult,
-    getQuoteHistoryResult
+    getQuoteHistoryResult,
+    customerProductLineAccessRight
   };
 }
