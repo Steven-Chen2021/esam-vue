@@ -22,6 +22,12 @@ export function QuoteDetailHooks() {
     type: string;
     source: [];
   }
+
+  interface iAccessRightSetting {
+    isWrite: boolean;
+    isReadAdvanceColumn: boolean;
+  }
+
   const quotationDetailResult = ref<FieldValues>({
     quoteid: null,
     quoteNo: null,
@@ -68,19 +74,16 @@ export function QuoteDetailHooks() {
     salesInOffice: null,
     salesOverseaOffice: null
   });
-
   const frightChargeParams = ref({
     quoteID: null,
     pid: null,
     quoteFreights: [] as any[]
   });
-
   const customerResult = reactive({
     customers: [] as Array<dropdownCtl>,
     loading: false,
     error: null as string | null
   });
-
   const freightChargeResult = ref([]);
   const productLineResult = ref([]);
   const shippingTermResult = ref([]);
@@ -89,10 +92,12 @@ export function QuoteDetailHooks() {
   const tradeTermResult = ref([]);
   const creditTermResult = ref([]);
   const cbmTransferUOMResult = ref([]);
-
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
-
   const chargeCodeSettingValues = ref([]);
+  const customerProductLineAccessRight = ref<iAccessRightSetting>({
+    isWrite: false,
+    isReadAdvanceColumn: false
+  });
 
   async function getQuotationDetailResult(
     QuoteID: number,
@@ -338,6 +343,15 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getQuoteHistoryResult(qid) {
+    try {
+      const response = await quoteDetailService.getQuoteHistoryResult(qid);
+      return response;
+    } catch (error) {
+      console.log("saveLocalChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -368,6 +382,8 @@ export function QuoteDetailHooks() {
     saveFreightChargeResult,
     saveLocalChargeResult,
     frightChargeParams,
-    getQuotePreviewResult
+    getQuotePreviewResult,
+    getQuoteHistoryResult,
+    customerProductLineAccessRight
   };
 }

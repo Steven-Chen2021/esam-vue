@@ -208,6 +208,17 @@ class QuoteDetailService {
       console.error(error);
     }
   }
+
+  async getQuoteHistoryResult(QID) {
+    try {
+      const url = "/api/Quote/QuoteHistoryResult";
+      const fullUrl = `${url}?QuoteID=${QID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new QuoteDetailService();

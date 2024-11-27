@@ -44,6 +44,7 @@ export function LocalChargeHooks() {
     dropdownMenu: boolean;
     width: string;
     height: string;
+    colWidths: number[] | null;
     columns: Array<{
       data: string;
       type: string;

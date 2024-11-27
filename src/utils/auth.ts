@@ -2,6 +2,9 @@ import Cookies from "js-cookie";
 import { storageLocal } from "@pureadmin/utils";
 import { useUserStoreHook } from "@/store/modules/user";
 import { logout, login } from "@/utils/oidcLogin";
+
+import CommonService from "@/services/commonService";
+
 export interface DataInfo<T> {
   /** token */
   accessToken: string;
@@ -119,4 +122,9 @@ export function removeToken() {
 /** 格式化token（jwt格式） */
 export const formatToken = (token: string): string => {
   return "Bearer " + token;
+};
+
+export const UserAccessRightByCustomerProductLine = (CustomerID, PLID): any => {
+  const res = CommonService.getUserAccessByCustomer(CustomerID, PLID);
+  return res;
 };
