@@ -146,7 +146,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 22;
+      quickFilterForm.filterAppliedPage = 32;
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -229,7 +229,7 @@ const deleteQuickFilter = () => {
   dialogVisible.value = false;
   const params = {
     filterID: deleteQuickFilterID.value,
-    filterAppliedPage: 22
+    filterAppliedPage: 32
   };
   CommonService.deleteQuickFilter(params)
     .then(data => {
@@ -349,7 +349,7 @@ const resetAdvancedFilterForm = (formEl: FormInstance | undefined) => {
 const submitAdvancedFilterForm = () => {
   const advancedFilterParam = reactive({
     GridColumnSettings: advancedFilterForm.filters,
-    APIRequestType: 23
+    APIRequestType: 33
   });
   console.log("handleFilterEnable param", advancedFilterParam);
   CommonService.updateAdvancedFilter(advancedFilterParam)
