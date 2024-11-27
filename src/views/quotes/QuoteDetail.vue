@@ -45,7 +45,12 @@ import { Editor, Toolbar } from "@wangeditor/editor-for-vue";
 import { usePreView } from "@/views/commons/hooks";
 import { UserAccessRightByCustomerProductLine } from "@/utils/auth";
 
+import { CommonHelper } from "@/utils/commonHelper";
+
+import { QuoteDetailColumnAccessRight } from "@/utils/apiRequestEnum";
+
 const { toPreView } = usePreView();
+const { GetColumnSettingResult, columnSettingResult } = CommonHelper();
 
 const {
   getCustomerByOwnerUserResult,
@@ -818,6 +823,15 @@ const showQuotationStatusHistory = () => {
   });
 };
 
+const dataPermissionExtension = columnName => {
+  const matchedColumn = columnSettingResult.value.find(
+    column => column.filterKey === columnName
+  );
+  if (matchedColumn) {
+    console.log("Matched Column:", matchedColumn);
+  }
+};
+
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
@@ -842,6 +856,8 @@ watchEffect(() => {
 });
 
 onMounted(() => {
+  GetColumnSettingResult(QuoteDetailColumnAccessRight);
+  console.log("columnSettingResult", columnSettingResult);
   if (getParameter.id != "0") {
     const id = Array.isArray(getParameter.id)
       ? parseInt(getParameter.id[0], 10)
@@ -902,7 +918,6 @@ onMounted(() => {
   getShippingTermResult();
   getCBMTransferUOMRsult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
-  console.debug("quotationDetailResult", quotationDetailResult);
 });
 
 onBeforeUnmount(() => {
@@ -1069,7 +1084,7 @@ const formatDate = dateString => {
                     v-model="quotationDetailResult.cbmToWT"
                     :min="0"
                     controls-position="right"
-                    style=" width: 120px;padding-left: 5px"
+                    style="width: 120px; padding-left: 5px"
                   />
                   <el-select
                     v-model="quotationDetailResult.cbmToWTUOMID"
