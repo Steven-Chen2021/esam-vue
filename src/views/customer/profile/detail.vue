@@ -65,13 +65,17 @@ const {
   handleCheckedPLChange,
   loadDimOrgOptions,
   fetchDCUrl,
-  DCUrl
+  DCUrl,
+  DCShow
 } = customerProfileCTL();
 // const { fetchMembersData } = leadmemberctl();
 defineOptions({
   name: "CustomerDetail"
 });
 initToDetail("params");
+const backToIndex = () => {
+  router.go(-1);
+};
 const activeName = ref(["general", "pl", "documents"]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
@@ -751,6 +755,19 @@ const cancelForm = () => {
       <div style="padding: 0 10px">
         <h1>{{ profileDataInit.customerName }}</h1>
       </div>
+      <div class="flex ...">
+        <div class="grow h-8 ..." />
+        <div class="grow-0 h-8 ...">
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            @click="backToIndex"
+          >
+            {{ t("common.back") }}
+          </el-button>
+        </div>
+      </div>
       <el-tabs type="border-card" style="margin-top: 16px">
         <el-tab-pane :label="t('customer.profile.title')">
           <div>
@@ -1269,7 +1286,7 @@ const cancelForm = () => {
                             v-model="profileData[filterItem.filterKey]"
                             :disabled="disableStatus(filterItem)"
                             :placeholder="
-                              t('customer.list.quickFilter.holderKeyinText')
+                              t('customer.profile.general.localNameAlert')
                             "
                             style="width: 240px"
                             @blur="
@@ -1279,13 +1296,6 @@ const cancelForm = () => {
                                 profileData[filterItem.filterKey]
                               )
                             "
-                          />
-                          <el-alert
-                            :title="
-                              t('customer.profile.general.localNameAlert')
-                            "
-                            type="warning"
-                            show-icon
                           />
                         </div>
                         <div
@@ -1707,13 +1717,37 @@ const cancelForm = () => {
                 class="custom-collapse-title"
               >
                 <el-main>
-                  <div class="iframe-container">
+                  <div v-if="DCShow" class="iframe-container">
                     <iframe
                       :src="DCUrl"
                       frameborder="0"
                       width="100%"
                       height="600px"
                     />
+                  </div>
+                  <div
+                    v-else
+                    class="flex justify-center items-center h-[640px]"
+                  >
+                    <div class="ml-12">
+                      <p
+                        v-motion
+                        class="font-medium text-4xl mb-4 dark:text-white"
+                        :initial="{
+                          opacity: 0,
+                          y: 100
+                        }"
+                        :enter="{
+                          opacity: 1,
+                          y: 0,
+                          transition: {
+                            delay: 80
+                          }
+                        }"
+                      >
+                        {{ t("common.unauthorized") }}
+                      </p>
+                    </div>
                   </div>
                 </el-main>
               </el-collapse-item>
@@ -1756,7 +1790,7 @@ const cancelForm = () => {
             </div>
           </el-drawer></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.deal.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.deal.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1779,7 +1813,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.contact.title')">
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.contact.title')">
           <contactTab
             v-if="searchingContact"
             :SearchLeadID="LID"
@@ -1792,7 +1826,7 @@ const cancelForm = () => {
             @handleBackEvent="handleBackEvent"
           />
         </el-tab-pane>
-        <el-tab-pane :label="t('customer.credit.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.credit.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1815,7 +1849,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.quotation.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.quotation.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1838,7 +1872,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.iRFQ.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.iRFQ.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1861,7 +1895,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.poms.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.poms.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1884,7 +1918,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.task.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.task.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1907,7 +1941,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.kpi.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.kpi.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1930,7 +1964,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.report.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.report.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1953,7 +1987,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.setting.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.setting.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p

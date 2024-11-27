@@ -27,7 +27,7 @@ export function useDetail() {
     });
     if (model === "params") {
       useMultiTagsStoreHook().handleTags("push", {
-        path: `/contact/detail/:id`,
+        path: `/contact/detail/:id/:lid/:qname`,
         name: "ContactDetail",
         params: parameter,
         meta: {

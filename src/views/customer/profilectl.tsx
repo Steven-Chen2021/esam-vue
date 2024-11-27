@@ -47,12 +47,13 @@ export function customerProfileCTL() {
       const [result1, result2, result3] = await Promise.all([
         // axios.get("/api/Customer/CustomerProfileColumnList?requestType=5"),
         // axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
-        CustomerQuickFilterService.getProfileColumnList(5),
+        CustomerQuickFilterService.getColumnSettingList(5),
         CustomerProfileService.getCustomerProfileResult(LeadID.value),
         CustomerProfileService.getUserAuthByCustomerResult(LeadID.value)
       ]);
       console.log("getUserAuthByCustomerResult", result3.returnValue);
       userAuth.value = deepClone(result3.returnValue);
+      DCShow.value = userAuth.value["isReadAdvanceColumn"];
       loadAgentROList();
       profileData.value = deepClone(result2.returnValue);
       if (LeadID.value === "0") {
@@ -1109,6 +1110,7 @@ export function customerProfileCTL() {
     }
   };
   //#region DC
+  const DCShow = ref(true);
   const DCUrl = ref("");
   const fetchDCUrl = async () => {
     try {
@@ -1121,7 +1123,7 @@ export function customerProfileCTL() {
       ]);
       const pattern =
         /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(\/[^\s]*)?(\?[^\s]*)?(#[^\s]*)?$/;
-      console.log("result1.returnValue", result1.returnValue);
+      console.log("DCUrl", result1.returnValue);
       console.log(
         "result1.returnValue test",
         pattern.test(result1.returnValue)
@@ -1132,6 +1134,27 @@ export function customerProfileCTL() {
         result1.returnValue !== "" &&
         pattern.test(result1.returnValue)
       ) {
+        if (userAuth) {
+          if (userAuth.value["isWrite"]) {
+            result1.returnValue = result1.returnValue.replace(
+              "BADEL=0",
+              "BADEL=1"
+            );
+            result1.returnValue = result1.returnValue.replace(
+              "BAUPL=0",
+              "BAUPL=1"
+            );
+          } else {
+            result1.returnValue = result1.returnValue.replace(
+              "BADEL=1",
+              "BADEL=0"
+            );
+            result1.returnValue = result1.returnValue.replace(
+              "BAUPL=1",
+              "BAUPL=0"
+            );
+          }
+        }
         DCUrl.value = deepClone(result1.returnValue);
         console.log("DCUrl.value", DCUrl.value);
       }
@@ -1201,6 +1224,7 @@ export function customerProfileCTL() {
     checkedPL,
     handleCheckedPLChange,
     DCUrl,
-    fetchDCUrl
+    fetchDCUrl,
+    DCShow
   };
 }
