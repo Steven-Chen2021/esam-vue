@@ -160,16 +160,21 @@ export function listCTL() {
                     const isSameDate = date1.isSame(date2, "date");
                     if (isSameDate) {
                       a["appointmentStartDate"] =
-                        `${dayjs(a["appointmentStartDate"]).format("MMM DD, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("HH:mm")}`;
+                        `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("HH:mm")}`;
                     } else {
                       a["appointmentStartDate"] =
-                        `${dayjs(a["appointmentStartDate"]).format("MMM DD, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("MMM DD, HH:mm")}`;
+                        `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("MMM DD, YYYY, HH:mm")}`;
                     }
                   } else {
                     a["appointmentStartDate"] =
-                      `${dayjs(a["appointmentStartDate"]).format("MMM DD, HH:mm")}`;
+                      `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")}`;
                   }
                 }
+                if (a["dueDate"] && a["dueDate"] !== "") {
+                  a["dueDate"] =
+                    `${dayjs(a["dueDate"]).format("MMM DD, YYYY")}`;
+                }
+                a["taskStatus"] = a["status"];
               });
               tableData.value = data.returnValue.results;
               if (

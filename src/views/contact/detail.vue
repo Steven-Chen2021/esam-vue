@@ -14,6 +14,7 @@ import {
 } from "element-plus";
 import { useUserStoreHook } from "@/store/modules/user";
 import CustomerProfileService from "@/services/customer/CustomerProfileService";
+import ContactProfileService from "@/services/contact/ContactProfileService";
 import { useDetail } from "./hooks";
 import CommonService from "@/services/commonService";
 const { initToDetail, getParameter, router } = useDetail();
@@ -57,6 +58,7 @@ const {
   PLModuleList,
   fetchDCUrl,
   DCUrl,
+  DCShow,
   inActiveContact,
   activeContact
 } = contactProfileCTL();
@@ -64,7 +66,7 @@ const {
 defineOptions({
   name: "ContactDetail"
 });
-// initToDetail("params");
+
 const props = defineProps({
   ParentID: {
     type: String,
@@ -77,7 +79,11 @@ const props = defineProps({
 });
 const emit = defineEmits(["handleBackEvent"]);
 const backToIndex = () => {
-  emit("handleBackEvent");
+  if (props.ParentID && props.ParentID !== "") {
+    emit("handleBackEvent");
+  } else {
+    router.go(-1);
+  }
 };
 const activeName = ref(["general", "documents"]);
 const baseRadio = ref("default");
@@ -232,7 +238,7 @@ const autoSaveForm = async (
   filterItem,
   v
 ) => {
-  if (LID === "0" || !userAuth.value["isWrite"]) return;
+  if (CID === "0" || !userAuth.value["isWrite"]) return;
   console.log("autoSaveForm", profileData.value);
   if (!formEl) return;
   if (disableStatus(filterItem)) return;
@@ -477,86 +483,76 @@ const autoSaveForm = async (
   });
 };
 const submitForm = async (formEl: FormInstance | undefined, disable) => {
-  profileData.value["PlList"] = checkedPL.value;
   if (!formEl) return;
   if (disable) return;
   await formEl.validate((valid, fields) => {
     if (valid) {
       const data = profileData.value;
-      if (data["agentROCheck"] && (!data["agentId"] || data["agentId"] === 0)) {
-        ElMessage({
-          message: t("customer.profile.agentRO"),
-          grouping: true,
-          type: "warning"
-        });
-        return;
-        // console.log("refAgent", refAgent);
-        // console.log("refCity", refCity);
-        // if (refAgent.value && refAgent.value.length === 1) {
-        //   setTimeout(() => {
-        //     refAgent.value[0].toggleMenu();
-        //   }, 500);
-        //   ElMessage({
-        //     message: t("customer.profile.agentRO"),
-        //     grouping: true,
-        //     type: "warning"
-        //   });
-        //   return;
-        // }
-      }
-      if (
-        (!data["city"] || data["city"] === "" || data["city"] === null) &&
-        (!data["cityText"] ||
-          data["cityText"] === "" ||
-          data["cityText"] === null)
-      ) {
-        if (refCity.value && refCity.value.length === 1) {
-          setTimeout(() => {
-            refCity.value[0].toggleMenu();
-          }, 500);
-          ElMessage({
-            message: t("customer.profile.cityAlert"),
-            grouping: true,
-            type: "warning"
-          });
-          return;
-        }
-      }
-      if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
-        if (
-          refLeadSourceDetail.value &&
-          refLeadSourceDetail.value.length === 1
-        ) {
-          setTimeout(() => {
-            refLeadSourceDetail.value[0].toggleMenu();
-          }, 500);
-          ElMessage({
-            message: t("customer.profile.leadSourceAlert"),
-            grouping: true,
-            type: "warning"
-          });
-          return;
-        }
-      }
-      // const profileNew = ref({});
-
-      // const dataInit = profileDataInit.value;
-      // console.log("dataInit", dataInit);
-      // console.log("data", data);
-
-      // for (const key in data) {
-      //   // console.log("key", key);
-      //   // console.log("data[key]", data[key]);
-      //   // console.log("dataInit[key]", dataInit[key]);
-      //   if (data[key] !== dataInit[key]) {
-      //     profileNew.value[key] = data[key];
+      // if (data["agentROCheck"] && (!data["agentId"] || data["agentId"] === 0)) {
+      //   ElMessage({
+      //     message: t("customer.profile.agentRO"),
+      //     grouping: true,
+      //     type: "warning"
+      //   });
+      //   return;
+      // }
+      // if (
+      //   (!data["city"] || data["city"] === "" || data["city"] === null) &&
+      //   (!data["cityText"] ||
+      //     data["cityText"] === "" ||
+      //     data["cityText"] === null)
+      // ) {
+      //   if (refCity.value && refCity.value.length === 1) {
+      //     setTimeout(() => {
+      //       refCity.value[0].toggleMenu();
+      //     }, 500);
+      //     ElMessage({
+      //       message: t("customer.profile.cityAlert"),
+      //       grouping: true,
+      //       type: "warning"
+      //     });
+      //     return;
       //   }
       // }
-      profileData.value["hqid"] = LID;
+      // if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
+      //   if (
+      //     refLeadSourceDetail.value &&
+      //     refLeadSourceDetail.value.length === 1
+      //   ) {
+      //     setTimeout(() => {
+      //       refLeadSourceDetail.value[0].toggleMenu();
+      //     }, 500);
+      //     ElMessage({
+      //       message: t("customer.profile.leadSourceAlert"),
+      //       grouping: true,
+      //       type: "warning"
+      //     });
+      //     return;
+      //   }
+      // }
+      profileData.value["hqid"] = CID;
+      profileData.value["customerId"] = LID;
+      // profileData.value["plList"] = PLModuleList.value.map(item => {
+      //   const status = "";
+      //   return { PLCode: item.description, IsActive: true };
+      // });
+
+      if (
+        profileData.value["bossArray"] &&
+        isArray(profileData.value["bossArray"])
+      ) {
+        profileData.value["boss"] = profileData.value["bossArray"].join(", ");
+      }
+      if (
+        profileData.value["hobbyArray"] &&
+        isArray(profileData.value["hobbyArray"])
+      ) {
+        profileData.value["hobby"] = profileData.value["hobbyArray"].join(", ");
+      }
       console.log("submit! profileData:", profileData.value);
-      CustomerProfileService.updateCustomerProfile(profileData.value)
+      ContactProfileService.updateContactProfile(profileData.value)
         .then(data => {
-          console.log("updateCustomerProfile data", data);
+          console.log("updateContactProfile data", data);
           ElMessage({
             message: t("customer.profile.fullSaveSucAlert"),
             grouping: true,
@@ -586,21 +582,6 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
     }
   });
 };
-// const disableStatus = filterItem => {
-//   const arr = ["read", "NA"];
-//   if (filterItem.visibilityLevel === 1) {
-//     return arr.includes(basicRole);
-//   } else {
-//     if (
-//       filterItem.filterKey === "leadSourceGroupID" ||
-//       filterItem.filterKey === "leadSourceID"
-//     ) {
-//       return leadSourceDisable.value;
-//     } else {
-//       return arr.includes(advRole);
-//     }
-//   }
-// };
 const username = useUserStoreHook()?.username;
 const LID = props.ParentID
   ? props.ParentID
@@ -613,6 +594,9 @@ const CID = props.ID
     ? getParameter.id[0]
     : getParameter.id;
 onMounted(() => {
+  if (!props.ID) {
+    initToDetail("params");
+  }
   console.log("contac detail getParameter", getParameter);
   ProfileID.value = CID;
   LeadID.value = LID;
@@ -622,180 +606,6 @@ onMounted(() => {
   // fetchPLData(0);
   // loadDimOrgOptions();
 });
-const returnPL = ref({
-  id: "",
-  ownerStationID: "",
-  sendToStationID: "",
-  showDimOrg: false
-});
-const activePLTabData = ref({ smhqid: null, pid: null, plName: null });
-const handleActionChange = (v, plName) => {
-  console.log("handleActionChange v", v);
-  console.log("handleActionChange tabItem.plName", plName);
-  if (v === "Send To") {
-    formDataMap.value[plName].showDimOrg = true;
-  } else {
-    formDataMap.value[plName].showDimOrg = false;
-    formDataMap.value[plName].sendToStationID = "";
-  }
-  console.log("handleActionChange formDataMap", formDataMap.value[plName]);
-};
-const handleReturnClick = (PLDetail, PLTab) => {
-  returnPL.value = PLDetail;
-  activePLTabData.value = PLTab;
-  if (
-    !returnPL.value ||
-    (returnPL.value &&
-      returnPL.value.showDimOrg &&
-      (!returnPL.value.sendToStationID ||
-        returnPL.value.sendToStationID === ""))
-  ) {
-    ElNotification({
-      title: t("customer.list.quickFilter.alertTitle"),
-      message: t("customer.profile.pl.returnMissStation"),
-      type: "warning"
-    });
-    dialogReturnVisible.value = false;
-    return false;
-  }
-  dialogType.value = "return";
-  dialogReturnVisible.value = true;
-};
-const handleAssignClick = (PLDetail, PLTab) => {
-  dialogType.value = "assign";
-  dialogReturnVisible.value = true;
-  returnPL.value = PLDetail;
-  activePLTabData.value = PLTab;
-};
-const dialogType = ref("return");
-const handleDialogConfirm = () => {
-  console.log("handleDialogConfirm", dialogType.value);
-  switch (dialogType.value) {
-    case "return": {
-      returnLeadOwner();
-      break;
-    }
-    case "assign": {
-      addPL();
-      break;
-    }
-  }
-};
-const returnLeadOwner = () => {
-  console.log("returnLeadOwner returnPL", returnPL.value);
-  const param = {
-    currentUserID: "A2232",
-    sourceID: returnPL.value.id,
-    stationID: returnPL.value.showDimOrg
-      ? returnPL.value.sendToStationID
-      : returnPL.value.ownerStationID
-  };
-  console.log("returnLeadOwner para", param);
-  CustomerProfileService.ChangeProductLinesOwner(param)
-    .then(data => {
-      console.log("ChangeProductLinesOwner data", data);
-      ElNotification({
-        title: t("customer.list.quickFilter.alertTitle"),
-        message: t("customer.profile.pl.returnSuc"),
-        type: "success"
-      });
-      dialogReturnVisible.value = false;
-      console.log("activePLTabData.value", activePLTabData.value);
-      fetchPLFormData(
-        LID,
-        activePLTabData.value.smhqid,
-        activePLTabData.value.plName,
-        true
-      );
-    })
-    .catch(err => {
-      console.log("addQuickFilter error", err);
-    });
-};
-const addPL = () => {
-  console.log("addPL returnPL", returnPL.value);
-  const param = {
-    currentUserID: "A2232",
-    currentStationID: "018",
-    lid: LID,
-    pid: activePLTabData.value.smhqid
-  };
-  console.log("addPL para", param);
-  CustomerProfileService.AddPL(param)
-    .then(data => {
-      console.log("ChangeProductLinesOwner data", data);
-      if (data.errorCode == 0) {
-        ElNotification({
-          title: t("customer.list.quickFilter.alertTitle"),
-          message: t("customer.profile.pl.assignSuc"),
-          type: "success"
-        });
-      } else {
-        ElNotification({
-          title: t("customer.list.quickFilter.alertTitle"),
-          message: t("customer.profile.pl.assignFail"),
-          type: "warning"
-        });
-      }
-      dialogReturnVisible.value = false;
-      console.log("activePLTabData.value", activePLTabData.value);
-      fetchPLFormData(
-        LID,
-        activePLTabData.value.smhqid,
-        activePLTabData.value.plName,
-        true
-      );
-    })
-    .catch(err => {
-      console.log("addQuickFilter error", err);
-    });
-};
-const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
-  console.log("handleBookingConfirmChange v", v);
-  console.log("handleBookingConfirmChange updateField", updateField);
-  const param = {
-    currentUserID: "A2232",
-    currentStationID: "018",
-    customerID: LID,
-    productLineID: PLDetail.pid,
-    needBookConfirm: null,
-    poa: null,
-    amS_ISF_SendBroker: null
-  };
-  switch (updateField) {
-    case "needBookConfirm":
-      param.needBookConfirm = v ? "1" : "0";
-      break;
-    case "poa":
-      param.poa = v ? "1" : "0";
-      break;
-    case "amS_ISF_SendBroker":
-      param.amS_ISF_SendBroker = v ? 1 : 0;
-      break;
-  }
-  console.log("handleBookingConfirmChange para", param);
-  CustomerProfileService.UpdateCustomerPLData(param)
-    .then(data => {
-      console.log("UpdateCustomerPLData data", data);
-      if (data.errorCode == 0) {
-        ElNotification({
-          title: t("customer.list.quickFilter.alertTitle"),
-          message: t("customer.profile.pl.updateOMSPLSuc"),
-          type: "success"
-        });
-      } else {
-        ElNotification({
-          title: t("customer.list.quickFilter.alertTitle"),
-          message: t("customer.profile.pl.updateOMSPLFail"),
-          type: "warning"
-        });
-      }
-      fetchPLFormData(LID, PLDetail.pid, PLDetail.plName, true);
-    })
-    .catch(err => {
-      console.log("addQuickFilter error", err);
-    });
-};
 </script>
 
 <template>
@@ -850,15 +660,13 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
             {{ size === "disabled" ? "Save" : "Processing" }}
           </el-button>
           <el-button
-            v-if="props.ParentID && props.ParentID !== ''"
             type="primary"
             plain
             :size="dynamicSize"
             :loading="formLoading"
-            :disabled="!userAuth['isWrite'] && LID !== '0'"
             @click="backToIndex"
           >
-            {{ t("contact.cancel") }}
+            {{ t("common.back") }}
           </el-button>
         </div>
       </div>
@@ -1359,6 +1167,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                           : false
                       "
                       label=""
+                      :disabled="disableStatus(filterItem)"
                       @change="
                         autoSaveForm(
                           profileFormRef,
@@ -1843,13 +1652,34 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
             class="custom-collapse-title"
           >
             <el-main>
-              <div class="iframe-container">
+              <div v-if="DCShow" class="iframe-container">
                 <iframe
                   :src="DCUrl"
                   frameborder="0"
                   width="100%"
                   height="600px"
                 />
+              </div>
+              <div v-else class="flex justify-center items-center h-[640px]">
+                <div class="ml-12">
+                  <p
+                    v-motion
+                    class="font-medium text-4xl mb-4 dark:text-white"
+                    :initial="{
+                      opacity: 0,
+                      y: 100
+                    }"
+                    :enter="{
+                      opacity: 1,
+                      y: 0,
+                      transition: {
+                        delay: 80
+                      }
+                    }"
+                  >
+                    {{ t("common.unauthorized") }}
+                  </p>
+                </div>
               </div>
             </el-main>
           </el-collapse-item>

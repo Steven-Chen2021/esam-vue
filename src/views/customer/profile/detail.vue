@@ -65,13 +65,17 @@ const {
   handleCheckedPLChange,
   loadDimOrgOptions,
   fetchDCUrl,
-  DCUrl
+  DCUrl,
+  DCShow
 } = customerProfileCTL();
 // const { fetchMembersData } = leadmemberctl();
 defineOptions({
   name: "CustomerDetail"
 });
 initToDetail("params");
+const backToIndex = () => {
+  router.go(-1);
+};
 const activeName = ref(["general", "pl", "documents"]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
@@ -99,6 +103,8 @@ const profileFormRef = ref<FormInstance>();
 const refCity = ref(null);
 const refAgent = ref(null);
 const refLeadSourceDetail = ref(null);
+const refLeadSourceID = ref(null);
+const refIndustryID = ref(null);
 const handleDropDownChange = async (
   formEl: FormInstance | undefined,
   v,
@@ -169,10 +175,22 @@ const handleDropDownChange = async (
         filterOptions.value["leadSource"] = {};
         filterOptions.value["leadSource"].list = data;
         filterOptions.value["leadSourceDetail"].list = [];
-        profileData.value["leadSourceDetail"] = "";
-        profileData.value["leadSourceID"] = "";
+        profileData.value["leadSourceDetail"] = null;
+        profileData.value["leadSourceID"] = null;
         if (subValue) {
           profileData.value["leadSourceID"] = subValue;
+        } else {
+          if (refLeadSourceID.value && refLeadSourceID.value.length === 1) {
+            setTimeout(() => {
+              refLeadSourceID.value[0].toggleMenu();
+            }, 500);
+            ElMessage({
+              message: t("customer.profile.leadSourceIDAlert"),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
         }
       });
       break;
@@ -187,7 +205,23 @@ const handleDropDownChange = async (
         });
       filterOptions.value["leadSourceDetail"] = {};
       filterOptions.value["leadSourceDetail"].list = response;
-      profileData.value["leadSourceDetail"] = "";
+      profileData.value["leadSourceDetail"] = null;
+      // if (
+      //   (!v || v === "") &&
+      //   refLeadSourceID.value &&
+      //   refLeadSourceID.value.length === 1
+      // ) {
+      //   setTimeout(() => {
+      //     refLeadSourceID.value[0].toggleMenu();
+      //     profileData.value["leadSourceDetail"] = null;
+      //   }, 500);
+      //   ElMessage({
+      //     message: t("customer.profile.leadSourceIDAlert"),
+      //     grouping: true,
+      //     type: "warning"
+      //   });
+      //   return;
+      // }
       break;
     }
     case "leadSourceDetail": {
@@ -210,9 +244,39 @@ const handleDropDownChange = async (
         });
       filterOptions.value["industry"] = {};
       filterOptions.value["industry"].list = response;
-      profileData.value["industryID"] = "";
+      profileData.value["industryID"] = null;
+      if (refIndustryID.value && refIndustryID.value.length === 1) {
+        setTimeout(() => {
+          refIndustryID.value[0].toggleMenu();
+          profileData.value["industryID"] = null;
+        }, 500);
+        ElMessage({
+          message: t("customer.profile.industryIDAlert"),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      }
       break;
     }
+    // case "industryID": {
+    //   if (
+    //     (!v || v === "") &&
+    //     refIndustryID.value &&
+    //     refIndustryID.value.length === 1
+    //   ) {
+    //     setTimeout(() => {
+    //       refIndustryID.value[0].toggleMenu();
+    //     }, 500);
+    //     ElMessage({
+    //       message: t("customer.profile.industryIDAlert"),
+    //       grouping: true,
+    //       type: "warning"
+    //     });
+    //     return;
+    //   }
+    //   break;
+    // }
   }
   autoSaveForm(formEl, filterItem, v);
 };
@@ -328,10 +392,78 @@ const autoSaveForm = async (
             });
           break;
         }
-        case "leadSourceID":
+        case "leadSourceID": {
+          if (
+            (!v || v === "") &&
+            refLeadSourceID.value &&
+            refLeadSourceID.value.length === 1
+          ) {
+            setTimeout(() => {
+              refLeadSourceID.value[0].toggleMenu();
+              profileData.value["leadSourceDetail"] = null;
+            }, 500);
+            ElMessage({
+              message: t("customer.profile.leadSourceIDAlert"),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "industryID": {
+          if (
+            (!v || v === "") &&
+            refIndustryID.value &&
+            refIndustryID.value.length === 1
+          ) {
+            setTimeout(() => {
+              refIndustryID.value[0].toggleMenu();
+            }, 500);
+            ElMessage({
+              message: t("customer.profile.industryIDAlert"),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
         case "leadSourceDetail": {
-          console.log("leadID", data["leadSourceID"]);
-          console.log("leadDetail", data["leadSourceDetail"]);
           if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
             if (
               refLeadSourceDetail.value &&
@@ -421,6 +553,23 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           return;
         }
       }
+      if (
+        !data["leadSourceID"] ||
+        data["leadSourceID"] === "" ||
+        data["leadSourceID"] === null
+      ) {
+        if (refLeadSourceID.value && refLeadSourceID.value.length === 1) {
+          setTimeout(() => {
+            refLeadSourceID.value[0].toggleMenu();
+          }, 500);
+          ElMessage({
+            message: t("customer.profile.leadSourceIDAlert"),
+            grouping: true,
+            type: "warning"
+          });
+          return;
+        }
+      }
       if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
         if (
           refLeadSourceDetail.value &&
@@ -431,6 +580,23 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           }, 500);
           ElMessage({
             message: t("customer.profile.leadSourceAlert"),
+            grouping: true,
+            type: "warning"
+          });
+          return;
+        }
+      }
+      if (
+        !data["industryID"] ||
+        data["industryID"] === "" ||
+        data["industryID"] === null
+      ) {
+        if (refIndustryID.value && refIndustryID.value.length === 1) {
+          setTimeout(() => {
+            refIndustryID.value[0].toggleMenu();
+          }, 500);
+          ElMessage({
+            message: t("customer.profile.industryIDAlert"),
             grouping: true,
             type: "warning"
           });
@@ -751,6 +917,19 @@ const cancelForm = () => {
       <div style="padding: 0 10px">
         <h1>{{ profileDataInit.customerName }}</h1>
       </div>
+      <!-- <div class="flex ...">
+        <div class="grow h-8 ..." />
+        <div class="grow-0 h-8 ...">
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            @click="backToIndex"
+          >
+            {{ t("common.back") }}
+          </el-button>
+        </div>
+      </div> -->
       <el-tabs type="border-card" style="margin-top: 16px">
         <el-tab-pane :label="t('customer.profile.title')">
           <div>
@@ -1026,6 +1205,7 @@ const cancelForm = () => {
                             style="margin-top: 18px"
                             prop="leadSourceID"
                             ><el-select
+                              ref="refLeadSourceID"
                               v-model="profileData['leadSourceID']"
                               :disabled="
                                 disableStatus({
@@ -1145,6 +1325,7 @@ const cancelForm = () => {
                             prop="industryID"
                           >
                             <el-select
+                              ref="refIndustryID"
                               v-model="profileData['industryID']"
                               :disabled="disableStatus(filterItem)"
                               :placeholder="
@@ -1269,7 +1450,7 @@ const cancelForm = () => {
                             v-model="profileData[filterItem.filterKey]"
                             :disabled="disableStatus(filterItem)"
                             :placeholder="
-                              t('customer.list.quickFilter.holderKeyinText')
+                              t('customer.profile.general.localNameAlert')
                             "
                             style="width: 240px"
                             @blur="
@@ -1279,13 +1460,6 @@ const cancelForm = () => {
                                 profileData[filterItem.filterKey]
                               )
                             "
-                          />
-                          <el-alert
-                            :title="
-                              t('customer.profile.general.localNameAlert')
-                            "
-                            type="warning"
-                            show-icon
                           />
                         </div>
                         <div
@@ -1707,13 +1881,37 @@ const cancelForm = () => {
                 class="custom-collapse-title"
               >
                 <el-main>
-                  <div class="iframe-container">
+                  <div v-if="DCShow" class="iframe-container">
                     <iframe
                       :src="DCUrl"
                       frameborder="0"
                       width="100%"
                       height="600px"
                     />
+                  </div>
+                  <div
+                    v-else
+                    class="flex justify-center items-center h-[640px]"
+                  >
+                    <div class="ml-12">
+                      <p
+                        v-motion
+                        class="font-medium text-4xl mb-4 dark:text-white"
+                        :initial="{
+                          opacity: 0,
+                          y: 100
+                        }"
+                        :enter="{
+                          opacity: 1,
+                          y: 0,
+                          transition: {
+                            delay: 80
+                          }
+                        }"
+                      >
+                        {{ t("common.unauthorized") }}
+                      </p>
+                    </div>
                   </div>
                 </el-main>
               </el-collapse-item>
@@ -1756,7 +1954,7 @@ const cancelForm = () => {
             </div>
           </el-drawer></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.deal.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.deal.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1779,7 +1977,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.contact.title')">
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.contact.title')">
           <contactTab
             v-if="searchingContact"
             :SearchLeadID="LID"
@@ -1792,7 +1990,7 @@ const cancelForm = () => {
             @handleBackEvent="handleBackEvent"
           />
         </el-tab-pane>
-        <el-tab-pane :label="t('customer.credit.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.credit.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1815,7 +2013,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.quotation.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.quotation.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1838,7 +2036,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.iRFQ.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.iRFQ.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1861,7 +2059,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.poms.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.poms.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1884,7 +2082,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.task.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.task.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1907,7 +2105,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.kpi.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.kpi.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1930,7 +2128,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.report.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.report.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p
@@ -1953,7 +2151,7 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane :label="t('customer.setting.title')"
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.setting.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
               <p

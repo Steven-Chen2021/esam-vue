@@ -45,13 +45,14 @@ export function contactProfileCTL() {
   const fetchProfileData = async () => {
     try {
       const [result1, result2, result3, plList] = await Promise.all([
-        CommonService.getProfileColumnList(25),
+        CommonService.getColumnSettingList(25),
         ContactProfileService.getContactProfileResult(ProfileID.value),
-        ContactProfileService.getUserAuthByCustomerResult(LeadID.value),
+        CommonService.getUserAccessByCustomer(LeadID.value, 0),
         CommonService.getPLList()
       ]);
       PLModuleList.value = deepClone(plList.returnValue);
       userAuth.value = deepClone(result3.returnValue);
+      DCShow.value = userAuth.value["isReadAdvanceColumn"];
       profileData.value = deepClone(result2.returnValue);
       if (profileData.value["boss"]) {
         profileData.value["bossArray"] = profileData.value["boss"]
@@ -113,20 +114,20 @@ export function contactProfileCTL() {
       console.error("Error fetching data:", error);
     }
   };
-  // TODO: API
+  const DCShow = ref(true);
   const DCUrl = ref("");
   const fetchDCUrl = async () => {
     try {
       const param = {
-        KeyValue: ProfileID.value,
-        DCType: "CON"
+        KeyValue: LeadID.value,
+        DCType: "LED"
       };
       const [result1] = await Promise.all([
         CommonService.getDocumentCloudSiteResult(param)
       ]);
       const pattern =
         /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(\/[^\s]*)?(\?[^\s]*)?(#[^\s]*)?$/;
-      console.log("result1.returnValue", result1.returnValue);
+      console.log("DCUrl", result1.returnValue);
       console.log(
         "result1.returnValue test",
         pattern.test(result1.returnValue)
@@ -137,6 +138,27 @@ export function contactProfileCTL() {
         result1.returnValue !== "" &&
         pattern.test(result1.returnValue)
       ) {
+        if (userAuth) {
+          if (userAuth.value["isWrite"]) {
+            result1.returnValue = result1.returnValue.replace(
+              "BADEL=0",
+              "BADEL=1"
+            );
+            result1.returnValue = result1.returnValue.replace(
+              "BAUPL=0",
+              "BAUPL=1"
+            );
+          } else {
+            result1.returnValue = result1.returnValue.replace(
+              "BADEL=1",
+              "BADEL=0"
+            );
+            result1.returnValue = result1.returnValue.replace(
+              "BAUPL=1",
+              "BAUPL=0"
+            );
+          }
+        }
         DCUrl.value = deepClone(result1.returnValue);
         console.log("DCUrl.value", DCUrl.value);
       }
@@ -257,6 +279,13 @@ export function contactProfileCTL() {
       }
     ],
     lastName: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "blur"
+      }
+    ],
+    email: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
@@ -1166,6 +1195,7 @@ export function contactProfileCTL() {
     PLModuleList,
     fetchDCUrl,
     DCUrl,
+    DCShow,
     inActiveContact,
     activeContact
   };

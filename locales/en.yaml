@@ -243,6 +243,8 @@ login:
   purePassWordUpdateReg: Password has been updated
 common:
   dc: Documents
+  unauthorized: No permission to view
+  back: Back
 task:
   quickfilter:
     priority: Priority
@@ -393,6 +395,8 @@ customer:
     agentRO: Please select Agent
     alertTilte: Alert
     leadSourceAlert: Please select Event Code
+    leadSourceIDAlert: Please select Lead Source
+    industryIDAlert: Please select Industry
     disqualify: Disqualify
     disqualifyReason: Disqualify Reason
     autoSaveSucAlert: Auto Save Successfully.
