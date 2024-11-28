@@ -118,8 +118,8 @@ class QuoteDetailService {
 
   async deleteQuotation(QuoteID) {
     try {
-      const url = "/api/Quote/QuoteResult";
-      const fullUrl = `${url}?QuoteID=${QuoteID}`;
+      const url = "/api/Quote/QuoteDeleteResult";
+      const fullUrl = `${url}?Quoteid=${QuoteID}`;
       const response = await API.delete(fullUrl);
       return response;
     } catch (error) {
@@ -213,6 +213,17 @@ class QuoteDetailService {
     try {
       const url = "/api/Quote/QuoteHistoryResult";
       const fullUrl = `${url}?QuoteID=${QID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getQuoteReferenceCodeResult(customerHQID) {
+    try {
+      const url = "/api/Quote/QuoteReferenceCodeResult";
+      const fullUrl = `${url}?CustomerID=${customerHQID}`;
       const response = await API.get(fullUrl);
       return response;
     } catch (error) {

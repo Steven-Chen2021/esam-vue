@@ -83,7 +83,9 @@ const {
   saveLocalChargeResult,
   frightChargeParams,
   getQuoteHistoryResult,
-  customerProductLineAccessRight
+  customerProductLineAccessRight,
+  getQuoteReferenceCodeResult,
+  quoteReferenceCodeResult
 } = QuoteDetailHooks();
 
 const {
@@ -194,268 +196,268 @@ const dataPermissionExtension = (columnName, valueType) => {
     return valueType;
   }
 };
-let quoteDetailColumns = ref<PlusColumn[]>([]);
-// let quoteDetailColumns: PlusColumn[] = [
-//   {
-//     label: "Company Name",
-//     width: 120,
-//     prop: "customerName",
-//     valueType: "autocomplete",
-//     fieldProps: {
-//       value: dataPermissionExtension("customerName"),
-//       valueKey: "text",
-//       fetchSuggestions: (queryString: string, cb: any) => {
-//         const results = queryString
-//           ? customerResult.customers.filter(createFilter(queryString))
-//           : customerResult.customers;
-//         cb(results);
-//       },
-//       onFocus: () => {
-//         previousValue.value = quotationDetailResult.value.customerHQID;
-//       },
-//       onSelect: (item: { text: string; value: number }) => {
-//         //get access
-//         quotationDetailResult.value.customerHQID = item.value;
-//         getProductLineByCustomerResult(item.value);
-//         getAttentionToResult(item.value);
-//         autoSaveTrigger(item.value, "customerName");
-//       }
-//     }
-//   },
-//   {
-//     label: "Product Line",
-//     width: 360,
-//     prop: "productLineCode",
-//     valueType: "select",
-//     options: productLineResult,
-//     colProps: {
-//       span: 8
-//     },
-//     fieldProps: {
-//       onFocus: () => {
-//         previousValue.value = quotationDetailResult.value.productLineCode;
-//       },
-//       onChange: (value: number) => {
-//         if (qid.value < 1) {
-//           const _customerHQID = quotationDetailResult.value.customerHQID;
-//           const _customerName = quotationDetailResult.value.customerName;
-//           const _productLineCode = quotationDetailResult.value.productLineCode;
-//           getQuotationDetailResult(
-//             qid.value,
-//             _productLineCode as number,
-//             _customerHQID as number
-//           ).then(res => {
-//             quotationDetailResult.value.customerHQID = _customerHQID;
-//             quotationDetailResult.value.customerName = _customerName;
-//             quotationDetailResult.value.productLineCode = _productLineCode;
-//           });
-//         }
-//         hideQuotationType.value = !(value > 0);
-//         const _pid = value ?? (quotationDetailResult.value.pid as number);
-//         const PLCode = ref();
-//         showCBMTransfer.value = false;
-//         if (_pid === 6) {
-//           //Ocean Freight Charge
-//           getChargeCodeSettingResult(qid.value, _pid);
-//           handleProductLineChange();
-//           PLCode.value = "OMS";
-//           showCBMTransfer.value = true;
-//         } else if (_pid === 2) {
-//           PLCode.value = "AMS";
-//         }
-//         getQuoteTypeResult("Lead", "Type", PLCode.value);
+// let quoteDetailColumns = ref<PlusColumn[]>([]);
+let quoteDetailColumns: PlusColumn[] = [
+  {
+    label: "Company Name",
+    width: 120,
+    prop: "customerName",
+    valueType: "autocomplete",
+    fieldProps: {
+      value: dataPermissionExtension("customerName"),
+      valueKey: "text",
+      fetchSuggestions: (queryString: string, cb: any) => {
+        const results = queryString
+          ? customerResult.customers.filter(createFilter(queryString))
+          : customerResult.customers;
+        cb(results);
+      },
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.customerHQID;
+      },
+      onSelect: (item: { text: string; value: number }) => {
+        //get access
+        quotationDetailResult.value.customerHQID = item.value;
+        getProductLineByCustomerResult(item.value);
+        getAttentionToResult(item.value);
+        autoSaveTrigger(item.value, "customerName");
+      }
+    }
+  },
+  {
+    label: "Product Line",
+    width: 360,
+    prop: "productLineCode",
+    valueType: "select",
+    options: productLineResult,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.productLineCode;
+      },
+      onChange: (value: number) => {
+        if (qid.value < 1) {
+          const _customerHQID = quotationDetailResult.value.customerHQID;
+          const _customerName = quotationDetailResult.value.customerName;
+          const _productLineCode = quotationDetailResult.value.productLineCode;
+          getQuotationDetailResult(
+            qid.value,
+            _productLineCode as number,
+            _customerHQID as number
+          ).then(res => {
+            quotationDetailResult.value.customerHQID = _customerHQID;
+            quotationDetailResult.value.customerName = _customerName;
+            quotationDetailResult.value.productLineCode = _productLineCode;
+          });
+        }
+        hideQuotationType.value = !(value > 0);
+        const _pid = value ?? (quotationDetailResult.value.pid as number);
+        const PLCode = ref();
+        showCBMTransfer.value = false;
+        if (_pid === 6) {
+          //Ocean Freight Charge
+          getChargeCodeSettingResult(qid.value, _pid);
+          handleProductLineChange();
+          PLCode.value = "OMS";
+          showCBMTransfer.value = true;
+        } else if (_pid === 2) {
+          PLCode.value = "AMS";
+        }
+        getQuoteTypeResult("Lead", "Type", PLCode.value);
 
-//         getCreditTermResult(
-//           quotationDetailResult.value.customerHQID as number,
-//           _pid
-//         );
-//         getQuoteFreightChargeResult(qid.value, _pid).then(() => {
-//           freightChargeSettings.value.data = freightChargeResult.value;
-//           let exportPromise = Promise.resolve();
-//           let importPromise = Promise.resolve();
+        getCreditTermResult(
+          quotationDetailResult.value.customerHQID as number,
+          _pid
+        );
+        getQuoteFreightChargeResult(qid.value, _pid).then(() => {
+          freightChargeSettings.value.data = freightChargeResult.value;
+          let exportPromise = Promise.resolve();
+          let importPromise = Promise.resolve();
 
-//           if ((quotationDetailResult.value.quoteid as number) > 0) {
-//             //don't forEach, just use quoteID to find out all data
-//             exportPromise = getLocalChargeResult(
-//               quotationDetailResult.value.quoteid as number,
-//               quotationDetailResult.value.pid,
-//               true,
-//               ""
-//             ).then(() => {
-//               handleLocalChargeResult(
-//                 localChargeResult,
-//                 quotationDetailResult.value.pid,
-//                 exportLocationResult
-//               );
-//             });
+          if ((quotationDetailResult.value.quoteid as number) > 0) {
+            //don't forEach, just use quoteID to find out all data
+            exportPromise = getLocalChargeResult(
+              quotationDetailResult.value.quoteid as number,
+              quotationDetailResult.value.pid,
+              true,
+              ""
+            ).then(() => {
+              handleLocalChargeResult(
+                localChargeResult,
+                quotationDetailResult.value.pid,
+                exportLocationResult
+              );
+            });
 
-//             importPromise = getLocalChargeResult(
-//               quotationDetailResult.value.quoteid as number,
-//               quotationDetailResult.value.pid,
-//               false,
-//               ""
-//             ).then(() => {
-//               handleLocalChargeResult(
-//                 localChargeResult,
-//                 quotationDetailResult.value.pid,
-//                 importLocationResult
-//               );
-//             });
-//           }
-//           Promise.all([exportPromise, importPromise]).then(() => {
-//             disabledExportLocalChargeBtn.value = false;
-//             disabledImportLocalChargeBtn.value = false;
-//           });
-//         });
-//         autoSaveTrigger(value, "pid");
+            importPromise = getLocalChargeResult(
+              quotationDetailResult.value.quoteid as number,
+              quotationDetailResult.value.pid,
+              false,
+              ""
+            ).then(() => {
+              handleLocalChargeResult(
+                localChargeResult,
+                quotationDetailResult.value.pid,
+                importLocationResult
+              );
+            });
+          }
+          Promise.all([exportPromise, importPromise]).then(() => {
+            disabledExportLocalChargeBtn.value = false;
+            disabledImportLocalChargeBtn.value = false;
+          });
+        });
+        autoSaveTrigger(value, "pid");
 
-//         UserAccessRightByCustomerProductLine(
-//           quotationDetailResult.value.customerHQID,
-//           _pid
-//         ).then(res => {
-//           customerProductLineAccessRight.value = res.returnValue;
-//         });
-//       }
-//     }
-//   },
-//   {
-//     label: "Effective - Expired",
-//     prop: "period",
-//     valueType: "date-picker",
-//     fieldProps: {
-//       type: "daterange",
-//       startPlaceholder: "Effective",
-//       endPlaceholder: "Expired",
-//       format: "YYYY-MMM-DD",
-//       onFocus: () => {
-//         const period = quotationDetailResult.value.period || [];
-//         if (Array.isArray(period) && period.length === 2) {
-//           const [effective, expired] = period;
-//           previousValue.value = `effective: ${effective || ""}, expired: ${expired || ""}`;
-//         } else {
-//           previousValue.value = ""; // 預設為空字串
-//         }
-//       },
-//       onChange: (value: [string, string]) => {
-//         if (Array.isArray(value) && value.length === 2) {
-//           const [effective, expired] = value;
-//           const formattedString = `effective: ${effective}, expired: ${expired}`;
-//           autoSaveTrigger(formattedString, "period");
-//         } else {
-//           console.error("Invalid value format:", value);
-//         }
-//       }
-//     },
-//     colProps: {
-//       span: 16
-//     }
-//   },
-//   {
-//     label: "Shipping Term",
-//     width: 120,
-//     prop: "shippingTerm",
-//     valueType: "select",
-//     options: shippingTermResult,
-//     colProps: {
-//       span: 8
-//     },
-//     fieldProps: {
-//       onFocus: () => {
-//         previousValue.value = quotationDetailResult.value.shippingTerm;
-//       },
-//       onChange: value => {
-//         autoSaveTrigger(value, "shippingTerm");
-//       }
-//     }
-//   },
-//   {
-//     label: "Type",
-//     prop: "typeCode",
-//     valueType: "radio",
-//     options: quoteTypeResult,
-//     hideInForm: hideQuotationType,
-//     colProps: {
-//       span: 8
-//     },
-//     fieldProps: {
-//       onFocus: () => {
-//         previousValue.value = quotationDetailResult.value.typeCode;
-//       },
-//       onChange: value => {
-//         const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
-//         hideOTPCode.value = showHideCodes.includes(value) ? false : true;
-//         autoSaveTrigger(value, "typeCode");
-//       }
-//     }
-//   },
-//   {
-//     label: "One Time Only Code",
-//     prop: "onePWD",
-//     valueType: "text", // 僅顯示文字
-//     hideInForm: hideOTPCode,
-//     colProps: {
-//       span: 8
-//     }
-//   },
-//   {
-//     label: "Attention To",
-//     width: 360,
-//     prop: "attentionTo",
-//     valueType: "select",
-//     options: attentionToResult,
-//     colProps: {
-//       span: 8
-//     },
-//     fieldProps: {
-//       onFocus: () => {
-//         previousValue.value = quotationDetailResult.value.attentionTo;
-//       },
-//       onChange: value => {
-//         autoSaveTrigger(value, "attentionTo");
-//       }
-//     }
-//   },
-//   {
-//     label: "Trade Term",
-//     width: 120,
-//     prop: "tradeTermId",
-//     valueType: "select",
-//     options: tradeTermResult,
-//     colProps: {
-//       span: 8
-//     },
-//     fieldProps: {
-//       onFocus: () => {
-//         previousValue.value = quotationDetailResult.value.tradeTermId;
-//       },
-//       onChange: value => {
-//         const selectTT = tradeTermResult.value.find(
-//           col => col.value === value
-//         ) as any;
-//         quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
-//         autoSaveTrigger(value, "tradeTermId");
-//       }
-//     }
-//   },
-//   {
-//     label: "Credit Term",
-//     width: 120,
-//     prop: "creditTermId",
-//     valueType: "select",
-//     options: creditTermResult,
-//     colProps: {
-//       span: 8
-//     },
-//     fieldProps: {
-//       onFocus: () => {
-//         previousValue.value = quotationDetailResult.value.creditTermId;
-//       },
-//       onChange: value => {
-//         autoSaveTrigger(value, "creditTermId");
-//       }
-//     }
-//   }
-// ];
+        UserAccessRightByCustomerProductLine(
+          quotationDetailResult.value.customerHQID,
+          _pid
+        ).then(res => {
+          customerProductLineAccessRight.value = res.returnValue;
+        });
+      }
+    }
+  },
+  {
+    label: "Effective - Expired",
+    prop: "period",
+    valueType: "date-picker",
+    fieldProps: {
+      type: "daterange",
+      startPlaceholder: "Effective",
+      endPlaceholder: "Expired",
+      format: "YYYY-MMM-DD",
+      onFocus: () => {
+        const period = quotationDetailResult.value.period || [];
+        if (Array.isArray(period) && period.length === 2) {
+          const [effective, expired] = period;
+          previousValue.value = `effective: ${effective || ""}, expired: ${expired || ""}`;
+        } else {
+          previousValue.value = ""; // 預設為空字串
+        }
+      },
+      onChange: (value: [string, string]) => {
+        if (Array.isArray(value) && value.length === 2) {
+          const [effective, expired] = value;
+          const formattedString = `effective: ${effective}, expired: ${expired}`;
+          autoSaveTrigger(formattedString, "period");
+        } else {
+          console.error("Invalid value format:", value);
+        }
+      }
+    },
+    colProps: {
+      span: 16
+    }
+  },
+  {
+    label: "Shipping Term",
+    width: 120,
+    prop: "shippingTerm",
+    valueType: "select",
+    options: shippingTermResult,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.shippingTerm;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "shippingTerm");
+      }
+    }
+  },
+  {
+    label: "Type",
+    prop: "typeCode",
+    valueType: "radio",
+    options: quoteTypeResult,
+    hideInForm: hideQuotationType,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.typeCode;
+      },
+      onChange: value => {
+        const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
+        hideOTPCode.value = showHideCodes.includes(value) ? false : true;
+        autoSaveTrigger(value, "typeCode");
+      }
+    }
+  },
+  {
+    label: "One Time Only Code",
+    prop: "onePWD",
+    valueType: "text", // 僅顯示文字
+    hideInForm: hideOTPCode,
+    colProps: {
+      span: 8
+    }
+  },
+  {
+    label: "Attention To",
+    width: 360,
+    prop: "attentionTo",
+    valueType: "select",
+    options: attentionToResult,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.attentionTo;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "attentionTo");
+      }
+    }
+  },
+  {
+    label: "Trade Term",
+    width: 120,
+    prop: "tradeTermId",
+    valueType: "select",
+    options: tradeTermResult,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.tradeTermId;
+      },
+      onChange: value => {
+        const selectTT = tradeTermResult.value.find(
+          col => col.value === value
+        ) as any;
+        quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
+        autoSaveTrigger(value, "tradeTermId");
+      }
+    }
+  },
+  {
+    label: "Credit Term",
+    width: 120,
+    prop: "creditTermId",
+    valueType: "select",
+    options: creditTermResult,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.creditTermId;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "creditTermId");
+      }
+    }
+  }
+];
 
 const handleLocalChargeResult = (
   localChargeResult,
@@ -888,7 +890,7 @@ const bindingPlusColumn = () => {
           previousValue.value = quotationDetailResult.value.customerHQID;
         },
         onSelect: (item: { text: string; value: number }) => {
-          //get access
+          console.log(123123);
           quotationDetailResult.value.customerHQID = item.value;
           getProductLineByCustomerResult(item.value);
           getAttentionToResult(item.value);
