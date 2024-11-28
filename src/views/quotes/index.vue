@@ -779,7 +779,11 @@ onMounted(() => {
             size="small"
             @click="
               toDetail(
-                { id: scope.row.qid, qname: scope.row.quoteNo },
+                {
+                  id: scope.row.qid,
+                  qname: scope.row.quoteNo,
+                  pid: scope.row.productLineName === 'Ocean' ? '6' : '2'
+                },
                 'params'
               )
             "
