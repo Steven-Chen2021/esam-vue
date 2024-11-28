@@ -532,6 +532,11 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       // }
       profileData.value["hqid"] = CID;
       profileData.value["customerId"] = LID;
+      // profileData.value["plList"] = PLModuleList.value.map(item => {
+      //   const status = "";
+      //   return { PLCode: item.description, IsActive: true };
+      // });
+
       if (
         profileData.value["bossArray"] &&
         isArray(profileData.value["bossArray"])

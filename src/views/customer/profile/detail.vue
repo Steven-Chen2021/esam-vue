@@ -103,6 +103,8 @@ const profileFormRef = ref<FormInstance>();
 const refCity = ref(null);
 const refAgent = ref(null);
 const refLeadSourceDetail = ref(null);
+const refLeadSourceID = ref(null);
+const refIndustryID = ref(null);
 const handleDropDownChange = async (
   formEl: FormInstance | undefined,
   v,
@@ -173,10 +175,22 @@ const handleDropDownChange = async (
         filterOptions.value["leadSource"] = {};
         filterOptions.value["leadSource"].list = data;
         filterOptions.value["leadSourceDetail"].list = [];
-        profileData.value["leadSourceDetail"] = "";
-        profileData.value["leadSourceID"] = "";
+        profileData.value["leadSourceDetail"] = null;
+        profileData.value["leadSourceID"] = null;
         if (subValue) {
           profileData.value["leadSourceID"] = subValue;
+        } else {
+          if (refLeadSourceID.value && refLeadSourceID.value.length === 1) {
+            setTimeout(() => {
+              refLeadSourceID.value[0].toggleMenu();
+            }, 500);
+            ElMessage({
+              message: t("customer.profile.leadSourceIDAlert"),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
         }
       });
       break;
@@ -191,7 +205,23 @@ const handleDropDownChange = async (
         });
       filterOptions.value["leadSourceDetail"] = {};
       filterOptions.value["leadSourceDetail"].list = response;
-      profileData.value["leadSourceDetail"] = "";
+      profileData.value["leadSourceDetail"] = null;
+      // if (
+      //   (!v || v === "") &&
+      //   refLeadSourceID.value &&
+      //   refLeadSourceID.value.length === 1
+      // ) {
+      //   setTimeout(() => {
+      //     refLeadSourceID.value[0].toggleMenu();
+      //     profileData.value["leadSourceDetail"] = null;
+      //   }, 500);
+      //   ElMessage({
+      //     message: t("customer.profile.leadSourceIDAlert"),
+      //     grouping: true,
+      //     type: "warning"
+      //   });
+      //   return;
+      // }
       break;
     }
     case "leadSourceDetail": {
@@ -214,9 +244,39 @@ const handleDropDownChange = async (
         });
       filterOptions.value["industry"] = {};
       filterOptions.value["industry"].list = response;
-      profileData.value["industryID"] = "";
+      profileData.value["industryID"] = null;
+      if (refIndustryID.value && refIndustryID.value.length === 1) {
+        setTimeout(() => {
+          refIndustryID.value[0].toggleMenu();
+          profileData.value["industryID"] = null;
+        }, 500);
+        ElMessage({
+          message: t("customer.profile.industryIDAlert"),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      }
       break;
     }
+    // case "industryID": {
+    //   if (
+    //     (!v || v === "") &&
+    //     refIndustryID.value &&
+    //     refIndustryID.value.length === 1
+    //   ) {
+    //     setTimeout(() => {
+    //       refIndustryID.value[0].toggleMenu();
+    //     }, 500);
+    //     ElMessage({
+    //       message: t("customer.profile.industryIDAlert"),
+    //       grouping: true,
+    //       type: "warning"
+    //     });
+    //     return;
+    //   }
+    //   break;
+    // }
   }
   autoSaveForm(formEl, filterItem, v);
 };
@@ -332,10 +392,78 @@ const autoSaveForm = async (
             });
           break;
         }
-        case "leadSourceID":
+        case "leadSourceID": {
+          if (
+            (!v || v === "") &&
+            refLeadSourceID.value &&
+            refLeadSourceID.value.length === 1
+          ) {
+            setTimeout(() => {
+              refLeadSourceID.value[0].toggleMenu();
+              profileData.value["leadSourceDetail"] = null;
+            }, 500);
+            ElMessage({
+              message: t("customer.profile.leadSourceIDAlert"),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "industryID": {
+          if (
+            (!v || v === "") &&
+            refIndustryID.value &&
+            refIndustryID.value.length === 1
+          ) {
+            setTimeout(() => {
+              refIndustryID.value[0].toggleMenu();
+            }, 500);
+            ElMessage({
+              message: t("customer.profile.industryIDAlert"),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
         case "leadSourceDetail": {
-          console.log("leadID", data["leadSourceID"]);
-          console.log("leadDetail", data["leadSourceDetail"]);
           if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
             if (
               refLeadSourceDetail.value &&
@@ -425,6 +553,23 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           return;
         }
       }
+      if (
+        !data["leadSourceID"] ||
+        data["leadSourceID"] === "" ||
+        data["leadSourceID"] === null
+      ) {
+        if (refLeadSourceID.value && refLeadSourceID.value.length === 1) {
+          setTimeout(() => {
+            refLeadSourceID.value[0].toggleMenu();
+          }, 500);
+          ElMessage({
+            message: t("customer.profile.leadSourceIDAlert"),
+            grouping: true,
+            type: "warning"
+          });
+          return;
+        }
+      }
       if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
         if (
           refLeadSourceDetail.value &&
@@ -435,6 +580,23 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           }, 500);
           ElMessage({
             message: t("customer.profile.leadSourceAlert"),
+            grouping: true,
+            type: "warning"
+          });
+          return;
+        }
+      }
+      if (
+        !data["industryID"] ||
+        data["industryID"] === "" ||
+        data["industryID"] === null
+      ) {
+        if (refIndustryID.value && refIndustryID.value.length === 1) {
+          setTimeout(() => {
+            refIndustryID.value[0].toggleMenu();
+          }, 500);
+          ElMessage({
+            message: t("customer.profile.industryIDAlert"),
             grouping: true,
             type: "warning"
           });
@@ -755,7 +917,7 @@ const cancelForm = () => {
       <div style="padding: 0 10px">
         <h1>{{ profileDataInit.customerName }}</h1>
       </div>
-      <div class="flex ...">
+      <!-- <div class="flex ...">
         <div class="grow h-8 ..." />
         <div class="grow-0 h-8 ...">
           <el-button
@@ -767,7 +929,7 @@ const cancelForm = () => {
             {{ t("common.back") }}
           </el-button>
         </div>
-      </div>
+      </div> -->
       <el-tabs type="border-card" style="margin-top: 16px">
         <el-tab-pane :label="t('customer.profile.title')">
           <div>
@@ -1043,6 +1205,7 @@ const cancelForm = () => {
                             style="margin-top: 18px"
                             prop="leadSourceID"
                             ><el-select
+                              ref="refLeadSourceID"
                               v-model="profileData['leadSourceID']"
                               :disabled="
                                 disableStatus({
@@ -1162,6 +1325,7 @@ const cancelForm = () => {
                             prop="industryID"
                           >
                             <el-select
+                              ref="refIndustryID"
                               v-model="profileData['industryID']"
                               :disabled="disableStatus(filterItem)"
                               :placeholder="

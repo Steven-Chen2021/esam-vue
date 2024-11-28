@@ -47,7 +47,7 @@ export function contactProfileCTL() {
       const [result1, result2, result3, plList] = await Promise.all([
         CommonService.getColumnSettingList(25),
         ContactProfileService.getContactProfileResult(ProfileID.value),
-        ContactProfileService.getUserAuthByCustomerResult(LeadID.value),
+        CommonService.getUserAccessByCustomer(LeadID.value, 0),
         CommonService.getPLList()
       ]);
       PLModuleList.value = deepClone(plList.returnValue);
@@ -279,6 +279,13 @@ export function contactProfileCTL() {
       }
     ],
     lastName: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "blur"
+      }
+    ],
+    email: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),

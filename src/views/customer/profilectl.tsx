@@ -49,9 +49,8 @@ export function customerProfileCTL() {
         // axios.get("/api/Customer/CustomerProfileResult?LID=" + HQID)
         CustomerQuickFilterService.getColumnSettingList(5),
         CustomerProfileService.getCustomerProfileResult(LeadID.value),
-        CustomerProfileService.getUserAuthByCustomerResult(LeadID.value)
+        CustomerQuickFilterService.getUserAccessByCustomer(LeadID.value, 0)
       ]);
-      console.log("getUserAuthByCustomerResult", result3.returnValue);
       userAuth.value = deepClone(result3.returnValue);
       DCShow.value = userAuth.value["isReadAdvanceColumn"];
       loadAgentROList();
@@ -254,13 +253,13 @@ export function customerProfileCTL() {
         trigger: "change"
       }
     ],
-    leadSourceID: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
+    // leadSourceID: [
+    //   {
+    //     required: true,
+    //     message: t("customer.profile.general.mandatory"),
+    //     trigger: "change"
+    //   }
+    // ],
     industryGroupID: [
       {
         required: true,
@@ -268,13 +267,13 @@ export function customerProfileCTL() {
         trigger: "change"
       }
     ],
-    industryID: [
-      {
-        required: true,
-        message: t("customer.profile.general.mandatory"),
-        trigger: "change"
-      }
-    ],
+    // industryID: [
+    //   {
+    //     required: true,
+    //     message: t("customer.profile.general.mandatory"),
+    //     trigger: "change"
+    //   }
+    // ],
     createdFor: [
       {
         required: true,

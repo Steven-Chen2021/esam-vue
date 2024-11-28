@@ -12,17 +12,17 @@ class ContactProfileService {
       return [];
     }
   }
-  async getUserAuthByCustomerResult(LID) {
-    try {
-      const url = `/api/Utility/GetUserAuthByCustomerResult?CustID=${LID}`;
-      const response = await API.get(url);
-      console.log("GetUserAuthByCustomerResult response", response);
-      return response;
-    } catch (error) {
-      console.error(error);
-      return [];
-    }
-  }
+  // async getUserAuthByCustomerResult(LID) {
+  //   try {
+  //     const url = `/api/Utility/GetUserAuthByCustomerResult?CustID=${LID}`;
+  //     const response = await API.get(url);
+  //     console.log("GetUserAuthByCustomerResult response", response);
+  //     return response;
+  //   } catch (error) {
+  //     console.error(error);
+  //     return [];
+  //   }
+  // }
   async inactiveContactResult(contactID) {
     try {
       const response = await API.post(
