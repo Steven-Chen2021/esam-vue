@@ -107,10 +107,6 @@ const handleViewClick = row => {
 
 const handleAddContact = () => {
   emit("handleTabEditEvent", "0", props.SearchLeadID);
-  // router.push({
-  //   name: "ContactDetail",
-  //   params: { id: 0, lid: props.SearchLeadID, qname: "Create Contact" }
-  // });
 };
 // #region Quick Filter
 const handleFilterClick = filter => {
@@ -406,8 +402,19 @@ const calculateMaxHeight = () => {
 };
 
 const maxHeight = ref(null);
-
+const userAccess = ref(null);
+const getUserAccessByCustomer = () => {
+  CommonService.getUserAccessByCustomer(props.SearchLeadID, 0)
+    .then(data => {
+      userAccess.value = data.returnValue;
+      console.log("userAccess.value", userAccess.value);
+    })
+    .catch(err => {
+      console.log("getUserAccessByCustomer error", err);
+    });
+};
 onMounted(async () => {
+  getUserAccessByCustomer();
   console.log("onMounted SearchLeadID", props.SearchLeadID);
   if (props.SearchLeadID && props.SearchLeadID !== "0") {
     FilterLeadID.value = props.SearchLeadID;
@@ -696,9 +703,12 @@ watch(
                       $t("customer.list.advancedSetting.clearBtn")
                     }}</el-button
                   >
-                  <el-button :icon="Plus" @click="handleAddContact">{{
-                    $t("customer.add")
-                  }}</el-button>
+                  <el-button
+                    v-if="userAccess && userAccess['isWrite']"
+                    :icon="Plus"
+                    @click="handleAddContact"
+                    >{{ $t("customer.add") }}</el-button
+                  >
                 </el-form-item>
               </div>
             </el-form>
