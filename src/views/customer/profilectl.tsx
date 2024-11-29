@@ -85,12 +85,8 @@ export function customerProfileCTL() {
         // } else
         if (column.visibilityLevel === 2) {
           if (!userAuth.value["isReadAdvanceColumn"] && LeadID.value !== "0") {
-            profileData.value[column.filterKey] = t(
-              "customer.profile.general.unauthorized"
-            );
-            profileDataInit.value[column.filterKey] = t(
-              "customer.profile.general.unauthorized"
-            );
+            profileData.value[column.filterKey] = t("common.unauthorized");
+            profileDataInit.value[column.filterKey] = t("common.unauthorized");
           }
         }
       });
@@ -1117,9 +1113,11 @@ export function customerProfileCTL() {
         KeyValue: LeadID.value,
         DCType: "LED"
       };
-      const [result1] = await Promise.all([
-        CustomerQuickFilterService.getDocumentCloudSiteResult(param)
+      const [result1, authResult] = await Promise.all([
+        CustomerQuickFilterService.getDocumentCloudSiteResult(param),
+        CustomerQuickFilterService.getUserAccessByCustomer(LeadID.value, 0)
       ]);
+      userAuth.value = deepClone(authResult.returnValue);
       const pattern =
         /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(\/[^\s]*)?(\?[^\s]*)?(#[^\s]*)?$/;
       console.log("DCUrl", result1.returnValue);
@@ -1133,6 +1131,8 @@ export function customerProfileCTL() {
         result1.returnValue !== "" &&
         pattern.test(result1.returnValue)
       ) {
+        console.log("userAuth", userAuth.value);
+        console.log("userAuth write", userAuth.value["isWrite"]);
         if (userAuth) {
           if (userAuth.value["isWrite"]) {
             result1.returnValue = result1.returnValue.replace(

@@ -76,7 +76,17 @@ export function contactProfileCTL() {
           .map(item => item.description);
       } else {
         profileFormData.value = deepClone(result1.returnValue);
+        if (!profileData.value["plList"]) {
+          profileData.value["plList"] = [];
+        } else {
+          profileData.value["plList"] = profileData.value["plList"]
+            .filter(a => a.isActive)
+            .map(a => {
+              return a.plCode;
+            });
+        }
       }
+
       console.log("profileData.value", profileData.value);
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
@@ -85,12 +95,8 @@ export function contactProfileCTL() {
             !userAuth.value["isReadAdvanceColumn"] &&
             ProfileID.value !== "0"
           ) {
-            profileData.value[column.filterKey] = t(
-              "customer.profile.general.unauthorized"
-            );
-            profileDataInit.value[column.filterKey] = t(
-              "customer.profile.general.unauthorized"
-            );
+            profileData.value[column.filterKey] = t("common.unauthorized");
+            profileDataInit.value[column.filterKey] = t("common.unauthorized");
           }
         }
       });
@@ -114,6 +120,27 @@ export function contactProfileCTL() {
       console.error("Error fetching data:", error);
     }
   };
+  const updateContactProfilePLResult = async params => {
+    ContactProfileService.updateContactProfilePLResult(params)
+      .then(data => {
+        if (data && data.isSuccess) {
+          ElMessage({
+            message: t("customer.profile.autoSaveSucAlert"),
+            grouping: true,
+            type: "success"
+          });
+        } else {
+          ElMessage({
+            message: t("customer.profile.autoSaveFailAlert"),
+            grouping: true,
+            type: "warning"
+          });
+        }
+      })
+      .catch(err => {
+        console.log("updateContactProfilePLResult error", err);
+      });
+  };
   const DCShow = ref(true);
   const DCUrl = ref("");
   const fetchDCUrl = async () => {
@@ -122,9 +149,11 @@ export function contactProfileCTL() {
         KeyValue: LeadID.value,
         DCType: "LED"
       };
-      const [result1] = await Promise.all([
-        CommonService.getDocumentCloudSiteResult(param)
+      const [result1, authResult] = await Promise.all([
+        CommonService.getDocumentCloudSiteResult(param),
+        CommonService.getUserAccessByCustomer(LeadID.value, 0)
       ]);
+      userAuth.value = deepClone(authResult.returnValue);
       const pattern =
         /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(\/[^\s]*)?(\?[^\s]*)?(#[^\s]*)?$/;
       console.log("DCUrl", result1.returnValue);
@@ -1197,6 +1226,7 @@ export function contactProfileCTL() {
     DCUrl,
     DCShow,
     inActiveContact,
-    activeContact
+    activeContact,
+    updateContactProfilePLResult
   };
 }

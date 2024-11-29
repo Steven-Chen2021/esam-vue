@@ -6,6 +6,7 @@ import { ref, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { contactProfileCTL } from "./profilectl";
 import dayjs from "dayjs";
+import { verifyMainFormat } from "@/utils/common.ts";
 import {
   ElNotification,
   FormInstance,
@@ -60,7 +61,8 @@ const {
   DCUrl,
   DCShow,
   inActiveContact,
-  activeContact
+  activeContact,
+  updateContactProfilePLResult
 } = contactProfileCTL();
 // const { fetchMembersData } = leadmemberctl();
 defineOptions({
@@ -89,25 +91,6 @@ const activeName = ref(["general", "documents"]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
 const size = ref("disabled");
-const buttonList = [
-  {
-    type: "",
-    text: "Back",
-    icon: "ep:back"
-  }
-];
-const handleMembersEdit = (PLDetail, PLTab) => {
-  console.log("profileData.value", profileData.value);
-  console.log("LID", LID);
-  router.push({
-    name: "CustomerMembers",
-    params: {
-      id: LID,
-      plid: PLDetail["id"],
-      pl: PLDetail["plName"]
-    }
-  });
-};
 const profileFormRef = ref<FormInstance>();
 const refCity = ref(null);
 const refAgent = ref(null);
@@ -231,6 +214,16 @@ const handleDropDownChange = async (
 };
 const handleCheckedPLChange = (value: string[]) => {
   console.log("handleCheckedPLChange", value);
+  if (CID === "0" || !userAuth.value["isWrite"]) return;
+  const plSaveData = PLModuleList.value.map(item => {
+    const status = profileData.value["plList"].some(
+      i => i === item.description
+    );
+    return { PLCode: item.description, IsActive: status };
+  });
+  const param = { plList: plSaveData, contactHQID: CID };
+  console.log("handleCheckedPLChange param", param);
+  updateContactProfilePLResult(param);
 };
 //formEl: FormInstance | undefined,
 const autoSaveForm = async (
@@ -267,7 +260,6 @@ const autoSaveForm = async (
       console.log("autosave param", param);
       switch (filterItem.filterKey) {
         case "names":
-        case "vip":
         case "titles":
         case "role":
         case "department":
@@ -277,13 +269,61 @@ const autoSaveForm = async (
         case "joinedCompany":
         case "joinedIndustry":
         case "birthday":
-        case "email":
         case "tel_OExt":
         case "familyMembers":
         case "address":
         case "city":
         case "zip":
         case "relationship": {
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "email": {
+          if (!verifyMainFormat(param.value)) {
+            ElMessage({
+              message: t("common.mailFormatErrorAlert"),
+              grouping: true,
+              type: "error"
+            });
+            return;
+          }
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "vip": {
+          param.value = param.value ? "True" : "False";
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
@@ -311,6 +351,60 @@ const autoSaveForm = async (
             data["tel_O1"] === ""
               ? data["tel_O2"].trim()
               : `${data["tel_O1"].trim()}-${data["tel_O2"].trim()}`;
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+
+          break;
+        case "tel_M1":
+        case "tel_M2":
+          param.fieldName = "tel_M";
+          param.oldValue = data["tel_M"];
+          param.value =
+            data["tel_M1"] === ""
+              ? data["tel_M2"].trim()
+              : `${data["tel_M1"].trim()}-${data["tel_M2"].trim()}`;
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+
+          break;
+        case "tel_H1":
+        case "tel_H2":
+          param.fieldName = "tel_H";
+          param.oldValue = data["tel_H"];
+          param.value =
+            data["tel_H1"] === ""
+              ? data["tel_H2"].trim()
+              : `${data["tel_H1"].trim()}-${data["tel_H2"].trim()}`;
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
@@ -488,54 +582,23 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       const data = profileData.value;
-      // if (data["agentROCheck"] && (!data["agentId"] || data["agentId"] === 0)) {
-      //   ElMessage({
-      //     message: t("customer.profile.agentRO"),
-      //     grouping: true,
-      //     type: "warning"
-      //   });
-      //   return;
-      // }
-      // if (
-      //   (!data["city"] || data["city"] === "" || data["city"] === null) &&
-      //   (!data["cityText"] ||
-      //     data["cityText"] === "" ||
-      //     data["cityText"] === null)
-      // ) {
-      //   if (refCity.value && refCity.value.length === 1) {
-      //     setTimeout(() => {
-      //       refCity.value[0].toggleMenu();
-      //     }, 500);
-      //     ElMessage({
-      //       message: t("customer.profile.cityAlert"),
-      //       grouping: true,
-      //       type: "warning"
-      //     });
-      //     return;
-      //   }
-      // }
-      // if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
-      //   if (
-      //     refLeadSourceDetail.value &&
-      //     refLeadSourceDetail.value.length === 1
-      //   ) {
-      //     setTimeout(() => {
-      //       refLeadSourceDetail.value[0].toggleMenu();
-      //     }, 500);
-      //     ElMessage({
-      //       message: t("customer.profile.leadSourceAlert"),
-      //       grouping: true,
-      //       type: "warning"
-      //     });
-      //     return;
-      //   }
-      // }
+      if (!verifyMainFormat(data["email"])) {
+        ElMessage({
+          message: t("common.mailFormatErrorAlert"),
+          grouping: true,
+          type: "error"
+        });
+        return;
+      }
       profileData.value["hqid"] = CID;
       profileData.value["customerId"] = LID;
-      // profileData.value["plList"] = PLModuleList.value.map(item => {
-      //   const status = "";
-      //   return { PLCode: item.description, IsActive: true };
-      // });
+      profileData.value["vip"] = profileData["vip"] ? "True" : "False";
+      profileData.value["plList"] = PLModuleList.value.map(item => {
+        const status = profileData.value["plList"].some(
+          i => i === item.description
+        );
+        return { PLCode: item.description, IsActive: status };
+      });
 
       if (
         profileData.value["bossArray"] &&
@@ -559,14 +622,20 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
             type: "success"
           });
           if (data.isSuccess && data.returnValue) {
-            router.replace({
-              name: "ContactDetail",
-              params: {
-                id: data.returnValue,
-                lid: data.returnValue,
-                qname: profileData.value["customerName"]
-              }
-            });
+            // router.replace({
+            //   name: "ContactDetail",
+            //   params: {
+            //     id: data.returnValue,
+            //     lid: LID,
+            //     qname: profileData.value["fullName"]
+            //   }
+            // });
+            CID = data.returnValue.toString();
+            ProfileID.value = CID;
+            console.log("ProfileID.value", ProfileID.value);
+            console.log("LeadID.value", LeadID.value);
+            fetchProfileData();
+            fetchDCUrl();
           }
         })
         .catch(err => {
@@ -588,7 +657,7 @@ const LID = props.ParentID
   : isArray(getParameter.lid)
     ? getParameter.lid[0]
     : getParameter.lid;
-const CID = props.ID
+let CID = props.ID
   ? props.ID
   : isArray(getParameter.id)
     ? getParameter.id[0]
