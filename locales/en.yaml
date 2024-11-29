@@ -511,6 +511,6 @@ quote:
       hqid: HQID
       customerName: Customer
   quotedetail:
-    cbm: CBM conv. rate
+    cbm: CBM Rate
     WeightBreak: Weight Break
     lcp: Local Charge Package

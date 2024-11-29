@@ -66,6 +66,7 @@ export function LocalChargeHooks() {
       col2: number
     ) => void;
     afterRemoveRow?: (index: number, amount: number) => void;
+    readOnly: boolean;
   }
 
   const exportLocationResult = ref<iLocalChargeResult[]>([]);
@@ -87,7 +88,6 @@ export function LocalChargeHooks() {
         location
       );
       if (response && response.returnValue) {
-        console.log(response);
         localChargeResult.value = response.returnValue;
       } else {
         throw new Error("Quotation Detail not found.");
