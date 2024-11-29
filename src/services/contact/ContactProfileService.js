@@ -54,6 +54,17 @@ class ContactProfileService {
       console.error(error);
     }
   }
+  async updateContactProfilePLResult(params) {
+    try {
+      const response = await API.post(
+        "/api/Contact/UpdateContactProfilePLResult",
+        params
+      );
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new ContactProfileService();

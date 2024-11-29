@@ -590,9 +590,7 @@ watch(
                       filterItem.filterSourceType === 'api'
                     "
                     v-model="filterItem.selectValue"
-                    :placeholder="
-                      t('customer.list.quickFilter.holderSelectText')
-                    "
+                    placeholder=""
                     style="width: 338px"
                     filterable
                   >
@@ -613,17 +611,13 @@ watch(
                       (queryString, cb) =>
                         querySearchAsync(queryString, cb, filterItem)
                     "
-                    :placeholder="
-                      t('customer.list.quickFilter.holderKeyinText')
-                    "
+                    placeholder=""
                     style="width: 338px"
                   />
                   <el-input
                     v-else-if="filterItem.filterType === 'input'"
                     v-model="filterItem.value"
-                    :placeholder="
-                      t('customer.list.quickFilter.holderKeyinText')
-                    "
+                    placeholder=""
                     style="width: 338px"
                   />
                   <el-date-picker
@@ -707,6 +701,7 @@ watch(
       :data="tableData"
       style="width: 100%; min-height: 200px"
       :max-height="maxHeight"
+      stripe
       @sort-change="handleSortChange"
     >
       <el-table-column
@@ -726,6 +721,7 @@ watch(
             ? true
             : false
         "
+        show-overflow-tooltip
       >
         <template #default="scope">
           <span v-if="col.filterKey !== 'combatTeamPL'">{{
@@ -797,10 +793,7 @@ watch(
               :label="t('customer.list.quickFilter.filterName')"
               prop="filterName"
             >
-              <el-input
-                v-model="quickFilterForm.filterName"
-                :placeholder="t('customer.list.quickFilter.holderKeyinText')"
-              />
+              <el-input v-model="quickFilterForm.filterName" placeholder="" />
             </el-form-item>
             <el-form-item
               v-for="filterItem in quickFilterForm.filters.filter(
@@ -851,7 +844,7 @@ watch(
                   filterItem.filterSourceType === 'api'
                 "
                 v-model="filterItem.selectValue"
-                :placeholder="t('customer.list.quickFilter.holderSelectText')"
+                placeholder=""
                 style="width: 338px"
                 filterable
               >
@@ -872,12 +865,12 @@ watch(
                   (queryString, cb) =>
                     querySearchAsync(queryString, cb, filterItem)
                 "
-                :placeholder="t('customer.list.quickFilter.holderKeyinText')"
+                placeholder=""
               />
               <el-input
                 v-else-if="filterItem.filterType === 'input'"
                 v-model="filterItem.value"
-                :placeholder="t('customer.list.quickFilter.holderKeyinText')"
+                placeholder=""
               />
               <!-- <el-date-picker
                 v-else-if="filterItem.filterType === 'daterange'"
