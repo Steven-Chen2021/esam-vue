@@ -281,9 +281,15 @@ const quoteDetailColumns = reactive<PlusColumn[]>([
         previousValue.value = quotationDetailResult.value.customerHQID;
       },
       onSelect: (item: { text: string; value: number }) => {
-        //get access
+        console.log(item);
         quotationDetailResult.value.customerHQID = item.value;
-        getProductLineByCustomerResult(item.value);
+        getProductLineByCustomerResult(item.value).then(res => {
+          productLineResult.value = res.returnValue.map((item: any) => ({
+            label: item.text,
+            value: item.value
+          }));
+        });
+        console.log(productLineResult);
         getAttentionToResult(item.value);
         autoSaveTrigger(item.value, "customerName");
       }
@@ -294,13 +300,14 @@ const quoteDetailColumns = reactive<PlusColumn[]>([
     width: 360,
     prop: "productLineCode",
     valueType: "select",
-    options: productLineResult,
+    options: productLineResult.value,
     colProps: {
       span: 8
     },
     fieldProps: {
       onFocus: () => {
         previousValue.value = quotationDetailResult.value.productLineCode;
+        console.log(productLineResult);
       },
       onChange: (value: number) => {
         if (qid.value < 1) {

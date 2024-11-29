@@ -8,7 +8,6 @@ export function QuoteDetailHooks() {
     text: string;
     value: number;
   }
-
   interface iChargeCodeSetting {
     headerName: string;
     columnName: string;
@@ -161,20 +160,15 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function getProductLineByCustomerResult(customerHQID: number) {
+  const getProductLineByCustomerResult = (customerHQID: number) => {
     try {
       const response =
-        await quoteDetailService.getProductLineByCustomerData(customerHQID);
-      if (response != null) {
-        productLineResult.value = response.returnValue.map((item: any) => ({
-          label: item.productLineCode,
-          value: item.pid
-        }));
-      }
+        quoteDetailService.getProductLineByCustomerData(customerHQID);
+      return response;
     } catch (error) {
       console.log("getProductLineByCustomerResult", error);
     }
-  }
+  };
 
   async function getShippingTermResult() {
     try {
