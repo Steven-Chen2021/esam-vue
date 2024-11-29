@@ -11,7 +11,8 @@ import {
   onMounted,
   defineComponent,
   nextTick,
-  watchEffect
+  watchEffect,
+  reactive
 } from "vue";
 
 import {
@@ -171,40 +172,104 @@ const rules = {
   ]
 };
 
-const dataPermissionExtension = (columnName, valueType) => {
-  console.log(columnSettingResult.value);
-  console.log(customerProductLineAccessRight.value);
-  console.log(quotationDetailResult);
+const dataPermissionExtension = () => {
+  if (!columnSettingResult || columnSettingResult.value.length < 1) {
+    GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
+      if (res && res.isSuccess) {
+        const columnSettings = res.returnValue;
+        console.log(columnSettings);
+        console.log(customerProductLineAccessRight.value);
+        console.log(quotationDetailResult.value);
 
-  const matchedColumn = columnSettingResult.value.find(column => {
-    return column.filterKey === columnName;
-  });
-  console.log(matchedColumn.visibilityLevel);
-  console.log(customerProductLineAccessRight.value.isReadAdvanceColumn);
-  if (
-    matchedColumn &&
-    matchedColumn.visibilityLevel === 2 &&
-    customerProductLineAccessRight.value.isReadAdvanceColumn === false
-  ) {
-    switch (columnName) {
-      case "serviceLevel":
-        quotationDetailResult.value.serviceLevel = "";
-        break;
-    }
-    return "text";
-  } else {
-    return valueType;
+        columnSettings.forEach(element => {
+          let ctl: PlusColumn | undefined; // 明確定義類型
+          switch (element.filterKey) {
+            case "sType":
+              ctl = quoteDetailColumns.find(f => f.prop === "typeCode");
+              if (
+                element.visibilityLevel === 2 &&
+                customerProductLineAccessRight.value.isReadAdvanceColumn ===
+                  false
+              ) {
+                quotationDetailResult.value.typeCode = "permission denied";
+              } else if (
+                customerProductLineAccessRight.value.isWrite === false
+              ) {
+                quotationDetailResult.value.typeCode =
+                  quotationDetailResult.value.type;
+              }
+              break;
+            case "productLineName":
+              ctl = quoteDetailColumns.find(f => f.prop === "productLineCode");
+              break;
+            case "attentionTo":
+              ctl = quoteDetailColumns.find(f => f.prop === "attentionTo");
+              break;
+            case "effectiveDate":
+              ctl = quoteDetailColumns.find(f => f.prop === "period");
+              quotationDetailResult.value.period = _formatDate(
+                quotationDetailResult.value.period
+              );
+              break;
+            case "tradeTerm":
+              ctl = quoteDetailColumns.find(f => f.prop === "tradeTermId");
+              if (
+                element.visibilityLevel === 2 &&
+                customerProductLineAccessRight.value.isReadAdvanceColumn ===
+                  false
+              ) {
+                quotationDetailResult.value.tradeTermId = "permission denied";
+              } else if (
+                customerProductLineAccessRight.value.isWrite === false
+              ) {
+                quotationDetailResult.value.tradeTermId =
+                  quotationDetailResult.value.tradeTermCode;
+              }
+              break;
+            case "shppingTerm":
+              ctl = quoteDetailColumns.find(f => f.prop === "shippingTerm");
+              break;
+            case "creditTerm":
+              ctl = quoteDetailColumns.find(f => f.prop === "creditTermId");
+              if (
+                element.visibilityLevel === 2 &&
+                customerProductLineAccessRight.value.isReadAdvanceColumn ===
+                  false
+              ) {
+                quotationDetailResult.value.creditTermId = "permission denied";
+              } else if (
+                customerProductLineAccessRight.value.isWrite === false
+              ) {
+                quotationDetailResult.value.creditTermId =
+                  quotationDetailResult.value.creditTermCode;
+              }
+              break;
+            case "reference":
+              ctl = quoteDetailColumns.find(f => f.prop === "reference");
+              break;
+            case "customerName":
+              ctl = quoteDetailColumns.find(f => f.prop === "customerName");
+              break;
+          }
+          if (ctl && customerProductLineAccessRight.value.isWrite === false) {
+            ctl.valueType = "text"; // 確保 ctl 存在後操作
+          }
+          if (customerProductLineAccessRight.value.isWrite === false) {
+            freightChargeSettings.value.readOnly =
+              !customerProductLineAccessRight.value.isWrite;
+          }
+        });
+      }
+    });
   }
 };
-// let quoteDetailColumns = ref<PlusColumn[]>([]);
-let quoteDetailColumns: PlusColumn[] = [
+const quoteDetailColumns = reactive<PlusColumn[]>([
   {
     label: "Company Name",
     width: 120,
     prop: "customerName",
     valueType: "autocomplete",
     fieldProps: {
-      value: dataPermissionExtension("customerName"),
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
         const results = queryString
@@ -456,8 +521,26 @@ let quoteDetailColumns: PlusColumn[] = [
         autoSaveTrigger(value, "creditTermId");
       }
     }
+  },
+  {
+    label: "Reference",
+    width: 120,
+    prop: "reference",
+    valueType: "select",
+    options: creditTermResult,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.creditTermId;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "creditTermId");
+      }
+    }
   }
-];
+]);
 
 const handleLocalChargeResult = (
   localChargeResult,
@@ -497,7 +580,8 @@ const handleLocalChargeResult = (
             contextMenu: true,
             afterChange: handleLocalChargeChange,
             afterSelection: handleAfterSelection,
-            afterRemoveRow: handleRemoveRow
+            afterRemoveRow: handleRemoveRow,
+            readOnly: !customerProductLineAccessRight.value.isWrite
           },
           localChargePackageList: res,
           localChargePackageSelector: []
@@ -554,7 +638,8 @@ const handleAfterChange = (changes, source) => {
                       contextMenu: true,
                       afterChange: handleLocalChargeChange,
                       afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow
+                      afterRemoveRow: handleRemoveRow,
+                      readOnly: !customerProductLineAccessRight.value.isWrite
                     },
                     localChargePackageList: res,
                     localChargePackageSelector: []
@@ -613,7 +698,8 @@ const handleAfterChange = (changes, source) => {
                       contextMenu: true,
                       afterChange: handleLocalChargeChange,
                       afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow
+                      afterRemoveRow: handleRemoveRow,
+                      readOnly: !customerProductLineAccessRight.value.isWrite
                     },
                     localChargePackageList: res,
                     localChargePackageSelector: []
@@ -664,7 +750,8 @@ const freightChargeSettings = ref({
   // 添加事件監聽器
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
-  afterRemoveRow: handleRemoveRow
+  afterRemoveRow: handleRemoveRow,
+  readOnly: false
 });
 
 const saveData = () => {
@@ -870,303 +957,7 @@ watchEffect(() => {
     historyLoading.value = false;
   }
 });
-
-const bindingPlusColumn = () => {
-  quoteDetailColumns.value = [
-    {
-      label: "Company Name",
-      width: 120,
-      prop: "customerName",
-      valueType: dataPermissionExtension("customerName", "autocomplete"),
-      fieldProps: {
-        valueKey: "text",
-        fetchSuggestions: (queryString: string, cb: any) => {
-          const results = queryString
-            ? customerResult.customers.filter(createFilter(queryString))
-            : customerResult.customers;
-          cb(results);
-        },
-        onFocus: () => {
-          previousValue.value = quotationDetailResult.value.customerHQID;
-        },
-        onSelect: (item: { text: string; value: number }) => {
-          console.log(123123);
-          quotationDetailResult.value.customerHQID = item.value;
-          getProductLineByCustomerResult(item.value);
-          getAttentionToResult(item.value);
-          autoSaveTrigger(item.value, "customerName");
-        }
-      }
-    },
-    {
-      label: "Product Line",
-      width: 360,
-      prop: "productLineCode",
-      valueType: dataPermissionExtension("productLineName", "select"),
-      options: productLineResult,
-      colProps: {
-        span: 8
-      },
-      fieldProps: {
-        onFocus: () => {
-          previousValue.value = quotationDetailResult.value.productLineCode;
-        },
-        onChange: (value: number) => {
-          if (qid.value < 1) {
-            const _customerHQID = quotationDetailResult.value.customerHQID;
-            const _customerName = quotationDetailResult.value.customerName;
-            const _productLineCode =
-              quotationDetailResult.value.productLineCode;
-            getQuotationDetailResult(
-              qid.value,
-              _productLineCode as number,
-              _customerHQID as number
-            ).then(res => {
-              quotationDetailResult.value.customerHQID = _customerHQID;
-              quotationDetailResult.value.customerName = _customerName;
-              quotationDetailResult.value.productLineCode = _productLineCode;
-            });
-          }
-          hideQuotationType.value = !(value > 0);
-          const _pid = value ?? (quotationDetailResult.value.pid as number);
-          const PLCode = ref();
-          showCBMTransfer.value = false;
-          if (_pid === 6) {
-            //Ocean Freight Charge
-            getChargeCodeSettingResult(qid.value, _pid);
-            handleProductLineChange();
-            PLCode.value = "OMS";
-            showCBMTransfer.value = true;
-          } else if (_pid === 2) {
-            PLCode.value = "AMS";
-          }
-          getQuoteTypeResult("Lead", "Type", PLCode.value);
-
-          getCreditTermResult(
-            quotationDetailResult.value.customerHQID as number,
-            _pid
-          );
-          getQuoteFreightChargeResult(qid.value, _pid).then(() => {
-            freightChargeSettings.value.data = freightChargeResult.value;
-            let exportPromise = Promise.resolve();
-            let importPromise = Promise.resolve();
-
-            if ((quotationDetailResult.value.quoteid as number) > 0) {
-              //don't forEach, just use quoteID to find out all data
-              exportPromise = getLocalChargeResult(
-                quotationDetailResult.value.quoteid as number,
-                quotationDetailResult.value.pid,
-                true,
-                ""
-              ).then(() => {
-                handleLocalChargeResult(
-                  localChargeResult,
-                  quotationDetailResult.value.pid,
-                  exportLocationResult
-                );
-              });
-
-              importPromise = getLocalChargeResult(
-                quotationDetailResult.value.quoteid as number,
-                quotationDetailResult.value.pid,
-                false,
-                ""
-              ).then(() => {
-                handleLocalChargeResult(
-                  localChargeResult,
-                  quotationDetailResult.value.pid,
-                  importLocationResult
-                );
-              });
-            }
-            Promise.all([exportPromise, importPromise]).then(() => {
-              disabledExportLocalChargeBtn.value = false;
-              disabledImportLocalChargeBtn.value = false;
-            });
-          });
-          autoSaveTrigger(value, "pid");
-
-          UserAccessRightByCustomerProductLine(
-            quotationDetailResult.value.customerHQID,
-            _pid
-          ).then(res => {
-            customerProductLineAccessRight.value = res.returnValue;
-          });
-        }
-      }
-    },
-    {
-      label: "Effective - Expired",
-      prop: "period",
-      valueType: "date-picker",
-      fieldProps: {
-        type: "daterange",
-        startPlaceholder: "Effective",
-        endPlaceholder: "Expired",
-        format: "YYYY-MMM-DD",
-        onFocus: () => {
-          const period = quotationDetailResult.value.period || [];
-          if (Array.isArray(period) && period.length === 2) {
-            const [effective, expired] = period;
-            previousValue.value = `effective: ${effective || ""}, expired: ${expired || ""}`;
-          } else {
-            previousValue.value = ""; // 預設為空字串
-          }
-        },
-        onChange: (value: [string, string]) => {
-          if (Array.isArray(value) && value.length === 2) {
-            const [effective, expired] = value;
-            const formattedString = `effective: ${effective}, expired: ${expired}`;
-            autoSaveTrigger(formattedString, "period");
-          } else {
-            console.error("Invalid value format:", value);
-          }
-        }
-      },
-      colProps: {
-        span: 16
-      }
-    },
-    {
-      label: "Shipping Term",
-      width: 120,
-      prop: "shippingTerm",
-      valueType: "select",
-      options: shippingTermResult,
-      colProps: {
-        span: 8
-      },
-      fieldProps: {
-        onFocus: () => {
-          previousValue.value = quotationDetailResult.value.shippingTerm;
-        },
-        onChange: value => {
-          autoSaveTrigger(value, "shippingTerm");
-        }
-      }
-    },
-    {
-      label: "Type",
-      prop: "typeCode",
-      valueType: "radio",
-      options: quoteTypeResult,
-      hideInForm: hideQuotationType,
-      colProps: {
-        span: 8
-      },
-      fieldProps: {
-        onFocus: () => {
-          previousValue.value = quotationDetailResult.value.typeCode;
-        },
-        onChange: value => {
-          const showHideCodes = [
-            "QAT3",
-            "QST3",
-            "QWT3",
-            "QDT3",
-            "QMT2",
-            "QTM3"
-          ];
-          hideOTPCode.value = showHideCodes.includes(value) ? false : true;
-          autoSaveTrigger(value, "typeCode");
-        }
-      }
-    },
-    {
-      label: "One Time Only Code",
-      prop: "onePWD",
-      valueType: "text", // 僅顯示文字
-      hideInForm: hideOTPCode,
-      colProps: {
-        span: 8
-      }
-    },
-    {
-      label: "Attention To",
-      width: 360,
-      prop: "attentionTo",
-      valueType: "select",
-      options: attentionToResult,
-      colProps: {
-        span: 8
-      },
-      fieldProps: {
-        onFocus: () => {
-          previousValue.value = quotationDetailResult.value.attentionTo;
-        },
-        onChange: value => {
-          autoSaveTrigger(value, "attentionTo");
-        }
-      }
-    },
-    {
-      label: "Trade Term",
-      width: 120,
-      prop: "tradeTermId",
-      valueType: "select",
-      options: tradeTermResult,
-      colProps: {
-        span: 8
-      },
-      fieldProps: {
-        onFocus: () => {
-          previousValue.value = quotationDetailResult.value.tradeTermId;
-        },
-        onChange: value => {
-          const selectTT = tradeTermResult.value.find(
-            col => col.value === value
-          ) as any;
-          quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
-          autoSaveTrigger(value, "tradeTermId");
-        }
-      }
-    },
-    {
-      label: "Credit Term",
-      width: 120,
-      prop: "creditTermId",
-      valueType: "select",
-      options: creditTermResult,
-      colProps: {
-        span: 8
-      },
-      fieldProps: {
-        onFocus: () => {
-          previousValue.value = quotationDetailResult.value.creditTermId;
-        },
-        onChange: value => {
-          autoSaveTrigger(value, "creditTermId");
-        }
-      }
-    },
-    {
-      label: "Reference",
-      width: 120,
-      prop: "reference",
-      valueType: dataPermissionExtension("reference", "select"),
-      options: creditTermResult,
-      colProps: {
-        span: 8
-      },
-      fieldProps: {
-        onFocus: () => {
-          previousValue.value = quotationDetailResult.value.creditTermId;
-        },
-        onChange: value => {
-          autoSaveTrigger(value, "creditTermId");
-        }
-      }
-    }
-  ];
-};
-
 onMounted(() => {
-  GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
-    if (res && res.isSuccess) {
-      columnSettingResult.value = res.returnValue;
-      bindingPlusColumn();
-    }
-  });
   if (getParameter.id != "0") {
     const id = Array.isArray(getParameter.id)
       ? parseInt(getParameter.id[0], 10)
@@ -1177,7 +968,7 @@ onMounted(() => {
     const _pid = Array.isArray(getParameter.pid)
       ? parseInt(getParameter.pid[0], 10)
       : parseInt(getParameter.pid, 10);
-    console.log(getParameter);
+
     getQuotationDetailResult(qid.value, _pid).then(() => {
       historyBtnVisible.value = true;
       deleteBtnVisible.value = true;
@@ -1186,16 +977,16 @@ onMounted(() => {
         const selectedItem = {
           text: quotationDetailResult.value.customerName,
           value: quotationDetailResult.value.customerHQID
-        }; // 模擬選中的公司
+        };
 
-        const fieldProps = quoteDetailColumns.value[0].fieldProps as any;
+        const fieldProps = quoteDetailColumns[0].fieldProps as any;
         if (fieldProps.onSelect) {
           fieldProps.onSelect(selectedItem);
         } else {
           console.warn("onSelect is not defined in fieldProps.");
         }
 
-        const companyNameColumn = quoteDetailColumns.value.find(
+        const companyNameColumn = quoteDetailColumns.find(
           col => col.prop === "customerName"
         ) as any;
         if (companyNameColumn?.fieldProps?.onSelect) {
@@ -1204,7 +995,7 @@ onMounted(() => {
           console.warn("onSelect is not defined for Company Name.");
         }
 
-        const productLineCodeColumn = quoteDetailColumns.value.find(
+        const productLineCodeColumn = quoteDetailColumns.find(
           col => col.prop === "productLineCode"
         ) as any;
         if (productLineCodeColumn?.fieldProps?.onChange) {
@@ -1212,7 +1003,7 @@ onMounted(() => {
             quotationDetailResult.value.pid
           );
         }
-        const shippingTermColumn = quoteDetailColumns.value.find(
+        const shippingTermColumn = quoteDetailColumns.find(
           col => col.prop === "shippingTerm"
         ) as any;
         if (shippingTermColumn?.fieldProps?.onChange) {
@@ -1221,6 +1012,7 @@ onMounted(() => {
           );
         }
       });
+      dataPermissionExtension();
     });
   }
   getCustomerByOwnerUserResult();
@@ -1261,6 +1053,41 @@ const formatDate = dateString => {
   const minutes = date.getMinutes().toString().padStart(2, "0");
   const seconds = date.getSeconds().toString().padStart(2, "0");
   return `${month} ${day}, ${year}`;
+};
+
+const _formatDate = dateInput => {
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ];
+
+  // 格式化單一日期
+  const formatSingleDate = dateString => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${month} ${day}, ${year}`;
+  };
+
+  // 如果輸入是一個數組，處理日期範圍
+  if (Array.isArray(dateInput) && dateInput.length === 2) {
+    const [start, end] = dateInput;
+    return `${formatSingleDate(start)} - ${formatSingleDate(end)}`;
+  }
+
+  // 處理單一日期
+  return formatSingleDate(dateInput);
 };
 </script>
 
@@ -1391,7 +1218,10 @@ const formatDate = dateString => {
                     >{{ $t("quote.quotedetail.cbm") }} :</label
                   >
                 </div>
-                <div class="el-form-item__content">
+                <div
+                  v-if="customerProductLineAccessRight.isWrite === true"
+                  class="el-form-item__content"
+                >
                   1:
                   <el-input-number
                     v-model="quotationDetailResult.cbmToWT"
@@ -1412,32 +1242,43 @@ const formatDate = dateString => {
                     />
                   </el-select>
                 </div>
+                <div v-else class="el-form-item__content">
+                  {{
+                    `1: ${quotationDetailResult.cbmToWT} ${quotationDetailResult.cbmToWTUOM}`
+                  }}
+                </div>
               </div>
             </el-collapse-item>
             <el-collapse-item title="GREETINGS" name="2">
               <template #title>
                 <span class="text-orange-500">GREETINGS</span>
               </template>
-              <Toolbar
-                :editor="editorRef"
-                :defaultConfig="toolbarConfig"
-                :mode="mode"
-                style="border-bottom: 1px solid #ccc"
-              />
-              <Editor
-                v-model="quotationDetailResult.greeting"
-                :defaultConfig="editorConfig"
-                :mode="mode"
-                style="height: 500px; overflow-y: hidden"
-                @onCreated="handleCreated"
-              />
-              <EditorBase />
+              <div v-if="customerProductLineAccessRight.isWrite === true">
+                <Toolbar
+                  :editor="editorRef"
+                  :defaultConfig="toolbarConfig"
+                  :mode="mode"
+                  style="border-bottom: 1px solid #ccc"
+                />
+                <Editor
+                  v-model="quotationDetailResult.greeting"
+                  :defaultConfig="editorConfig"
+                  :mode="mode"
+                  style="height: 500px; overflow-y: hidden"
+                  @onCreated="handleCreated"
+                />
+                <EditorBase />
+              </div>
+              <div v-else>
+                {{ quotationDetailResult.greeting }}
+              </div>
             </el-collapse-item>
             <el-collapse-item title="FREIGHT CHARGE" name="3">
               <template #title>
                 <span class="text-orange-500">FREIGHT CHARGE</span>
               </template>
               <el-tooltip
+                v-if="customerProductLineAccessRight.isWrite === true"
                 class="box-item"
                 effect="dark"
                 content="Customized Columns"
@@ -1469,21 +1310,23 @@ const formatDate = dateString => {
                   :key="index"
                   :label="item.city"
                 >
-                  {{ $t("quote.quotedetail.lcp") }}：
-                  <el-select
-                    v-model="item.localChargePackageSelector"
-                    filterable
-                    placeholder="Select"
-                    style="width: 280px; padding-bottom: 5px"
-                    @change="AddLCPItems(item, true)"
-                  >
-                    <el-option
-                      v-for="c in item.localChargePackageList"
-                      :key="c.value"
-                      :label="c.text"
-                      :value="c.value"
-                    />
-                  </el-select>
+                  <div v-if="customerProductLineAccessRight.isWrite">
+                    {{ $t("quote.quotedetail.lcp") }}：
+                    <el-select
+                      v-model="item.localChargePackageSelector"
+                      filterable
+                      placeholder="Select"
+                      style="width: 280px; padding-bottom: 5px"
+                      @change="AddLCPItems(item, true)"
+                    >
+                      <el-option
+                        v-for="c in item.localChargePackageList"
+                        :key="c.value"
+                        :label="c.text"
+                        :value="c.value"
+                      />
+                    </el-select>
+                  </div>
                   <HotTable
                     :ref="setHotTableRef(item.cityID)"
                     :settings="item.hotTableSetting"
@@ -1501,21 +1344,23 @@ const formatDate = dateString => {
                   :key="index"
                   :label="item.city"
                 >
-                  {{ $t("quote.quotedetail.lcp") }}：
-                  <el-select
-                    v-model="item.localChargePackageSelector"
-                    filterable
-                    placeholder="Select"
-                    style="width: 280px; padding-bottom: 5px"
-                    @change="AddLCPItems(item, false)"
-                  >
-                    <el-option
-                      v-for="c in item.localChargePackageList"
-                      :key="c.value"
-                      :label="c.text"
-                      :value="c.value"
-                    />
-                  </el-select>
+                  <div v-if="customerProductLineAccessRight.isWrite">
+                    {{ $t("quote.quotedetail.lcp") }}：
+                    <el-select
+                      v-model="item.localChargePackageSelector"
+                      filterable
+                      placeholder="Select"
+                      style="width: 280px; padding-bottom: 5px"
+                      @change="AddLCPItems(item, false)"
+                    >
+                      <el-option
+                        v-for="c in item.localChargePackageList"
+                        :key="c.value"
+                        :label="c.text"
+                        :value="c.value"
+                      />
+                    </el-select>
+                  </div>
                   <HotTable
                     :ref="setHotTableRef(item.cityID)"
                     :settings="item.hotTableSetting"
@@ -1540,6 +1385,7 @@ const formatDate = dateString => {
                   <div class="checkbox-wrapper">
                     <el-checkbox
                       v-model="term.isSelected"
+                      :disabled="!customerProductLineAccessRight.isWrite"
                       class="checkbox-content"
                     />
                     <span class="checkbox-label">{{ term.contents }}</span>
@@ -1551,7 +1397,11 @@ const formatDate = dateString => {
               <template #title>
                 <span class="text-orange-500">REMARK</span>
               </template>
+              <div v-if="!customerProductLineAccessRight.isWrite">
+                {{ quotationDetailResult.remark }}
+              </div>
               <el-input
+                v-else
                 v-model="quotationDetailResult.remark"
                 style="width: 440px"
                 placeholder="Please input"

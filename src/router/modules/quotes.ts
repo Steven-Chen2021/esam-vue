@@ -15,7 +15,8 @@ export default {
       name: "quoteSearch",
       component: () => import("@/views/quotes/index.vue"),
       meta: {
-        title: $t("menus.dimercoQuotes")
+        title: $t("menus.dimercoQuotes"),
+        keepAlive: true
       }
     },
     {
