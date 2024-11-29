@@ -19,7 +19,7 @@ export default {
       }
     },
     {
-      path: "/quotes/detail/:id/:qname",
+      path: "/quotes/detail/:id/:qname/:pid?",
       name: "QuoteDetail",
       component: () => import("@/views/quotes/QuoteDetail.vue"),
       meta: {

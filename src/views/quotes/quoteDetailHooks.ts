@@ -91,6 +91,7 @@ export function QuoteDetailHooks() {
   const attentionToResult = ref([]);
   const tradeTermResult = ref([]);
   const creditTermResult = ref([]);
+  const quoteReferenceCodeResult = ref([]);
   const cbmTransferUOMResult = ref([]);
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
   const chargeCodeSettingValues = ref([]);
@@ -352,6 +353,21 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getQuoteReferenceCodeResult(customerHQID) {
+    try {
+      const response =
+        await quoteDetailService.getQuoteReferenceCodeResult(customerHQID);
+      if (response != null) {
+        quoteReferenceCodeResult.value = response.map((item: any) => ({
+          label: item.text,
+          value: item.value
+        }));
+      }
+    } catch (error) {
+      console.log("saveLocalChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -384,6 +400,8 @@ export function QuoteDetailHooks() {
     frightChargeParams,
     getQuotePreviewResult,
     getQuoteHistoryResult,
-    customerProductLineAccessRight
+    customerProductLineAccessRight,
+    getQuoteReferenceCodeResult,
+    quoteReferenceCodeResult
   };
 }

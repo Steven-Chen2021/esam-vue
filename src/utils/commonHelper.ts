@@ -28,14 +28,8 @@ export function CommonHelper() {
 
   async function GetColumnSettingResult(APIRequestType: number) {
     try {
-      commonService
-        .getColumnSettingList(APIRequestType)
-        .then(res => {
-          if (res && res.isSuccess) columnSettingResult.value = res.returnValue;
-        })
-        .catch(err => {
-          console.error("autosave error", err);
-        });
+      const result = commonService.getColumnSettingList(APIRequestType);
+      return result;
     } catch (error) {
       console.error("autoSaveHelper Error:", error);
     }
