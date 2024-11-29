@@ -245,6 +245,7 @@ common:
   dc: Documents
   unauthorized: No permission to view
   back: Back
+  mailFormatErrorAlert: Please check eMail format.
 task:
   quickfilter:
     priority: Priority
@@ -293,7 +294,7 @@ contact:
     tel_H: Tel(H)
     familyMembers: Family Member
     address: Address
-    city: Location
+    city: City
     zip: Postal Code
     relationship: Relationship
     remark: Remark

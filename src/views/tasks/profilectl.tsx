@@ -84,12 +84,8 @@ export function contactProfileCTL() {
             !userAuth.value["isReadAdvanceColumn"] &&
             ProfileID.value !== "0"
           ) {
-            profileData.value[column.filterKey] = t(
-              "customer.profile.general.unauthorized"
-            );
-            profileDataInit.value[column.filterKey] = t(
-              "customer.profile.general.unauthorized"
-            );
+            profileData.value[column.filterKey] = t("common.unauthorized");
+            profileDataInit.value[column.filterKey] = t("common.unauthorized");
           }
         }
       });
