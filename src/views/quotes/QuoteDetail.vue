@@ -283,7 +283,6 @@ const quoteDetailColumns: PlusColumn[] = [
       onSelect: (item: { text: string; value: number }) => {
         quotationDetailResult.value.customerHQID = item.value;
         getProductLineByCustomerResult(item.value);
-        console.log(productLineResult);
         getAttentionToResult(item.value);
         autoSaveTrigger(item.value, "customerName");
       }
@@ -294,7 +293,7 @@ const quoteDetailColumns: PlusColumn[] = [
     width: 360,
     prop: "productLineCode",
     valueType: "select",
-    options: productLineResult.value,
+    options: productLineResult,
     colProps: {
       span: 8
     },

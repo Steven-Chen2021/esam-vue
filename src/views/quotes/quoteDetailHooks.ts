@@ -169,12 +169,10 @@ export function QuoteDetailHooks() {
       const response =
         await quoteDetailService.getProductLineByCustomerData(customerHQID);
       if (response != null) {
-        console.log(response);
         productLineResult.value = response.returnValue.map((item: any) => ({
           label: item.productLineCode,
           value: item.pid
         }));
-        console.log(productLineResult.value);
       }
     } catch (error) {
       console.log("getProductLineByCustomerResult", error);
