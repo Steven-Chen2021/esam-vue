@@ -264,6 +264,7 @@ task:
     subject: Subject
     description: Description
     actionItem: Action Item
+    company: Company
 contact:
   tabTitle: Contact Search
   cancel: Cancel
