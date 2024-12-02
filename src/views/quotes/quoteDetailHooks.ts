@@ -8,6 +8,10 @@ export function QuoteDetailHooks() {
     text: string;
     value: number;
   }
+  interface selectCtl {
+    label: string;
+    value: number;
+  }
   interface iChargeCodeSetting {
     headerName: string;
     columnName: string;
@@ -84,7 +88,7 @@ export function QuoteDetailHooks() {
     error: null as string | null
   });
   const freightChargeResult = ref([]);
-  const productLineResult = ref([]);
+  const productLineResult = ref<selectCtl[]>([]);
   const shippingTermResult = ref([]);
   const quoteTypeResult = ref([]);
   const attentionToResult = ref([]);
@@ -160,15 +164,22 @@ export function QuoteDetailHooks() {
     }
   }
 
-  const getProductLineByCustomerResult = (customerHQID: number) => {
+  async function getProductLineByCustomerResult(customerHQID: number) {
     try {
       const response =
-        quoteDetailService.getProductLineByCustomerData(customerHQID);
-      return response;
+        await quoteDetailService.getProductLineByCustomerData(customerHQID);
+      if (response != null) {
+        console.log(response);
+        productLineResult.value = response.returnValue.map((item: any) => ({
+          label: item.productLineCode,
+          value: item.pid
+        }));
+        console.log(productLineResult.value);
+      }
     } catch (error) {
       console.log("getProductLineByCustomerResult", error);
     }
-  };
+  }
 
   async function getShippingTermResult() {
     try {

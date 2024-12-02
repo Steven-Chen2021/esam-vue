@@ -263,7 +263,7 @@ const dataPermissionExtension = () => {
     });
   }
 };
-const quoteDetailColumns = reactive<PlusColumn[]>([
+const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
     width: 120,
@@ -281,14 +281,8 @@ const quoteDetailColumns = reactive<PlusColumn[]>([
         previousValue.value = quotationDetailResult.value.customerHQID;
       },
       onSelect: (item: { text: string; value: number }) => {
-        console.log(item);
         quotationDetailResult.value.customerHQID = item.value;
-        getProductLineByCustomerResult(item.value).then(res => {
-          productLineResult.value = res.returnValue.map((item: any) => ({
-            label: item.text,
-            value: item.value
-          }));
-        });
+        getProductLineByCustomerResult(item.value);
         console.log(productLineResult);
         getAttentionToResult(item.value);
         autoSaveTrigger(item.value, "customerName");
@@ -547,7 +541,7 @@ const quoteDetailColumns = reactive<PlusColumn[]>([
       }
     }
   }
-]);
+];
 
 const handleLocalChargeResult = (
   localChargeResult,
