@@ -723,6 +723,7 @@ watch(
       :data="tableData"
       style="width: 100%; min-height: 200px"
       :max-height="maxHeight"
+      stripe
       @sort-change="handleSortChange"
     >
       <el-table-column
@@ -742,6 +743,7 @@ watch(
             ? true
             : false
         "
+        show-overflow-tooltip
       >
         <template #default="scope">
           <span v-if="col.filterKey !== 'combatTeamPL'">{{

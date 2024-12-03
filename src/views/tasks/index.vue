@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
+import dayjs from "dayjs";
 import Close from "@iconify-icons/ep/close";
 import {
   ref,
@@ -92,16 +93,19 @@ const handleFilterEnable = (obj: any) => {
 // import { useRouter } from "vue-router";
 // const Router = useRouter();
 const handleViewClick = row => {
-  console.log("handleViewClick row", row);
+  console.log("handleViewClick row", row.appointmentStartDateInit);
+  console.log(
+    "handleViewClick dt",
+    dayjs(row.appointmentStartDateInit).format("MMM DD").toString()
+  );
   router.push({
-    name: "ContactDetail",
-    params: { id: row.id, lid: row.hqid, qname: row.fullName }
-  });
-};
-const handleAddCustomer = () => {
-  router.push({
-    name: "CustomerDetail",
-    params: { id: 0, qname: "Create Customer" }
+    name: "TaskDetail",
+    params: {
+      id: row.taskID,
+      lid: row.lid,
+      qname: row.company,
+      dt: dayjs(row.appointmentStartDateInit).format("MMM DD").toString()
+    }
   });
 };
 // #region Quick Filter
