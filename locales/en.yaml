@@ -246,6 +246,8 @@ common:
   unauthorized: No permission to view
   back: Back
   mailFormatErrorAlert: Please check eMail format.
+  dateTimeStartPlaceholder: Start Time
+  dateTimeEndPlaceholder: End Time
 task:
   quickfilter:
     priority: Priority

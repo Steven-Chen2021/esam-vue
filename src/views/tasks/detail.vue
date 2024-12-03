@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
+import { isArray } from "@pureadmin/utils";
 import { ref, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { contactProfileCTL } from "./profilectl";
+import { taskProfileCTL } from "./profilectl";
 import dayjs from "dayjs";
+import { verifyMainFormat } from "@/utils/common";
 import {
   ElNotification,
   FormInstance,
@@ -12,28 +14,17 @@ import {
   ElMessage
 } from "element-plus";
 import { useUserStoreHook } from "@/store/modules/user";
-import CustomerProfileService from "@/services/customer/CustomerProfileService";
+import TaskProfileService from "@/services/tasks/TaskProfileService";
 import { useDetail } from "./hooks";
 import CommonService from "@/services/commonService";
 const { initToDetail, getParameter, router } = useDetail();
 import { quickFilterCTL } from "../customer/quickfilterctl";
-const { monthDatePickerList } = quickFilterCTL();
+const { monthDatePickerList, querySearchAsync } = quickFilterCTL();
 const {
   profileDataInit,
   profileFormData,
   profileData,
   rules,
-  tabsPLList,
-  PLFormData,
-  formDataMap,
-  activeTabPID,
-  fetchPLFormData,
-  handleClickPLHistory,
-  dialogPLUpdateHistoryVisible,
-  PLUpdateHistoryList,
-  PLHistoryTitle,
-  dialogReturnVisible,
-  dimOrgOptions,
   ddlNeedExtraList,
   ddlCasList,
   inputNeedExtraList,
@@ -44,8 +35,6 @@ const {
   fetchPLData,
   getOptions,
   filterOptions,
-  leadSourceDisable,
-  handleAgentROCheckChange,
   userAuth,
   disableStatus,
   ProfileID,
@@ -56,37 +45,38 @@ const {
   PLModuleList,
   fetchDCUrl,
   DCUrl,
+  DCShow,
   inActiveContact,
-  activeContact
-} = contactProfileCTL();
-// const { fetchMembersData } = leadmemberctl();
+  activeContact,
+  updateContactProfilePLResult,
+  querySearchSeleteAsync,
+  remoteFilterAttendeesloading
+} = taskProfileCTL();
 defineOptions({
-  name: "ContactDetail"
+  name: "TaskDetail"
 });
-initToDetail("params");
+const props = defineProps({
+  ParentID: {
+    type: String,
+    required: false
+  },
+  ID: {
+    type: String,
+    required: false
+  }
+});
+const emit = defineEmits(["handleBackEvent"]);
+const backToIndex = () => {
+  if (props.ParentID && props.ParentID !== "") {
+    emit("handleBackEvent");
+  } else {
+    router.go(-1);
+  }
+};
 const activeName = ref(["general", "documents"]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
 const size = ref("disabled");
-const buttonList = [
-  {
-    type: "",
-    text: "Back",
-    icon: "ep:back"
-  }
-];
-const handleMembersEdit = (PLDetail, PLTab) => {
-  console.log("profileData.value", profileData.value);
-  console.log("LID", LID);
-  router.push({
-    name: "CustomerMembers",
-    params: {
-      id: LID,
-      plid: PLDetail["id"],
-      pl: PLDetail["plName"]
-    }
-  });
-};
 const profileFormRef = ref<FormInstance>();
 const refCity = ref(null);
 const refAgent = ref(null);
@@ -208,16 +198,13 @@ const handleDropDownChange = async (
   }
   autoSaveForm(formEl, filterItem, v);
 };
-const handleCheckedPLChange = (value: string[]) => {
-  console.log("handleCheckedPLChange", value);
-};
 //formEl: FormInstance | undefined,
 const autoSaveForm = async (
   formEl: FormInstance | undefined,
   filterItem,
   v
 ) => {
-  if (LID === "0" || !userAuth.value["isWrite"]) return;
+  if (CID === "0" || !userAuth.value["isWrite"]) return;
   console.log("autoSaveForm", profileData.value);
   if (!formEl) return;
   if (disableStatus(filterItem)) return;
@@ -237,7 +224,7 @@ const autoSaveForm = async (
         tableName: "smcustomercontact",
         fieldName: filterItem.filterKey,
         id: CID,
-        custID: CID,
+        custID: LID,
         oldValue: dataInit[filterItem.filterKey],
         value: v,
         oldEntity: "string",
@@ -246,7 +233,6 @@ const autoSaveForm = async (
       console.log("autosave param", param);
       switch (filterItem.filterKey) {
         case "names":
-        case "vip":
         case "titles":
         case "role":
         case "department":
@@ -256,13 +242,61 @@ const autoSaveForm = async (
         case "joinedCompany":
         case "joinedIndustry":
         case "birthday":
-        case "email":
         case "tel_OExt":
         case "familyMembers":
         case "address":
         case "city":
         case "zip":
         case "relationship": {
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "email": {
+          if (!verifyMainFormat(param.value)) {
+            ElMessage({
+              message: t("common.mailFormatErrorAlert"),
+              grouping: true,
+              type: "error"
+            });
+            return;
+          }
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "vip": {
+          param.value = param.value ? "True" : "False";
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
@@ -290,6 +324,60 @@ const autoSaveForm = async (
             data["tel_O1"] === ""
               ? data["tel_O2"].trim()
               : `${data["tel_O1"].trim()}-${data["tel_O2"].trim()}`;
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+
+          break;
+        case "tel_M1":
+        case "tel_M2":
+          param.fieldName = "tel_M";
+          param.oldValue = data["tel_M"];
+          param.value =
+            data["tel_M1"] === ""
+              ? data["tel_M2"].trim()
+              : `${data["tel_M1"].trim()}-${data["tel_M2"].trim()}`;
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+
+          break;
+        case "tel_H1":
+        case "tel_H2":
+          param.fieldName = "tel_H";
+          param.oldValue = data["tel_H"];
+          param.value =
+            data["tel_H1"] === ""
+              ? data["tel_H2"].trim()
+              : `${data["tel_H1"].trim()}-${data["tel_H2"].trim()}`;
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
@@ -462,100 +550,65 @@ const autoSaveForm = async (
   });
 };
 const submitForm = async (formEl: FormInstance | undefined, disable) => {
-  profileData.value["PlList"] = checkedPL.value;
   if (!formEl) return;
   if (disable) return;
   await formEl.validate((valid, fields) => {
     if (valid) {
       const data = profileData.value;
-      if (data["agentROCheck"] && (!data["agentId"] || data["agentId"] === 0)) {
+      if (!verifyMainFormat(data["email"])) {
         ElMessage({
-          message: t("customer.profile.agentRO"),
+          message: t("common.mailFormatErrorAlert"),
           grouping: true,
-          type: "warning"
+          type: "error"
         });
         return;
-        // console.log("refAgent", refAgent);
-        // console.log("refCity", refCity);
-        // if (refAgent.value && refAgent.value.length === 1) {
-        //   setTimeout(() => {
-        //     refAgent.value[0].toggleMenu();
-        //   }, 500);
-        //   ElMessage({
-        //     message: t("customer.profile.agentRO"),
-        //     grouping: true,
-        //     type: "warning"
-        //   });
-        //   return;
-        // }
+      }
+      profileData.value["hqid"] = CID;
+      profileData.value["customerId"] = LID;
+      profileData.value["vip"] = profileData["vip"] ? "True" : "False";
+      profileData.value["plList"] = PLModuleList.value.map(item => {
+        const status = profileData.value["plList"].some(
+          i => i === item.description
+        );
+        return { PLCode: item.description, IsActive: status };
+      });
+
+      if (
+        profileData.value["bossArray"] &&
+        isArray(profileData.value["bossArray"])
+      ) {
+        profileData.value["boss"] = profileData.value["bossArray"].join(", ");
       }
       if (
-        (!data["city"] || data["city"] === "" || data["city"] === null) &&
-        (!data["cityText"] ||
-          data["cityText"] === "" ||
-          data["cityText"] === null)
+        profileData.value["hobbyArray"] &&
+        isArray(profileData.value["hobbyArray"])
       ) {
-        if (refCity.value && refCity.value.length === 1) {
-          setTimeout(() => {
-            refCity.value[0].toggleMenu();
-          }, 500);
-          ElMessage({
-            message: t("customer.profile.cityAlert"),
-            grouping: true,
-            type: "warning"
-          });
-          return;
-        }
+        profileData.value["hobby"] = profileData.value["hobbyArray"].join(", ");
       }
-      if (data["leadSourceID"] === 16 && data["leadSourceDetail"] === "") {
-        if (
-          refLeadSourceDetail.value &&
-          refLeadSourceDetail.value.length === 1
-        ) {
-          setTimeout(() => {
-            refLeadSourceDetail.value[0].toggleMenu();
-          }, 500);
-          ElMessage({
-            message: t("customer.profile.leadSourceAlert"),
-            grouping: true,
-            type: "warning"
-          });
-          return;
-        }
-      }
-      // const profileNew = ref({});
-
-      // const dataInit = profileDataInit.value;
-      // console.log("dataInit", dataInit);
-      // console.log("data", data);
-
-      // for (const key in data) {
-      //   // console.log("key", key);
-      //   // console.log("data[key]", data[key]);
-      //   // console.log("dataInit[key]", dataInit[key]);
-      //   if (data[key] !== dataInit[key]) {
-      //     profileNew.value[key] = data[key];
-      //   }
-      // }
-      profileData.value["hqid"] = LID;
       console.log("submit! profileData:", profileData.value);
-      CustomerProfileService.updateCustomerProfile(profileData.value)
+      TaskProfileService.updateContactProfile(profileData.value)
         .then(data => {
-          console.log("updateCustomerProfile data", data);
+          console.log("updateContactProfile data", data);
           ElMessage({
             message: t("customer.profile.fullSaveSucAlert"),
             grouping: true,
             type: "success"
           });
           if (data.isSuccess && data.returnValue) {
-            router.replace({
-              name: "ContactDetail",
-              params: {
-                id: data.returnValue,
-                lid: data.returnValue,
-                qname: profileData.value["customerName"]
-              }
-            });
+            // router.replace({
+            //   name: "ContactDetail",
+            //   params: {
+            //     id: data.returnValue,
+            //     lid: LID,
+            //     qname: profileData.value["fullName"]
+            //   }
+            // });
+            CID = data.returnValue.toString();
+            ProfileID.value = CID;
+            console.log("ProfileID.value", ProfileID.value);
+            console.log("LeadID.value", LeadID.value);
+            fetchProfileData();
+            fetchDCUrl();
           }
         })
         .catch(err => {
@@ -571,207 +624,27 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
     }
   });
 };
-// const disableStatus = filterItem => {
-//   const arr = ["read", "NA"];
-//   if (filterItem.visibilityLevel === 1) {
-//     return arr.includes(basicRole);
-//   } else {
-//     if (
-//       filterItem.filterKey === "leadSourceGroupID" ||
-//       filterItem.filterKey === "leadSourceID"
-//     ) {
-//       return leadSourceDisable.value;
-//     } else {
-//       return arr.includes(advRole);
-//     }
-//   }
-// };
 const username = useUserStoreHook()?.username;
-const LID = getParameter.lid;
-const CID = getParameter.id;
+const LID = props.ParentID
+  ? props.ParentID
+  : isArray(getParameter.lid)
+    ? getParameter.lid[0]
+    : getParameter.lid;
+let CID = props.ID
+  ? props.ID
+  : isArray(getParameter.id)
+    ? getParameter.id[0]
+    : getParameter.id;
 onMounted(() => {
+  if (!props.ID) {
+    initToDetail("params");
+  }
+  console.log("contac detail getParameter", getParameter);
   ProfileID.value = CID;
   LeadID.value = LID;
   fetchProfileData();
-  // fetchPLModuleList();
   fetchDCUrl();
-  // fetchPLData(0);
-  // loadDimOrgOptions();
 });
-const returnPL = ref({
-  id: "",
-  ownerStationID: "",
-  sendToStationID: "",
-  showDimOrg: false
-});
-const activePLTabData = ref({ smhqid: null, pid: null, plName: null });
-const handleActionChange = (v, plName) => {
-  console.log("handleActionChange v", v);
-  console.log("handleActionChange tabItem.plName", plName);
-  if (v === "Send To") {
-    formDataMap.value[plName].showDimOrg = true;
-  } else {
-    formDataMap.value[plName].showDimOrg = false;
-    formDataMap.value[plName].sendToStationID = "";
-  }
-  console.log("handleActionChange formDataMap", formDataMap.value[plName]);
-};
-const handleReturnClick = (PLDetail, PLTab) => {
-  returnPL.value = PLDetail;
-  activePLTabData.value = PLTab;
-  if (
-    !returnPL.value ||
-    (returnPL.value &&
-      returnPL.value.showDimOrg &&
-      (!returnPL.value.sendToStationID ||
-        returnPL.value.sendToStationID === ""))
-  ) {
-    ElNotification({
-      title: t("customer.list.quickFilter.alertTitle"),
-      message: t("customer.profile.pl.returnMissStation"),
-      type: "warning"
-    });
-    dialogReturnVisible.value = false;
-    return false;
-  }
-  dialogType.value = "return";
-  dialogReturnVisible.value = true;
-};
-const handleAssignClick = (PLDetail, PLTab) => {
-  dialogType.value = "assign";
-  dialogReturnVisible.value = true;
-  returnPL.value = PLDetail;
-  activePLTabData.value = PLTab;
-};
-const dialogType = ref("return");
-const handleDialogConfirm = () => {
-  console.log("handleDialogConfirm", dialogType.value);
-  switch (dialogType.value) {
-    case "return": {
-      returnLeadOwner();
-      break;
-    }
-    case "assign": {
-      addPL();
-      break;
-    }
-  }
-};
-const returnLeadOwner = () => {
-  console.log("returnLeadOwner returnPL", returnPL.value);
-  const param = {
-    currentUserID: "A2232",
-    sourceID: returnPL.value.id,
-    stationID: returnPL.value.showDimOrg
-      ? returnPL.value.sendToStationID
-      : returnPL.value.ownerStationID
-  };
-  console.log("returnLeadOwner para", param);
-  CustomerProfileService.ChangeProductLinesOwner(param)
-    .then(data => {
-      console.log("ChangeProductLinesOwner data", data);
-      ElNotification({
-        title: t("customer.list.quickFilter.alertTitle"),
-        message: t("customer.profile.pl.returnSuc"),
-        type: "success"
-      });
-      dialogReturnVisible.value = false;
-      console.log("activePLTabData.value", activePLTabData.value);
-      fetchPLFormData(
-        LID,
-        activePLTabData.value.smhqid,
-        activePLTabData.value.plName,
-        true
-      );
-    })
-    .catch(err => {
-      console.log("addQuickFilter error", err);
-    });
-};
-const addPL = () => {
-  console.log("addPL returnPL", returnPL.value);
-  const param = {
-    currentUserID: "A2232",
-    currentStationID: "018",
-    lid: LID,
-    pid: activePLTabData.value.smhqid
-  };
-  console.log("addPL para", param);
-  CustomerProfileService.AddPL(param)
-    .then(data => {
-      console.log("ChangeProductLinesOwner data", data);
-      if (data.errorCode == 0) {
-        ElNotification({
-          title: t("customer.list.quickFilter.alertTitle"),
-          message: t("customer.profile.pl.assignSuc"),
-          type: "success"
-        });
-      } else {
-        ElNotification({
-          title: t("customer.list.quickFilter.alertTitle"),
-          message: t("customer.profile.pl.assignFail"),
-          type: "warning"
-        });
-      }
-      dialogReturnVisible.value = false;
-      console.log("activePLTabData.value", activePLTabData.value);
-      fetchPLFormData(
-        LID,
-        activePLTabData.value.smhqid,
-        activePLTabData.value.plName,
-        true
-      );
-    })
-    .catch(err => {
-      console.log("addQuickFilter error", err);
-    });
-};
-const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
-  console.log("handleBookingConfirmChange v", v);
-  console.log("handleBookingConfirmChange updateField", updateField);
-  const param = {
-    currentUserID: "A2232",
-    currentStationID: "018",
-    customerID: LID,
-    productLineID: PLDetail.pid,
-    needBookConfirm: null,
-    poa: null,
-    amS_ISF_SendBroker: null
-  };
-  switch (updateField) {
-    case "needBookConfirm":
-      param.needBookConfirm = v ? "1" : "0";
-      break;
-    case "poa":
-      param.poa = v ? "1" : "0";
-      break;
-    case "amS_ISF_SendBroker":
-      param.amS_ISF_SendBroker = v ? 1 : 0;
-      break;
-  }
-  console.log("handleBookingConfirmChange para", param);
-  CustomerProfileService.UpdateCustomerPLData(param)
-    .then(data => {
-      console.log("UpdateCustomerPLData data", data);
-      if (data.errorCode == 0) {
-        ElNotification({
-          title: t("customer.list.quickFilter.alertTitle"),
-          message: t("customer.profile.pl.updateOMSPLSuc"),
-          type: "success"
-        });
-      } else {
-        ElNotification({
-          title: t("customer.list.quickFilter.alertTitle"),
-          message: t("customer.profile.pl.updateOMSPLFail"),
-          type: "warning"
-        });
-      }
-      fetchPLFormData(LID, PLDetail.pid, PLDetail.plName, true);
-    })
-    .catch(err => {
-      console.log("addQuickFilter error", err);
-    });
-};
 </script>
 
 <template>
@@ -785,7 +658,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
             </template>
           </el-button> -->
         </div>
-        <div class="grow-0 h-8 ...">
+        <div class="grow-0 h-8 ..." style="margin-bottom: 8px">
           <el-button
             v-if="
               ProfileID !== '0' && profileData['btnStatusTitle'] === 'Inactive'
@@ -825,10 +698,16 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
           >
             {{ size === "disabled" ? "Save" : "Processing" }}
           </el-button>
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            :loading="formLoading"
+            @click="backToIndex"
+          >
+            {{ t("common.back") }}
+          </el-button>
         </div>
-      </div>
-      <div style="padding: 10px 10px 0">
-        <h1>{{ profileDataInit.customerName }}</h1>
       </div>
       <div class="pb-2">
         <el-alert
@@ -903,6 +782,189 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                       "
                       >{{ profileData[filterItem.filterKey] }}</el-text
                     >
+                    <el-autocomplete
+                      v-else-if="
+                        filterItem.filterType === 'autocomplete' &&
+                        filterItem.filterSourceType === 'api'
+                      "
+                      v-model="filterItem.value"
+                      value-key="text"
+                      :fetch-suggestions="
+                        (queryString, cb) =>
+                          querySearchAsync(queryString, cb, filterItem)
+                      "
+                      placeholder=""
+                      :disabled="disableStatus(filterItem)"
+                      style="width: 338px"
+                    />
+                    <el-select
+                      v-else-if="
+                        filterOptions[filterItem.filterKey] &&
+                        filterItem.filterType === 'dropdown' &&
+                        filterItem.filterSourceType === 'api' &&
+                        filterItem.filterKey === 'contact'
+                      "
+                      v-model="profileData['contactArray']"
+                      :disabled="disableStatus(filterItem)"
+                      :placeholder="
+                        t('customer.list.quickFilter.holderSelectText')
+                      "
+                      style="width: 318px"
+                      multiple
+                      filterable
+                      allow-create
+                      @change="
+                        v =>
+                          handleDropDownChange(
+                            profileFormRef,
+                            v,
+                            filterItem,
+                            null
+                          )
+                      "
+                    >
+                      <el-option
+                        v-for="option in filterOptions[filterItem.filterKey]
+                          .list"
+                        :key="option.value"
+                        :label="option.text"
+                        :value="option.value"
+                      />
+                    </el-select>
+                    <el-select
+                      v-else-if="
+                        filterOptions[filterItem.filterKey] &&
+                        filterItem.filterType === 'dropdown' &&
+                        filterItem.filterSourceType === 'api' &&
+                        filterItem.filterKey === 'attendees'
+                      "
+                      v-model="profileData['attendeesArray']"
+                      :disabled="disableStatus(filterItem)"
+                      :placeholder="
+                        t('customer.list.quickFilter.holderSelectText')
+                      "
+                      style="width: 318px"
+                      multiple
+                      filterable
+                      remote
+                      :loading="remoteFilterAttendeesloading"
+                      :remote-method="
+                        queryString =>
+                          querySearchSeleteAsync(queryString, filterItem)
+                      "
+                      @change="
+                        v =>
+                          handleDropDownChange(
+                            profileFormRef,
+                            v,
+                            filterItem,
+                            null
+                          )
+                      "
+                    >
+                      <el-option
+                        v-for="option in filterOptions[filterItem.filterKey]
+                          .list"
+                        :key="option.value"
+                        :label="option.text"
+                        :value="option.value"
+                      />
+                    </el-select>
+                    <el-select
+                      v-else-if="
+                        filterOptions[filterItem.filterKey] &&
+                        filterItem.filterType === 'dropdown' &&
+                        filterItem.filterSourceType === 'api' &&
+                        filterItem.filterKey === 'notifyParty'
+                      "
+                      v-model="profileData['notifyPartyArray']"
+                      :disabled="disableStatus(filterItem)"
+                      :placeholder="
+                        t('customer.list.quickFilter.holderSelectText')
+                      "
+                      style="width: 318px"
+                      multiple
+                      filterable
+                      remote
+                      :remote-method="
+                        queryString =>
+                          querySearchSeleteAsync(queryString, filterItem)
+                      "
+                      @change="
+                        v =>
+                          handleDropDownChange(
+                            profileFormRef,
+                            v,
+                            filterItem,
+                            null
+                          )
+                      "
+                    >
+                      <el-option
+                        v-for="option in filterOptions[filterItem.filterKey]
+                          .list"
+                        :key="option.value"
+                        :label="option.text"
+                        :value="option.value"
+                      />
+                    </el-select>
+                    <div
+                      v-else-if="
+                        filterItem.filterType === 'daterange' &&
+                        filterItem.filterKey === 'appointmentStartDate'
+                      "
+                    >
+                      <el-date-picker
+                        v-model="profileData[filterItem.filterKey]"
+                        :disabled="disableStatus(filterItem)"
+                        type="datetime"
+                        :range-separator="
+                          $t('customer.list.quickFilter.dateSeparator')
+                        "
+                        :start-placeholder="
+                          $t('customer.list.quickFilter.startDateHolderText')
+                        "
+                        :end-placeholder="
+                          $t('customer.list.quickFilter.endDateHolderText')
+                        "
+                        format="MMM DD, YYYY HH:mm"
+                        value-format="YYYY-MM-DD HH:mm"
+                        style="width: 258px"
+                        :placeholder="$t('common.dateTimeStartPlaceholder')"
+                        @change="
+                          autoSaveForm(
+                            profileFormRef,
+                            filterItem,
+                            profileData[filterItem.filterKey]
+                          )
+                        "
+                      />
+                      <el-date-picker
+                        v-model="profileData['appointmentEndTime']"
+                        :disabled="disableStatus(filterItem)"
+                        type="datetime"
+                        :range-separator="
+                          $t('customer.list.quickFilter.dateSeparator')
+                        "
+                        :start-placeholder="
+                          $t('customer.list.quickFilter.startDateHolderText')
+                        "
+                        :end-placeholder="
+                          $t('customer.list.quickFilter.endDateHolderText')
+                        "
+                        format="MMM DD, YYYY HH:mm"
+                        value-format="YYYY-MM-DD HH:mm"
+                        style="width: 258px"
+                        :placeholder="$t('common.dateTimeEndPlaceholder')"
+                        @change="
+                          autoSaveForm(
+                            profileFormRef,
+                            filterItem,
+                            profileData[filterItem.filterKey]
+                          )
+                        "
+                      />
+                    </div>
                     <div
                       v-else-if="
                         filterItem.filterType === 'input' &&
@@ -1244,42 +1306,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                         :value="option.value"
                       />
                     </el-select>
-                    <el-select
-                      v-else-if="
-                        filterOptions[filterItem.filterKey] &&
-                        filterItem.filterType === 'dropdown' &&
-                        filterItem.filterSourceType === 'api' &&
-                        !ddlNeedExtraList.includes(filterItem.filterKey) &&
-                        !ddlCasList.includes(filterItem.filterKey) &&
-                        filterItem.filterKey === 'hobby'
-                      "
-                      v-model="profileData['hobbyArray']"
-                      :disabled="disableStatus(filterItem)"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderSelectText')
-                      "
-                      style="width: 318px"
-                      multiple
-                      filterable
-                      allow-create
-                      @change="
-                        v =>
-                          handleDropDownChange(
-                            profileFormRef,
-                            v,
-                            filterItem,
-                            null
-                          )
-                      "
-                    >
-                      <el-option
-                        v-for="option in filterOptions[filterItem.filterKey]
-                          .list"
-                        :key="option.value"
-                        :label="option.text"
-                        :value="option.value"
-                      />
-                    </el-select>
+
                     <el-select
                       v-else-if="
                         filterOptions[filterItem.filterKey] &&
@@ -1324,6 +1351,7 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
                           : false
                       "
                       label=""
+                      :disabled="disableStatus(filterItem)"
                       @change="
                         autoSaveForm(
                           profileFormRef,
@@ -1802,19 +1830,40 @@ const handleBookingConfirmChange = async (v, updateField, PLDetail) => {
             </div>
           </el-collapse-item>
           <el-collapse-item
-            v-if="LID !== '0'"
+            v-if="CID !== '0'"
             :title="t('common.dc')"
             name="documents"
             class="custom-collapse-title"
           >
             <el-main>
-              <div class="iframe-container">
+              <div v-if="DCShow" class="iframe-container">
                 <iframe
                   :src="DCUrl"
                   frameborder="0"
                   width="100%"
                   height="600px"
                 />
+              </div>
+              <div v-else class="flex justify-center items-center h-[640px]">
+                <div class="ml-12">
+                  <p
+                    v-motion
+                    class="font-medium text-4xl mb-4 dark:text-white"
+                    :initial="{
+                      opacity: 0,
+                      y: 100
+                    }"
+                    :enter="{
+                      opacity: 1,
+                      y: 0,
+                      transition: {
+                        delay: 80
+                      }
+                    }"
+                  >
+                    {{ t("common.unauthorized") }}
+                  </p>
+                </div>
               </div>
             </el-main>
           </el-collapse-item>

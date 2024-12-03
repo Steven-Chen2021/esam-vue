@@ -44,6 +44,7 @@ export function contactProfileCTL() {
   // TODO: 补全所有栏位
   const fetchProfileData = async () => {
     try {
+      formLoading.value = true;
       const [result1, result2, result3, plList] = await Promise.all([
         CommonService.getColumnSettingList(25),
         ContactProfileService.getContactProfileResult(ProfileID.value),
@@ -54,6 +55,12 @@ export function contactProfileCTL() {
       userAuth.value = deepClone(result3.returnValue);
       DCShow.value = userAuth.value["isReadAdvanceColumn"];
       profileData.value = deepClone(result2.returnValue);
+      profileData.value["vip"] =
+        profileData.value["vip"] &&
+        (profileData.value["vip"] === "True" ||
+          profileData.value["vip"] === "true")
+          ? true
+          : false;
       if (profileData.value["boss"]) {
         profileData.value["bossArray"] = profileData.value["boss"]
           .split(/[,;]/)
@@ -86,8 +93,6 @@ export function contactProfileCTL() {
             });
         }
       }
-
-      console.log("profileData.value", profileData.value);
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
         if (column.visibilityLevel === 2) {
@@ -100,9 +105,6 @@ export function contactProfileCTL() {
           }
         }
       });
-      console.log("profileData", profileData.value);
-      console.log("profileFormData", profileFormData.value);
-      // profileDataInit.value = ref(deepClone(profileData.value));
       if (result1.returnValue && result2.returnValue) {
         fetchOptionsNeedParam(result1.returnValue, result2.returnValue);
       }
@@ -147,7 +149,7 @@ export function contactProfileCTL() {
     try {
       const param = {
         KeyValue: LeadID.value,
-        DCType: "LED"
+        DCType: "CON"
       };
       const [result1, authResult] = await Promise.all([
         CommonService.getDocumentCloudSiteResult(param),
@@ -156,11 +158,11 @@ export function contactProfileCTL() {
       userAuth.value = deepClone(authResult.returnValue);
       const pattern =
         /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(\/[^\s]*)?(\?[^\s]*)?(#[^\s]*)?$/;
-      console.log("DCUrl", result1.returnValue);
-      console.log(
-        "result1.returnValue test",
-        pattern.test(result1.returnValue)
-      );
+      // console.log("DCUrl", result1.returnValue);
+      // console.log(
+      //   "result1.returnValue test",
+      //   pattern.test(result1.returnValue)
+      // );
       if (
         result1 &&
         result1.returnValue &&
@@ -189,7 +191,7 @@ export function contactProfileCTL() {
           }
         }
         DCUrl.value = deepClone(result1.returnValue);
-        console.log("DCUrl.value", DCUrl.value);
+        // console.log("DCUrl.value", DCUrl.value);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -651,7 +653,7 @@ export function contactProfileCTL() {
           //     value: profileData.value["boss"]
           //   });
           // }
-          console.log("filterOptions.value", filterOptions.value);
+          // console.log("filterOptions.value", filterOptions.value);
         });
         if (item.filterKey === "leadSourceGroup") {
           if (profileData) {

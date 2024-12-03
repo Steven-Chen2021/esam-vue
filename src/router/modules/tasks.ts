@@ -19,7 +19,7 @@ export default {
       }
     },
     {
-      path: "/tasks/detail/:id/:lid/:qname",
+      path: "/tasks/detail/:id/:lid/:qname/:dt",
       name: "TaskDetail",
       component: () => import("@/views/tasks/detail.vue"),
       meta: {
