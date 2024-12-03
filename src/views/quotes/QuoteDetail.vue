@@ -47,11 +47,15 @@ import { usePreView } from "@/views/commons/hooks";
 import { UserAccessRightByCustomerProductLine } from "@/utils/auth";
 
 import { CommonHelper } from "@/utils/commonHelper";
+import { UrlHelper } from "@/utils/urlHelper";
 
 import { QuoteDetailColumnAccessRight } from "@/utils/apiRequestEnum";
 
 const { toPreView } = usePreView();
-const { GetColumnSettingResult, columnSettingResult } = CommonHelper();
+const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
+  CommonHelper();
+
+const { ReconstructDCURL } = UrlHelper();
 
 const {
   getCustomerByOwnerUserResult,
@@ -83,10 +87,13 @@ const {
   saveFreightChargeResult,
   saveLocalChargeResult,
   frightChargeParams,
+  getQuotePreviewResult,
   getQuoteHistoryResult,
   customerProductLineAccessRight,
   getQuoteReferenceCodeResult,
-  quoteReferenceCodeResult
+  quoteReferenceCodeResult,
+  quoteDimensionFactorResult,
+  getQuoteDimensionFactorResult
 } = QuoteDetailHooks();
 
 const {
@@ -129,6 +136,8 @@ const disabledExportLocalChargeBtn = ref(true);
 const disabledImportLocalChargeBtn = ref(true);
 const vxeTableRef = ref();
 const hideQuotationType = ref(true);
+const hideQuoteDimensionFactor = ref(true);
+const hideVolumeShareForAgent = ref(true);
 const hideOTPCode = ref(true);
 //Editor Parameters
 const mode = "default";
@@ -143,6 +152,9 @@ const quoteStatusHistory = ref([]);
 // 用於存放所有 HotTable 的 refs
 const hotTableRefs = ref({});
 const previousValue = ref<any>();
+
+const dcUrl = ref();
+
 // 方法來動態設置 HotTable 的 ref
 const setHotTableRef = city => el => {
   if (el) {
@@ -160,13 +172,13 @@ const updateHotTableData = (city, data) => {
 const value2 = ref(6);
 
 const rules = {
-  name: [
+  customerName: [
     {
       required: true,
       message: "请输入名称"
     }
   ],
-  tag: [
+  productLineCode: [
     {
       required: true,
       message: "请输入标签"
@@ -179,10 +191,6 @@ const dataPermissionExtension = () => {
     GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
       if (res && res.isSuccess) {
         const columnSettings = res.returnValue;
-        console.log(columnSettings);
-        console.log(customerProductLineAccessRight.value);
-        console.log(quotationDetailResult.value);
-
         columnSettings.forEach(element => {
           let ctl: PlusColumn | undefined; // 明確定義類型
           switch (element.filterKey) {
@@ -329,8 +337,12 @@ const quoteDetailColumns: PlusColumn[] = [
           handleProductLineChange();
           PLCode.value = "OMS";
           showCBMTransfer.value = true;
+          hideQuoteDimensionFactor.value = true;
+          hideVolumeShareForAgent.value = true;
         } else if (_pid === 2) {
           PLCode.value = "AMS";
+          hideQuoteDimensionFactor.value = false;
+          hideVolumeShareForAgent.value = false;
         }
         getQuoteTypeResult("Lead", "Type", PLCode.value);
 
@@ -338,6 +350,11 @@ const quoteDetailColumns: PlusColumn[] = [
           quotationDetailResult.value.customerHQID as number,
           _pid
         );
+
+        if (_pid === 2) {
+          console.log(quoteDimensionFactorResult);
+        }
+
         getQuoteFreightChargeResult(qid.value, _pid).then(() => {
           freightChargeSettings.value.data = freightChargeResult.value;
           let exportPromise = Promise.resolve();
@@ -383,7 +400,21 @@ const quoteDetailColumns: PlusColumn[] = [
           _pid
         ).then(res => {
           customerProductLineAccessRight.value = res.returnValue;
+          const dcParams = { KeyValue: qid.value, DCType: "NRA" };
+          DocumentCloudResult(dcParams).then(res => {
+            if (res && res.isSuccess) {
+              const result = ReconstructDCURL(
+                res.returnValue,
+                customerProductLineAccessRight.value.isWrite,
+                customerProductLineAccessRight.value.isReadAdvanceColumn,
+                "NRA"
+              );
+              dcUrl.value = result;
+            }
+          });
         });
+
+        console.log(quotationDetailResult);
       }
     }
   },
@@ -539,6 +570,64 @@ const quoteDetailColumns: PlusColumn[] = [
       },
       onChange: value => {
         autoSaveTrigger(value, "creditTermId");
+      }
+    }
+  },
+  {
+    label: "Dimension Factor",
+    prop: "dimensionFactor",
+    valueType: "radio",
+    options: quoteDimensionFactorResult,
+    hideInForm: hideQuoteDimensionFactor,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.dimensionFactor;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "dimensionFactor");
+      }
+    }
+  },
+  {
+    label: "Volume Share",
+    prop: "volumeShareForAgent",
+    valueType: "input-number",
+    hideInForm: hideVolumeShareForAgent,
+    colProps: {
+      span: 5
+    },
+    fieldProps: {
+      // style: {
+      //   width: "50%"
+      // },
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.dimensionFactor;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "dimensionFactor");
+      }
+    }
+  },
+  {
+    label: "Dimerco Share",
+    prop: "volumeShareForAgent",
+    valueType: "text",
+    hideInForm: hideVolumeShareForAgent,
+    colProps: {
+      span: 5
+    },
+    fieldProps: {
+      style: {
+        width: "50%"
+      },
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.dimensionFactor;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "dimensionFactor");
       }
     }
   }
@@ -959,6 +1048,7 @@ watchEffect(() => {
     historyLoading.value = false;
   }
 });
+
 onMounted(() => {
   if (getParameter.id != "0") {
     const id = Array.isArray(getParameter.id)
@@ -1021,9 +1111,9 @@ onMounted(() => {
   getTradeTermResult().then(itme => {
     console.debug("getTradeTermResult", tradeTermResult);
   });
-
   getShippingTermResult();
   getCBMTransferUOMRsult();
+  getQuoteDimensionFactorResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
 });
 
@@ -1032,6 +1122,7 @@ onBeforeUnmount(() => {
   if (editor == null) return;
   editor.destroy();
 });
+
 const formatDate = dateString => {
   const date = new Date(dateString);
   const months = [
@@ -1250,6 +1341,12 @@ const _formatDate = dateInput => {
                   }}
                 </div>
               </div>
+              <div
+                v-if="hideVolumeShareForAgent != true"
+                class="el-form-item__content"
+              >
+                34636
+              </div>
             </el-collapse-item>
             <el-collapse-item title="GREETINGS" name="2">
               <template #title>
@@ -1419,6 +1516,27 @@ const _formatDate = dateInput => {
               </template>
               <div class="flex flex-col ...">
                 <div v-html="quotationDetailResult.signature" />
+              </div>
+            </el-collapse-item>
+            <el-collapse-item title="DOCUMENT CLOUD" name="9">
+              <template #title>
+                <span class="text-orange-500">DOCUMENT CLOUD</span>
+              </template>
+              <div class="flex flex-col ...">
+                <div
+                  v-if="customerProductLineAccessRight.isReadAdvanceColumn"
+                  class="iframe-container"
+                >
+                  <iframe
+                    :src="dcUrl"
+                    frameborder="0"
+                    width="100%"
+                    height="600px"
+                  />
+                </div>
+                <div v-else>
+                  {{ dcUrl }}
+                </div>
               </div>
             </el-collapse-item>
           </el-collapse>

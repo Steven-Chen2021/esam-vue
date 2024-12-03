@@ -98,6 +98,7 @@ export function QuoteDetailHooks() {
   const cbmTransferUOMResult = ref([]);
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
   const chargeCodeSettingValues = ref([]);
+  const quoteDimensionFactorResult = ref([]);
   const customerProductLineAccessRight = ref<iAccessRightSetting>({
     isWrite: false,
     isReadAdvanceColumn: false
@@ -371,6 +372,22 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getQuoteDimensionFactorResult() {
+    try {
+      const response = await quoteDetailService.getQuoteDimensionFactorResult();
+      if (response != null) {
+        quoteDimensionFactorResult.value = response.returnValue.map(
+          (item: any) => ({
+            label: item.text,
+            value: item.value
+          })
+        );
+      }
+    } catch (error) {
+      console.log("saveLocalChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -405,6 +422,8 @@ export function QuoteDetailHooks() {
     getQuoteHistoryResult,
     customerProductLineAccessRight,
     getQuoteReferenceCodeResult,
-    quoteReferenceCodeResult
+    quoteReferenceCodeResult,
+    quoteDimensionFactorResult,
+    getQuoteDimensionFactorResult
   };
 }
