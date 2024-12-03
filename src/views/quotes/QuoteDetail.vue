@@ -600,9 +600,10 @@ const quoteDetailColumns: PlusColumn[] = [
       span: 5
     },
     fieldProps: {
-      // style: {
-      //   width: "50%"
-      // },
+      onInput: value => {
+        console.log("onInput", value);
+        quotationDetailResult.value.volumeShareForAgent = 100;
+      },
       onFocus: () => {
         previousValue.value = quotationDetailResult.value.dimensionFactor;
       },
@@ -620,6 +621,8 @@ const quoteDetailColumns: PlusColumn[] = [
       span: 5
     },
     fieldProps: {
+      max: 100,
+      min: 0,
       style: {
         width: "50%"
       },
@@ -1340,12 +1343,6 @@ const _formatDate = dateInput => {
                     `1: ${quotationDetailResult.cbmToWT} ${quotationDetailResult.cbmToWTUOM}`
                   }}
                 </div>
-              </div>
-              <div
-                v-if="hideVolumeShareForAgent != true"
-                class="el-form-item__content"
-              >
-                34636
               </div>
             </el-collapse-item>
             <el-collapse-item title="GREETINGS" name="2">
