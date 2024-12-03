@@ -27,19 +27,19 @@ export function useDetail() {
     });
     if (model === "params") {
       useMultiTagsStoreHook().handleTags("push", {
-        path: `/contact/detail/:id`,
-        name: "ContactDetail",
+        path: `/tasks/detail/:id/:lid/:qname/:dt`,
+        name: "TaskDetail",
         params: parameter,
         meta: {
           title: {
-            zh: `${parameter.id === "0" ? "Create Contact" : parameter.qname}`,
-            en: `${parameter.id === "0" ? "Create Contact" : parameter.qname}`
+            zh: `${parameter.id === "0" ? "Create Task" : parameter.qname + " - " + parameter.dt}`,
+            en: `${parameter.id === "0" ? "Create Task" : parameter.qname + " - " + parameter.dt}`
           }
           // 如果使用的是非国际化精简版title可以像下面这么写
           // title: `No.${index} - 详情信息`,
         }
       });
-      router.push({ name: "ContactDetail", params: parameter });
+      router.push({ name: "TaskDetail", params: parameter });
     }
   }
 

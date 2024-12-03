@@ -6,7 +6,7 @@ import { ref, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { contactProfileCTL } from "./profilectl";
 import dayjs from "dayjs";
-import { verifyMainFormat } from "@/utils/common.ts";
+import { verifyMainFormat } from "@/utils/common";
 import {
   ElNotification,
   FormInstance,
@@ -14,7 +14,6 @@ import {
   ElMessage
 } from "element-plus";
 import { useUserStoreHook } from "@/store/modules/user";
-import CustomerProfileService from "@/services/customer/CustomerProfileService";
 import ContactProfileService from "@/services/contact/ContactProfileService";
 import { useDetail } from "./hooks";
 import CommonService from "@/services/commonService";
@@ -26,17 +25,6 @@ const {
   profileFormData,
   profileData,
   rules,
-  tabsPLList,
-  PLFormData,
-  formDataMap,
-  activeTabPID,
-  fetchPLFormData,
-  handleClickPLHistory,
-  dialogPLUpdateHistoryVisible,
-  PLUpdateHistoryList,
-  PLHistoryTitle,
-  dialogReturnVisible,
-  dimOrgOptions,
   ddlNeedExtraList,
   ddlCasList,
   inputNeedExtraList,
@@ -251,7 +239,7 @@ const autoSaveForm = async (
         tableName: "smcustomercontact",
         fieldName: filterItem.filterKey,
         id: CID,
-        custID: CID,
+        custID: LID,
         oldValue: dataInit[filterItem.filterKey],
         value: v,
         oldEntity: "string",
@@ -266,15 +254,37 @@ const autoSaveForm = async (
         case "location":
         case "assistant":
         case "language":
-        case "joinedCompany":
-        case "joinedIndustry":
-        case "birthday":
         case "tel_OExt":
         case "familyMembers":
         case "address":
         case "city":
         case "zip":
         case "relationship": {
+          CommonService.autoSave(param)
+            .then(d => {
+              console.log("autosave data", d);
+              ElMessage({
+                message: t("customer.profile.autoSaveSucAlert"),
+                grouping: true,
+                type: "success"
+              });
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
+        }
+        case "birthday":
+        case "joinedCompany":
+        case "joinedIndustry": {
+          param.value = param.value
+            ? dayjs(param.value).format("YYYY/MM/DD")
+            : "";
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
@@ -592,7 +602,7 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       }
       profileData.value["hqid"] = CID;
       profileData.value["customerId"] = LID;
-      profileData.value["vip"] = profileData["vip"] ? "True" : "False";
+      profileData.value["vip"] = profileData.value["vip"] ? "True" : "False";
       profileData.value["plList"] = PLModuleList.value.map(item => {
         const status = profileData.value["plList"].some(
           i => i === item.description
@@ -612,6 +622,15 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       ) {
         profileData.value["hobby"] = profileData.value["hobbyArray"].join(", ");
       }
+      profileData.value["birthday"] = profileData.value["birthday"]
+        ? dayjs(profileData.value["birthday"]).format("YYYY/MM/DD")
+        : "";
+      profileData.value["joinedCompany"] = profileData.value["joinedCompany"]
+        ? dayjs(profileData.value["joinedCompany"]).format("YYYY/MM/DD")
+        : "";
+      profileData.value["joinedIndustry"] = profileData.value["joinedIndustry"]
+        ? dayjs(profileData.value["joinedIndustry"]).format("YYYY/MM/DD")
+        : "";
       console.log("submit! profileData:", profileData.value);
       ContactProfileService.updateContactProfile(profileData.value)
         .then(data => {
@@ -1230,10 +1249,7 @@ onMounted(() => {
                       v-else-if="filterItem.filterType === 'checkbox'"
                       v-model="profileData[filterItem.filterKey]"
                       :checked="
-                        profileData[filterItem.filterKey] === 'true' ||
-                        profileData[filterItem.filterKey] === 'True'
-                          ? true
-                          : false
+                        profileData[filterItem.filterKey] ? true : false
                       "
                       label=""
                       :disabled="disableStatus(filterItem)"

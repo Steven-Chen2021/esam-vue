@@ -145,6 +145,7 @@ export function listCTL() {
           .then(data => {
             if (data.isSuccess) {
               data.returnValue.results.forEach(a => {
+                a["appointmentStartDateInit"] = a["appointmentStartDate"];
                 if (
                   a["appointmentStartDate"] &&
                   a["appointmentStartDate"] !== ""

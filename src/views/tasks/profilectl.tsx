@@ -1,6 +1,6 @@
 import { useI18n } from "vue-i18n";
 import CommonService from "@/services/commonService";
-import ContactProfileService from "@/services/contact/ContactProfileService";
+import TaskProfileService from "@/services/tasks/TaskProfileService";
 import LeadMemberService from "@/services/customer/LeadMemberService";
 import { ElMessage } from "element-plus";
 // import Sortable from "sortablejs";
@@ -8,6 +8,7 @@ import { ElMessage } from "element-plus";
 import { ref, onMounted, reactive, watch, computed } from "vue";
 // import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
+
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;
@@ -35,7 +36,7 @@ export interface QuickFilter {
   clicked: boolean;
   filters: QuickFilterDetail[];
 }
-export function contactProfileCTL() {
+export function taskProfileCTL() {
   const { t } = useI18n();
   const userAuth = ref({});
   const profileDataInit = ref({ customerName: "" });
@@ -44,23 +45,42 @@ export function contactProfileCTL() {
   // TODO: 补全所有栏位
   const fetchProfileData = async () => {
     try {
-      const [result1, result2, result3, plList] = await Promise.all([
+      const [result1, result2, result3] = await Promise.all([
         CommonService.getColumnSettingList(35),
-        ContactProfileService.getContactProfileResult(ProfileID.value),
-        CommonService.getUserAccessByCustomer(LeadID.value, 0),
-        CommonService.getPLList()
+        TaskProfileService.getTaskProfileResult(ProfileID.value, LeadID.value),
+        CommonService.getUserAccessByCustomer(LeadID.value, 0)
       ]);
-      PLModuleList.value = deepClone(plList.returnValue);
       userAuth.value = deepClone(result3.returnValue);
+      DCShow.value = userAuth.value["isReadAdvanceColumn"];
       profileData.value = deepClone(result2.returnValue);
-      if (profileData.value["boss"]) {
-        profileData.value["bossArray"] = profileData.value["boss"]
+      profileData.value["appointmentStartDate"] =
+        profileData.value["appointmentStartTime"];
+      if (
+        profileData.value["attendees"] &&
+        profileData.value["attendees"] !== ""
+      ) {
+        filterOptions.value["attendees"] = {};
+        filterOptions.value["attendees"].list =
+          profileData.value["attendeesList"];
+        profileData.value["attendeesArray"] = profileData.value["attendees"]
           .split(/[,;]/)
           .map(item => item.trim())
           .filter(a => a !== "");
       }
-      if (profileData.value["hobby"]) {
-        profileData.value["hobbyArray"] = profileData.value["hobby"]
+      if (
+        profileData.value["notifyParty"] &&
+        profileData.value["notifyParty"] !== ""
+      ) {
+        filterOptions.value["notifyParty"] = {};
+        filterOptions.value["notifyParty"].list =
+          profileData.value["notifyPartyList"];
+        profileData.value["notifyPartyArray"] = profileData.value["notifyParty"]
+          .split(/[,;]/)
+          .map(item => item.trim())
+          .filter(a => a !== "");
+      }
+      if (profileData.value["contact"]) {
+        profileData.value["contactArray"] = profileData.value["contact"]
           .split(/[,;]/)
           .map(item => item.trim())
           .filter(a => a !== "");
@@ -70,12 +90,19 @@ export function contactProfileCTL() {
         profileFormData.value = deepClone(
           result1.returnValue.filter(c => c.showOnDetailAdd === true)
         );
-        profileData.value["plList"] = plList.returnValue
-          .filter(item => item.status === "Active")
-          .map(item => item.description);
       } else {
         profileFormData.value = deepClone(result1.returnValue);
+        if (!profileData.value["plList"]) {
+          profileData.value["plList"] = [];
+        } else {
+          profileData.value["plList"] = profileData.value["plList"]
+            .filter(a => a.isActive)
+            .map(a => {
+              return a.plCode;
+            });
+        }
       }
+
       console.log("profileData.value", profileData.value);
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
@@ -109,37 +136,83 @@ export function contactProfileCTL() {
       console.error("Error fetching data:", error);
     }
   };
-  // TODO: API
+  const updateContactProfilePLResult = async params => {
+    TaskProfileService.updateContactProfilePLResult(params)
+      .then(data => {
+        if (data && data.isSuccess) {
+          ElMessage({
+            message: t("customer.profile.autoSaveSucAlert"),
+            grouping: true,
+            type: "success"
+          });
+        } else {
+          ElMessage({
+            message: t("customer.profile.autoSaveFailAlert"),
+            grouping: true,
+            type: "warning"
+          });
+        }
+      })
+      .catch(err => {
+        console.log("updateContactProfilePLResult error", err);
+      });
+  };
+  // #region: DC
+  const DCShow = ref(true);
   const DCUrl = ref("");
   const fetchDCUrl = async () => {
     try {
       const param = {
-        KeyValue: 62326,
-        DCType: "LED"
+        KeyValue: LeadID.value,
+        DCType: "TSK"
       };
-      const [result1] = await Promise.all([
-        CommonService.getDocumentCloudSiteResult(param)
+      const [result1, authResult] = await Promise.all([
+        CommonService.getDocumentCloudSiteResult(param),
+        CommonService.getUserAccessByCustomer(LeadID.value, 0)
       ]);
+      userAuth.value = deepClone(authResult.returnValue);
       const pattern =
         /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(\/[^\s]*)?(\?[^\s]*)?(#[^\s]*)?$/;
-      console.log("result1.returnValue", result1.returnValue);
-      console.log(
-        "result1.returnValue test",
-        pattern.test(result1.returnValue)
-      );
+      // console.log("DCUrl", result1.returnValue);
+      // console.log(
+      //   "result1.returnValue test",
+      //   pattern.test(result1.returnValue)
+      // );
       if (
         result1 &&
         result1.returnValue &&
         result1.returnValue !== "" &&
         pattern.test(result1.returnValue)
       ) {
+        if (userAuth) {
+          if (userAuth.value["isWrite"]) {
+            result1.returnValue = result1.returnValue.replace(
+              "BADEL=0",
+              "BADEL=1"
+            );
+            result1.returnValue = result1.returnValue.replace(
+              "BAUPL=0",
+              "BAUPL=1"
+            );
+          } else {
+            result1.returnValue = result1.returnValue.replace(
+              "BADEL=1",
+              "BADEL=0"
+            );
+            result1.returnValue = result1.returnValue.replace(
+              "BAUPL=1",
+              "BAUPL=0"
+            );
+          }
+        }
         DCUrl.value = deepClone(result1.returnValue);
-        console.log("DCUrl.value", DCUrl.value);
+        // console.log("DCUrl.value", DCUrl.value);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
+  // #endregion
   const handleAgentROCheckChange = v => {
     console.log("handleAgentROCheckChange", profileData.value);
     if (v) {
@@ -214,7 +287,7 @@ export function contactProfileCTL() {
     }
     try {
       console.log("fetchPLFormData", `LID:${LID} PID:${PID}`);
-      const response = await ContactProfileService.getPLDetailData(LID, PID);
+      const response = await TaskProfileService.getPLDetailData(LID, PID);
       formDataMap.value[plName] = deepClone(response.returnValue);
       if (formDataMap.value[plName] && formDataMap.value[plName].id) {
         LeadMemberService.getLeadMembersResult(
@@ -253,6 +326,13 @@ export function contactProfileCTL() {
       }
     ],
     lastName: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "blur"
+      }
+    ],
+    email: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
@@ -386,7 +466,7 @@ export function contactProfileCTL() {
     console.log("handleClickPLHistory PLDetail", PLDetail);
     dialogPLUpdateHistoryVisible.value = true;
     PLHistoryTitle.value = PLDetail.plName;
-    ContactProfileService.getPLUpdateHistoryListData({
+    TaskProfileService.getPLUpdateHistoryListData({
       SourceID: PLDetail.id,
       SourceType: "LeadNew"
     })
@@ -518,6 +598,22 @@ export function contactProfileCTL() {
           Paginator: false
         };
         switch (item.filterKey) {
+          case "contact":
+            resourceType = 129;
+            subParam["CustomerID"] = LeadID.value;
+            break;
+          case "priority":
+            resourceType = 123;
+            break;
+          case "logType":
+            resourceType = 124;
+            break;
+          case "taskStatus":
+            resourceType = 125;
+            break;
+          case "subjectCategory":
+            resourceType = 126;
+            break;
           case "names":
             resourceType = 118;
             break;
@@ -1085,17 +1181,64 @@ export function contactProfileCTL() {
   };
   const inActiveContact = async () => {
     formLoading.value = true;
-    ContactProfileService.inactiveContactResult(ProfileID.value).then(data => {
+    TaskProfileService.inactiveContactResult(ProfileID.value).then(data => {
       console.log("inactiveContactResult data", data);
       fetchProfileData();
     });
   };
   const activeContact = async () => {
     formLoading.value = true;
-    ContactProfileService.activeContactResult(ProfileID.value).then(data => {
+    TaskProfileService.activeContactResult(ProfileID.value).then(data => {
       console.log("activeContactResult data", data);
       fetchProfileData();
     });
+  };
+  const remoteFilterAttendeesloading = ref(false);
+  const querySearchSeleteAsync = async (queryString: string, filterItem) => {
+    if (queryString) {
+      remoteFilterAttendeesloading.value = true;
+      let OptionsResourceType;
+      switch (filterItem.filterKey) {
+        case "attendees":
+        case "notifyParty":
+          OptionsResourceType = 127;
+          break;
+      }
+      const searchKey =
+        !queryString || queryString === "null" ? "" : queryString;
+      const params = {
+        SearchKey: searchKey,
+        OptionsResourceType: OptionsResourceType,
+        PageSize: 50,
+        PageIndex: 1,
+        Paginator: true
+      };
+      try {
+        remoteFilterAttendeesloading.value = false;
+        // 发送请求并获取响应
+        const response = await CommonService.getAutoCompleteList(params);
+
+        // 根据 queryString 过滤响应结果
+        const results = searchKey
+          ? response.filter(createFilter(searchKey))
+          : response;
+
+        // 判断 results 是否为数组
+        if (!Array.isArray(results)) {
+          // 如果不是数组，则传递空数组给 cb
+          filterOptions.value[filterItem["filterKey"]].list = [];
+        } else {
+          // 如果是数组，则传递结果给 cb
+          filterOptions.value[filterItem["filterKey"]].list = results;
+        }
+      } catch (error) {
+        // 处理请求错误
+        console.error("Error fetching data:", error);
+        filterOptions.value[filterItem["filterKey"]].list = [];
+      }
+    } else {
+      filterOptions.value[filterItem["filterKey"]].list = [];
+    }
   };
   return {
     membersFormData,
@@ -1162,7 +1305,11 @@ export function contactProfileCTL() {
     PLModuleList,
     fetchDCUrl,
     DCUrl,
+    DCShow,
     inActiveContact,
-    activeContact
+    activeContact,
+    updateContactProfilePLResult,
+    querySearchSeleteAsync,
+    remoteFilterAttendeesloading
   };
 }

@@ -1,27 +1,17 @@
 import API from "../interceptor";
 
-class ContactProfileService {
-  async getContactProfileResult(ContactID) {
+class TaskProfileService {
+  async getTaskProfileResult(TaskID, CustomerHQID) {
     try {
-      const url = `/api/Contact/ContactProfileResult?ContactID=${ContactID}`;
+      const url = `/api/Task/TaskDetailResult?TaskID=${TaskID}&CustomerHQID=${CustomerHQID}`;
       const response = await API.get(url);
+      console.log("TaskDetailResult response", response);
       return response;
     } catch (error) {
       console.error(error);
       return [];
     }
   }
-  // async getUserAuthByCustomerResult(LID) {
-  //   try {
-  //     const url = `/api/Utility/GetUserAuthByCustomerResult?CustID=${LID}`;
-  //     const response = await API.get(url);
-  //     console.log("GetUserAuthByCustomerResult response", response);
-  //     return response;
-  //   } catch (error) {
-  //     console.error(error);
-  //     return [];
-  //   }
-  // }
   async inactiveContactResult(contactID) {
     try {
       const response = await API.post(
@@ -66,4 +56,4 @@ class ContactProfileService {
   }
 }
 
-export default new ContactProfileService();
+export default new TaskProfileService();

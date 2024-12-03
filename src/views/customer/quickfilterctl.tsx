@@ -239,6 +239,7 @@ export function quickFilterCTL() {
       case "boss":
         OptionsResourceType = 121;
         break;
+      case "contact":
       case "taskOwner":
       case "groupRepName":
       case "notifyParty":
