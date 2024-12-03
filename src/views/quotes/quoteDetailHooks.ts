@@ -8,7 +8,10 @@ export function QuoteDetailHooks() {
     text: string;
     value: number;
   }
-
+  interface selectCtl {
+    label: string;
+    value: number;
+  }
   interface iChargeCodeSetting {
     headerName: string;
     columnName: string;
@@ -85,7 +88,7 @@ export function QuoteDetailHooks() {
     error: null as string | null
   });
   const freightChargeResult = ref([]);
-  const productLineResult = ref([]);
+  const productLineResult = ref<selectCtl[]>([]);
   const shippingTermResult = ref([]);
   const quoteTypeResult = ref([]);
   const attentionToResult = ref([]);

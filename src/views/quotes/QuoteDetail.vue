@@ -157,6 +157,8 @@ const updateHotTableData = (city, data) => {
   }
 };
 
+const value2 = ref(6);
+
 const rules = {
   name: [
     {
@@ -263,7 +265,7 @@ const dataPermissionExtension = () => {
     });
   }
 };
-const quoteDetailColumns = reactive<PlusColumn[]>([
+const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
     width: 120,
@@ -281,7 +283,6 @@ const quoteDetailColumns = reactive<PlusColumn[]>([
         previousValue.value = quotationDetailResult.value.customerHQID;
       },
       onSelect: (item: { text: string; value: number }) => {
-        //get access
         quotationDetailResult.value.customerHQID = item.value;
         getProductLineByCustomerResult(item.value);
         getAttentionToResult(item.value);
@@ -301,6 +302,7 @@ const quoteDetailColumns = reactive<PlusColumn[]>([
     fieldProps: {
       onFocus: () => {
         previousValue.value = quotationDetailResult.value.productLineCode;
+        console.log(productLineResult);
       },
       onChange: (value: number) => {
         if (qid.value < 1) {
@@ -540,7 +542,7 @@ const quoteDetailColumns = reactive<PlusColumn[]>([
       }
     }
   }
-]);
+];
 
 const handleLocalChargeResult = (
   localChargeResult,
@@ -1436,10 +1438,32 @@ const _formatDate = dateInput => {
             :value="item.columnName"
             class="flex items-center"
           >
-            {{ item.headerName }}
+            <template #default>
+              <div>
+                <input v-model="item.headerName" placeholder="Type here" />
+              </div>
+            </template>
+            <!-- {{ item.headerName }} -->
           </el-checkbox>
         </div>
       </el-checkbox-group>
+      <ElDivider />
+      <div class="slider-demo-block">
+        <span class="demonstration">Add Weight Break</span>
+      </div>
+      <el-timeline style="max-width: 600px">
+        <el-timeline-item
+          v-for="(item, index) in value2"
+          :key="index"
+          placement="top"
+          center
+        >
+          <el-input-number controls-position="right" size="small" />
+          <br />
+          <el-checkbox label="Selling Rate" value="Value 1" />
+          <el-checkbox label="Cost" value="Value 1" />
+        </el-timeline-item>
+      </el-timeline>
     </el-drawer>
     <el-drawer v-model="historyVisible" size="60%" title="History">
       <VxeTableBar

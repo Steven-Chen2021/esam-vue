@@ -34,7 +34,6 @@ export function listCTL() {
     QuoteSearchService.getQuoteList(searchParams)
       .then(data => {
         tableData.value = data.returnValue.results;
-        console.log(data);
         if (data) total.value = data.returnValue.totalRecord;
         loading.value = false;
       })
@@ -89,9 +88,9 @@ export function listCTL() {
     rowIndex: number;
   }) => {
     if (row && rowIndex === 1) {
-      console.log("warning-row sample", row);
+      console.debug("warning-row sample", row);
     } else if (rowIndex === 3) {
-      console.log("success-row sample", row);
+      console.debug("success-row sample", row);
     }
     return "";
   };
@@ -106,7 +105,6 @@ export function listCTL() {
 
   const copyQuote = async params => {
     loading.value = true;
-    console.log(params);
     try {
       const response = QuoteSearchService.copyQuotation(params);
       return response;
