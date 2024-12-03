@@ -34,5 +34,18 @@ export function CommonHelper() {
       console.error("autoSaveHelper Error:", error);
     }
   }
-  return { GetColumnSettingResult, columnSettingResult };
+
+  async function DocumentCloudResult(param) {
+    try {
+      const result = commonService.getDocumentCloudSiteResult(param);
+      return result;
+    } catch (error) {
+      console.error("GetDocumentCloudResult Error:", error);
+    }
+  }
+  return {
+    GetColumnSettingResult,
+    columnSettingResult,
+    DocumentCloudResult
+  };
 }
