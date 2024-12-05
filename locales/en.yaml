@@ -267,6 +267,8 @@ task:
     description: Description
     actionItem: Action Item
     company: Company
+  profile:
+    maintain: Task Maintain
 contact:
   tabTitle: Contact Search
   cancel: Cancel
