@@ -147,6 +147,15 @@ export function LocalChargeHooks() {
     }
   }
 
+  async function saveLocalChargeResult(params) {
+    try {
+      const response = await quoteDetailService.saveLocalCharge(params);
+      return response;
+    } catch (error) {
+      console.log("saveLocalChargeResult", error);
+    }
+  }
+
   return {
     exportLocationResult,
     importLocationResult,
@@ -154,6 +163,7 @@ export function LocalChargeHooks() {
     localChargeResult,
     handleSaveLocalCharge,
     getLocalChargePackageResult,
-    getLocalChargePackageDetailResult
+    getLocalChargePackageDetailResult,
+    saveLocalChargeResult
   };
 }

@@ -85,7 +85,6 @@ const {
   saveQuoteDetailResult,
   getLocalCharge,
   saveFreightChargeResult,
-  saveLocalChargeResult,
   frightChargeParams,
   getQuotePreviewResult,
   getQuoteHistoryResult,
@@ -102,7 +101,8 @@ const {
   getLocalChargeResult,
   localChargeResult,
   getLocalChargePackageResult,
-  getLocalChargePackageDetailResult
+  getLocalChargePackageDetailResult,
+  saveLocalChargeResult
 } = LocalChargeHooks();
 
 const { AutoSaveItem, AutoSave } = AutoSaveHelper();
@@ -187,11 +187,13 @@ const rules = {
 };
 
 const dataPermissionExtension = () => {
+  console.log(customerProductLineAccessRight.value);
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
     GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
       if (res && res.isSuccess) {
         const columnSettings = res.returnValue;
         columnSettings.forEach(element => {
+          console.log(element);
           let ctl: PlusColumn | undefined; // 明確定義類型
           switch (element.filterKey) {
             case "sType":
@@ -217,7 +219,7 @@ const dataPermissionExtension = () => {
               break;
             case "effectiveDate":
               ctl = quoteDetailColumns.find(f => f.prop === "period");
-              quotationDetailResult.value.period = _formatDate(
+              quotationDetailResult.value.period = formatDate(
                 quotationDetailResult.value.period
               );
               break;
@@ -261,7 +263,10 @@ const dataPermissionExtension = () => {
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
               break;
           }
-          if (ctl && customerProductLineAccessRight.value.isWrite === false) {
+          if (
+            ctl != undefined &&
+            customerProductLineAccessRight.value.isWrite === false
+          ) {
             ctl.valueType = "text"; // 確保 ctl 存在後操作
           }
           if (customerProductLineAccessRight.value.isWrite === false) {
@@ -276,9 +281,11 @@ const dataPermissionExtension = () => {
 const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
-    width: 120,
     prop: "customerName",
     valueType: "autocomplete",
+    colProps: {
+      span: 12
+    },
     fieldProps: {
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
@@ -299,8 +306,39 @@ const quoteDetailColumns: PlusColumn[] = [
     }
   },
   {
+    label: "Effective - Expired",
+    prop: "period",
+    valueType: "date-picker",
+    colProps: {
+      span: 12
+    },
+    fieldProps: {
+      type: "daterange",
+      startPlaceholder: "Effective",
+      endPlaceholder: "Expired",
+      format: "YYYY-MMM-DD",
+      onFocus: () => {
+        const period = quotationDetailResult.value.period || [];
+        if (Array.isArray(period) && period.length === 2) {
+          const [effective, expired] = period;
+          previousValue.value = `effective: ${effective || ""}, expired: ${expired || ""}`;
+        } else {
+          previousValue.value = ""; // 預設為空字串
+        }
+      },
+      onChange: (value: [string, string]) => {
+        if (Array.isArray(value) && value.length === 2) {
+          const [effective, expired] = value;
+          const formattedString = `effective: ${effective}, expired: ${expired}`;
+          autoSaveTrigger(formattedString, "period");
+        } else {
+          console.error("Invalid value format:", value);
+        }
+      }
+    }
+  },
+  {
     label: "Product Line",
-    width: 360,
     prop: "productLineCode",
     valueType: "select",
     options: productLineResult,
@@ -310,7 +348,6 @@ const quoteDetailColumns: PlusColumn[] = [
     fieldProps: {
       onFocus: () => {
         previousValue.value = quotationDetailResult.value.productLineCode;
-        console.log(productLineResult);
       },
       onChange: (value: number) => {
         if (qid.value < 1) {
@@ -331,9 +368,8 @@ const quoteDetailColumns: PlusColumn[] = [
         const _pid = value ?? (quotationDetailResult.value.pid as number);
         const PLCode = ref();
         showCBMTransfer.value = false;
+        getChargeCodeSettingResult(qid.value, _pid);
         if (_pid === 6) {
-          //Ocean Freight Charge
-          getChargeCodeSettingResult(qid.value, _pid);
           handleProductLineChange();
           PLCode.value = "OMS";
           showCBMTransfer.value = true;
@@ -395,6 +431,8 @@ const quoteDetailColumns: PlusColumn[] = [
         });
         autoSaveTrigger(value, "pid");
 
+        if (getParameter.id === "0") {
+        }
         UserAccessRightByCustomerProductLine(
           quotationDetailResult.value.customerHQID,
           _pid
@@ -413,105 +451,6 @@ const quoteDetailColumns: PlusColumn[] = [
             }
           });
         });
-
-        console.log(quotationDetailResult);
-      }
-    }
-  },
-  {
-    label: "Effective - Expired",
-    prop: "period",
-    valueType: "date-picker",
-    fieldProps: {
-      type: "daterange",
-      startPlaceholder: "Effective",
-      endPlaceholder: "Expired",
-      format: "YYYY-MMM-DD",
-      onFocus: () => {
-        const period = quotationDetailResult.value.period || [];
-        if (Array.isArray(period) && period.length === 2) {
-          const [effective, expired] = period;
-          previousValue.value = `effective: ${effective || ""}, expired: ${expired || ""}`;
-        } else {
-          previousValue.value = ""; // 預設為空字串
-        }
-      },
-      onChange: (value: [string, string]) => {
-        if (Array.isArray(value) && value.length === 2) {
-          const [effective, expired] = value;
-          const formattedString = `effective: ${effective}, expired: ${expired}`;
-          autoSaveTrigger(formattedString, "period");
-        } else {
-          console.error("Invalid value format:", value);
-        }
-      }
-    },
-    colProps: {
-      span: 16
-    }
-  },
-  {
-    label: "Shipping Term",
-    width: 120,
-    prop: "shippingTerm",
-    valueType: "select",
-    options: shippingTermResult,
-    colProps: {
-      span: 8
-    },
-    fieldProps: {
-      onFocus: () => {
-        previousValue.value = quotationDetailResult.value.shippingTerm;
-      },
-      onChange: value => {
-        autoSaveTrigger(value, "shippingTerm");
-      }
-    }
-  },
-  {
-    label: "Type",
-    prop: "typeCode",
-    valueType: "radio",
-    options: quoteTypeResult,
-    hideInForm: hideQuotationType,
-    colProps: {
-      span: 8
-    },
-    fieldProps: {
-      onFocus: () => {
-        previousValue.value = quotationDetailResult.value.typeCode;
-      },
-      onChange: value => {
-        const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
-        hideOTPCode.value = showHideCodes.includes(value) ? false : true;
-        autoSaveTrigger(value, "typeCode");
-      }
-    }
-  },
-  {
-    label: "One Time Only Code",
-    prop: "onePWD",
-    valueType: "text", // 僅顯示文字
-    hideInForm: hideOTPCode,
-    colProps: {
-      span: 8
-    }
-  },
-  {
-    label: "Attention To",
-    width: 360,
-    prop: "attentionTo",
-    valueType: "select",
-    options: attentionToResult,
-    colProps: {
-      span: 8
-    },
-    fieldProps: {
-      onFocus: () => {
-        previousValue.value = quotationDetailResult.value.attentionTo;
-      },
-      onChange: value => {
-        autoSaveTrigger(value, "attentionTo");
       }
     }
   },
@@ -537,6 +476,43 @@ const quoteDetailColumns: PlusColumn[] = [
       }
     }
   },
+  {
+    label: "Shipping Term",
+    width: 120,
+    prop: "shippingTerm",
+    valueType: "select",
+    options: shippingTermResult,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.shippingTerm;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "shippingTerm");
+      }
+    }
+  },
+  {
+    label: "Attention To",
+    width: 360,
+    prop: "attentionTo",
+    valueType: "select",
+    options: attentionToResult,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.attentionTo;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "attentionTo");
+      }
+    }
+  },
+
   {
     label: "Credit Term",
     width: 120,
@@ -580,7 +556,7 @@ const quoteDetailColumns: PlusColumn[] = [
     options: quoteDimensionFactorResult,
     hideInForm: hideQuoteDimensionFactor,
     colProps: {
-      span: 8
+      span: 5
     },
     fieldProps: {
       onFocus: () => {
@@ -589,6 +565,35 @@ const quoteDetailColumns: PlusColumn[] = [
       onChange: value => {
         autoSaveTrigger(value, "dimensionFactor");
       }
+    }
+  },
+  {
+    label: "Type",
+    prop: "typeCode",
+    valueType: "radio",
+    options: quoteTypeResult,
+    hideInForm: hideQuotationType,
+    colProps: {
+      span: 8
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.typeCode;
+      },
+      onChange: value => {
+        const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
+        hideOTPCode.value = showHideCodes.includes(value) ? false : true;
+        autoSaveTrigger(value, "typeCode");
+      }
+    }
+  },
+  {
+    label: "One Time Only Code",
+    prop: "onePWD",
+    valueType: "text", // 僅顯示文字
+    hideInForm: hideOTPCode,
+    colProps: {
+      span: 8
     }
   },
   {
@@ -597,34 +602,41 @@ const quoteDetailColumns: PlusColumn[] = [
     valueType: "input-number",
     hideInForm: hideVolumeShareForAgent,
     colProps: {
-      span: 5
+      span: 4
     },
+    min: 0,
     fieldProps: {
-      // style: {
-      //   width: "50%"
-      // },
+      onInput: value => {
+        quotationDetailResult.value.volumeShareForDimerco = 100 - value;
+      },
       onFocus: () => {
-        previousValue.value = quotationDetailResult.value.dimensionFactor;
+        previousValue.value = quotationDetailResult.value.volumeShareForAgent;
       },
       onChange: value => {
+        if (value > 100) quotationDetailResult.value.volumeShareForAgent = 100;
+        if (value < 0) quotationDetailResult.value.volumeShareForAgent = 0;
+        quotationDetailResult.value.volumeShareForDimerco =
+          100 - (quotationDetailResult.value.volumeShareForAgent as number);
         autoSaveTrigger(value, "dimensionFactor");
       }
     }
   },
   {
     label: "Dimerco Share",
-    prop: "volumeShareForAgent",
+    prop: "volumeShareForDimerco",
     valueType: "text",
     hideInForm: hideVolumeShareForAgent,
     colProps: {
-      span: 5
+      span: 4
     },
     fieldProps: {
+      max: 100,
+      min: 0,
       style: {
         width: "50%"
       },
       onFocus: () => {
-        previousValue.value = quotationDetailResult.value.dimensionFactor;
+        previousValue.value = quotationDetailResult.value.volumeShareForDimerco;
       },
       onChange: value => {
         autoSaveTrigger(value, "dimensionFactor");
@@ -657,7 +669,7 @@ const handleLocalChargeResult = (
             width: "100%",
             height: "auto",
             colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-            columns: localCharge.columns.map(column => ({
+            columns: localCharge?.columns?.map(column => ({
               data: column.data,
               type: column.type,
               source: column.source || []
@@ -715,7 +727,7 @@ const handleAfterChange = (changes, source) => {
                       width: "100%",
                       height: "auto",
                       colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge.columns.map(column => ({
+                      columns: localCharge?.columns?.map(column => ({
                         data: column.data,
                         type: column.type,
                         source: column.source || []
@@ -808,6 +820,20 @@ const handleAfterChange = (changes, source) => {
 const handleLocalChargeChange = (changes, source) => {
   if (source === "edit") {
     console.log(changes, source);
+    const exportLocalChargeParam = {
+      quoteID: frightChargeParams.value.quoteID,
+      pid: quotationDetailResult.value.pid,
+      isExport: true,
+      detail: exportLocationResult.value
+    };
+    const importLocalChargeParam = {
+      quoteID: frightChargeParams.value.quoteID,
+      pid: quotationDetailResult.value.pid,
+      isExport: false,
+      detail: importLocationResult.value
+    };
+    saveLocalChargeResult(exportLocalChargeParam);
+    saveLocalChargeResult(importLocalChargeParam);
   }
 };
 
@@ -1104,7 +1130,13 @@ onMounted(() => {
           );
         }
       });
-      dataPermissionExtension();
+      UserAccessRightByCustomerProductLine(
+        quotationDetailResult.value.customerHQID,
+        _pid
+      ).then(res => {
+        customerProductLineAccessRight.value = res.returnValue;
+        dataPermissionExtension();
+      });
     });
   }
   getCustomerByOwnerUserResult();
@@ -1123,32 +1155,7 @@ onBeforeUnmount(() => {
   editor.destroy();
 });
 
-const formatDate = dateString => {
-  const date = new Date(dateString);
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-  ];
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const seconds = date.getSeconds().toString().padStart(2, "0");
-  return `${month} ${day}, ${year}`;
-};
-
-const _formatDate = dateInput => {
+const formatDate = dateInput => {
   const months = [
     "Jan",
     "Feb",
@@ -1340,12 +1347,6 @@ const _formatDate = dateInput => {
                     `1: ${quotationDetailResult.cbmToWT} ${quotationDetailResult.cbmToWTUOM}`
                   }}
                 </div>
-              </div>
-              <div
-                v-if="hideVolumeShareForAgent != true"
-                class="el-form-item__content"
-              >
-                34636
               </div>
             </el-collapse-item>
             <el-collapse-item title="GREETINGS" name="2">
@@ -1543,8 +1544,9 @@ const _formatDate = dateInput => {
         </div>
       </el-scrollbar>
     </el-card>
-    <el-drawer v-model="freightVisible" title="Add new columns">
+    <el-drawer v-model="freightVisible" size="35%" title="Add new columns">
       <el-checkbox-group
+        v-if="quotationDetailResult.pid === 6"
         v-model="chargeCodeSettingValues"
         @change="handleCheckboxGroupChange"
       >
@@ -1561,11 +1563,44 @@ const _formatDate = dateInput => {
                 <input v-model="item.headerName" placeholder="Type here" />
               </div>
             </template>
-            <!-- {{ item.headerName }} -->
           </el-checkbox>
         </div>
       </el-checkbox-group>
-      <ElDivider />
+      <div v-else class="grid grid-cols-2 gap-4">
+        <el-checkbox
+          v-for="item in ChargeCodeSettingResult"
+          :key="item.columnName"
+          v-model="item.selected"
+          :value="item.columnName"
+          :label="item.headerName"
+        >
+          <template #default>
+            <el-input
+              v-if="item.ctlType === 'input'"
+              v-model="item.headerName"
+              style="width: 140px"
+              placeholder="Please input"
+              @change="amsCostAdjust"
+            />
+            <span v-else>{{ item.headerName }}</span>
+          </template>
+        </el-checkbox>
+        <!-- <el-checkbox
+          v-for="item in ChargeCodeSettingResult"
+          :key="item.columnName"
+          :label="item.headerName"
+          :value="item.columnName"
+          class="flex items-center"
+        >
+          <template #default>
+            <div>
+              <input v-model="item.headerName" placeholder="Type here" />
+            </div>
+          </template>
+        </el-checkbox> -->
+      </div>
+
+      <!-- <ElDivider />
       <div class="slider-demo-block">
         <span class="demonstration">Add Weight Break</span>
       </div>
@@ -1581,7 +1616,7 @@ const _formatDate = dateInput => {
           <el-checkbox label="Selling Rate" value="Value 1" />
           <el-checkbox label="Cost" value="Value 1" />
         </el-timeline-item>
-      </el-timeline>
+      </el-timeline> -->
     </el-drawer>
     <el-drawer v-model="historyVisible" size="60%" title="History">
       <VxeTableBar

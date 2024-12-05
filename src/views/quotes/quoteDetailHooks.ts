@@ -17,6 +17,8 @@ export function QuoteDetailHooks() {
     columnName: string;
     selected: boolean;
     columnWidth: number;
+    ctlType: string;
+    isReadOnly: boolean;
     hotTableColumnSetting: iHotTableColumnSetting;
   }
 
@@ -330,21 +332,12 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function saveLocalChargeResult(params) {
-    try {
-      const response = await quoteDetailService.saveLocalCharge(params);
-      return response;
-    } catch (error) {
-      console.log("saveLocalChargeResult", error);
-    }
-  }
-
   async function getQuotePreviewResult(qid, pid) {
     try {
       const response = await quoteDetailService.getQuotePreviewResult(qid, pid);
       return response;
     } catch (error) {
-      console.log("saveLocalChargeResult", error);
+      console.log("getQuotePreviewResult", error);
     }
   }
 
@@ -353,7 +346,7 @@ export function QuoteDetailHooks() {
       const response = await quoteDetailService.getQuoteHistoryResult(qid);
       return response;
     } catch (error) {
-      console.log("saveLocalChargeResult", error);
+      console.log("getQuoteHistoryResult", error);
     }
   }
 
@@ -368,7 +361,7 @@ export function QuoteDetailHooks() {
         }));
       }
     } catch (error) {
-      console.log("saveLocalChargeResult", error);
+      console.log("getQuoteReferenceCodeResult", error);
     }
   }
 
@@ -384,7 +377,7 @@ export function QuoteDetailHooks() {
         );
       }
     } catch (error) {
-      console.log("saveLocalChargeResult", error);
+      console.log("getQuoteDimensionFactorResult", error);
     }
   }
 
@@ -416,7 +409,6 @@ export function QuoteDetailHooks() {
     saveQuoteDetailResult,
     getLocalCharge,
     saveFreightChargeResult,
-    saveLocalChargeResult,
     frightChargeParams,
     getQuotePreviewResult,
     getQuoteHistoryResult,
