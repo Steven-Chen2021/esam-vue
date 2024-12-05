@@ -896,6 +896,7 @@ watch(
                   filterItem.filterSourceType === 'api'
                 "
                 v-model="filterItem.value"
+                value-key="text"
                 :fetch-suggestions="
                   (queryString, cb) =>
                     querySearchAsync(queryString, cb, filterItem)

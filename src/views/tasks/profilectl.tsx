@@ -66,6 +66,9 @@ export function taskProfileCTL() {
           .split(/[,;]/)
           .map(item => item.trim())
           .filter(a => a !== "");
+      } else {
+        filterOptions.value["attendees"] = {};
+        filterOptions.value["attendees"].list = [];
       }
       if (
         profileData.value["notifyParty"] &&
@@ -78,6 +81,9 @@ export function taskProfileCTL() {
           .split(/[,;]/)
           .map(item => item.trim())
           .filter(a => a !== "");
+      } else {
+        filterOptions.value["notifyParty"] = {};
+        filterOptions.value["notifyParty"].list = [];
       }
       if (profileData.value["contact"]) {
         profileData.value["contactArray"] = profileData.value["contact"]
@@ -85,7 +91,53 @@ export function taskProfileCTL() {
           .map(item => item.trim())
           .filter(a => a !== "");
       }
-
+      profileData.value["taskOwner"] = profileData.value["taskOwnerId"];
+      // if (
+      //   profileData.value["taskOwnerId"] &&
+      //   profileData.value["taskOwnerId"] !== ""
+      // ) {
+      //   const subParam = {
+      //     OptionsResourceType: 127,
+      //     SelectValue: profileData.value["taskOwner"],
+      //     Paginator: false
+      //   };
+      //   CommonService.getAutoCompleteList(subParam).then(data => {
+      //     filterOptions.value["taskOwner"] = {};
+      //     filterOptions.value["taskOwner"].list = data;
+      //     filterOptions.value["taskOwner"].loading = false;
+      //   });
+      //   // console.log("123123123");
+      //   // filterOptions.value["taskOwner"] = {};
+      //   // filterOptions.value["taskOwner"].list = [];
+      //   // filterOptions.value["taskOwner"].list.push({
+      //   //   text: profileData.value["taskOwner"],
+      //   //   value: profileData.value["taskOwnerId"]
+      //   // });
+      //   // filterOptions.value["taskOwner"].loading = false;
+      //   // console.log("taskOwner", filterOptions.value["taskOwner"]);
+      // } else {
+      //   filterOptions.value["taskOwner"] = {};
+      //   filterOptions.value["taskOwner"].list = [];
+      // }
+      // profileData.value["ownerBranch"] = profileData.value["taskOwnerBranch"];
+      // if (
+      //   profileData.value["ownerBranch"] &&
+      //   profileData.value["ownerBranch"] !== ""
+      // ) {
+      //   const subParam = {
+      //     OptionsResourceType: 117,
+      //     SelectValue: profileData.value["ownerBranch"],
+      //     Paginator: false
+      //   };
+      //   CommonService.getAutoCompleteList(subParam).then(data => {
+      //     filterOptions.value["ownerBranch"] = {};
+      //     filterOptions.value["ownerBranch"].list = data;
+      //     filterOptions.value["ownerBranch"].loading = false;
+      //   });
+      // } else {
+      //   filterOptions.value["ownerBranch"] = {};
+      //   filterOptions.value["ownerBranch"].list = [];
+      // }
       if (ProfileID.value === "0") {
         profileFormData.value = deepClone(
           result1.returnValue.filter(c => c.showOnDetailAdd === true)
@@ -459,6 +511,7 @@ export function taskProfileCTL() {
       }
     }
   };
+  const remoteSelectList = ["taskOwner", "ownerBranch", "groupRepName"];
   const ddlNeedExtraList = ["city"]; //City dropdownList with extra input textbox
   const ddlCasList = ["industryGroup", "leadSourceGroup"]; //cascading dropdown
   const inputNeedExtraList = ["phone"]; //Need extra input textbox
@@ -588,6 +641,7 @@ export function taskProfileCTL() {
             a.filterSourceType === "api" &&
             a.filterSource)
       );
+      console.log("fetchOptionsNeedParam selectFilterList", selectFilterList);
       selectFilterList.forEach(async item => {
         let resourceType = 0;
         const subParam = {
@@ -614,8 +668,18 @@ export function taskProfileCTL() {
           case "subjectCategory":
             resourceType = 126;
             break;
-          case "names":
-            resourceType = 118;
+          case "attendees":
+          case "notifyParty":
+          case "ownerBranch":
+            return;
+          case "taskOwner":
+            resourceType = 127;
+            subParam["SelectValue"] = profileData.value["taskOwnerId"];
+            break;
+          case "groupRepName":
+            resourceType = 127;
+            subParam["SelectValue"] = profileData.value["groupRepName"];
+            console.log("options groupRepName", subParam);
             break;
           case "boss":
             resourceType = 119;
@@ -675,17 +739,6 @@ export function taskProfileCTL() {
           filterOptions.value[item.filterKey] = {};
           filterOptions.value[item.filterKey].list = data;
           filterOptions.value[item.filterKey].loading = false;
-          // if (
-          //   (!data ||
-          //     !data.find(a => a["text"] === profileData.value["boss"])) &&
-          //   item.filterKey === "boss"
-          // ) {
-          //   filterOptions.value[item.filterKey].list.push({
-          //     text: profileData.value["boss"],
-          //     value: profileData.value["boss"]
-          //   });
-          // }
-          console.log("filterOptions.value", filterOptions.value);
         });
         if (item.filterKey === "leadSourceGroup") {
           if (profileData) {
@@ -1194,13 +1247,20 @@ export function taskProfileCTL() {
     });
   };
   const remoteFilterAttendeesloading = ref(false);
+  const createSelectFilter = (queryString: string) => {
+    return (item: AutoCompleteItem) => {
+      return item.text.toLowerCase().indexOf(queryString.toLowerCase()) >= 0;
+    };
+  };
   const querySearchSeleteAsync = async (queryString: string, filterItem) => {
     if (queryString) {
       remoteFilterAttendeesloading.value = true;
       let OptionsResourceType;
       switch (filterItem.filterKey) {
+        case "taskOwner":
         case "attendees":
         case "notifyParty":
+        case "groupRepName":
           OptionsResourceType = 127;
           break;
       }
@@ -1220,9 +1280,9 @@ export function taskProfileCTL() {
 
         // 根据 queryString 过滤响应结果
         const results = searchKey
-          ? response.filter(createFilter(searchKey))
+          ? response.filter(createSelectFilter(searchKey))
           : response;
-
+        console.log("querySearchSeleteAsync results", results);
         // 判断 results 是否为数组
         if (!Array.isArray(results)) {
           // 如果不是数组，则传递空数组给 cb
@@ -1310,6 +1370,7 @@ export function taskProfileCTL() {
     activeContact,
     updateContactProfilePLResult,
     querySearchSeleteAsync,
-    remoteFilterAttendeesloading
+    remoteFilterAttendeesloading,
+    remoteSelectList
   };
 }

@@ -5,7 +5,6 @@ class TaskProfileService {
     try {
       const url = `/api/Task/TaskDetailResult?TaskID=${TaskID}&CustomerHQID=${CustomerHQID}`;
       const response = await API.get(url);
-      console.log("TaskDetailResult response", response);
       return response;
     } catch (error) {
       console.error(error);

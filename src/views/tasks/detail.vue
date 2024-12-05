@@ -50,7 +50,8 @@ const {
   activeContact,
   updateContactProfilePLResult,
   querySearchSeleteAsync,
-  remoteFilterAttendeesloading
+  remoteFilterAttendeesloading,
+  remoteSelectList
 } = taskProfileCTL();
 defineOptions({
   name: "TaskDetail"
@@ -89,113 +90,6 @@ const handleDropDownChange = async (
 ) => {
   console.log("handleDropDownChange value", v);
   console.log("handleDropDownChange filterItem", filterItem);
-  const data = profileData.value;
-  const dataInit = profileDataInit.value;
-  switch (filterItem.filterKey) {
-    case "country": {
-      const response =
-        // TODO: 跨域问题
-        await CommonService.getAutoCompleteList({
-          OptionsResourceType: 15,
-          ParentParams: [v],
-          Paginator: false
-        });
-      filterOptions.value["state"] = {};
-      filterOptions.value["state"].list = response;
-      filterOptions.value["city"].list = [];
-      profileData.value["city"] = "";
-      profileData.value["state"] = "";
-      break;
-    }
-    case "state": {
-      const response =
-        // TODO: 跨域问题
-        await CommonService.getAutoCompleteList({
-          OptionsResourceType: 16,
-          ParentParams: profileData.value["country"] + "," + v,
-          Paginator: false
-        });
-      console.log("dropdown change api para", {
-        OptionsResourceType: 16,
-        ParentParams: profileData.value["country"] + "," + v,
-        Paginator: false
-      });
-      filterOptions.value["city"] = {};
-      filterOptions.value["city"].list = response;
-      profileData.value["city"] = "";
-
-      if (data["country"] !== dataInit["country"]) {
-        autoSaveForm(formEl, { filterKey: "country" }, data["country"]);
-      }
-      if (data["cityText"] !== dataInit["cityText"]) {
-        autoSaveForm(formEl, { filterKey: "cityText" }, data["cityText"]);
-      }
-      break;
-    }
-    case "city": {
-      if (data["state"] !== dataInit["state"]) {
-        autoSaveForm(formEl, { filterKey: "state" }, data["state"]);
-      }
-      if (data["country"] !== dataInit["country"]) {
-        autoSaveForm(formEl, { filterKey: "country" }, data["country"]);
-      }
-      break;
-    }
-    case "leadSourceGroupID": {
-      const subParam = {
-        OptionsResourceType: 100,
-        ParentParams: v,
-        Paginator: false
-      };
-      CommonService.getAutoCompleteList(subParam).then(data => {
-        filterOptions.value["leadSource"] = {};
-        filterOptions.value["leadSource"].list = data;
-        filterOptions.value["leadSourceDetail"].list = [];
-        profileData.value["leadSourceDetail"] = "";
-        profileData.value["leadSourceID"] = "";
-        if (subValue) {
-          profileData.value["leadSourceID"] = subValue;
-        }
-      });
-      break;
-    }
-    case "leadSourceID": {
-      const response =
-        // TODO: 跨域问题
-        await CommonService.getAutoCompleteList({
-          OptionsResourceType: 101,
-          ParentParams: [v],
-          Paginator: false
-        });
-      filterOptions.value["leadSourceDetail"] = {};
-      filterOptions.value["leadSourceDetail"].list = response;
-      profileData.value["leadSourceDetail"] = "";
-      break;
-    }
-    case "leadSourceDetail": {
-      if (data["leadSourceID"] !== dataInit["leadSourceID"]) {
-        autoSaveForm(
-          formEl,
-          { filterKey: "leadSourceID" },
-          data["leadSourceID"]
-        );
-      }
-      break;
-    }
-    case "industryGroupID": {
-      const response =
-        // TODO: 跨域问题
-        await CommonService.getAutoCompleteList({
-          OptionsResourceType: 102,
-          ParentParams: v,
-          Paginator: false
-        });
-      filterOptions.value["industry"] = {};
-      filterOptions.value["industry"].list = response;
-      profileData.value["industryID"] = "";
-      break;
-    }
-  }
   autoSaveForm(formEl, filterItem, v);
 };
 //formEl: FormInstance | undefined,
@@ -221,7 +115,7 @@ const autoSaveForm = async (
       console.log("dataInit", dataInit);
       console.log("data", data);
       const param = {
-        tableName: "smcustomercontact",
+        tableName: "sasalestask",
         fieldName: filterItem.filterKey,
         id: CID,
         custID: LID,
@@ -232,22 +126,11 @@ const autoSaveForm = async (
       };
       console.log("autosave param", param);
       switch (filterItem.filterKey) {
-        case "names":
-        case "titles":
-        case "role":
-        case "department":
-        case "location":
-        case "assistant":
-        case "language":
-        case "joinedCompany":
-        case "joinedIndustry":
-        case "birthday":
-        case "tel_OExt":
-        case "familyMembers":
-        case "address":
-        case "city":
-        case "zip":
-        case "relationship": {
+        case "priority":
+        case "logType":
+        case "taskStatus":
+        case "taskOwner":
+        case "groupRepName": {
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
@@ -267,15 +150,9 @@ const autoSaveForm = async (
             });
           break;
         }
-        case "email": {
-          if (!verifyMainFormat(param.value)) {
-            ElMessage({
-              message: t("common.mailFormatErrorAlert"),
-              grouping: true,
-              type: "error"
-            });
-            return;
-          }
+        case "contact":
+          param.oldValue = data["contact"];
+          param.value = data["contactArray"].join(", ");
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
@@ -294,235 +171,9 @@ const autoSaveForm = async (
               });
             });
           break;
-        }
-        case "vip": {
-          param.value = param.value ? "True" : "False";
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
-          break;
-        }
-        case "tel_O1":
-        case "tel_O2":
-          param.fieldName = "tel_O";
-          param.oldValue = data["tel_O"];
-          param.value =
-            data["tel_O1"] === ""
-              ? data["tel_O2"].trim()
-              : `${data["tel_O1"].trim()}-${data["tel_O2"].trim()}`;
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
-
-          break;
-        case "tel_M1":
-        case "tel_M2":
-          param.fieldName = "tel_M";
-          param.oldValue = data["tel_M"];
-          param.value =
-            data["tel_M1"] === ""
-              ? data["tel_M2"].trim()
-              : `${data["tel_M1"].trim()}-${data["tel_M2"].trim()}`;
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
-
-          break;
-        case "tel_H1":
-        case "tel_H2":
-          param.fieldName = "tel_H";
-          param.oldValue = data["tel_H"];
-          param.value =
-            data["tel_H1"] === ""
-              ? data["tel_H2"].trim()
-              : `${data["tel_H1"].trim()}-${data["tel_H2"].trim()}`;
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
-
-          break;
-        case "fax_1":
-        case "fax_2":
-          param.fieldName = "fax";
-          param.oldValue = data["fax"];
-          param.value =
-            data["fax_1"] === ""
-              ? data["fax_2"].trim()
-              : `${data["fax_1"].trim()}-${data["fax_2"].trim()}`;
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
-
-          break;
-        case "fax2_1":
-        case "fax2_2":
-          param.fieldName = "fax2";
-          param.oldValue = data["fax2"];
-          param.value =
-            data["fax2_1"] === ""
-              ? data["fax2_2"].trim()
-              : `${data["fax2_1"].trim()}-${data["fax2_2"].trim()}`;
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
-
-          break;
-        case "firstName":
-        case "lastName":
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-              const paramFullname = {
-                tableName: "smcustomercontact",
-                fieldName: "fullName",
-                id: CID,
-                custID: CID,
-                oldValue: dataInit["fullName"],
-                value: `${data["names"]} ${data["firstName"]} ${data["lastName"]}`,
-                oldEntity: "string",
-                newEntity: "string"
-              };
-              CommonService.autoSave(paramFullname)
-                .then(d => {
-                  console.log("autosave data", d);
-                  ElMessage({
-                    message: t("customer.profile.autoSaveSucAlert"),
-                    grouping: true,
-                    type: "success"
-                  });
-                })
-                .catch(err => {
-                  console.log("autosave error", err);
-                  ElMessage({
-                    message: t("customer.profile.autoSaveFailAlert"),
-                    grouping: true,
-                    type: "warning"
-                  });
-                });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
-
-          break;
-        case "hobby":
-          param.oldValue = data["hobby"];
-          param.value = data["hobbyArray"].join(", ");
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
-          break;
-        case "boss":
-          param.oldValue = data["boss"];
-          param.value = data["bossArray"].join(", ");
+        case "attendees":
+          param.oldValue = data["attendees"];
+          param.value = data["attendeesArray"].join(",");
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
@@ -728,7 +379,7 @@ onMounted(() => {
                 "
               >
                 <span class="dim-collapse-title">{{
-                  t("contact.profile.maintain")
+                  t("task.profile.maintain")
                 }}</span>
                 <div v-if="profileData['updatedUserName']">
                   <span>{{ t("contact.profile.updatedBy") }}</span>
@@ -782,12 +433,12 @@ onMounted(() => {
                       "
                       >{{ profileData[filterItem.filterKey] }}</el-text
                     >
-                    <el-autocomplete
+                    <!-- <el-autocomplete
                       v-else-if="
                         filterItem.filterType === 'autocomplete' &&
                         filterItem.filterSourceType === 'api'
                       "
-                      v-model="filterItem.value"
+                      v-model="profileData[filterItem.filterKey]"
                       value-key="text"
                       :fetch-suggestions="
                         (queryString, cb) =>
@@ -796,7 +447,54 @@ onMounted(() => {
                       placeholder=""
                       :disabled="disableStatus(filterItem)"
                       style="width: 338px"
-                    />
+                      @change="
+                        v =>
+                          handleDropDownChange(
+                            profileFormRef,
+                            v,
+                            filterItem,
+                            null
+                          )
+                      "
+                    /> -->
+                    <el-select
+                      v-else-if="
+                        filterOptions[filterItem.filterKey] &&
+                        filterItem.filterType === 'dropdown' &&
+                        filterItem.filterSourceType === 'api' &&
+                        remoteSelectList.includes(filterItem.filterKey)
+                      "
+                      v-model="profileData[filterItem.filterKey]"
+                      :disabled="disableStatus(filterItem)"
+                      :placeholder="
+                        t('customer.list.quickFilter.holderSelectText')
+                      "
+                      style="width: 318px"
+                      filterable
+                      remote
+                      :loading="remoteFilterAttendeesloading"
+                      :remote-method="
+                        queryString =>
+                          querySearchSeleteAsync(queryString, filterItem)
+                      "
+                      @change="
+                        v =>
+                          handleDropDownChange(
+                            profileFormRef,
+                            v,
+                            filterItem,
+                            null
+                          )
+                      "
+                    >
+                      <el-option
+                        v-for="option in filterOptions[filterItem.filterKey]
+                          .list"
+                        :key="option.value"
+                        :label="option.text"
+                        :value="option.value"
+                      />
+                    </el-select>
                     <el-select
                       v-else-if="
                         filterOptions[filterItem.filterKey] &&
@@ -828,7 +526,7 @@ onMounted(() => {
                           .list"
                         :key="option.value"
                         :label="option.text"
-                        :value="option.value"
+                        :value="option.text"
                       />
                     </el-select>
                     <el-select
@@ -1814,19 +1512,6 @@ onMounted(() => {
                   </el-form-item>
                 </div>
               </el-form>
-              <el-checkbox-group
-                v-model="profileData['plList']"
-                @change="handleCheckedPLChange"
-              >
-                <el-checkbox
-                  v-for="PLItem in PLModuleList"
-                  :key="PLItem.smhqid"
-                  :label="PLItem.description"
-                  :value="PLItem.description"
-                >
-                  {{ PLItem.description }}
-                </el-checkbox>
-              </el-checkbox-group>
             </div>
           </el-collapse-item>
           <el-collapse-item
