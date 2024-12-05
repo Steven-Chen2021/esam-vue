@@ -1,7 +1,7 @@
 import Cookies from "js-cookie";
 import { storageLocal } from "@pureadmin/utils";
 import { useUserStoreHook } from "@/store/modules/user";
-import { logout, login } from "@/utils/oidcLogin";
+import { logout } from "@/utils/oidcLogin";
 
 import CommonService from "@/services/commonService";
 
@@ -116,7 +116,7 @@ export function removeToken() {
   Cookies.remove(multipleTabsKey);
   storageLocal().removeItem(userKey);
   logout();
-  login();
+  // login();
 }
 
 /** 格式化token（jwt格式） */

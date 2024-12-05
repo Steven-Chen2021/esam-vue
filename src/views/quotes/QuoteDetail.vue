@@ -187,11 +187,13 @@ const rules = {
 };
 
 const dataPermissionExtension = () => {
+  console.log(customerProductLineAccessRight.value);
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
     GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
       if (res && res.isSuccess) {
         const columnSettings = res.returnValue;
         columnSettings.forEach(element => {
+          console.log(element);
           let ctl: PlusColumn | undefined; // 明確定義類型
           switch (element.filterKey) {
             case "sType":
@@ -217,7 +219,7 @@ const dataPermissionExtension = () => {
               break;
             case "effectiveDate":
               ctl = quoteDetailColumns.find(f => f.prop === "period");
-              quotationDetailResult.value.period = _formatDate(
+              quotationDetailResult.value.period = formatDate(
                 quotationDetailResult.value.period
               );
               break;
@@ -261,7 +263,10 @@ const dataPermissionExtension = () => {
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
               break;
           }
-          if (ctl && customerProductLineAccessRight.value.isWrite === false) {
+          if (
+            ctl != undefined &&
+            customerProductLineAccessRight.value.isWrite === false
+          ) {
             ctl.valueType = "text"; // 確保 ctl 存在後操作
           }
           if (customerProductLineAccessRight.value.isWrite === false) {
@@ -426,6 +431,8 @@ const quoteDetailColumns: PlusColumn[] = [
         });
         autoSaveTrigger(value, "pid");
 
+        if (getParameter.id === "0") {
+        }
         UserAccessRightByCustomerProductLine(
           quotationDetailResult.value.customerHQID,
           _pid
@@ -662,7 +669,7 @@ const handleLocalChargeResult = (
             width: "100%",
             height: "auto",
             colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-            columns: localCharge.columns.map(column => ({
+            columns: localCharge?.columns?.map(column => ({
               data: column.data,
               type: column.type,
               source: column.source || []
@@ -720,7 +727,7 @@ const handleAfterChange = (changes, source) => {
                       width: "100%",
                       height: "auto",
                       colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge.columns.map(column => ({
+                      columns: localCharge?.columns?.map(column => ({
                         data: column.data,
                         type: column.type,
                         source: column.source || []
@@ -1123,7 +1130,13 @@ onMounted(() => {
           );
         }
       });
-      dataPermissionExtension();
+      UserAccessRightByCustomerProductLine(
+        quotationDetailResult.value.customerHQID,
+        _pid
+      ).then(res => {
+        customerProductLineAccessRight.value = res.returnValue;
+        dataPermissionExtension();
+      });
     });
   }
   getCustomerByOwnerUserResult();
@@ -1142,32 +1155,7 @@ onBeforeUnmount(() => {
   editor.destroy();
 });
 
-const formatDate = dateString => {
-  const date = new Date(dateString);
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-  ];
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const seconds = date.getSeconds().toString().padStart(2, "0");
-  return `${month} ${day}, ${year}`;
-};
-
-const _formatDate = dateInput => {
+const formatDate = dateInput => {
   const months = [
     "Jan",
     "Feb",
