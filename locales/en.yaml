@@ -267,8 +267,10 @@ task:
     description: Description
     actionItem: Action Item
     company: Company
+    locationAddress: Address
   profile:
     maintain: Task Maintain
+    appointmentEndTimeAlert: Please select Appointment EndTime
 contact:
   tabTitle: Contact Search
   cancel: Cancel
