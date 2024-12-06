@@ -11,43 +11,9 @@ class TaskProfileService {
       return [];
     }
   }
-  async inactiveContactResult(contactID) {
+  async updateTaskProfile(params) {
     try {
-      const response = await API.post(
-        `/api/Contact/InactiveContactResult?ContactID=${contactID}`
-      );
-      return response;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-  async activeContactResult(contactID) {
-    try {
-      const response = await API.post(
-        `/api/Contact/ActiveContactResult?ContactID=${contactID}`
-      );
-      return response;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-  async updateContactProfile(params) {
-    try {
-      const response = await API.post(
-        "/api/Contact/UpdateContactProfileResult",
-        params
-      );
-      return response;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-  async updateContactProfilePLResult(params) {
-    try {
-      const response = await API.post(
-        "/api/Contact/UpdateContactProfilePLResult",
-        params
-      );
+      const response = await API.post("/api/Task/SaveTaskInfoResult", params);
       return response;
     } catch (error) {
       console.error(error);

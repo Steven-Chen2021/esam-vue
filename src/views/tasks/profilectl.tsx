@@ -92,52 +92,8 @@ export function taskProfileCTL() {
           .filter(a => a !== "");
       }
       profileData.value["taskOwner"] = profileData.value["taskOwnerId"];
-      // if (
-      //   profileData.value["taskOwnerId"] &&
-      //   profileData.value["taskOwnerId"] !== ""
-      // ) {
-      //   const subParam = {
-      //     OptionsResourceType: 127,
-      //     SelectValue: profileData.value["taskOwner"],
-      //     Paginator: false
-      //   };
-      //   CommonService.getAutoCompleteList(subParam).then(data => {
-      //     filterOptions.value["taskOwner"] = {};
-      //     filterOptions.value["taskOwner"].list = data;
-      //     filterOptions.value["taskOwner"].loading = false;
-      //   });
-      //   // console.log("123123123");
-      //   // filterOptions.value["taskOwner"] = {};
-      //   // filterOptions.value["taskOwner"].list = [];
-      //   // filterOptions.value["taskOwner"].list.push({
-      //   //   text: profileData.value["taskOwner"],
-      //   //   value: profileData.value["taskOwnerId"]
-      //   // });
-      //   // filterOptions.value["taskOwner"].loading = false;
-      //   // console.log("taskOwner", filterOptions.value["taskOwner"]);
-      // } else {
-      //   filterOptions.value["taskOwner"] = {};
-      //   filterOptions.value["taskOwner"].list = [];
-      // }
-      // profileData.value["ownerBranch"] = profileData.value["taskOwnerBranch"];
-      // if (
-      //   profileData.value["ownerBranch"] &&
-      //   profileData.value["ownerBranch"] !== ""
-      // ) {
-      //   const subParam = {
-      //     OptionsResourceType: 117,
-      //     SelectValue: profileData.value["ownerBranch"],
-      //     Paginator: false
-      //   };
-      //   CommonService.getAutoCompleteList(subParam).then(data => {
-      //     filterOptions.value["ownerBranch"] = {};
-      //     filterOptions.value["ownerBranch"].list = data;
-      //     filterOptions.value["ownerBranch"].loading = false;
-      //   });
-      // } else {
-      //   filterOptions.value["ownerBranch"] = {};
-      //   filterOptions.value["ownerBranch"].list = [];
-      // }
+      profileData.value["ownerBranch"] = profileData.value["taskOwnerBranch"];
+      profileData.value["subjectCategory"] = profileData.value["subjectTypeId"];
       if (ProfileID.value === "0") {
         profileFormData.value = deepClone(
           result1.returnValue.filter(c => c.showOnDetailAdd === true)
@@ -363,28 +319,42 @@ export function taskProfileCTL() {
   //#region Lead Members
   //#endregion
   const rules = {
-    names: [
+    priority: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
         trigger: "focusout"
       }
     ],
-    firstName: [
+    taskOwner: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
-        trigger: "blur"
+        trigger: "focusout"
       }
     ],
-    lastName: [
+    taskStatus: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
-        trigger: "blur"
+        trigger: "focusout"
       }
     ],
-    email: [
+    description: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "focusout"
+      }
+    ],
+    appointmentStartDate: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
+    subject: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
@@ -511,7 +481,7 @@ export function taskProfileCTL() {
       }
     }
   };
-  const remoteSelectList = ["taskOwner", "ownerBranch", "groupRepName"];
+  const remoteSelectList = ["taskOwner", "groupRepName", "locationCity"];
   const ddlNeedExtraList = ["city"]; //City dropdownList with extra input textbox
   const ddlCasList = ["industryGroup", "leadSourceGroup"]; //cascading dropdown
   const inputNeedExtraList = ["phone"]; //Need extra input textbox
@@ -534,34 +504,7 @@ export function taskProfileCTL() {
   const PLHistoryTitle = ref();
   const PLUpdateHistoryList = ref([]);
   const dialogReturnVisible = ref(false);
-  // watch(
-  //   () => profileFormData,
-  //   newVal => {
-  //     const newRules = {};
-  //     newVal.value.forEach(item => {
-  //       if (item.filterKey) {
-  //         newRules[item.filterKey] = [
-  //           {
-  //             required: true,
-  //             message: `${item.filterKey} is required`,
-  //             trigger: "blur"
-  //           }
-  //         ];
-  //         // Add more validation rules as needed
-  //       }
-  //     });
-  //     rules.value = newRules;
-  //     console.log("rules", rules);
-  //   },
-  //   { deep: true }
-  // );
   const quickFilterFormRef = ref<FormInstance>();
-  // const quickFilterFormInitData: QuickFilter = {
-  //   filterName: "",
-  //   id: 0,
-  //   clicked: false,
-  //   filters: []
-  // };
   const quickFilterFormInitData: QuickFilter = {
     filterName: "",
     id: 0,
@@ -604,28 +547,6 @@ export function taskProfileCTL() {
   //取得下拉选单列表,统一存入filterOptions
   const formLoading = ref(true);
   const filterOptions = ref({});
-  // const fetchOptions = async (filterItems: QuickFilterDetail[]) => {
-  //   try {
-  //     const selectFilterList: QuickFilterDetail[] = filterItems.filter(
-  //       a =>
-  //         a.filterType === "select" &&
-  //         a.filterSourceType === "API" &&
-  //         a.filterSource
-  //     );
-  //     // console.log("selectFilterList", selectFilterList);
-  //     selectFilterList.forEach(async item => {
-  //       const response = await CustomerQuickFilterService.getStatusList(
-  //         item.filterSource
-  //       );
-  //       filterOptions.value[item.filterKey] = {};
-  //       filterOptions.value[item.filterKey].list = response;
-  //       filterOptions.value[item.filterKey].loading = false;
-  //     });
-  //   } catch (error) {
-  //     console.error("Failed to fetch list:", error);
-  //     return [];
-  //   }
-  // };
   const fetchOptionsNeedParam = async (
     filterItems: QuickFilterDetail[],
     formData
@@ -652,6 +573,13 @@ export function taskProfileCTL() {
           Paginator: false
         };
         switch (item.filterKey) {
+          case "locationCity":
+            resourceType = 128;
+            subParam["SelectValue"] = profileData.value["locationCity"];
+            break;
+          case "ownerBranch":
+            resourceType = 130;
+            break;
           case "contact":
             resourceType = 129;
             subParam["CustomerID"] = LeadID.value;
@@ -670,7 +598,6 @@ export function taskProfileCTL() {
             break;
           case "attendees":
           case "notifyParty":
-          case "ownerBranch":
             return;
           case "taskOwner":
             resourceType = 127;
@@ -680,52 +607,6 @@ export function taskProfileCTL() {
             resourceType = 127;
             subParam["SelectValue"] = profileData.value["groupRepName"];
             console.log("options groupRepName", subParam);
-            break;
-          case "boss":
-            resourceType = 119;
-            subParam.SelectID = LeadID.value;
-            break;
-          case "role":
-            resourceType = 120;
-            break;
-          case "hobby":
-            resourceType = 122;
-            break;
-          case "productLineName":
-            resourceType = 2;
-            break;
-          case "country":
-            resourceType = 14;
-            break;
-          case "state": {
-            resourceType = 15;
-            subParam.SelectID = profileData.value["state"]
-              ? profileData.value["state"]
-              : "";
-            if (profileData) {
-              subParam["ParentParams"] = profileData.value["country"];
-              break;
-            }
-          }
-          case "city": {
-            resourceType = 16;
-            if (profileData) {
-              subParam["ParentParams"] =
-                profileData.value["country"] + "," + profileData.value["state"];
-              break;
-            }
-          }
-          case "leadSourceGroup":
-            resourceType = 17;
-            subParam.SelectID = profileData.value["leadSourceGroupID"]
-              ? profileData.value["leadSourceGroupID"]
-              : "";
-            break;
-          case "industryGroup":
-            resourceType = 18;
-            subParam.SelectID = profileData.value["industryGroupID"]
-              ? profileData.value["industryGroupID"]
-              : "";
             break;
           default:
             resourceType = 0;
@@ -740,69 +621,7 @@ export function taskProfileCTL() {
           filterOptions.value[item.filterKey].list = data;
           filterOptions.value[item.filterKey].loading = false;
         });
-        if (item.filterKey === "leadSourceGroup") {
-          if (profileData) {
-            CommonService.getAutoCompleteList({
-              OptionsResourceType: 100,
-              Paginator: false,
-              ParentParams: profileData.value["leadSourceGroupID"],
-              SelectID: profileData.value["leadSourceID"]
-                ? profileData.value["leadSourceID"]
-                : ""
-            }).then(data => {
-              filterOptions.value["leadSource"] = {};
-              filterOptions.value["leadSource"].list = data;
-              filterOptions.value["leadSource"].loading = false;
-            });
-            CommonService.getAutoCompleteList({
-              OptionsResourceType: 101,
-              Paginator: false,
-              ParentParams: profileData.value["leadSourceID"],
-              SelectValue: profileData.value["leadSourceDetail"]
-                ? profileData.value["leadSourceDetail"]
-                : ""
-            }).then(data => {
-              filterOptions.value["leadSourceDetail"] = {};
-              filterOptions.value["leadSourceDetail"].list = data;
-              filterOptions.value["leadSourceDetail"].loading = false;
-            });
-          }
-        } else if (item.filterKey === "industryGroup") {
-          if (profileData) {
-            CommonService.getAutoCompleteList({
-              OptionsResourceType: 102,
-              Paginator: false,
-              ParentParams: profileData.value["industryGroupID"],
-              SelectID: profileData.value["industry"]
-                ? profileData.value["industry"]
-                : ""
-            }).then(data => {
-              filterOptions.value["industry"] = {};
-              filterOptions.value["industry"].list = data;
-              filterOptions.value["industry"].loading = false;
-            });
-          }
-        }
       });
-      //Load currency list
-      CommonService.getAutoCompleteList({
-        OptionsResourceType: 103,
-        Paginator: false
-      }).then(data => {
-        filterOptions.value["currency"] = {};
-        filterOptions.value["currency"].list = data;
-        filterOptions.value["currency"].loading = false;
-      });
-      //Load createdFor list
-      CommonService.getAutoCompleteList({
-        OptionsResourceType: 105,
-        Paginator: false
-      }).then(data => {
-        filterOptions.value["createdFor"] = {};
-        filterOptions.value["createdFor"].list = data;
-        filterOptions.value["createdFor"].loading = false;
-      });
-      // console.log("filterOptions", filterOptions.value);
     } catch (error) {
       console.error("Failed to fetch list:", error);
       return [];
@@ -1262,6 +1081,9 @@ export function taskProfileCTL() {
         case "notifyParty":
         case "groupRepName":
           OptionsResourceType = 127;
+          break;
+        case "locationCity":
+          OptionsResourceType = 128;
           break;
       }
       const searchKey =
