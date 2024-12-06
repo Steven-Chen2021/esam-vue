@@ -50,7 +50,9 @@ import { CommonHelper } from "@/utils/commonHelper";
 import { UrlHelper } from "@/utils/urlHelper";
 
 import { QuoteDetailColumnAccessRight } from "@/utils/apiRequestEnum";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const { toPreView } = usePreView();
 const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
   CommonHelper();
@@ -139,6 +141,7 @@ const hideQuotationType = ref(true);
 const hideQuoteDimensionFactor = ref(true);
 const hideVolumeShareForAgent = ref(true);
 const hideOTPCode = ref(true);
+const quotationForm = ref(null);
 //Editor Parameters
 const mode = "default";
 const editorRef = shallowRef();
@@ -169,31 +172,33 @@ const updateHotTableData = (city, data) => {
   }
 };
 
-const value2 = ref(6);
-
 const rules = {
   customerName: [
     {
       required: true,
-      message: "请输入名称"
+      message: t("message.required.companyName")
     }
   ],
   productLineCode: [
     {
       required: true,
-      message: "请输入标签"
+      message: t("message.required.productLine")
+    }
+  ],
+  period: [
+    {
+      required: true,
+      message: t("message.required.period")
     }
   ]
 };
 
 const dataPermissionExtension = () => {
-  console.log(customerProductLineAccessRight.value);
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
     GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
       if (res && res.isSuccess) {
         const columnSettings = res.returnValue;
         columnSettings.forEach(element => {
-          console.log(element);
           let ctl: PlusColumn | undefined; // 明確定義類型
           switch (element.filterKey) {
             case "sType":
@@ -219,9 +224,11 @@ const dataPermissionExtension = () => {
               break;
             case "effectiveDate":
               ctl = quoteDetailColumns.find(f => f.prop === "period");
-              quotationDetailResult.value.period = formatDate(
-                quotationDetailResult.value.period
-              );
+              if (customerProductLineAccessRight.value.isWrite === false) {
+                quotationDetailResult.value.period = formatDate(
+                  quotationDetailResult.value.period
+                );
+              }
               break;
             case "tradeTerm":
               ctl = quoteDetailColumns.find(f => f.prop === "tradeTermId");
@@ -536,7 +543,7 @@ const quoteDetailColumns: PlusColumn[] = [
     width: 120,
     prop: "reference",
     valueType: "select",
-    options: creditTermResult,
+    options: quoteReferenceCodeResult,
     colProps: {
       span: 8
     },
@@ -873,60 +880,71 @@ const freightChargeSettings = ref({
 
 const saveData = () => {
   saveLoading.value = "default";
+  quotationForm.value.formInstance
+    .validate()
+    .then(() => {
+      if (!quotationDetailResult.value.quoteid) {
+        quotationDetailResult.value.quoteid = 0;
+      }
+
+      quotationDetailResult.value.attentionToId =
+        quotationDetailResult.value.attentionTo;
+
+      const detailStatus = saveQuoteDetailResult(
+        quotationDetailResult.value
+      ).then(res => {
+        if (res && res.isSuccess) {
+          frightChargeParams.value.quoteID = res.returnValue;
+          frightChargeParams.value.pid = quotationDetailResult.value.pid;
+          frightChargeParams.value.quoteFreights =
+            freightChargeSettings.value.data;
+          saveFreightChargeResult(frightChargeParams.value).then(res => {
+            const exportLocalChargeParam = {
+              quoteID: frightChargeParams.value.quoteID,
+              pid: quotationDetailResult.value.pid,
+              isExport: true,
+              detail: exportLocationResult.value
+            };
+            const importLocalChargeParam = {
+              quoteID: frightChargeParams.value.quoteID,
+              pid: quotationDetailResult.value.pid,
+              isExport: false,
+              detail: importLocationResult.value
+            };
+            saveLocalChargeResult(exportLocalChargeParam);
+            saveLocalChargeResult(importLocalChargeParam);
+            ElNotification({
+              title: "successfully",
+              message: "Quotation save successfully!",
+              type: "success"
+            });
+          });
+        } else {
+          ElNotification({
+            title: "Error",
+            message: "Failed to save the quotation.",
+            type: "error"
+          });
+        }
+      });
+      console.debug(detailStatus);
+      console.debug("result", quotationDetailResult.value);
+      console.debug(
+        "freightChargeSettings-data",
+        freightChargeSettings.value.data
+      );
+      console.debug("frightChargeParams", frightChargeParams.value);
+      console.debug("exportLocationResult", exportLocationResult);
+      console.debug("importLocationResult", importLocationResult);
+    })
+    .catch(error => {
+      console.error("Validation failed:", error);
+      // 處理驗證失敗
+    });
+
   setTimeout(() => {
     saveLoading.value = "disabled";
   }, 3000);
-
-  if (!quotationDetailResult.value.quoteid) {
-    quotationDetailResult.value.quoteid = 0;
-  }
-
-  quotationDetailResult.value.attentionToId =
-    quotationDetailResult.value.attentionTo;
-
-  const detailStatus = saveQuoteDetailResult(quotationDetailResult.value).then(
-    res => {
-      if (res && res.isSuccess) {
-        frightChargeParams.value.quoteID = res.returnValue;
-        frightChargeParams.value.pid = quotationDetailResult.value.pid;
-        frightChargeParams.value.quoteFreights =
-          freightChargeSettings.value.data;
-        saveFreightChargeResult(frightChargeParams.value).then(res => {
-          const exportLocalChargeParam = {
-            quoteID: frightChargeParams.value.quoteID,
-            pid: quotationDetailResult.value.pid,
-            isExport: true,
-            detail: exportLocationResult.value
-          };
-          const importLocalChargeParam = {
-            quoteID: frightChargeParams.value.quoteID,
-            pid: quotationDetailResult.value.pid,
-            isExport: false,
-            detail: importLocationResult.value
-          };
-          saveLocalChargeResult(exportLocalChargeParam);
-          saveLocalChargeResult(importLocalChargeParam);
-          ElNotification({
-            title: "successfully",
-            message: "Quotation save successfully!",
-            type: "success"
-          });
-        });
-      } else {
-        ElNotification({
-          title: "Error",
-          message: "Failed to save the quotation.",
-          type: "error"
-        });
-      }
-    }
-  );
-  console.debug(detailStatus);
-  console.debug("result", quotationDetailResult.value);
-  console.debug("freightChargeSettings-data", freightChargeSettings.value.data);
-  console.debug("frightChargeParams", frightChargeParams.value);
-  console.debug("exportLocationResult", exportLocationResult);
-  console.debug("importLocationResult", importLocationResult);
 };
 
 const previewQuote = () => {
@@ -1050,6 +1068,74 @@ const showQuotationStatusHistory = () => {
   getQuoteHistoryResult(quotationDetailResult.value.quoteid).then(res => {
     quoteStatusHistory.value = res.returnValue;
   });
+};
+
+const amsCostAdjust = item => {
+  console.log(ChargeCodeSettingResult);
+  console.log(item);
+
+  // 檢查是否是某個 sellingRate 的 columnName
+  if (item.columnName.startsWith("sellingRate")) {
+    const currentIndex = parseInt(
+      item.columnName.replace("sellingRate", ""),
+      10
+    );
+
+    // 確保值以 "+" 或 "-" 開頭
+    if (!/^[+-]/.test(item.headerName)) {
+      console.warn(
+        `Invalid input for ${item.columnName}: ${item.headerName}. Value must start with "+" or "-". Clearing value.`
+      );
+      item.headerName = ""; // 清空值
+      return;
+    }
+
+    // 如果只輸入了 "+" 或 "-"（沒有數字），暫時允許，但不執行大小比較
+    if (/^[+-]$/.test(item.headerName)) {
+      return; // 暫時返回，不清空，允許用戶繼續輸入
+    }
+
+    // 確保完整格式（+ 或 - 開頭，後接數字）
+    if (!/^[+-]\d+$/.test(item.headerName)) {
+      console.warn(
+        `Invalid input for ${item.columnName}: ${item.headerName}. Value must start with "+" or "-" followed by a number.`
+      );
+      item.headerName = ""; // 清空值
+      return;
+    }
+
+    const currentValue = parseInt(item.headerName, 10); // 將 headerName 轉換為數值
+
+    // 如果不是第一個欄位，檢查是否比前一個欄位大
+    if (currentIndex > 1) {
+      const prevRate = ChargeCodeSettingResult.find(
+        c => c.columnName === `sellingRate${currentIndex - 1}`
+      );
+      if (prevRate) {
+        const prevValue = parseInt(prevRate.headerName, 10);
+
+        // 如果當前值小於或等於前一個值，清空並提示
+        if (currentValue <= prevValue) {
+          console.warn(
+            `Invalid input for ${item.columnName}: ${item.headerName}. Value must be greater than ${prevRate.columnName} (${prevRate.headerName}). Clearing value.`
+          );
+          item.headerName = ""; // 清空值
+          return;
+        }
+      }
+    }
+
+    // 找到對應的 sellingCost 項目
+    const costColumnName = item.columnName.replace("Rate", "Cost");
+    const costItem = ChargeCodeSettingResult.find(
+      c => c.columnName === costColumnName
+    );
+
+    if (costItem) {
+      // 更新 headerName 為 rate 的 headerName 加上 " Cost"
+      costItem.headerName = `${item.headerName} Cost`;
+    }
+  }
 };
 
 watchEffect(() => {
@@ -1301,6 +1387,7 @@ const formatDate = dateInput => {
                 <span class="text-orange-500">QUOTE DETAIL</span>
               </template>
               <PlusForm
+                ref="quotationForm"
                 v-model="quotationDetailResult"
                 :columns="quoteDetailColumns"
                 :rules="rules"
@@ -1544,7 +1631,7 @@ const formatDate = dateInput => {
         </div>
       </el-scrollbar>
     </el-card>
-    <el-drawer v-model="freightVisible" size="35%" title="Add new columns">
+    <el-drawer v-model="freightVisible" size="45%" title="Add new columns">
       <el-checkbox-group
         v-if="quotationDetailResult.pid === 6"
         v-model="chargeCodeSettingValues"
@@ -1580,7 +1667,7 @@ const formatDate = dateInput => {
               v-model="item.headerName"
               style="width: 140px"
               placeholder="Please input"
-              @change="amsCostAdjust"
+              @change="amsCostAdjust(item)"
             />
             <span v-else>{{ item.headerName }}</span>
           </template>
