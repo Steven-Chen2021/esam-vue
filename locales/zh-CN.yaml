@@ -329,3 +329,10 @@ quote:
     cbm: CBM 轉換率
     WeightBreak: 重量區間
     lcp: 本地收费套餐
+message:
+  required:
+    companyName: 公司名称必填
+    productLine: 产品线必填
+    period: 日期区间必填
+approval:
+  list: 簽核管理

@@ -518,3 +518,11 @@ quote:
     cbm: CBM Rate
     WeightBreak: Weight Break
     lcp: Local Charge Package
+message:
+  required:
+    companyName: Company Name Is Required.
+    productLine: Product LineIs Required.
+    period: Effective And Expired Is Required.
+approval:
+  list: Approval Management
+  
