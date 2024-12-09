@@ -347,7 +347,7 @@ export function taskProfileCTL() {
         trigger: "focusout"
       }
     ],
-    appointmentStartDate: [
+    appointmentStartTime: [
       {
         required: true,
         message: t("customer.profile.general.mandatory"),
