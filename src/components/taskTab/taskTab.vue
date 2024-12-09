@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
+import dayjs from "dayjs";
 import Close from "@iconify-icons/ep/close";
 import {
   ref,
@@ -11,12 +12,13 @@ import {
   computed,
   nextTick
 } from "vue";
-import { Plus } from "@element-plus/icons-vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { QuickFilter, quickFilterCTL } from "@/views/customer/quickfilterctl";
 import { listCTL } from "@/views/customer/listctl";
+import { key } from "localforage";
+import { message, closeAllMessage } from "@/utils/message";
 import { useTourStore } from "@/store/modules/tour";
-import { contact } from "@/router/enums";
+import { tasks } from "@/router/enums";
 import {
   ElNotification,
   ButtonInstance,
@@ -63,6 +65,7 @@ const {
 const {
   fetchListData,
   tableData,
+  tableRowClassName,
   currentPage,
   pageSize,
   total,
@@ -77,7 +80,7 @@ const {
 } = listCTL();
 //Page Setting
 defineOptions({
-  name: "CustomerList"
+  name: "TaskList"
 });
 const showAdvancedSettings = ref(false);
 const handleAdvancedSettings = () => {
@@ -92,20 +95,54 @@ const handleListEnable = (obj: {
 const handleFilterEnable = (obj: any) => {
   submitAdvancedFilterForm();
 };
+// #region Tab extra
+import { Plus } from "@element-plus/icons-vue";
 const emit = defineEmits(["handleTabEditEvent"]);
 const handleViewClick = row => {
   console.log("handleViewClick row", row);
-  emit("handleTabEditEvent", row.id.toString(), row.hqid);
-  // router.push({
-  //   name: "ContactDetail",
-  //   params: { id: row.id, lid: row.hqid, qname: row.fullName }
-  // });
+  emit("handleTabEditEvent", row.taskID.toString(), row.lid);
 };
-
-const handleAddContact = () => {
+const handleAddTask = () => {
   emit("handleTabEditEvent", "0", props.SearchLeadID);
 };
+const userAccess = ref(null);
+const getUserAccessByCustomer = () => {
+  CommonService.getUserAccessByCustomer(props.SearchLeadID, 0)
+    .then(data => {
+      userAccess.value = data.returnValue;
+      console.log("userAccess.value", userAccess.value);
+    })
+    .catch(err => {
+      console.log("getUserAccessByCustomer error", err);
+    });
+};
+// #endregion
+
 // #region Quick Filter
+const handleFilterClick = filter => {
+  filter.filters.forEach(a => {
+    if (
+      (a.filterType === "dropdown" ||
+        a.filterType === "input" ||
+        a.filterType === "autocomplete") &&
+      a.value &&
+      a.value !== "" &&
+      Array.isArray(a.value) &&
+      a.value.length > 0
+    )
+      a.value = a.value[0];
+  });
+  console.log("handleFilterClick filter", filter);
+  const filters = filter.filters.filter(
+    a =>
+      a.value &&
+      (a.value !== "" || (Array.isArray(a.value) && a.value.length > 0))
+  );
+  console.log("handleFilterClick filtered", filters);
+  handleConditionalSearch({ filters: filters });
+  handleQuickFilterClick(filter);
+  activePanelNames.value = [];
+};
 const quickFilterRules = reactive<FormRules<QuickFilter>>({
   filterName: [
     {
@@ -123,7 +160,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 22;
+      quickFilterForm.filterAppliedPage = 32;
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -206,7 +243,7 @@ const deleteQuickFilter = () => {
   dialogVisible.value = false;
   const params = {
     filterID: deleteQuickFilterID.value,
-    filterAppliedPage: 22
+    filterAppliedPage: 32
   };
   CommonService.deleteQuickFilter(params)
     .then(data => {
@@ -289,11 +326,11 @@ const dialogVisible = ref(false);
 const showTour = ref(false);
 const tourStore = useTourStore();
 const openTour = computed({
-  get: () => tourStore.contactListShow,
-  set: value => tourStore.setContactListTour(value)
+  get: () => tourStore.taskListShow,
+  set: value => tourStore.setTaskListTour(value)
 });
 function handlefinishTour() {
-  useTourStoreHook().setContactListTour(false);
+  useTourStoreHook().setTaskListTour(false);
   tourStep.value = 0;
 }
 const refBtnAddFilter = ref<ButtonInstance>();
@@ -326,7 +363,7 @@ const resetAdvancedFilterForm = (formEl: FormInstance | undefined) => {
 const submitAdvancedFilterForm = () => {
   const advancedFilterParam = reactive({
     GridColumnSettings: advancedFilterForm.filters,
-    APIRequestType: 23
+    APIRequestType: 33
   });
   console.log("handleFilterEnable param", advancedFilterParam);
   CommonService.updateAdvancedFilter(advancedFilterParam)
@@ -358,43 +395,35 @@ const handleFilterBtnClick = item => {
   handleConditionalSearch(advancedFilterForm);
 };
 // #endregion
-const userAccess = ref(null);
-const getUserAccessByCustomer = () => {
-  CommonService.getUserAccessByCustomer(props.SearchLeadID, 0)
-    .then(data => {
-      userAccess.value = data.returnValue;
-      console.log("userAccess.value", userAccess.value);
-    })
-    .catch(err => {
-      console.log("getUserAccessByCustomer error", err);
-    });
-};
+
 onMounted(async () => {
+  // #region tab extra
   getUserAccessByCustomer();
   console.log("onMounted SearchLeadID", props.SearchLeadID);
   if (props.SearchLeadID && props.SearchLeadID !== "0") {
     FilterLeadID.value = props.SearchLeadID;
   }
-  requestType.value = contact;
-  filterRequestType.value = contact;
+  // #endregion
+  requestType.value = tasks;
+  filterRequestType.value = tasks;
   fetchListData();
   fetchData();
   fetchAdvancedFilterData();
   await nextTick(); // 等待 DOM 更新完成
   setTimeout(() => {
     // 在这里决定是否显示 el-tour
-    if (tourStore.contactListShow) {
+    if (tourStore.taskListShow) {
       // 这里可以添加你的逻辑决定是否显示
       showTour.value = true; // 或者根据其他条件来决定
     }
   }, 2000);
 });
 watch(
-  () => tourStore.contactListShow,
+  () => tourStore.taskListShow,
   () => {
     setTimeout(() => {
       // 在这里决定是否显示 el-tour
-      if (tourStore.contactListShow) {
+      if (tourStore.taskListShow) {
         // 这里可以添加你的逻辑决定是否显示
         showTour.value = true; // 或者根据其他条件来决定
       }
@@ -467,7 +496,7 @@ watch(
       </el-form>
       <el-collapse v-model="activePanelNames">
         <el-collapse-item
-          :title="t('contact.tabTitle')"
+          :title="t('customer.list.advancedSetting.basicFilterTitle')"
           name="BasicFilterForm"
           class="custom-collapse-title"
         >
@@ -485,8 +514,8 @@ watch(
                 <el-form-item
                   v-for="filterItem in advancedFilterForm.filters.filter(
                     c =>
-                      c.enableOnSearchView &&
                       c.showOnFilter &&
+                      c.enableOnSearchView &&
                       c.filterType !== 'cascadingdropdown' &&
                       c.filterKey !== 'capitalAmount'
                   )"
@@ -542,9 +571,7 @@ watch(
                       filterItem.filterSourceType === 'api'
                     "
                     v-model="filterItem.selectValue"
-                    :placeholder="
-                      t('customer.list.quickFilter.holderSelectText')
-                    "
+                    placeholder=""
                     style="width: 338px"
                     filterable
                     clearable
@@ -562,21 +589,18 @@ watch(
                       filterItem.filterSourceType === 'api'
                     "
                     v-model="filterItem.value"
+                    value-key="text"
                     :fetch-suggestions="
                       (queryString, cb) =>
                         querySearchAsync(queryString, cb, filterItem)
                     "
-                    :placeholder="
-                      t('customer.list.quickFilter.holderKeyinText')
-                    "
+                    placeholder=""
                     style="width: 338px"
                   />
                   <el-input
                     v-else-if="filterItem.filterType === 'input'"
                     v-model="filterItem.value"
-                    :placeholder="
-                      t('customer.list.quickFilter.holderKeyinText')
-                    "
+                    placeholder=""
                     style="width: 338px"
                   />
                   <el-date-picker
@@ -662,7 +686,7 @@ watch(
                   <el-button
                     v-if="userAccess && userAccess['isWrite']"
                     :icon="Plus"
-                    @click="handleAddContact"
+                    @click="handleAddTask"
                     >{{ $t("customer.add") }}</el-button
                   >
                 </el-form-item>
@@ -684,9 +708,9 @@ watch(
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
           c =>
-            c.enableOnSearchView &&
             c.filterType !== 'cascadingdropdown' &&
-            c.showOnGrid
+            c.showOnGrid &&
+            c.enableOnSearchView
         )"
         :key="col.filterKey"
         :prop="col.filterKey"
@@ -770,15 +794,12 @@ watch(
               :label="t('customer.list.quickFilter.filterName')"
               prop="filterName"
             >
-              <el-input
-                v-model="quickFilterForm.filterName"
-                :placeholder="t('customer.list.quickFilter.holderKeyinText')"
-              />
+              <el-input v-model="quickFilterForm.filterName" placeholder="" />
             </el-form-item>
             <el-form-item
               v-for="filterItem in quickFilterForm.filters.filter(
                 c =>
-                  c.enableOnSearchView && c.filterType !== 'cascadingdropdown'
+                  c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
               )"
               :key="filterItem.filterKey"
               :label="t(filterItem.langethKey)"
@@ -824,7 +845,7 @@ watch(
                   filterItem.filterSourceType === 'api'
                 "
                 v-model="filterItem.selectValue"
-                :placeholder="t('customer.list.quickFilter.holderSelectText')"
+                placeholder=""
                 style="width: 338px"
                 filterable
               >
@@ -841,16 +862,17 @@ watch(
                   filterItem.filterSourceType === 'api'
                 "
                 v-model="filterItem.value"
+                value-key="text"
                 :fetch-suggestions="
                   (queryString, cb) =>
                     querySearchAsync(queryString, cb, filterItem)
                 "
-                :placeholder="t('customer.list.quickFilter.holderKeyinText')"
+                placeholder=""
               />
               <el-input
                 v-else-if="filterItem.filterType === 'input'"
                 v-model="filterItem.value"
-                :placeholder="t('customer.list.quickFilter.holderKeyinText')"
+                placeholder=""
               />
               <el-checkbox
                 v-else-if="filterItem.filterType === 'checkbox'"
@@ -936,7 +958,7 @@ watch(
         <tbody>
           <tr
             v-for="settingItem in advancedFilterForm.filters.filter(
-              c => c.enableOnSearchView && c.filterType !== 'cascadingdropdown'
+              c => c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
             )"
             v-bind:key="settingItem.filterKey"
           >

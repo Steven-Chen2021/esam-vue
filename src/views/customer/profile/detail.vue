@@ -17,8 +17,12 @@ import CustomerProfileService from "@/services/customer/CustomerProfileService";
 import { useDetail } from "../hooks";
 import CommonService from "@/services/commonService";
 const { initToDetail, getParameter, router } = useDetail();
+// #region Tab extra
 import contactTab from "@/components/contactTab/contactTab.vue";
 import contactDetailTab from "@/views/contact/detail.vue";
+import taskTab from "@/components/taskTab/taskTab.vue";
+import taskDetailTab from "@/views/tasks/detail.vue";
+const ContactDetailID = ref("0");
 const searchingContact = ref(true);
 const handleBackEvent = () => {
   searchingContact.value = true;
@@ -30,6 +34,19 @@ const handleTabEditEvent = (ContactID, LeadDetailID) => {
   searchingContact.value = false;
   ContactDetailID.value = ContactID;
 };
+const TaskDetailID = ref("0");
+const searchingTask = ref(true);
+const handleBackEventTask = () => {
+  searchingTask.value = true;
+};
+const handleTabEditEventTask = (TaskID, LeadDetailID) => {
+  console.log(
+    `handleTabEditEvent- TaskID: ${TaskID}, LeadDetailID: ${LeadDetailID}`
+  );
+  searchingTask.value = false;
+  TaskDetailID.value = TaskID;
+};
+// #endregion
 const {
   profileDataInit,
   profileFormData,
@@ -668,7 +685,7 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
 const username = useUserStoreHook()?.username;
 const dialogVisible = ref(false);
 const LID = isArray(getParameter.id) ? getParameter.id[0] : getParameter.id;
-const ContactDetailID = ref("0");
+
 onMounted(() => {
   // if (isArray(getParameter.id)) {
   //   console.log("getParameter.id[]", getParameter.id[0]);
@@ -2082,29 +2099,19 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane v-if="LID !== '0'" :label="t('customer.task.title')"
-          ><div class="flex justify-center items-center h-[640px]">
-            <div class="ml-12">
-              <p
-                v-motion
-                class="font-medium text-4xl mb-4 dark:text-white"
-                :initial="{
-                  opacity: 0,
-                  y: 100
-                }"
-                :enter="{
-                  opacity: 1,
-                  y: 0,
-                  transition: {
-                    delay: 80
-                  }
-                }"
-              >
-                Welcome to the Task Page
-              </p>
-            </div>
-          </div></el-tab-pane
-        >
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.task.title')">
+          <taskTab
+            v-if="searchingTask"
+            :SearchLeadID="LID"
+            @handleTabEditEvent="handleTabEditEventTask"
+          />
+          <taskDetailTab
+            v-else
+            :ParentID="LID"
+            :ID="TaskDetailID"
+            @handleBackEvent="handleBackEventTask"
+          />
+        </el-tab-pane>
         <el-tab-pane v-if="LID !== '0'" :label="t('customer.kpi.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">
