@@ -13,7 +13,7 @@ export default {
     {
       path: "/approval/index",
       name: "ApprovalList",
-      component: () => import("@/views/approval/index.vue"),
+      component: () => import("@/views/search-management/index.vue"),
       meta: {
         title: $t("approval.list")
       }

@@ -43,7 +43,7 @@ export function listCTL() {
       });
   };
   const searchParams = reactive({
-    APIRequestType: 8,
+    APIRequestType: 73,
     ConditionalSettings: null,
     pageSize: pageSize,
     pageIndex: currentPage,
