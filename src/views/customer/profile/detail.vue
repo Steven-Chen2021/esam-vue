@@ -1861,6 +1861,7 @@ const cancelForm = () => {
                           style="margin-left: 6px"
                           type="primary"
                           plain
+                          :disabled="!userAuth['isWrite']"
                           @click="
                             handleReturnClick(
                               formDataMap[tabItem.plName],
