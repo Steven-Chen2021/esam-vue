@@ -260,6 +260,7 @@ task:
     groupRepName: Group Rep
     notifyParty: Notify Party
     appointmentStartDate: Appointment Date
+    appointmentStartTime: Appointment Date
     dueDate: Due Date
     locationCity: Location
     subjectCategory: Subject Category

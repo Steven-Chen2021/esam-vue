@@ -637,7 +637,7 @@ onMounted(() => {
                     <div
                       v-else-if="
                         filterItem.filterType === 'daterange' &&
-                        filterItem.filterKey === 'appointmentStartDate'
+                        filterItem.filterKey === 'appointmentStartTime'
                       "
                     >
                       <el-date-picker
