@@ -1,8 +1,66 @@
-import CustomerQuickFilterService from "@/services/commonService";
+import commonService from "@/services/commonService";
 import QuickFilterService from "@/services/quickFilterService";
-// import axios from "axios";
 import { ref, onMounted, reactive, watch, computed } from "vue";
 import type { FormInstance } from "element-plus/es/components/form/index.mjs";
+// import { contact, customer, tasks } from "@/router/enums";
+
+import {
+  customerName,
+  // customerStatus,
+  productLine,
+  // carrier,
+  // shipper,
+  // consignee,
+  // tradeterm,
+  // quotestatus,
+  // shippingterm,
+  // servicelevel,
+  // natureofgoods,
+  // shipmentqualitytype,
+  // creditterm,
+  // quoteProductLine,
+  country,
+  state,
+  city,
+  leadSourceGroup,
+  industryGroup,
+  status,
+  // quoteCustomerByLead,
+  // quoteFreightChargeCode,
+  // dimOrg,
+  // leadSource,
+  // leadSourceDetail,
+  // industry,
+  // currency,
+  // agentRO,
+  // user,
+  countryBySearchKey,
+  stateBySearchKey,
+  cityBySearchKey,
+  leadSourceGroupBySearchKey,
+  industryGroupBySearchKey,
+  localName,
+  userBySearchKey,
+  leadSourceBySearchKey,
+  leadSourceDetailBySearchKey,
+  industryBySearchKey,
+  ownerSales,
+  station,
+  contactNames,
+  contactFullName,
+  contactRole,
+  contactBoss,
+  // contactHobby,
+  taskPriority,
+  taskLogType,
+  taskStatus,
+  taskSubjectType,
+  userformat2,
+  cityformat2BySearchKey
+  // contactBycustomerid,
+  // stationCustID
+} from "@/types/optionsResourceTypeEnum";
+
 export interface QuickFilterDetail {
   filterKey: string;
   filterType: string;
@@ -19,6 +77,8 @@ export interface QuickFilterDetail {
   allowSorting: boolean;
   allowGridHeaderFilter: boolean;
   width: number;
+  controlTypeOnDetail: string;
+  enableOnSearchView: boolean;
 }
 export interface QuickFilter {
   filterName: string;
@@ -29,13 +89,9 @@ export interface QuickFilter {
   filters: QuickFilterDetail[];
 }
 export function quickFilterCTL() {
+  const monthDatePickerList = ["joinedCompany", "joinedIndustry"];
+  const filterRequestType = ref(1);
   const quickFilterFormRef = ref<FormInstance>();
-  // const quickFilterFormInitData: QuickFilter = {
-  //   filterName: "",
-  //   id: 0,
-  //   clicked: false,
-  //   filters: []
-  // };
   const quickFilterFormInitData: QuickFilter = {
     filterName: "",
     id: 0,
@@ -61,15 +117,14 @@ export function quickFilterCTL() {
     filterAppliedPage: 0
   });
   // TODO: API get quick filter list,转变日期格式
-  // let quickFilterList = reactive<QuickFilter[]>([]);
+
   const quickFilterList = ref<QuickFilter[]>([]);
-  onMounted(() => {
-    fetchData();
-    fetchAdvancedFilterData();
-    // nextTick(() => {
-    //   columnDrop();
-    // });
-  });
+
+  const QuickFilterColumnListParam = ref<number>();
+  const CustomizeQuickFilterSettingParam = ref<number>();
+  const ColumnSettingParam = ref<number>();
+
+  onMounted(() => {});
   // TODO: API
   //取得下拉选单列表,统一存入filterOptions
   const filterOptions = ref({});
@@ -81,10 +136,10 @@ export function quickFilterCTL() {
           a.filterSourceType === "API" &&
           a.filterSource
       );
+      // console.log("selectFilterList", selectFilterList);
       selectFilterList.forEach(async item => {
-        const response = await CustomerQuickFilterService.getStatusList(
-          item.filterSource
-        );
+        const response = await commonService.getStatusList(item.filterSource);
+        console.log(`fetchStatusList ${item.filterKey}`, response);
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;
@@ -97,23 +152,55 @@ export function quickFilterCTL() {
   const fetchOptionsNeedParam = async (filterItems: QuickFilterDetail[]) => {
     try {
       const selectFilterList: QuickFilterDetail[] = filterItems.filter(
-        a =>
-          a.filterType === "dropdown" &&
-          a.filterSourceType === "api" &&
-          a.filterSource
+        a => a.filterType === "dropdown" && a.filterSourceType === "api"
       );
       selectFilterList.forEach(async item => {
-        const response =
-          // TODO: 跨域问题
-          // await CustomerQuickFilterService.getOptionListNeedParam(
-          //   item.filterSource,
-          //   { OptionsResourceType: 2, Paginator: false }
-          // );
-          await CustomerQuickFilterService.getDropdownList(item.filterSource);
-        // await CustomerQuickFilterService.getAutoCompleteList({
-        //   OptionsResourceType: 2,
-        //   Paginator: false
-        // });
+        let resourceType = 0;
+        switch (item.filterKey) {
+          case "productLineName":
+            resourceType = productLine;
+            break;
+          case "country":
+            resourceType = country;
+            break;
+          case "state":
+            resourceType = state;
+            break;
+          case "city":
+            resourceType = city;
+            break;
+          case "leadSourceGroup":
+            resourceType = leadSourceGroup;
+            break;
+          case "industryGroup":
+            resourceType = industryGroup;
+            break;
+          case "status":
+            resourceType = status;
+            break;
+          case "names":
+            resourceType = contactNames;
+            break;
+          case "role":
+            resourceType = contactRole;
+            break;
+          case "priority":
+            resourceType = taskPriority;
+            break;
+          case "logType":
+            resourceType = taskLogType;
+            break;
+          case "taskStatus":
+            resourceType = taskStatus;
+            break;
+          case "subjectCategory":
+            resourceType = taskSubjectType;
+            break;
+        }
+        const response = await commonService.getAutoCompleteList({
+          OptionsResourceType: resourceType,
+          Paginator: false
+        });
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;
@@ -123,15 +210,7 @@ export function quickFilterCTL() {
       return [];
     }
   };
-  // 监听 filters 的变化
-  watch(
-    () => quickFilterForm.filters,
-    newFilters => {
-      fetchOptions(newFilters);
-      fetchOptionsNeedParam(newFilters);
-    },
-    { deep: true } // 深度监听 filters 的变化
-  );
+
   //autocomplete
   interface AutoCompleteItem {
     value: string;
@@ -139,22 +218,75 @@ export function quickFilterCTL() {
   }
   const createFilter = (queryString: string) => {
     return (item: AutoCompleteItem) => {
-      return item.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0;
+      return item.text.toLowerCase().indexOf(queryString.toLowerCase()) !== -1;
     };
   };
   const querySearchAsync = async (
     queryString: string,
     cb: (arg: any) => void,
-    filterItem: QuickFilterDetail
+    filterItem
   ) => {
     let OptionsResourceType;
-    if (filterItem.filterKey === "customerName") {
-      OptionsResourceType = 0;
-    } else {
-      OptionsResourceType = 1;
+    switch (filterItem.filterKey) {
+      case "customerName":
+      case "company":
+        OptionsResourceType = customerName;
+        break;
+      case "country":
+        OptionsResourceType = countryBySearchKey;
+        break;
+      case "state":
+        OptionsResourceType = stateBySearchKey;
+        break;
+      case "city":
+        OptionsResourceType = cityBySearchKey;
+        break;
+      case "leadSourceGroup":
+        OptionsResourceType = leadSourceGroupBySearchKey;
+        break;
+      case "industryGroup":
+        OptionsResourceType = industryGroupBySearchKey;
+        break;
+      case "localName":
+        OptionsResourceType = localName;
+        break;
+      case "ownerSales":
+        OptionsResourceType = ownerSales;
+        break;
+      case "leadSource":
+        OptionsResourceType = leadSourceBySearchKey;
+        break;
+      case "leadSourceDetail":
+        OptionsResourceType = leadSourceDetailBySearchKey;
+        break;
+      case "industry":
+        OptionsResourceType = industryBySearchKey;
+        break;
+      case "userName":
+        OptionsResourceType = userBySearchKey;
+        break;
+      case "fullName":
+        OptionsResourceType = contactFullName;
+        break;
+      case "boss":
+        OptionsResourceType = contactBoss;
+        break;
+      case "contact":
+      case "taskOwner":
+      case "groupRepName":
+      case "notifyParty":
+        OptionsResourceType = userformat2;
+        break;
+      case "ownerBranch":
+        OptionsResourceType = station;
+        break;
+      case "locationCity":
+        OptionsResourceType = cityformat2BySearchKey;
+        break;
     }
+    const searchKey = !queryString || queryString === "null" ? "" : queryString;
     const params = {
-      SearchKey: queryString,
+      SearchKey: searchKey,
       OptionsResourceType: OptionsResourceType,
       PageSize: 50,
       PageIndex: 1,
@@ -162,12 +294,11 @@ export function quickFilterCTL() {
     };
     try {
       // 发送请求并获取响应
-      const response =
-        await CustomerQuickFilterService.getAutoCompleteList(params);
+      const response = await commonService.getAutoCompleteList(params);
 
       // 根据 queryString 过滤响应结果
-      const results = queryString
-        ? response.filter(createFilter(queryString))
+      const results = searchKey
+        ? response.filter(createFilter(searchKey))
         : response;
 
       // 判断 results 是否为数组
@@ -184,41 +315,16 @@ export function quickFilterCTL() {
       cb([]);
     }
   };
-  // const resetQuickFilterForm = (formEl: FormInstance | undefined) => {
-  //   if (!formEl) return;
-  //   // formEl.resetFields();
-  //   initQuickFilter();
-  // };
-  // // TODO: init Quick Filter
-  // const initQuickFilter = () => {
-  //   quickFilterForm.filterName = quickFilterFormInitData.filterName;
-  //   quickFilterForm.id = quickFilterFormInitData.id;
-  //   quickFilterForm.clicked = quickFilterFormInitData.clicked;
-  //   quickFilterForm.filters = quickFilterFormInitData.filters.map(filter => ({
-  //     filterKey: filter.filterKey,
-  //     filterType: filter.filterType,
-  //     filterSourceType: filter.filterSourceType,
-  //     filterSource: filter.filterSource,
-  //     value: filter.value,
-  //     selectValue: filter.selectValue,
-  //     dateValue: filter.dateValue,
-  //     langethKey: filter.langethKey,
-  //     ValueBegin: filter.ValueBegin || "",
-  //     ValueEnd: filter.ValueEnd || "",
-  //     showOnGrid: filter.showOnGrid,
-  //     showOnFilter: filter.showOnFilter,
-  //     allowSorting: filter.allowSorting,
-  //     allowGridHeaderFilter: filter.allowGridHeaderFilter
-  //   }));
-  // };
   // TODO: API clcik quick filter to search
   const handleQuickFilterClick = (item: QuickFilter) => {
+    console.log(`Clicked button ${item.filterName}`);
     quickFilterList.value.forEach(a => {
       a.clicked = false;
     });
-    if (quickFilterList.value.length > 1) {
+    if (quickFilterList.value.length > 0) {
       item.clicked = true;
     }
+    console.log("handleQuickFilterClick quickFilterList:", quickFilterList);
     initBasicFilter();
   };
   const getOptions = (jsonString: string) => {
@@ -274,11 +380,8 @@ export function quickFilterCTL() {
     }
   };
   const updateQuickFilter = (formData: QuickFilter) => {
-    // const response =
-    //   await CustomerQuickFilterService.updateQuickFilter(formData);
-    // console.log("updateQuickFilter", response);
-
-    CustomerQuickFilterService.updateQuickFilter(formData)
+    commonService
+      .updateQuickFilter(formData)
       .then(data => {
         console.log("updateQuickFilter data", data);
       })
@@ -303,13 +406,18 @@ export function quickFilterCTL() {
     }
     return clone;
   }
-  async function fetchData() {
+  const fetchData = async () => {
     try {
       const [result1, result2, result3] = await Promise.all([
-        QuickFilterService.getQuickFilterColumnList(70),
-        QuickFilterService.getCustomizeQuickFilterSetting(71),
-        QuickFilterService.getColumnSetting(72)
+        QuickFilterService.getQuickFilterColumnList(
+          QuickFilterColumnListParam.value
+        ),
+        QuickFilterService.getCustomizeQuickFilterSetting(
+          CustomizeQuickFilterSettingParam.value
+        ),
+        QuickFilterService.getColumnSetting(ColumnSettingParam.value)
       ]);
+
       quickFilterFormInitData.filters = deepClone(result1);
       quickFilterFormInitData.filters.forEach(a => {
         a.showOnGrid = true;
@@ -326,14 +434,64 @@ export function quickFilterCTL() {
         Array.isArray(result3) &&
         result3.length === quickFilterFormInitData.filters.length
       ) {
+        console.log("result3");
         advancedFilterForm.filters = deepClone(result3);
       } else {
+        console.log("result1", quickFilterFormInitData.filters);
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
-      advancedFilterForm.filters.forEach(a => {
-        if (a.width && a.width === 70) {
-          a.width = 140;
-        }
+      const filterColumns = result1;
+      fetchOptions(quickFilterFormInitData.filters);
+      fetchOptionsNeedParam(quickFilterFormInitData.filters);
+
+      const customizedFilters = result2;
+      // console.log("filterColumns", filterColumns);
+      // console.log("filters", customizedFilters);
+      customizedFilters.forEach(filterSetting => {
+        const filterColumnsClone = deepClone(filterColumns);
+        filterColumnsClone.forEach(filter => {
+          const matchedMainFilter = filterSetting.filters.find(
+            column => column.filterKey === filter.filterKey
+          );
+          if (matchedMainFilter) {
+            filter.value = matchedMainFilter.value;
+            if (filter.filterType === "dropdown") {
+              filter.selectValue = getDropDownValue(filter.value);
+            } else if (filter.filterType === "daterange") {
+              filter.ValueBegin = getDateBeginValue(filter.value);
+              filter.ValueEnd = getDateEndValue(filter.value);
+            }
+          }
+        });
+        filterSetting.filters = filterColumnsClone;
+      });
+
+      quickFilterList.value = customizedFilters;
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  const fetchQuickFilterData = async () => {
+    try {
+      const [result1, result2] = await Promise.all([
+        QuickFilterService.getQuickFilterColumnList(
+          QuickFilterColumnListParam.value
+        ),
+        QuickFilterService.getCustomizeQuickFilterSetting(
+          CustomizeQuickFilterSettingParam.value
+        )
+      ]);
+
+      quickFilterFormInitData.filters = deepClone(result1);
+      quickFilterFormInitData.filters.forEach(a => {
+        a.showOnGrid = true;
+        a.showOnFilter = true;
+        a.allowSorting = true;
+        a.allowGridHeaderFilter = true;
+        a.value = "";
+        a.selectValue = "";
+        a.ValueBegin = "";
+        a.ValueEnd = "";
       });
       const filterColumns = result1;
       fetchOptions(quickFilterFormInitData.filters);
@@ -363,31 +521,21 @@ export function quickFilterCTL() {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  }
-  const fetchAdvancedFilterData = () => {
-    CustomerQuickFilterService.getAdvancedFilterSetting(5)
+  };
+  const fetchAdvancedFilterData = async () => {
+    QuickFilterService.getColumnSetting(ColumnSettingParam)
       .then(data => {
         if (
           data &&
-          data.returnValue &&
-          Array.isArray(data.returnValue) &&
-          data.returnValue.length === quickFilterFormInitData.filters.length
+          Array.isArray(data) &&
+          data.length === quickFilterFormInitData.filters.length
         ) {
-          advancedFilterForm.filters = deepClone(data.returnValue);
+          advancedFilterForm.filters = deepClone(data);
         } else {
           advancedFilterForm.filters = deepClone(
             quickFilterFormInitData.filters
           );
         }
-        advancedFilterForm.filters.forEach(a => {
-          // a.showOnGrid = true;
-          // a.showOnFilter = true;
-          // a.allowSorting = true;
-          // a.allowGridHeaderFilter = true;
-          if (a.width && a.width === 70) {
-            a.width = 140;
-          }
-        });
       })
       .catch(err => {
         console.log("getAdvancedFilterSetting error", err);
@@ -399,7 +547,6 @@ export function quickFilterCTL() {
     });
   };
   const initBasicFilter = () => {
-    // console.log("initBasicFilter");
     advancedFilterForm.filters.forEach(filter => {
       filter.value = "";
       filter.selectValue = "";
@@ -407,44 +554,8 @@ export function quickFilterCTL() {
       filter.ValueEnd = "";
     });
   };
-  // const columnDrop = () => {
-  //   nextTick(() => {
-  //     const wrapper: HTMLElement = document.querySelector(
-  //       ".el-table__header-wrapper tr"
-  //     );
-  //     Sortable.create(wrapper, {
-  //       animation: 300,
-  //       delay: 0,
-  //       onEnd: ({ newIndex, oldIndex }) => {
-  //         const oldItem = advancedFilterForm.filters[oldIndex];
-  //         advancedFilterForm.filters.splice(oldIndex, 1);
-  //         advancedFilterForm.filters.splice(newIndex, 0, oldItem);
-  //         if (oldIndex !== newIndex) {
-  //           advancedFilterForm.filters = advancedFilterForm.filters.map(
-  //             column => {
-  //               const { ...rest } = column;
-  //               return {
-  //                 ...rest,
-  //                 fixed: false
-  //               };
-  //             }
-  //           );
-  //         }
-  //       }
-  //     });
-  //   });
-  // };
   const handleAdvancedReset = () => {
     initBasicFilter();
-    // console.log(
-    //   "handleAdvancedReset showBasicFilterTopForm",
-    //   showBasicFilterTopForm.value
-    // );
-    // console.log(
-    //   "handleAdvancedReset showBasicFilterForm",
-    //   showBasicFilterForm.value
-    // );
-    // if (!showBasicFilterTopForm) showBasicFilterForm.value = true;
   };
   const formattedDateRange = item => {
     if (item.ValueBegin && !item.ValueEnd) {
@@ -466,19 +577,21 @@ export function quickFilterCTL() {
   const basicFilterTopForm = computed(() => {
     return advancedFilterForm.filters.filter(
       a =>
-        (a.value && a.value !== "") ||
-        (a.selectValue && a.selectValue !== "") ||
-        (a.ValueBegin && a.ValueBegin !== "") ||
-        (a.ValueEnd && a.ValueEnd !== "")
+        a.enableOnSearchView &&
+        ((a.value && a.value !== "") ||
+          (a.selectValue && a.selectValue !== "") ||
+          (a.ValueBegin && a.ValueBegin !== "") ||
+          (a.ValueEnd && a.ValueEnd !== ""))
     );
   });
   const showBasicFilterTopForm = computed(() => {
     const c = advancedFilterForm.filters.filter(
       a =>
-        (a.value && a.value !== "") ||
-        (a.selectValue && a.selectValue !== "") ||
-        (a.ValueBegin && a.ValueBegin !== "") ||
-        (a.ValueEnd && a.ValueEnd !== "")
+        a.enableOnSearchView &&
+        ((a.value && a.value !== "") ||
+          (a.selectValue && a.selectValue !== "") ||
+          (a.ValueBegin && a.ValueBegin !== "") ||
+          (a.ValueEnd && a.ValueEnd !== ""))
     );
     if (c && c.length > 0) {
       return true;
@@ -488,11 +601,21 @@ export function quickFilterCTL() {
   });
   const showBasicFilterForm = ref(true);
   watch(showBasicFilterTopForm, newVal => {
-    if (!newVal) {
+    const f = quickFilterList.value.filter(c => c.clicked);
+    if (!newVal && f.length == 0) {
       // showBasicFilterForm.value = true;
       activePanelNames.value.push("BasicFilterForm");
     }
   });
+  // 监听 filters 的变化
+  watch(
+    () => quickFilterForm.filters,
+    newFilters => {
+      fetchOptions(newFilters);
+      fetchOptionsNeedParam(newFilters);
+    },
+    { deep: true } // 深度监听 filters 的变化
+  );
   const activePanelNames = ref(["BasicFilterForm"]);
   return {
     getOptions,
@@ -506,6 +629,8 @@ export function quickFilterCTL() {
     handleQuickFilterClick,
     updateQuickFilter,
     fetchData,
+    fetchQuickFilterData,
+    fetchAdvancedFilterData,
     advancedFilterForm,
     basicFilterTopForm,
     initAdvancedFilter,
@@ -516,6 +641,11 @@ export function quickFilterCTL() {
     // handleCustomerSearch,
     formattedDateRange,
     handleBasicFilterBtnClick,
-    activePanelNames
+    activePanelNames,
+    filterRequestType,
+    monthDatePickerList,
+    QuickFilterColumnListParam,
+    CustomizeQuickFilterSettingParam,
+    ColumnSettingParam
   };
 }
