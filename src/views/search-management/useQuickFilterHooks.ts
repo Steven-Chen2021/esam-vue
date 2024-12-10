@@ -7,7 +7,7 @@ import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 import {
   customerName,
   // customerStatus,
-  productLine,
+  // productLine,
   // carrier,
   // shipper,
   // consignee,
@@ -19,12 +19,12 @@ import {
   // shipmentqualitytype,
   // creditterm,
   // quoteProductLine,
-  country,
-  state,
-  city,
-  leadSourceGroup,
-  industryGroup,
-  status,
+  // country,
+  // state,
+  // city,
+  // leadSourceGroup,
+  // industryGroup,
+  // status,
   // quoteCustomerByLead,
   // quoteFreightChargeCode,
   // dimOrg,
@@ -46,15 +46,15 @@ import {
   industryBySearchKey,
   ownerSales,
   station,
-  contactNames,
+  // contactNames,
   contactFullName,
-  contactRole,
+  // contactRole,
   contactBoss,
   // contactHobby,
-  taskPriority,
-  taskLogType,
-  taskStatus,
-  taskSubjectType,
+  // taskPriority,
+  // taskLogType,
+  // taskStatus,
+  // taskSubjectType,
   userformat2,
   cityformat2BySearchKey
   // contactBycustomerid,
@@ -155,52 +155,9 @@ export function quickFilterCTL() {
         a => a.filterType === "dropdown" && a.filterSourceType === "api"
       );
       selectFilterList.forEach(async item => {
-        let resourceType = 0;
-        switch (item.filterKey) {
-          case "productLineName":
-            resourceType = productLine;
-            break;
-          case "country":
-            resourceType = country;
-            break;
-          case "state":
-            resourceType = state;
-            break;
-          case "city":
-            resourceType = city;
-            break;
-          case "leadSourceGroup":
-            resourceType = leadSourceGroup;
-            break;
-          case "industryGroup":
-            resourceType = industryGroup;
-            break;
-          case "status":
-            resourceType = status;
-            break;
-          case "names":
-            resourceType = contactNames;
-            break;
-          case "role":
-            resourceType = contactRole;
-            break;
-          case "priority":
-            resourceType = taskPriority;
-            break;
-          case "logType":
-            resourceType = taskLogType;
-            break;
-          case "taskStatus":
-            resourceType = taskStatus;
-            break;
-          case "subjectCategory":
-            resourceType = taskSubjectType;
-            break;
-        }
-        const response = await commonService.getAutoCompleteList({
-          OptionsResourceType: resourceType,
-          Paginator: false
-        });
+        const response = await commonService.getAutoCompleteListViaURL(
+          item.filterSource
+        );
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;
@@ -523,7 +480,7 @@ export function quickFilterCTL() {
     }
   };
   const fetchAdvancedFilterData = async () => {
-    QuickFilterService.getColumnSetting(ColumnSettingParam)
+    QuickFilterService.getColumnSetting(ColumnSettingParam.value)
       .then(data => {
         if (
           data &&

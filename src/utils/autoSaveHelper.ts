@@ -6,25 +6,25 @@ import { ref } from "vue";
 export function AutoSaveHelper() {
   const { t } = useI18n();
   interface iAutoSave {
-    tableName: string | null;
-    fieldName: string | null;
-    id: number;
-    custID: string;
-    oldValue: string | null;
-    value: number | null;
-    oldEntity: number | null;
-    newEntity: string | null;
+    TableName: string | null;
+    FieldName: string | null;
+    Id: number;
+    CustID: string;
+    OldValue: string | null;
+    Value: number | null;
+    OldEntity: number | null;
+    NewEntity: string | null;
   }
 
   const AutoSaveItem = ref<iAutoSave>({
-    tableName: null,
-    fieldName: null,
-    id: 0,
-    custID: "",
-    oldValue: null,
-    value: null,
-    oldEntity: null,
-    newEntity: null
+    TableName: null,
+    FieldName: null,
+    Id: 0,
+    CustID: "",
+    OldValue: null,
+    Value: null,
+    OldEntity: null,
+    NewEntity: null
   });
 
   async function AutoSave(params: any) {

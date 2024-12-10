@@ -530,4 +530,21 @@ message:
     period: Effective And Expired Is Required.
 approval:
   list: Approval Management
+  quickfilter:
+    ownerStationCode: Owner Station
+    customerName: Customer Name
+    approvalNum: Approval Number
+    status: Status
+    createdUserName: IssueBy
+    updatedDate: IssueDate
+    approvalID: Approval ID
+    comments: Comments
+    toUserID: Signer
+    pid: Product Line ID
+    productLineCode: Product Line
+    sourceType: Apply Category
+    ownerStationID: Owner Station ID
+      
+    
+      
   

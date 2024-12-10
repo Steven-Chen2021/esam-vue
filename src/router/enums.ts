@@ -31,7 +31,8 @@ const home = 0, // 平台规定只有 home 路由的 rank 才能为 0 ，所以�
   report = 7,
   deal = 4,
   customer = 1,
-  menuoverflow = 24;
+  menuoverflow = 24,
+  approval = 40;
 
 export {
   home,
@@ -65,5 +66,6 @@ export {
   credit,
   report,
   deal,
-  customer
+  customer,
+  approval
 };

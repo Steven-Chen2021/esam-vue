@@ -2,8 +2,9 @@ import CustomerSearchService from "@/services/customer/CustomerSearchService";
 import ContactSearchService from "@/services/contact/ContactSearchService";
 import TaskSearchService from "@/services/tasks/TaskSearchService";
 import QuoteSearchService from "@/services/quote/QuoteSearchService";
+import ApprovalSearchService from "@/services/approval/approvalSearchService";
 import { ElMessage } from "element-plus";
-import { contact, customer, tasks, quotes } from "@/router/enums";
+import { contact, customer, tasks, quotes, approval } from "@/router/enums";
 import dayjs from "dayjs";
 import { reactive, ref } from "vue";
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
@@ -231,6 +232,22 @@ export function listCTL() {
             })
             .catch(err => {
               console.log("getCustomerList error", err);
+              loading.value = false;
+            });
+        }
+        break;
+      case approval:
+        {
+          loading.value = true;
+          ApprovalSearchService.getApprovalList(searchParams)
+            .then(data => {
+              tableData.value = data.returnValue.results;
+              console.log(data);
+              if (data) total.value = data.returnValue.totalRecord;
+              loading.value = false;
+            })
+            .catch(err => {
+              console.log("getApprovalList error", err);
               loading.value = false;
             });
         }

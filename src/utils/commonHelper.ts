@@ -1,6 +1,6 @@
 import commonService from "@/services/commonService";
 // import { useI18n } from "vue-i18n";
-import { ref } from "vue";
+import { ref, reactive } from "vue";
 
 export function CommonHelper() {
   interface iColumnList {
@@ -26,6 +26,20 @@ export function CommonHelper() {
 
   const columnSettingResult = ref<iColumnList[]>([]);
 
+  const historyColumns = ref([
+    { type: "seq", field: "id", title: "ID", width: 50 },
+    { field: "columnName", title: "Column Name" },
+    { field: "originalValue", title: "Original Value" },
+    { field: "updatedValue", title: "Updated Value" },
+    { field: "updatedDate", title: "Update Date", sortable: true },
+    { field: "updateBy", title: "Update By" }
+  ]);
+  const historyResult = ref([]);
+  const apiStatusResult = reactive({
+    loading: false,
+    error: null as string | null
+  });
+
   async function GetColumnSettingResult(APIRequestType: number) {
     try {
       const result = commonService.getColumnSettingList(APIRequestType);
@@ -43,9 +57,33 @@ export function CommonHelper() {
       console.error("GetDocumentCloudResult Error:", error);
     }
   }
+
+  async function getHistoryResult(Category, SourceID) {
+    try {
+      console.log("getHistoryResult begin");
+      console.log(Category);
+      console.log(SourceID);
+      const response = await commonService.getHistoryLogResult(
+        Category,
+        SourceID
+      );
+      console.log(response);
+      if (response != null) {
+        historyResult.value = response.returnValue;
+      }
+    } catch (error) {
+      apiStatusResult.error = `Data Load Failed - ${error}`;
+    } finally {
+      apiStatusResult.loading = false;
+    }
+  }
+
   return {
     GetColumnSettingResult,
     columnSettingResult,
-    DocumentCloudResult
+    DocumentCloudResult,
+    historyColumns,
+    historyResult,
+    getHistoryResult
   };
 }

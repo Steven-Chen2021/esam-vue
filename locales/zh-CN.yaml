@@ -336,3 +336,17 @@ message:
     period: 日期区间必填
 approval:
   list: 簽核管理
+  quickfilter:
+    ownerStationCode: 所属站点   
+    customerName: 客户名称
+    approvalNum: 申请单号
+    status: 状态
+    createdUserName: 申请人
+    updatedDate: 申请日
+    approvalID: 申请编号
+    comments: 意见
+    toUserID: 签核者
+    pid: 产品线编号
+    productLineCode: 产品线
+    sourceType: 申请类别
+    ownerStationID: 所属站点编号

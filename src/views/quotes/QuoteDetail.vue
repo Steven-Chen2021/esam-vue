@@ -37,7 +37,6 @@ import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
 import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
-import { HistoryComponentHooks } from "./details/historyHooks";
 import { VxeTableBar } from "@/components/ReVxeTableBar";
 import { AutoSaveHelper } from "@/utils/autoSaveHelper";
 
@@ -51,11 +50,18 @@ import { UrlHelper } from "@/utils/urlHelper";
 
 import { QuoteDetailColumnAccessRight } from "@/utils/apiRequestEnum";
 import { useI18n } from "vue-i18n";
+import { Quotation } from "@/types/historyTypeEnum";
 
 const { t } = useI18n();
 const { toPreView } = usePreView();
-const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
-  CommonHelper();
+const {
+  GetColumnSettingResult,
+  columnSettingResult,
+  DocumentCloudResult,
+  historyColumns,
+  historyResult,
+  getHistoryResult
+} = CommonHelper();
 
 const { ReconstructDCURL } = UrlHelper();
 
@@ -108,9 +114,6 @@ const {
 } = LocalChargeHooks();
 
 const { AutoSaveItem, AutoSave } = AutoSaveHelper();
-
-const { historyColumns, historyResult, getHistoryResult } =
-  HistoryComponentHooks();
 
 defineOptions({
   name: "QuoteDetail"
@@ -336,8 +339,9 @@ const quoteDetailColumns: PlusColumn[] = [
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
           const [effective, expired] = value;
-          const formattedString = `effective: ${effective}, expired: ${expired}`;
-          autoSaveTrigger(formattedString, "period");
+          // const formattedString = `effective: ${effective}, expired: ${expired}`;
+          autoSaveTrigger(effective, "effectiveDate");
+          autoSaveTrigger(expired, "expiredDate");
         } else {
           console.error("Invalid value format:", value);
         }
@@ -436,7 +440,7 @@ const quoteDetailColumns: PlusColumn[] = [
             disabledImportLocalChargeBtn.value = false;
           });
         });
-        autoSaveTrigger(value, "pid");
+        autoSaveTrigger(value, "productLineName");
 
         if (getParameter.id === "0") {
         }
@@ -479,7 +483,7 @@ const quoteDetailColumns: PlusColumn[] = [
           col => col.value === value
         ) as any;
         quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
-        autoSaveTrigger(value, "tradeTermId");
+        autoSaveTrigger(value, "tradeTerm");
       }
     }
   },
@@ -497,7 +501,7 @@ const quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.shippingTerm;
       },
       onChange: value => {
-        autoSaveTrigger(value, "shippingTerm");
+        autoSaveTrigger(value, "shppingTerm");
       }
     }
   },
@@ -534,7 +538,7 @@ const quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.creditTermId;
       },
       onChange: value => {
-        autoSaveTrigger(value, "creditTermId");
+        autoSaveTrigger(value, "creditTerm");
       }
     }
   },
@@ -552,7 +556,7 @@ const quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.creditTermId;
       },
       onChange: value => {
-        autoSaveTrigger(value, "creditTermId");
+        autoSaveTrigger(value, "reference");
       }
     }
   },
@@ -590,7 +594,7 @@ const quoteDetailColumns: PlusColumn[] = [
       onChange: value => {
         const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
         hideOTPCode.value = showHideCodes.includes(value) ? false : true;
-        autoSaveTrigger(value, "typeCode");
+        autoSaveTrigger(value, "sType");
       }
     }
   },
@@ -624,7 +628,7 @@ const quoteDetailColumns: PlusColumn[] = [
         if (value < 0) quotationDetailResult.value.volumeShareForAgent = 0;
         quotationDetailResult.value.volumeShareForDimerco =
           100 - (quotationDetailResult.value.volumeShareForAgent as number);
-        autoSaveTrigger(value, "dimensionFactor");
+        autoSaveTrigger(value, "volumeShareForAgent");
       }
     }
   },
@@ -644,10 +648,10 @@ const quoteDetailColumns: PlusColumn[] = [
       },
       onFocus: () => {
         previousValue.value = quotationDetailResult.value.volumeShareForDimerco;
-      },
-      onChange: value => {
-        autoSaveTrigger(value, "dimensionFactor");
       }
+      // onChange: value => {
+      //   autoSaveTrigger(value, "volumeShareForAgent");
+      // }
     }
   }
 ];
@@ -990,7 +994,7 @@ const deleteData = () => {
 
 const viewHistory = () => {
   historyVisible.value = true;
-  getHistoryResult();
+  getHistoryResult(Quotation, quotationDetailResult.value.quoteid);
 };
 
 const handleCheckboxGroupChange = (values: string[]) => {
@@ -1053,14 +1057,14 @@ const AddLCPItems = (source, isExport) => {
 
 const autoSaveTrigger = (newValue, columnName) => {
   if (newValue != previousValue.value && getParameter.id != "0") {
-    AutoSaveItem.value.tableName = "saquotes";
-    AutoSaveItem.value.fieldName = columnName;
-    AutoSaveItem.value.id = quotationDetailResult.value.qid as number;
-    AutoSaveItem.value.custID =
+    AutoSaveItem.value.TableName = "saquotes";
+    AutoSaveItem.value.FieldName = columnName;
+    AutoSaveItem.value.Id = quotationDetailResult.value.quoteid as number;
+    AutoSaveItem.value.CustID =
       quotationDetailResult.value.customerHQID.toString();
-    AutoSaveItem.value.oldValue = previousValue.value;
-    AutoSaveItem.value.value = newValue;
-    AutoSave(AutoSaveItem);
+    AutoSaveItem.value.OldValue = previousValue.value;
+    AutoSaveItem.value.Value = newValue;
+    AutoSave(AutoSaveItem.value);
   }
 };
 
@@ -1135,6 +1139,59 @@ const amsCostAdjust = item => {
       // 更新 headerName 為 rate 的 headerName 加上 " Cost"
       costItem.headerName = `${item.headerName} Cost`;
     }
+  }
+};
+
+const handleHandsonTableAutoSave = category => {
+  switch (category) {
+    case "Freight":
+      frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
+      frightChargeParams.value.pid = quotationDetailResult.value.pid;
+      frightChargeParams.value.quoteFreights = freightChargeSettings.value.data;
+      saveFreightChargeResult(frightChargeParams.value).then(res => {
+        if (res && res.isSuccess) {
+          ElNotification({
+            title: "successfully",
+            message: "Freight Charge Save Successfully!",
+            type: "success"
+          });
+        }
+      });
+      break;
+    case "Export":
+      const exportLocalChargeParam = {
+        quoteID: frightChargeParams.value.quoteID,
+        pid: quotationDetailResult.value.pid,
+        isExport: true,
+        detail: exportLocationResult.value
+      };
+      saveLocalChargeResult(exportLocalChargeParam).then(res => {
+        if (res && res.isSuccess) {
+          ElNotification({
+            title: "successfully",
+            message: "Export Local Charge Save Successfully!",
+            type: "success"
+          });
+        }
+      });
+      break;
+    case "Import":
+      const importLocalChargeParam = {
+        quoteID: frightChargeParams.value.quoteID,
+        pid: quotationDetailResult.value.pid,
+        isExport: false,
+        detail: importLocationResult.value
+      };
+      saveLocalChargeResult(importLocalChargeParam).then(res => {
+        if (res && res.isSuccess) {
+          ElNotification({
+            title: "successfully",
+            message: "Import Local Charge Save Successfully!",
+            type: "success"
+          });
+        }
+      });
+      break;
   }
 };
 
@@ -1484,7 +1541,12 @@ const formatDate = dateInput => {
                 class="handsontable-wrapper"
                 @focusout="handleFocusOut"
               >
-                <HotTable ref="hotTableRef" :settings="freightChargeSettings" />
+                <div @mouseleave="handleHandsonTableAutoSave('Freight')">
+                  <HotTable
+                    ref="hotTableRef"
+                    :settings="freightChargeSettings"
+                  />
+                </div>
               </div>
             </el-collapse-item>
             <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
@@ -1514,10 +1576,12 @@ const formatDate = dateInput => {
                       />
                     </el-select>
                   </div>
-                  <HotTable
-                    :ref="setHotTableRef(item.cityID)"
-                    :settings="item.hotTableSetting"
-                  />
+                  <div @mouseleave="handleHandsonTableAutoSave('Export')">
+                    <HotTable
+                      :ref="setHotTableRef(item.cityID)"
+                      :settings="item.hotTableSetting"
+                    />
+                  </div>
                 </el-tab-pane>
               </el-tabs>
             </el-collapse-item>
@@ -1548,10 +1612,12 @@ const formatDate = dateInput => {
                       />
                     </el-select>
                   </div>
-                  <HotTable
-                    :ref="setHotTableRef(item.cityID)"
-                    :settings="item.hotTableSetting"
-                  />
+                  <div @mouseleave="handleHandsonTableAutoSave('Export')">
+                    <HotTable
+                      :ref="setHotTableRef(item.cityID)"
+                      :settings="item.hotTableSetting"
+                    />
+                  </div>
                 </el-tab-pane>
               </el-tabs>
             </el-collapse-item>
