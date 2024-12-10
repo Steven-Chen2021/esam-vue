@@ -501,6 +501,10 @@ watch(
                 v-else-if="filterItem.filterType === 'daterange'"
                 style="margin-left: 6px; font-weight: bold"
                 >{{ formattedDateRange(filterItem) }}</span
+              ><span
+                v-else-if="filterItem.filterType === 'checkbox'"
+                style="margin-left: 6px; font-weight: bold"
+                >{{ filterItem.value ? "Yes" : "No" }}</span
               >
               <el-icon style="margin: 0.1em 0 0 0.2em" :size="16">
                 <IconifyIconOffline :icon="Close" />

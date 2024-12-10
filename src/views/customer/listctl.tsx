@@ -93,6 +93,10 @@ export function listCTL() {
         ContactSearchService.getContactList(searchParams)
           .then(data => {
             if (data.isSuccess) {
+              data.returnValue.results.forEach(a => {
+                a["vip"] =
+                  a["vip"] || a["vip"].toLowerCase() === "true" ? "Yes" : "No";
+              });
               tableData.value = data.returnValue.results;
               if (
                 data &&
