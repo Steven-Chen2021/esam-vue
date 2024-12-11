@@ -1122,6 +1122,11 @@ export function taskProfileCTL() {
       filterOptions.value[filterItem["filterKey"]].list = [];
     }
   };
+  const notifyWindowShow = ref(false);
+  const cancelSaveNotify = () => {
+    console.log("cancelSaveNotify");
+    notifyWindowShow.value = false;
+  };
   return {
     membersFormData,
     loadDimOrgOptions,
@@ -1193,6 +1198,8 @@ export function taskProfileCTL() {
     updateContactProfilePLResult,
     querySearchSeleteAsync,
     remoteFilterAttendeesloading,
-    remoteSelectList
+    remoteSelectList,
+    notifyWindowShow,
+    cancelSaveNotify
   };
 }

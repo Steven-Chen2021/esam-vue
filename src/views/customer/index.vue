@@ -593,6 +593,8 @@ watch(
                     placeholder=""
                     style="width: 338px"
                     filterable
+                    clearable
+                    @change="handleSearch(advancedFilterForm)"
                   >
                     <el-option
                       v-for="option in filterOptions[filterItem.filterKey].list"
@@ -613,12 +615,15 @@ watch(
                     "
                     placeholder=""
                     style="width: 338px"
+                    @keydown.enter="handleSearch(advancedFilterForm)"
+                    @select="handleSearch(advancedFilterForm)"
                   />
                   <el-input
                     v-else-if="filterItem.filterType === 'input'"
                     v-model="filterItem.value"
                     placeholder=""
                     style="width: 338px"
+                    @keydown.enter="handleSearch(advancedFilterForm)"
                   />
                   <el-date-picker
                     v-if="filterItem.filterType === 'daterange'"
@@ -635,6 +640,7 @@ watch(
                     format="MMM DD"
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
+                    @change="handleSearch(advancedFilterForm)"
                   />
                   <span
                     v-if="filterItem.filterType === 'daterange'"
@@ -656,6 +662,7 @@ watch(
                     format="MMM DD"
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
+                    @change="handleSearch(advancedFilterForm)"
                   />
                 </el-form-item>
                 <el-form-item>

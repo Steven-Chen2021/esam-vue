@@ -274,6 +274,8 @@ task:
     appointmentEndTimeAlert: Please select Appointment EndTime
   action:
     title: Action Items
+  mailNotify:
+    title: eMail Notify
 contact:
   tabTitle: Contact Search
   cancel: Cancel

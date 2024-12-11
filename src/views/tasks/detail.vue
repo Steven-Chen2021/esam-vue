@@ -51,11 +51,16 @@ const {
   updateContactProfilePLResult,
   querySearchSeleteAsync,
   remoteFilterAttendeesloading,
-  remoteSelectList
+  remoteSelectList,
+  notifyWindowShow,
+  cancelSaveNotify
 } = taskProfileCTL();
 defineOptions({
   name: "TaskDetail"
 });
+// #region eMail Notify
+import taskeMailNotify from "@/components/taskeMailNotify/taskeMailNotify.vue";
+// #endregion
 const props = defineProps({
   ParentID: {
     type: String,
@@ -868,6 +873,11 @@ onMounted(() => {
         </el-collapse>
       </div>
     </el-card>
+    <taskeMailNotify
+      :showeMailNotifyWindow="notifyWindowShow"
+      :TaskID="0"
+      @handleCancelEvent="cancelSaveNotify"
+    />
   </div>
 </template>
 
