@@ -18,6 +18,12 @@ import CustomerQuickFilterService from "@/services/commonService";
 import { useTourStoreHook } from "@/store/modules/tour";
 import { useRouter } from "vue-router";
 import { useDetail } from "./hooks";
+import {
+  GetQuoteQuickFilterColumnList,
+  CustomizeQuickFilterSettingFromQuoteSearch,
+  QuoteGridColumnSetting,
+  QuoteGridResult
+} from "@/types/apiRequestTypeEnum";
 
 const { toDetail, router } = useDetail();
 
@@ -74,11 +80,15 @@ const handleFilterEnable = (obj: any) => {
 
 const Router = useRouter();
 const handleViewClick = row => {
-  console.log("handleViewClick row", row);
-  Router.push({
-    path: "/quotes/detail",
-    query: { LID: row.hqid, basicRole: "read" }
-  });
+  toDetail(
+    {
+      id: row.qid,
+      qname: row.quoteNo,
+      pid: row.productLineName === "Ocean" ? "6" : "2",
+      pagemode: "view"
+    },
+    "params"
+  );
 };
 // #region Quick Filter
 const handleFilterClick = filter => {
@@ -121,7 +131,8 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 6;
+      quickFilterForm.filterAppliedPage =
+        CustomizeQuickFilterSettingFromQuoteSearch;
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -205,7 +216,7 @@ const deleteQuickFilter = () => {
   dialogVisible.value = false;
   const params = {
     filterID: deleteQuickFilterID.value,
-    filterAppliedPage: 6
+    filterAppliedPage: CustomizeQuickFilterSettingFromQuoteSearch
   };
   CustomerQuickFilterService.deleteQuickFilter(params)
     .then(data => {
@@ -357,7 +368,10 @@ const handleCopyQuote = quoteID => {
   copyQuote(params)
     .then(res => {
       if (res.isSuccess && res.returnValue > 0)
-        toDetail({ id: res.returnValue, qname: "Copy Quote" }, "params");
+        toDetail(
+          { id: res.returnValue, qname: "Copy Quote", pagemode: "edit" },
+          "params"
+        );
     })
     .catch(ex => {
       console.log(ex);
@@ -734,6 +748,7 @@ onMounted(() => {
             ? true
             : false
         "
+        show-overflow-tooltip
       >
         <template #default="scope">
           <span v-if="col.filterKey !== 'combatTeamPL'">{{
@@ -769,6 +784,7 @@ onMounted(() => {
             link
             type="primary"
             size="small"
+            show-overflow-tooltip
             @click="handleViewClick(scope.row)"
           >
             View
@@ -782,7 +798,8 @@ onMounted(() => {
                 {
                   id: scope.row.qid,
                   qname: scope.row.quoteNo,
-                  pid: scope.row.productLineName === 'Ocean' ? '6' : '2'
+                  pid: scope.row.productLineName === 'Ocean' ? '6' : '2',
+                  pagemode: 'edit'
                 },
                 'params'
               )

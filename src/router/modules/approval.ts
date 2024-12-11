@@ -21,7 +21,7 @@ export default {
     {
       path: "/approval/detail/:id",
       name: "ApprovalDetail",
-      component: () => import("@/views/approval/Detail.vue"),
+      component: () => import("@/views/approval/detail.vue"),
       meta: {
         title: $t("menus.dimercoQuotes"),
         showLink: false
