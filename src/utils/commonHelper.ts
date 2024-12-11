@@ -32,7 +32,7 @@ export function CommonHelper() {
     { field: "originalValue", title: "Original Value" },
     { field: "updatedValue", title: "Updated Value" },
     { field: "updatedDate", title: "Update Date", sortable: true },
-    { field: "updateBy", title: "Update By" }
+    { field: "updatedBy", title: "Update By" }
   ]);
   const historyResult = ref([]);
   const apiStatusResult = reactive({
@@ -60,17 +60,14 @@ export function CommonHelper() {
 
   async function getHistoryResult(Category, SourceID) {
     try {
-      console.log("getHistoryResult begin");
-      console.log(Category);
-      console.log(SourceID);
       const response = await commonService.getHistoryLogResult(
         Category,
         SourceID
       );
-      console.log(response);
       if (response != null) {
         historyResult.value = response.returnValue;
       }
+      return response;
     } catch (error) {
       apiStatusResult.error = `Data Load Failed - ${error}`;
     } finally {

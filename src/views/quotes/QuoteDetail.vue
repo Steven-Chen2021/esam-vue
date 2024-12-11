@@ -48,7 +48,7 @@ import { UserAccessRightByCustomerProductLine } from "@/utils/auth";
 import { CommonHelper } from "@/utils/commonHelper";
 import { UrlHelper } from "@/utils/urlHelper";
 
-import { QuoteDetailColumnAccessRight } from "@/utils/apiRequestEnum";
+import { QuoteDetailColumnAccessRight } from "@/types/apiRequestTypeEnum";
 import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
 
@@ -158,6 +158,7 @@ const quoteStatusHistory = ref([]);
 // 用於存放所有 HotTable 的 refs
 const hotTableRefs = ref({});
 const previousValue = ref<any>();
+const previousGreetingsValue = ref<any>();
 
 const dcUrl = ref();
 
@@ -449,6 +450,11 @@ const quoteDetailColumns: PlusColumn[] = [
           _pid
         ).then(res => {
           customerProductLineAccessRight.value = res.returnValue;
+          customerProductLineAccessRight.value.isWrite =
+            getParameter.pagemode === "view"
+              ? false
+              : customerProductLineAccessRight.value.isWrite;
+
           const dcParams = { KeyValue: qid.value, DCType: "NRA" };
           DocumentCloudResult(dcParams).then(res => {
             if (res && res.isSuccess) {
@@ -702,6 +708,16 @@ const handleLocalChargeResult = (
         });
       });
     });
+  }
+};
+
+const handleGreetingsFocus = () => {
+  previousGreetingsValue.value = quotationDetailResult.value.greeting;
+};
+
+const handleGreetingsFocusOut = () => {
+  if (previousGreetingsValue.value != quotationDetailResult.value.greeting) {
+    autoSaveTrigger(quotationDetailResult.value.greeting, "greetings");
   }
 };
 
@@ -994,7 +1010,9 @@ const deleteData = () => {
 
 const viewHistory = () => {
   historyVisible.value = true;
-  getHistoryResult(Quotation, quotationDetailResult.value.quoteid);
+  getHistoryResult(Quotation, quotationDetailResult.value.quoteid).then(res => {
+    historyLoading.value = false;
+  });
 };
 
 const handleCheckboxGroupChange = (values: string[]) => {
@@ -1075,10 +1093,6 @@ const showQuotationStatusHistory = () => {
 };
 
 const amsCostAdjust = item => {
-  console.log(ChargeCodeSettingResult);
-  console.log(item);
-
-  // 檢查是否是某個 sellingRate 的 columnName
   if (item.columnName.startsWith("sellingRate")) {
     const currentIndex = parseInt(
       item.columnName.replace("sellingRate", ""),
@@ -1090,13 +1104,13 @@ const amsCostAdjust = item => {
       console.warn(
         `Invalid input for ${item.columnName}: ${item.headerName}. Value must start with "+" or "-". Clearing value.`
       );
-      item.headerName = ""; // 清空值
+      item.headerName = "";
       return;
     }
 
     // 如果只輸入了 "+" 或 "-"（沒有數字），暫時允許，但不執行大小比較
     if (/^[+-]$/.test(item.headerName)) {
-      return; // 暫時返回，不清空，允許用戶繼續輸入
+      return; // 暫時返回，不清空，允許繼續輸入
     }
 
     // 確保完整格式（+ 或 - 開頭，後接數字）
@@ -1104,7 +1118,7 @@ const amsCostAdjust = item => {
       console.warn(
         `Invalid input for ${item.columnName}: ${item.headerName}. Value must start with "+" or "-" followed by a number.`
       );
-      item.headerName = ""; // 清空值
+      item.headerName = "";
       return;
     }
 
@@ -1143,6 +1157,7 @@ const amsCostAdjust = item => {
 };
 
 const handleHandsonTableAutoSave = category => {
+  return false;
   switch (category) {
     case "Freight":
       frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
@@ -1278,6 +1293,10 @@ onMounted(() => {
         _pid
       ).then(res => {
         customerProductLineAccessRight.value = res.returnValue;
+        customerProductLineAccessRight.value.isWrite =
+          getParameter.pagemode === "view"
+            ? false
+            : customerProductLineAccessRight.value.isWrite;
         dataPermissionExtension();
       });
     });
@@ -1510,6 +1529,8 @@ const formatDate = dateInput => {
                   :mode="mode"
                   style="height: 500px; overflow-y: hidden"
                   @onCreated="handleCreated"
+                  @onFocus="handleGreetingsFocus"
+                  @focusout="handleGreetingsFocusOut"
                 />
                 <EditorBase />
               </div>

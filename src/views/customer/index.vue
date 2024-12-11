@@ -196,7 +196,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
               message: t("customer.list.quickFilter.addSucText"),
               type: "success"
             });
-            fetchQuickFilterData(customer);
+            fetchQuickFilterData();
             setTimeout(() => {
               setTourStep();
             }, 800);
