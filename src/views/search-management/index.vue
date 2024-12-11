@@ -44,10 +44,15 @@ import {
   CustomizeQuickFilterSettingFromTaskSearch,
   TaskGridColumnSetting,
   TaskGridResult,
-  TaskProfileColumnList
+  TaskProfileColumnList,
+  GetApprovalFilterColumnList,
+  CustomizeQuickFilterSettingFromApprovalSearch,
+  ApprovalGridColumnSetting,
+  ApprovalGridResult,
+  ApprovalColumnList
 } from "@/types/apiRequestTypeEnum";
 
-import { contact, customer, tasks, quotes } from "@/router/enums";
+import { contact, customer, tasks, quotes, approval } from "@/router/enums";
 
 const quickFilterShow = ref(false);
 const {
@@ -96,6 +101,9 @@ defineOptions({
   name: "searchManagement"
 });
 const showAdvancedSettings = ref(false);
+const maxHeight = ref(null);
+const category = ref();
+
 const handleAdvancedSettings = () => {
   showAdvancedSettings.value = true;
 };
@@ -110,10 +118,27 @@ const handleFilterEnable = (obj: any) => {
 };
 
 const handleViewClick = row => {
-  router.push({
-    name: "CustomerDetail",
-    params: { id: row.hqid, qname: row.customerName }
-  });
+  console.log(row);
+  console.log(category.value);
+  switch (category.value) {
+    case "ApprovalList":
+      if (row.sourceType === "Quote") {
+        router.push({
+          name: "ApprovalDetail",
+          params: { id: row.approvalID }
+        });
+      } else if (row.sourceType === "Credit") {
+      } else {
+      }
+      break;
+    case "DealList":
+      break;
+  }
+
+  // router.push({
+  //   name: "CustomerDetail",
+  //   params: { id: row.hqid, qname: row.customerName }
+  // });
 };
 const handleAddCustomer = () => {
   router.push({
@@ -400,18 +425,22 @@ const handleFilterBtnClick = item => {
 };
 // #endregion
 
-const maxHeight = ref(null);
-
 onMounted(async () => {
-  console.log(router.currentRoute.value.name);
-  const category = router.currentRoute.value.name;
-  switch (category) {
+  category.value = router.currentRoute.value.name;
+  switch (category.value) {
     case "quoteSearch":
       QuickFilterColumnListParam.value = GetQuoteQuickFilterColumnList;
       CustomizeQuickFilterSettingParam.value =
         CustomizeQuickFilterSettingFromQuoteSearch;
       ColumnSettingParam.value = QuoteGridColumnSetting;
       requestCategory.value = quotes;
+      break;
+    case "ApprovalList":
+      QuickFilterColumnListParam.value = GetApprovalFilterColumnList;
+      CustomizeQuickFilterSettingParam.value =
+        CustomizeQuickFilterSettingFromApprovalSearch;
+      ColumnSettingParam.value = ApprovalGridColumnSetting;
+      requestCategory.value = approval;
       break;
   }
   dataResultAPIRequestType.value = customer;

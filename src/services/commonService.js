@@ -91,18 +91,18 @@ class CustomerQuickFilterService {
     }
   }
 
-  async getHistoryResult(params) {
-    try {
-      const url = "/api/Common/HistoryResult";
-      const queryString = new URLSearchParams(params).toString();
-      const fullUrl = `${url}?${queryString}`;
-      const response = await API.get(fullUrl);
-      return response.returnValue;
-    } catch (error) {
-      console.error(error);
-      return [];
-    }
-  }
+  // async getHistoryResult(params) {
+  //   try {
+  //     const url = "/api/Common/HistoryResult";
+  //     const queryString = new URLSearchParams(params).toString();
+  //     const fullUrl = `${url}?${queryString}`;
+  //     const response = await API.get(fullUrl);
+  //     return response.returnValue;
+  //   } catch (error) {
+  //     console.error(error);
+  //     return [];
+  //   }
+  // }
 
   async getCBMTransferUOMResult() {
     try {
@@ -160,6 +160,26 @@ class CustomerQuickFilterService {
     } catch (error) {
       console.error(error);
       return [];
+    }
+  }
+
+  async getAutoCompleteListViaURL(Url) {
+    try {
+      const response = await API.get(Url);
+      return response.returnValue;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+  async getHistoryLogResult(Category, SourceID) {
+    try {
+      const url = "/api/Common/DiffLogResult";
+      const fullUrl = `${url}?page=${Category}&SourceID=${SourceID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
     }
   }
 }

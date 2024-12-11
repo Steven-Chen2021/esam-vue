@@ -1,5 +1,5 @@
 import { $t } from "@/plugins/i18n";
-import { deal } from "@/router/enums";
+import { approval } from "@/router/enums";
 
 export default {
   path: "/approval",
@@ -7,7 +7,7 @@ export default {
   meta: {
     icon: "ri:draft-line",
     title: $t("approval.list"),
-    rank: deal
+    rank: approval
   },
   children: [
     {
@@ -16,6 +16,15 @@ export default {
       component: () => import("@/views/search-management/index.vue"),
       meta: {
         title: $t("approval.list")
+      }
+    },
+    {
+      path: "/approval/detail/:id",
+      name: "ApprovalDetail",
+      component: () => import("@/views/approval/Detail.vue"),
+      meta: {
+        title: $t("menus.dimercoQuotes"),
+        showLink: false
       }
     }
   ]

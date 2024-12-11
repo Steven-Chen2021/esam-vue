@@ -21,7 +21,12 @@ const GetCustomerQuickFilterColumnList = 1,
   CustomizeQuickFilterSettingFromTaskSearch = 32,
   TaskGridColumnSetting = 33,
   TaskGridResult = 34,
-  TaskProfileColumnList = 35;
+  TaskProfileColumnList = 35,
+  GetApprovalFilterColumnList = 41,
+  CustomizeQuickFilterSettingFromApprovalSearch = 42,
+  ApprovalGridColumnSetting = 43,
+  ApprovalGridResult = 44,
+  ApprovalColumnList = 45;
 
 export {
   GetCustomerQuickFilterColumnList,
@@ -47,5 +52,10 @@ export {
   CustomizeQuickFilterSettingFromTaskSearch,
   TaskGridColumnSetting,
   TaskGridResult,
-  TaskProfileColumnList
+  TaskProfileColumnList,
+  GetApprovalFilterColumnList,
+  CustomizeQuickFilterSettingFromApprovalSearch,
+  ApprovalGridColumnSetting,
+  ApprovalGridResult,
+  ApprovalColumnList
 };
