@@ -32,8 +32,8 @@ export function useDetail() {
         params: parameter,
         meta: {
           title: {
-            zh: `${parameter.id === "0" ? "Create Task" : parameter.qname + " - " + parameter.dt}`,
-            en: `${parameter.id === "0" ? "Create Task" : parameter.qname + " - " + parameter.dt}`
+            zh: `${parameter.id === "0" ? "Create Task" : (parameter.qname.toString().length > 10 ? parameter.qname.toString().substring(0, 7) + "..." : parameter.qname) + " - " + parameter.dt}`,
+            en: `${parameter.id === "0" ? "Create Task" : (parameter.qname.toString().length > 10 ? parameter.qname.toString().substring(0, 7) + "..." : parameter.qname) + " - " + parameter.dt}`
           }
           // 如果使用的是非国际化精简版title可以像下面这么写
           // title: `No.${index} - 详情信息`,

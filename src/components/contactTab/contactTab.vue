@@ -548,6 +548,7 @@ watch(
                     style="width: 338px"
                     filterable
                     clearable
+                    @change="handleSearch(advancedFilterForm)"
                   >
                     <el-option
                       v-for="option in filterOptions[filterItem.filterKey].list"
@@ -570,6 +571,8 @@ watch(
                       t('customer.list.quickFilter.holderKeyinText')
                     "
                     style="width: 338px"
+                    @keydown.enter="handleSearch(advancedFilterForm)"
+                    @select="handleSearch(advancedFilterForm)"
                   />
                   <el-input
                     v-else-if="filterItem.filterType === 'input'"
@@ -578,6 +581,7 @@ watch(
                       t('customer.list.quickFilter.holderKeyinText')
                     "
                     style="width: 338px"
+                    @keydown.enter="handleSearch(advancedFilterForm)"
                   />
                   <el-date-picker
                     v-if="filterItem.filterType === 'daterange'"
@@ -603,6 +607,7 @@ watch(
                     "
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
+                    @change="handleSearch(advancedFilterForm)"
                   />
                   <span
                     v-if="filterItem.filterType === 'daterange'"
@@ -633,12 +638,14 @@ watch(
                     "
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
+                    @change="handleSearch(advancedFilterForm)"
                   />
                   <el-checkbox
                     v-else-if="filterItem.filterType === 'checkbox'"
                     v-model="filterItem.value"
                     :checked="filterItem.value ? true : false"
                     label=""
+                    @change="handleSearch(advancedFilterForm)"
                   />
                 </el-form-item>
                 <el-form-item>
