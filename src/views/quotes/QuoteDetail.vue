@@ -51,17 +51,13 @@ import { UrlHelper } from "@/utils/urlHelper";
 import { QuoteDetailColumnAccessRight } from "@/types/apiRequestTypeEnum";
 import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
+import { useHistoryColumns } from "@/components/HistoryLog/Columns";
+const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
 const { t } = useI18n();
 const { toPreView } = usePreView();
-const {
-  GetColumnSettingResult,
-  columnSettingResult,
-  DocumentCloudResult,
-  historyColumns,
-  historyResult,
-  getHistoryResult
-} = CommonHelper();
+const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
+  CommonHelper();
 
 const { ReconstructDCURL } = UrlHelper();
 
@@ -312,7 +308,9 @@ const quoteDetailColumns: PlusColumn[] = [
         quotationDetailResult.value.customerHQID = item.value;
         getProductLineByCustomerResult(item.value);
         getAttentionToResult(item.value);
-        autoSaveTrigger(item.value, "customerName");
+        if (previousValue.value != undefined && item.value != undefined) {
+          autoSaveTrigger(item.value, "customerName");
+        }
       }
     }
   },
@@ -340,9 +338,10 @@ const quoteDetailColumns: PlusColumn[] = [
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
           const [effective, expired] = value;
-          // const formattedString = `effective: ${effective}, expired: ${expired}`;
-          autoSaveTrigger(effective, "effectiveDate");
-          autoSaveTrigger(expired, "expiredDate");
+          const parseEffective = new Date(`${effective}`);
+          const parseExpired = new Date(`${expired}`);
+          autoSaveTrigger(parseEffective, "effectiveDate");
+          autoSaveTrigger(parseExpired, "expiredDate");
         } else {
           console.error("Invalid value format:", value);
         }
@@ -441,7 +440,10 @@ const quoteDetailColumns: PlusColumn[] = [
             disabledImportLocalChargeBtn.value = false;
           });
         });
-        autoSaveTrigger(value, "productLineName");
+
+        if (previousValue.value != undefined && value != undefined) {
+          autoSaveTrigger(value, "productLineName");
+        }
 
         if (getParameter.id === "0") {
         }
@@ -674,38 +676,40 @@ const handleLocalChargeResult = (
         true,
         localCharge.cityID
       ).then(res => {
-        LocationResult.value.push({
-          cityID: localCharge.cityID,
-          city: localCharge.city,
-          detail: [],
-          hotTableSetting: {
-            data: localCharge.detail || [],
-            colHeaders: localCharge.colHeaders || [],
-            rowHeaders: false,
-            dropdownMenu: true,
-            width: "100%",
-            height: "auto",
-            colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-            columns: localCharge?.columns?.map(column => ({
-              data: column.data,
-              type: column.type,
-              source: column.source || []
-            })),
-            autoWrapRow: true,
-            autoWrapCol: true,
-            allowInsertColumn: true,
-            allowInsertRow: true,
-            allowInvalid: true,
-            licenseKey: "524eb-e5423-11952-44a09-e7a22",
-            contextMenu: true,
-            afterChange: handleLocalChargeChange,
-            afterSelection: handleAfterSelection,
-            afterRemoveRow: handleRemoveRow,
-            readOnly: !customerProductLineAccessRight.value.isWrite
-          },
-          localChargePackageList: res,
-          localChargePackageSelector: []
-        });
+        if (localCharge.cityID != 0) {
+          LocationResult.value.push({
+            cityID: localCharge.cityID,
+            city: localCharge.city,
+            detail: [],
+            hotTableSetting: {
+              data: localCharge.detail || [],
+              colHeaders: localCharge.colHeaders || [],
+              rowHeaders: false,
+              dropdownMenu: true,
+              width: "100%",
+              height: "auto",
+              colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+              columns: localCharge?.columns?.map(column => ({
+                data: column.data,
+                type: column.type,
+                source: column.source || []
+              })),
+              autoWrapRow: true,
+              autoWrapCol: true,
+              allowInsertColumn: true,
+              allowInsertRow: true,
+              allowInvalid: true,
+              licenseKey: "524eb-e5423-11952-44a09-e7a22",
+              contextMenu: true,
+              afterChange: handleLocalChargeChange,
+              afterSelection: handleAfterSelection,
+              afterRemoveRow: handleRemoveRow,
+              readOnly: !customerProductLineAccessRight.value.isWrite
+            },
+            localChargePackageList: res,
+            localChargePackageSelector: []
+          });
+        }
       });
     });
   }
@@ -717,7 +721,11 @@ const handleGreetingsFocus = () => {
 
 const handleGreetingsFocusOut = () => {
   if (previousGreetingsValue.value != quotationDetailResult.value.greeting) {
-    autoSaveTrigger(quotationDetailResult.value.greeting, "greetings");
+    autoSaveTrigger(
+      quotationDetailResult.value.greeting,
+      "greetings",
+      "SAQuoteSection"
+    );
   }
 };
 
@@ -742,6 +750,7 @@ const handleAfterChange = (changes, source) => {
                   true,
                   localCharge.cityID
                 ).then(res => {
+                  console.log(localCharge);
                   exportLocationResult.value.push({
                     cityID: localCharge.cityID,
                     city: localCharge.city,
@@ -1073,9 +1082,12 @@ const AddLCPItems = (source, isExport) => {
   });
 };
 
-const autoSaveTrigger = (newValue, columnName) => {
+const autoSaveTrigger = (newValue, columnName, tableName2?) => {
   if (newValue != previousValue.value && getParameter.id != "0") {
     AutoSaveItem.value.TableName = "saquotes";
+    if (tableName2 != null) {
+      AutoSaveItem.value.TableName2 = tableName2;
+    }
     AutoSaveItem.value.FieldName = columnName;
     AutoSaveItem.value.Id = quotationDetailResult.value.quoteid as number;
     AutoSaveItem.value.CustID =
@@ -1255,12 +1267,13 @@ onMounted(() => {
           value: quotationDetailResult.value.customerHQID
         };
 
-        const fieldProps = quoteDetailColumns[0].fieldProps as any;
-        if (fieldProps.onSelect) {
-          fieldProps.onSelect(selectedItem);
-        } else {
-          console.warn("onSelect is not defined in fieldProps.");
-        }
+        // const fieldProps = quoteDetailColumns[0].fieldProps as any;
+        // console.log(quoteDetailColumns[0]);
+        // if (fieldProps.onSelect) {
+        //   fieldProps.onSelect(selectedItem);
+        // } else {
+        //   console.warn("onSelect is not defined in fieldProps.");
+        // }
 
         const companyNameColumn = quoteDetailColumns.find(
           col => col.prop === "customerName"
@@ -1759,60 +1772,17 @@ const formatDate = dateInput => {
             <span v-else>{{ item.headerName }}</span>
           </template>
         </el-checkbox>
-        <!-- <el-checkbox
-          v-for="item in ChargeCodeSettingResult"
-          :key="item.columnName"
-          :label="item.headerName"
-          :value="item.columnName"
-          class="flex items-center"
-        >
-          <template #default>
-            <div>
-              <input v-model="item.headerName" placeholder="Type here" />
-            </div>
-          </template>
-        </el-checkbox> -->
       </div>
-
-      <!-- <ElDivider />
-      <div class="slider-demo-block">
-        <span class="demonstration">Add Weight Break</span>
-      </div>
-      <el-timeline style="max-width: 600px">
-        <el-timeline-item
-          v-for="(item, index) in value2"
-          :key="index"
-          placement="top"
-          center
-        >
-          <el-input-number controls-position="right" size="small" />
-          <br />
-          <el-checkbox label="Selling Rate" value="Value 1" />
-          <el-checkbox label="Cost" value="Value 1" />
-        </el-timeline-item>
-      </el-timeline> -->
     </el-drawer>
     <el-drawer v-model="historyVisible" size="60%" title="History">
-      <VxeTableBar
-        :vxeTableRef="vxeTableRef"
-        :columns="historyColumns"
-        title=""
-        @refresh="getHistoryResult"
-      >
-        <template v-slot="{ size, dynamicColumns }">
-          <vxe-grid
-            ref="vxeTableRef"
-            v-loading="historyLoading"
-            show-overflow
-            height="500"
-            :size="size"
-            :row-config="{ isHover: true }"
-            :scroll-y="{ enabled: true }"
-            :columns="dynamicColumns"
-            :data="historyResult"
-          />
-        </template>
-      </VxeTableBar>
+      <pure-table
+        :data="historyResult"
+        :columns="columns"
+        row-key="id"
+        border
+        default-expand-all
+        class="mb-6"
+      />
     </el-drawer>
   </div>
 </template>
