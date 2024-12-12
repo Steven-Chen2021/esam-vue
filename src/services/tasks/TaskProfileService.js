@@ -19,6 +19,14 @@ class TaskProfileService {
       console.error(error);
     }
   }
+  async getNotifyData(params) {
+    try {
+      const response = await API.post("/api/Task/SaveTaskInfoResult", params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new TaskProfileService();

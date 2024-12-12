@@ -730,6 +730,17 @@ watch(
         "
         show-overflow-tooltip
       >
+        <template #header>
+          <el-popover
+            placement="top-start"
+            trigger="hover"
+            :content="t(col.langethKey)"
+          >
+            <template #reference>
+              {{ t(col.langethKey) }}
+            </template>
+          </el-popover>
+        </template>
         <template #default="scope">
           <span v-if="col.filterKey !== 'combatTeamPL'">{{
             scope.row[col.filterKey]
@@ -1056,6 +1067,12 @@ watch(
   </div>
 </template>
 <style scoped>
+.headerHover {
+  color: var(--el-bg-color);
+  background: var(--el-text-color-primary);
+  border: 1px solid var(--el-text-color-primary);
+}
+
 :deep(#quick-filter-drawer .el-form-item--default) {
   margin-bottom: 18px !important;
 }
