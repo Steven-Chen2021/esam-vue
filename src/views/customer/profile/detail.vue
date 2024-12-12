@@ -966,7 +966,9 @@ const cancelForm = () => {
                   :size="dynamicSize"
                   :loading-icon="useRenderIcon('ep:eleme')"
                   :loading="size !== 'disabled'"
-                  :icon="useRenderIcon('ri:save-line')"
+                  :icon="
+                    useRenderIcon('material-symbols:tab-close-inactive-outline')
+                  "
                   :disabled="!userAuth['isWrite'] && LID !== '0'"
                   @click="disQualifyDialog = true"
                 >
@@ -983,6 +985,15 @@ const cancelForm = () => {
                   @click="submitForm(profileFormRef, false)"
                 >
                   {{ size === "disabled" ? "Save" : "Processing" }}
+                </el-button>
+                <el-button
+                  type="primary"
+                  plain
+                  :size="dynamicSize"
+                  :icon="useRenderIcon('lets-icons:back')"
+                  @click="backToIndex"
+                >
+                  {{ t("common.back") }}
                 </el-button>
               </div>
             </div>

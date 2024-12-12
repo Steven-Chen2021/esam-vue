@@ -4,6 +4,7 @@ const { t } = useI18n();
 import { isArray } from "@pureadmin/utils";
 import { ref, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
+import location from "@iconify-icons/ep/close";
 import { taskProfileCTL } from "./profilectl";
 import dayjs from "dayjs";
 import { verifyMainFormat } from "@/utils/common";
@@ -288,32 +289,16 @@ onMounted(() => {
         </div>
         <div class="grow-0 h-8 ..." style="margin-bottom: 8px">
           <el-button
-            v-if="
-              ProfileID !== '0' && profileData['btnStatusTitle'] === 'Inactive'
-            "
+            v-if="ProfileID !== '0'"
             type="primary"
             plain
             :size="dynamicSize"
             :loading="formLoading"
-            :icon="useRenderIcon('ri:save-line')"
+            :icon="useRenderIcon('fluent:mail-add-24-regular')"
             :disabled="!userAuth['isWrite'] && ProfileID !== '0'"
-            @click="inActiveContact()"
+            @click="notifyWindowShow = true"
           >
-            {{ t("contact.profile.inActive") }}
-          </el-button>
-          <el-button
-            v-else-if="
-              ProfileID !== '0' && profileData['btnStatusTitle'] === 'Active'
-            "
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading="formLoading"
-            :icon="useRenderIcon('ri:save-line')"
-            :disabled="!userAuth['isWrite'] && ProfileID !== '0'"
-            @click="activeContact()"
-          >
-            {{ t("contact.profile.active") }}
+            {{ t("task.mailNotify.title") }}
           </el-button>
           <el-button
             type="primary"
@@ -324,13 +309,14 @@ onMounted(() => {
             :disabled="!userAuth['isWrite'] && LID !== '0'"
             @click="submitForm(profileFormRef, false)"
           >
-            {{ size === "disabled" ? "Save" : "Processing" }}
+            {{ formLoading ? t("common.processing") : t("common.save") }}
           </el-button>
           <el-button
             type="primary"
             plain
             :size="dynamicSize"
             :loading="formLoading"
+            :icon="useRenderIcon('lets-icons:back')"
             @click="backToIndex"
           >
             {{ t("common.back") }}
@@ -402,6 +388,16 @@ onMounted(() => {
                     :label="getFormItemLabel(filterItem)"
                     :prop="filterItem.filterKey"
                   >
+                    <template v-if="filterItem.iconName" #label>
+                      <div style="display: flex; align-items: center">
+                        <IconifyIconOnline
+                          :icon="filterItem.iconName"
+                          style="margin-right: 2px"
+                          class="primary-color-span"
+                        />
+                        {{ getFormItemLabel(filterItem) }}
+                      </div>
+                    </template>
                     <el-text
                       v-if="
                         filterItem.readOnlyOnDetail ||
@@ -882,6 +878,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.primary-color-span {
+  color: var(--el-color-primary);
+}
+
 .containerC {
   display: flex;
   flex-direction: column;
