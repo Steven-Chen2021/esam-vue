@@ -248,6 +248,8 @@ common:
   mailFormatErrorAlert: Please check eMail format.
   dateTimeStartPlaceholder: Start Time
   dateTimeEndPlaceholder: End Time
+  save: Save
+  processing: Processing
 task:
   quickfilter:
     priority: Priority
@@ -276,6 +278,15 @@ task:
     title: Action Items
   mailNotify:
     title: eMail Notify
+    send: Send
+    to: To
+    cc: CC
+    mailTitle: Title
+    content: Content
+    loadDataError: Load Data Error
+    confirm: Confirm
+    sendSuc: Sent successfully.
+    sendFail: Sent failed.
 contact:
   tabTitle: Contact Search
   cancel: Cancel
