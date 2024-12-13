@@ -13,7 +13,7 @@ export default {
     {
       path: "/customer/index",
       name: "CustomerList",
-      component: () => import("@/views/customer/index.vue"),
+      component: () => import("@/views/search-management/index.vue"),
       meta: {
         title: $t("menus.dimercoCustomer")
       }

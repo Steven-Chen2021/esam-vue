@@ -38,7 +38,7 @@ watch(props, newVal => {
 });
 const cancelSaveNotifyForm = () => {
   emit("handleCancelEvent");
-  console.log("cancelSaveNotifyForm");
+  // console.log("cancelSaveNotifyForm");
 };
 const loadNotifyData = () => {
   const params = {};

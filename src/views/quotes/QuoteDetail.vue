@@ -730,6 +730,8 @@ const handleGreetingsFocusOut = () => {
 };
 
 const handleAfterChange = (changes, source) => {
+  console.log(changes);
+  console.log(source);
   if (source === "edit") {
     changes.forEach(([row, prop, oldValue, newValue]) => {
       if (prop === "pReceipt") {
@@ -873,6 +875,11 @@ const handleLocalChargeChange = (changes, source) => {
   }
 };
 
+const handleBeforeChange = (changes, source) => {
+  console.log(changes);
+  console.log(source);
+};
+
 const handleAfterSelection = (row, column, row2, column2) => {
   console.debug(
     "handleAfterSelection",
@@ -904,6 +911,7 @@ const freightChargeSettings = ref({
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
   afterRemoveRow: handleRemoveRow,
+  beforeChange: handleBeforeChange,
   readOnly: false
 });
 

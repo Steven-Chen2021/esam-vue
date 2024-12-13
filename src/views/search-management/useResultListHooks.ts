@@ -300,6 +300,16 @@ export function listCTL() {
     return "";
   };
 
+  const copyQuote = async params => {
+    loading.value = true;
+    try {
+      const response = QuoteSearchService.copyQuotation(params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return {
     fetchListData,
     tableData,
@@ -316,6 +326,7 @@ export function listCTL() {
     loading,
     requestCategory,
     FilterLeadID,
-    dataResultAPIRequestType
+    dataResultAPIRequestType,
+    copyQuote
   };
 }

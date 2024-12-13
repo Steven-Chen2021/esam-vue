@@ -44,9 +44,61 @@ export function CommonHelper() {
     }
   }
 
+  function formatDate(
+    dateString,
+    columnName,
+    needHours?,
+    needMinutes?,
+    needSeconds?
+  ) {
+    console.log(`Column:${columnName}, Value:${dateString}`);
+    if (
+      columnName === "hqid" ||
+      isNaN(Date.parse(dateString)) ||
+      /^\d+$/.test(dateString)
+    ) {
+      return dateString; // 如果不是有效日期，返回原本的資料
+    }
+    if (dateString === 0) {
+      return "";
+    }
+    const date = new Date(dateString);
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    if (needHours) {
+      return `${month} ${day}, ${year} ${hours}`;
+    }
+    if (needMinutes) {
+      return `${month} ${day}, ${year} ${hours}:${minutes}`;
+    }
+    if (needSeconds) {
+      return `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`;
+    }
+    return `${month} ${day}, ${year}`;
+  }
+
   return {
     GetColumnSettingResult,
     columnSettingResult,
-    DocumentCloudResult
+    DocumentCloudResult,
+    formatDate
   };
 }
