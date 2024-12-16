@@ -13,7 +13,7 @@ export default {
     {
       path: "/contact/index",
       name: "ContactList",
-      component: () => import("@/views/contact/index.vue"),
+      component: () => import("@/views/search-management/index.vue"),
       meta: {
         title: $t("menus.dimercoContact")
       }

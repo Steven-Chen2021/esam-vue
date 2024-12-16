@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
+import dayjs from "dayjs";
 import Close from "@iconify-icons/ep/close";
 import { ref, reactive, onMounted, watch, computed, nextTick } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 import { useDetail } from "./hooks";
-const { toDetail, getParameter, router } = useDetail();
+const { toDetail, getParameter, router, toQuoteDetail } = useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { QuickFilter, quickFilterCTL } from "./useQuickFilterHooks";
 import { listCTL } from "./useResultListHooks";
@@ -53,6 +54,8 @@ import {
 } from "@/types/apiRequestTypeEnum";
 
 import { contact, customer, tasks, quotes, approval } from "@/router/enums";
+import { CommonHelper } from "@/utils/commonHelper";
+const { formatDate } = CommonHelper();
 
 const quickFilterShow = ref(false);
 const {
@@ -94,7 +97,8 @@ const {
   handleResetConditionalSearch,
   loading,
   requestCategory,
-  dataResultAPIRequestType
+  dataResultAPIRequestType,
+  copyQuote
 } = listCTL();
 //Page Setting
 defineOptions({
@@ -118,8 +122,6 @@ const handleFilterEnable = (obj: any) => {
 };
 
 const handleViewClick = row => {
-  console.log(row);
-  console.log(category.value);
   switch (category.value) {
     case "ApprovalList":
       if (row.sourceType === "Quote") {
@@ -133,12 +135,41 @@ const handleViewClick = row => {
       break;
     case "DealList":
       break;
+    case "CustomerList":
+      router.push({
+        name: "CustomerDetail",
+        params: { id: row.hqid, qname: row.customerName }
+      });
+      break;
+    case "quoteSearch":
+      toQuoteDetail(
+        {
+          id: row.qid,
+          qname: row.quoteNo,
+          pid: row.productLineName === "Ocean" ? "6" : "2",
+          pagemode: "view"
+        },
+        "params"
+      );
+      break;
+    case "ContactList":
+      router.push({
+        name: "ContactDetail",
+        params: { id: row.id, lid: row.hqid, qname: row.fullName }
+      });
+      break;
+    case "TaskList":
+      router.push({
+        name: "TaskDetail",
+        params: {
+          id: row.taskID,
+          lid: row.lid,
+          qname: row.company,
+          dt: dayjs(row.appointmentStartDateInit).format("MMM DD").toString()
+        }
+      });
+      break;
   }
-
-  // router.push({
-  //   name: "CustomerDetail",
-  //   params: { id: row.hqid, qname: row.customerName }
-  // });
 };
 const handleAddCustomer = () => {
   router.push({
@@ -160,13 +191,11 @@ const handleFilterClick = filter => {
     )
       a.value = a.value[0];
   });
-  console.log("handleFilterClick filter", filter);
   const filters = filter.filters.filter(
     a =>
       a.value &&
       (a.value !== "" || (Array.isArray(a.value) && a.value.length > 0))
   );
-  console.log("handleFilterClick filtered", filters);
   handleConditionalSearch({ filters: filters });
   handleQuickFilterClick(filter);
   activePanelNames.value = [];
@@ -220,13 +249,9 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
           (Array.isArray(item.value) ? item.value.length > 0 : true)
         );
       });
-
-      console.log("submit! quickFilterForm", quickFilterForm);
       if (quickFilterForm.id === 0) {
-        // const res = updateQuickFilter(quickFilterForm);
         CustomerQuickFilterService.addQuickFilter(quickFilterForm)
           .then(data => {
-            console.log("addQuickFilter data", data);
             ElNotification({
               title: t("customer.list.quickFilter.alertTitle"),
               message: t("customer.list.quickFilter.addSucText"),
@@ -243,7 +268,6 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
       } else {
         CustomerQuickFilterService.updateQuickFilter(quickFilterForm)
           .then(data => {
-            console.log("updateQuickFilter data", data);
             ElNotification({
               title: t("customer.list.quickFilter.alertTitle"),
               message: t("customer.list.quickFilter.updateSucText"),
@@ -257,14 +281,11 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
       }
 
       quickFilterShow.value = false;
-    } else {
-      console.log("error submit!", fields);
     }
   });
 };
 const deleteQuickFilterID = ref(0);
 const handleDeleteQuickFilter = (item: QuickFilter) => {
-  console.log(`Delete button ${item.id}`);
   deleteQuickFilterID.value = item.id;
   dialogVisible.value = true;
 };
@@ -276,7 +297,6 @@ const deleteQuickFilter = () => {
   };
   CustomerQuickFilterService.deleteQuickFilter(params)
     .then(data => {
-      console.log("deleteQuickFilter data", data);
       ElNotification({
         title: t("customer.list.quickFilter.alertTitle"),
         message: t("customer.list.quickFilter.delSucText"),
@@ -315,7 +335,6 @@ const initQuickFilter = () => {
     controlTypeOnDetail: "",
     enableOnSearchView: filter.enableOnSearchView
   }));
-  console.log("initQuickFilter", quickFilterForm);
 };
 const handleQuickFilterOpen = () => {
   initQuickFilter();
@@ -394,10 +413,8 @@ const submitAdvancedFilterForm = () => {
     GridColumnSettings: advancedFilterForm.filters,
     APIRequestType: 3
   });
-  console.log("handleFilterEnable param", advancedFilterParam);
   CustomerQuickFilterService.updateAdvancedFilter(advancedFilterParam)
     .then(data => {
-      console.log("updateAdvancedFilter data:", data);
       ElNotification({
         title: t("customer.list.quickFilter.alertTitle"),
         message: t("customer.list.quickFilter.updateSucText"),
@@ -425,6 +442,23 @@ const handleFilterBtnClick = item => {
 };
 // #endregion
 
+const handleCopyQuote = quoteID => {
+  const params = {
+    quoteid: quoteID
+  };
+  copyQuote(params)
+    .then(res => {
+      if (res.isSuccess && res.returnValue > 0)
+        toQuoteDetail(
+          { id: res.returnValue, qname: "Copy Quote", pagemode: "edit" },
+          "params"
+        );
+    })
+    .catch(ex => {
+      console.log(ex);
+    });
+};
+
 onMounted(async () => {
   category.value = router.currentRoute.value.name;
   switch (category.value) {
@@ -442,18 +476,37 @@ onMounted(async () => {
       ColumnSettingParam.value = ApprovalGridColumnSetting;
       requestCategory.value = approval;
       break;
+    case "CustomerList":
+      QuickFilterColumnListParam.value = GetCustomerQuickFilterColumnList;
+      CustomizeQuickFilterSettingParam.value =
+        CustomizeQuickFilterSettingFromCustomerSearch;
+      ColumnSettingParam.value = CustomerGridColumnSetting;
+      requestCategory.value = customer;
+      break;
+    case "ContactList":
+      QuickFilterColumnListParam.value = GetContactQuickFilterColumnList;
+      CustomizeQuickFilterSettingParam.value =
+        CustomizeQuickFilterSettingFromContactSearch;
+      ColumnSettingParam.value = ContactGridColumnSetting;
+      requestCategory.value = contact;
+      break;
+    case "TaskList":
+      QuickFilterColumnListParam.value = GetTaskQuickFilterColumnList;
+      CustomizeQuickFilterSettingParam.value =
+        CustomizeQuickFilterSettingFromTaskSearch;
+      ColumnSettingParam.value = TaskGridColumnSetting;
+      requestCategory.value = tasks;
+      break;
   }
   dataResultAPIRequestType.value = customer;
   filterRequestType.value = customer;
   fetchListData();
   fetchData();
   fetchAdvancedFilterData();
-  await nextTick(); // 等待 DOM 更新完成
+  await nextTick();
   setTimeout(() => {
-    // 在这里决定是否显示 el-tour
     if (tourStore.customerListShow) {
-      // 这里可以添加你的逻辑决定是否显示
-      showTour.value = true; // 或者根据其他条件来决定
+      showTour.value = true;
     }
   }, 2000);
 });
@@ -461,14 +514,12 @@ watch(
   () => tourStore.customerListShow,
   () => {
     setTimeout(() => {
-      // 在这里决定是否显示 el-tour
       if (tourStore.customerListShow) {
-        // 这里可以添加你的逻辑决定是否显示
-        showTour.value = true; // 或者根据其他条件来决定
+        showTour.value = true;
       }
     }, 100);
   },
-  { deep: true } // 深度监听 filters 的变化
+  { deep: true }
 );
 </script>
 
@@ -768,7 +819,7 @@ watch(
       >
         <template #default="scope">
           <span v-if="col.filterKey !== 'combatTeamPL'">{{
-            scope.row[col.filterKey]
+            formatDate(scope.row[col.filterKey], col.filterKey)
           }}</span>
           <div
             v-else-if="
@@ -804,6 +855,32 @@ watch(
           >
             View
           </el-button>
+          <el-button
+            v-if="router.currentRoute.value.name === 'quoteSearch'"
+            link
+            type="primary"
+            size="small"
+            @click="
+              toDetail(
+                {
+                  id: scope.row.qid,
+                  qname: scope.row.quoteNo,
+                  pid: scope.row.productLineName === 'Ocean' ? '6' : '2',
+                  pagemode: 'edit'
+                },
+                'params'
+              )
+            "
+            >Edit</el-button
+          >
+          <el-button
+            v-if="router.currentRoute.value.name === 'quoteSearch'"
+            link
+            type="primary"
+            size="small"
+            @click="handleCopyQuote(scope.row.qid)"
+            >{{ `Copy` }}</el-button
+          >
         </template>
       </el-table-column>
     </el-table>

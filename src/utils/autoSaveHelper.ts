@@ -7,6 +7,7 @@ export function AutoSaveHelper() {
   const { t } = useI18n();
   interface iAutoSave {
     TableName: string | null;
+    TableName2: string | null;
     FieldName: string | null;
     Id: number;
     CustID: string;
@@ -18,6 +19,7 @@ export function AutoSaveHelper() {
 
   const AutoSaveItem = ref<iAutoSave>({
     TableName: null,
+    TableName2: null,
     FieldName: null,
     Id: 0,
     CustID: "",

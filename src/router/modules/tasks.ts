@@ -13,7 +13,7 @@ export default {
     {
       path: "/tasks/index",
       name: "TaskList",
-      component: () => import("@/views/tasks/index.vue"),
+      component: () => import("@/views/search-management/index.vue"),
       meta: {
         title: $t("menus.dimercoTask")
       }

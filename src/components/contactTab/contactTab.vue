@@ -94,7 +94,7 @@ const handleFilterEnable = (obj: any) => {
 };
 const emit = defineEmits(["handleTabEditEvent"]);
 const handleViewClick = row => {
-  console.log("handleViewClick row", row);
+  // console.log("handleViewClick row", row);
   emit("handleTabEditEvent", row.id.toString(), row.hqid);
   // router.push({
   //   name: "ContactDetail",
@@ -156,11 +156,11 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
           (Array.isArray(item.value) ? item.value.length > 0 : true)
         );
       });
-      console.log("submit! quickFilterForm", quickFilterForm);
+      // console.log("submit! quickFilterForm", quickFilterForm);
       if (quickFilterForm.id === 0) {
         CommonService.addQuickFilter(quickFilterForm)
           .then(data => {
-            console.log("addQuickFilter data", data);
+            // console.log("addQuickFilter data", data);
             ElNotification({
               title: t("customer.list.quickFilter.alertTitle"),
               message: t("customer.list.quickFilter.addSucText"),
@@ -177,7 +177,7 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
       } else {
         CommonService.updateQuickFilter(quickFilterForm)
           .then(data => {
-            console.log("updateQuickFilter data", data);
+            // console.log("updateQuickFilter data", data);
             ElNotification({
               title: t("customer.list.quickFilter.alertTitle"),
               message: t("customer.list.quickFilter.updateSucText"),
@@ -191,14 +191,15 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
       }
 
       quickFilterShow.value = false;
-    } else {
-      console.log("error submit!", fields);
     }
+    // else {
+    //   console.log("error submit!", fields);
+    // }
   });
 };
 const deleteQuickFilterID = ref(0);
 const handleDeleteQuickFilter = (item: QuickFilter) => {
-  console.log(`Delete button ${item.id}`);
+  // console.log(`Delete button ${item.id}`);
   deleteQuickFilterID.value = item.id;
   dialogVisible.value = true;
 };
@@ -210,7 +211,7 @@ const deleteQuickFilter = () => {
   };
   CommonService.deleteQuickFilter(params)
     .then(data => {
-      console.log("deleteQuickFilter data", data);
+      // console.log("deleteQuickFilter data", data);
       ElNotification({
         title: t("customer.list.quickFilter.alertTitle"),
         message: t("customer.list.quickFilter.delSucText"),
@@ -249,7 +250,7 @@ const initQuickFilter = () => {
     controlTypeOnDetail: "",
     enableOnSearchView: filter.enableOnSearchView
   }));
-  console.log("initQuickFilter", quickFilterForm);
+  // console.log("initQuickFilter", quickFilterForm);
 };
 const handleQuickFilterOpen = () => {
   initQuickFilter();
@@ -257,12 +258,12 @@ const handleQuickFilterOpen = () => {
   setTourStep();
 };
 const handleEditQuickFilter = (item: QuickFilter) => {
-  console.log(`handleEditQuickFilter item`, item);
+  // console.log(`handleEditQuickFilter item`, item);
   quickFilterShow.value = true;
   quickFilterForm.filterName = item.filterName;
   quickFilterForm.id = item.id;
   // Copy filters data
-  console.log("handleEditQuickFilter item.filters:", item.filters);
+  // console.log("handleEditQuickFilter item.filters:", item.filters);
   quickFilterForm.filters = item.filters.map(filter => ({
     filterKey: filter.filterKey,
     filterType: filter.filterType,
@@ -328,10 +329,10 @@ const submitAdvancedFilterForm = () => {
     GridColumnSettings: advancedFilterForm.filters,
     APIRequestType: 23
   });
-  console.log("handleFilterEnable param", advancedFilterParam);
+  // console.log("handleFilterEnable param", advancedFilterParam);
   CommonService.updateAdvancedFilter(advancedFilterParam)
     .then(data => {
-      console.log("updateAdvancedFilter data:", data);
+      // console.log("updateAdvancedFilter data:", data);
       ElNotification({
         title: t("customer.list.quickFilter.alertTitle"),
         message: t("customer.list.quickFilter.updateSucText"),
@@ -363,7 +364,7 @@ const getUserAccessByCustomer = () => {
   CommonService.getUserAccessByCustomer(props.SearchLeadID, 0)
     .then(data => {
       userAccess.value = data.returnValue;
-      console.log("userAccess.value", userAccess.value);
+      // console.log("userAccess.value", userAccess.value);
     })
     .catch(err => {
       console.log("getUserAccessByCustomer error", err);
@@ -371,7 +372,7 @@ const getUserAccessByCustomer = () => {
 };
 onMounted(async () => {
   getUserAccessByCustomer();
-  console.log("onMounted SearchLeadID", props.SearchLeadID);
+  // console.log("onMounted SearchLeadID", props.SearchLeadID);
   if (props.SearchLeadID && props.SearchLeadID !== "0") {
     FilterLeadID.value = props.SearchLeadID;
   }
