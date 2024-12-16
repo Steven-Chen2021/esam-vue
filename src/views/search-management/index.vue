@@ -172,10 +172,49 @@ const handleViewClick = row => {
   }
 };
 const handleAddCustomer = () => {
-  router.push({
-    name: "CustomerDetail",
-    params: { id: 0, qname: "Create Customer" }
-  });
+  switch (category.value) {
+    case "ApprovalList":
+      // if (row.sourceType === "Quote") {
+      //   router.push({
+      //     name: "ApprovalDetail",
+      //     params: { id: row.approvalID }
+      //   });
+      // } else if (row.sourceType === "Credit") {
+      // } else {
+      // }
+      break;
+    case "DealList":
+      break;
+    case "CustomerList":
+      router.push({
+        name: "CustomerDetail",
+        params: { id: 0, qname: "Create Customer" }
+      });
+      break;
+    case "quoteSearch":
+      router.push({
+        name: "QuoteDetail",
+        params: { id: 0, qname: "Create Quotation" }
+      });
+      break;
+    case "ContactList":
+      // router.push({
+      //   name: "ContactDetail",
+      //   params: { id: row.id, lid: row.hqid, qname: row.fullName }
+      // });
+      break;
+    case "TaskList":
+      // router.push({
+      //   name: "TaskDetail",
+      //   params: {
+      //     id: row.taskID,
+      //     lid: row.lid,
+      //     qname: row.company,
+      //     dt: dayjs(row.appointmentStartDateInit).format("MMM DD").toString()
+      //   }
+      // });
+      break;
+  }
 };
 // #region Quick Filter
 const handleFilterClick = filter => {
@@ -778,9 +817,15 @@ watch(
                       $t("customer.list.advancedSetting.settingBtn")
                     }}</el-button
                   >
-                  <el-button :icon="Plus" @click="handleAddCustomer">{{
-                    $t("customer.add")
-                  }}</el-button>
+                  <el-button
+                    v-if="
+                      router.currentRoute.value.name === 'quoteSearch' ||
+                      router.currentRoute.value.name === 'CustomerList'
+                    "
+                    :icon="Plus"
+                    @click="handleAddCustomer"
+                    >{{ $t("customer.add") }}</el-button
+                  >
                 </el-form-item>
               </div>
             </el-form>
@@ -861,7 +906,7 @@ watch(
             type="primary"
             size="small"
             @click="
-              toDetail(
+              toQuoteDetail(
                 {
                   id: scope.row.qid,
                   qname: scope.row.quoteNo,

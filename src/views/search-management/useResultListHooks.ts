@@ -50,7 +50,6 @@ export function listCTL() {
   const dataResultAPIRequestType = ref<number>();
 
   const fetchListData = async () => {
-    console.log(requestCategory.value);
     switch (requestCategory.value) {
       case customer: {
         loading.value = true;

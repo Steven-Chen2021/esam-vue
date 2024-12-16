@@ -51,7 +51,6 @@ export function CommonHelper() {
     needMinutes?,
     needSeconds?
   ) {
-    console.log(`Column:${columnName}, Value:${dateString}`);
     if (
       columnName === "hqid" ||
       isNaN(Date.parse(dateString)) ||

@@ -2,6 +2,41 @@ import { ref, reactive } from "vue";
 import commonService from "@/services/commonService";
 
 export function useHistoryColumns() {
+  interface iHistoryResult {
+    id: number;
+    columnName: string;
+    originalValue: string;
+    updatedValue: string;
+    updatedDate: string;
+    updatedBy: string;
+    hasChildren?: boolean;
+    children?: [] | any;
+  }
+
+  const demo: iHistoryResult[] = [
+    {
+      id: 0,
+      columnName: "Column One",
+      originalValue: "1",
+      updatedValue: "2",
+      updatedDate: "34yasdhg35u3",
+      updatedBy: "4wtdrhjw45u4",
+      hasChildren: true,
+      children: [
+        { sid: 0, userName: "jweriujgwe" },
+        { sid: 2, userName: "jweriujgwe" }
+      ]
+    },
+    {
+      id: 1,
+      columnName: "Column Two",
+      originalValue: "rj4jsrj",
+      updatedValue: "w45jserj",
+      updatedDate: "4w56j4retj4qj",
+      updatedBy: "j4jsgs4rc"
+    }
+  ];
+
   const historyResult = ref([]);
   const apiStatusResult = reactive({
     loading: false,
@@ -23,12 +58,12 @@ export function useHistoryColumns() {
         <el-popover effect="light" trigger="hover" placement="top" width="auto">
           {{
             default: () => (
-              <>
+              <div>
                 <div>name: {row.originalValue}</div>
                 <div>address: {row.updatedValue}</div>
-              </>
+              </div>
             ),
-            reference: () => <el-tag>{row.columnName}</el-tag>
+            reference: () => <el-tag>{row.updatedValue}</el-tag>
           }}
         </el-popover>
       )
@@ -50,8 +85,11 @@ export function useHistoryColumns() {
         Category,
         SourceID
       );
-      if (response != null) {
+      console.log("getHistoryResult", response);
+      if (response != null && response.returnValue.leng > 0) {
         historyResult.value = response.returnValue;
+      } else {
+        historyResult.value = demo;
       }
       return response;
     } catch (error) {

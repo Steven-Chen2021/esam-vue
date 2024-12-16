@@ -267,7 +267,7 @@ customer:
     productLineName: Product Line
   list:
     quickFilter:
-      addFilterbtn: Add Filter
+      addFilterbtn: Add Quick Filter
       filterName: Filter Name
       title: Quick Filter Setting
       resetText: Reset

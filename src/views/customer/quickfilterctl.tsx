@@ -457,7 +457,6 @@ export function quickFilterCTL() {
         console.log("result3");
         advancedFilterForm.filters = deepClone(result3);
       } else {
-        console.log("result1", quickFilterFormInitData.filters);
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
       // advancedFilterForm.filters.forEach(a => {
