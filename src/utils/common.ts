@@ -1,4 +1,4 @@
-export function verifyMainFormat(mailAddress) {
+export function verifyMailFormat(mailAddress) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(mailAddress);
 }
