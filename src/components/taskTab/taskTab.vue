@@ -732,6 +732,18 @@ watch(
         "
         show-overflow-tooltip
       >
+        <template #header>
+          <el-popover
+            placement="top-start"
+            trigger="hover"
+            :content="t(col.langethKey)"
+            effect="dark"
+          >
+            <template #reference>
+              {{ t(col.langethKey) }}
+            </template>
+          </el-popover>
+        </template>
         <template #default="scope">
           <span v-if="col.filterKey !== 'combatTeamPL'">{{
             scope.row[col.filterKey]

@@ -6,7 +6,7 @@ import { ref, onMounted, reactive } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { contactProfileCTL } from "./profilectl";
 import dayjs from "dayjs";
-import { verifyMainFormat } from "@/utils/common";
+import { verifyMailFormat } from "@/utils/common";
 import {
   ElNotification,
   FormInstance,
@@ -305,7 +305,7 @@ const autoSaveForm = async (
           break;
         }
         case "email": {
-          if (!verifyMainFormat(param.value)) {
+          if (!verifyMailFormat(param.value)) {
             ElMessage({
               message: t("common.mailFormatErrorAlert"),
               grouping: true,
@@ -592,7 +592,7 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       const data = profileData.value;
-      if (!verifyMainFormat(data["email"])) {
+      if (!verifyMailFormat(data["email"])) {
         ElMessage({
           message: t("common.mailFormatErrorAlert"),
           grouping: true,

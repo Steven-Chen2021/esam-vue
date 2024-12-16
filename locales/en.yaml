@@ -250,6 +250,15 @@ common:
   dateTimeEndPlaceholder: End Time
   save: Save
   processing: Processing
+  history: History
+deal:
+  clostBtn: Close
+  profile:
+    dealNo: Deal#
+    dealType: Deal Type
+    flag: Flag
+    initialDate: Initial Date
+    closeDate: Close Date
 task:
   quickfilter:
     priority: Priority

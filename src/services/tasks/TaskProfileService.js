@@ -19,9 +19,21 @@ class TaskProfileService {
       console.error(error);
     }
   }
-  async getNotifyData(params) {
+  async getMailNotifyResult(TaskID) {
     try {
-      const response = await API.post("/api/Task/SaveTaskInfoResult", params);
+      const url = `/api/Task/GetMailNotifyResult?TaskID=${TaskID}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async sendTaskNotifyMailResult(params) {
+    try {
+      const response = await API.post(
+        "/api/Task/sendTaskNotifyMailResult",
+        params
+      );
       return response;
     } catch (error) {
       console.error(error);

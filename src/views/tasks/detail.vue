@@ -7,14 +7,12 @@ import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import location from "@iconify-icons/ep/close";
 import { taskProfileCTL } from "./profilectl";
 import dayjs from "dayjs";
-import { verifyMainFormat } from "@/utils/common";
 import {
   ElNotification,
   FormInstance,
   ElMessageBox,
   ElMessage
 } from "element-plus";
-import { useUserStoreHook } from "@/store/modules/user";
 import TaskProfileService from "@/services/tasks/TaskProfileService";
 import { useDetail } from "./hooks";
 import CommonService from "@/services/commonService";
@@ -253,7 +251,6 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
     }
   });
 };
-const username = useUserStoreHook()?.username;
 const LID = props.ParentID
   ? props.ParentID
   : isArray(getParameter.lid)
@@ -871,7 +868,7 @@ onMounted(() => {
     </el-card>
     <taskeMailNotify
       :showeMailNotifyWindow="notifyWindowShow"
-      :TaskID="0"
+      :TaskID="CID"
       @handleCancelEvent="cancelSaveNotify"
     />
   </div>
