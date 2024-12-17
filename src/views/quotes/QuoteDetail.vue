@@ -509,7 +509,9 @@ const quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.shippingTerm;
       },
       onChange: value => {
-        autoSaveTrigger(value, "shppingTerm");
+        if (previousValue.value != undefined && value != undefined) {
+          autoSaveTrigger(value, "shppingTerm");
+        }
       }
     }
   },
@@ -531,7 +533,6 @@ const quoteDetailColumns: PlusColumn[] = [
       }
     }
   },
-
   {
     label: "Credit Term",
     width: 120,
@@ -728,11 +729,38 @@ const handleGreetingsFocusOut = () => {
     );
   }
 };
-
+const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const handleAfterChange = (changes, source) => {
-  console.log(changes);
-  console.log(source);
   if (source === "edit") {
+    hotTableRef.value.hotInstance.validateCells(valid => {
+      if (valid) {
+        const filteredData = freightChargeSettings.value.data.filter(item =>
+          checkProperties.some(
+            key =>
+              item[key] !== null && item[key] !== "" && item[key] !== undefined
+          )
+        );
+
+        frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
+        frightChargeParams.value.pid = quotationDetailResult.value.pid;
+        frightChargeParams.value.quoteFreights = filteredData;
+        if (
+          frightChargeParams.value.quoteFreights.length > 0 &&
+          changes[0][2] != changes[0][3]
+        ) {
+          saveFreightChargeResult(frightChargeParams.value).then(res => {
+            if (res && res.isSuccess) {
+              ElNotification({
+                title: "successfully",
+                message: "Freight Charge Save Successfully!",
+                type: "success"
+              });
+            }
+          });
+        }
+      }
+    });
+
     changes.forEach(([row, prop, oldValue, newValue]) => {
       if (prop === "pReceipt") {
         const cityExists = exportLocationResult.value.some(
@@ -752,7 +780,6 @@ const handleAfterChange = (changes, source) => {
                   true,
                   localCharge.cityID
                 ).then(res => {
-                  console.log(localCharge);
                   exportLocationResult.value.push({
                     cityID: localCharge.cityID,
                     city: localCharge.city,
@@ -857,7 +884,9 @@ const handleAfterChange = (changes, source) => {
 
 const handleLocalChargeChange = (changes, source) => {
   if (source === "edit") {
-    console.log(changes, source);
+    if (changes[0][2] === changes[0][3]) {
+      return;
+    }
     const exportLocalChargeParam = {
       quoteID: frightChargeParams.value.quoteID,
       pid: quotationDetailResult.value.pid,
@@ -870,18 +899,13 @@ const handleLocalChargeChange = (changes, source) => {
       isExport: false,
       detail: importLocationResult.value
     };
+
     saveLocalChargeResult(exportLocalChargeParam);
     saveLocalChargeResult(importLocalChargeParam);
   }
 };
-
-const handleBeforeChange = (changes, source) => {
-  console.log(changes);
-  console.log(source);
-};
-
 const handleAfterSelection = (row, column, row2, column2) => {
-  console.debug(
+  console.log(
     "handleAfterSelection",
     `選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`
   );
@@ -911,7 +935,7 @@ const freightChargeSettings = ref({
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
   afterRemoveRow: handleRemoveRow,
-  beforeChange: handleBeforeChange,
+  // beforeChange: handleBeforeChange,
   readOnly: false
 });
 
@@ -1091,6 +1115,7 @@ const AddLCPItems = (source, isExport) => {
 };
 
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
+  console.log(columnName);
   if (newValue != previousValue.value && getParameter.id != "0") {
     AutoSaveItem.value.TableName = "saquotes";
     if (tableName2 != null) {

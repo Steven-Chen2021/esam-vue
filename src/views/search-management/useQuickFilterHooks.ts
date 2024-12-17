@@ -155,6 +155,7 @@ export function quickFilterCTL() {
         a => a.filterType === "dropdown" && a.filterSourceType === "api"
       );
       selectFilterList.forEach(async item => {
+        console.log(item.filterSource);
         const response = await commonService.getAutoCompleteListViaURL(
           item.filterSource
         );
@@ -394,7 +395,6 @@ export function quickFilterCTL() {
         console.log("result3");
         advancedFilterForm.filters = deepClone(result3);
       } else {
-        console.log("result1", quickFilterFormInitData.filters);
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
       }
       const filterColumns = result1;

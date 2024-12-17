@@ -387,7 +387,7 @@ customer:
       tourBF1ext: Click to set filter criteria and customize the content displayed in the results.
   list:
     quickFilter:
-      addFilterbtn: Add Filter
+      addFilterbtn: Add Quick Filter
       filterName: Filter Name
       title: Quick Filter Setting
       resetText: Reset
