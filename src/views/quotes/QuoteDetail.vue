@@ -1008,6 +1008,10 @@ const saveData = () => {
   }, 3000);
 };
 
+const sendApproval = () => {
+  console.log("wilson");
+};
+
 const previewQuote = () => {
   toPreView({
     category: "quotation",
@@ -1461,7 +1465,7 @@ const formatDate = dateInput => {
             :loading-icon="useRenderIcon('ep:eleme')"
             :loading="saveLoading !== 'disabled'"
             :icon="useRenderIcon('ep:edit')"
-            @click="saveData"
+            @click="sendApproval"
           >
             {{ saveLoading === "disabled" ? "Send to Approval" : "Processing" }}
           </el-button>

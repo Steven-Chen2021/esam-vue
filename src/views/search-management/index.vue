@@ -94,6 +94,7 @@ const {
   handlePageChange,
   handleSizeChange,
   handleConditionalSearch,
+  searchParams,
   handleResetConditionalSearch,
   loading,
   requestCategory,
@@ -507,6 +508,7 @@ onMounted(async () => {
         CustomizeQuickFilterSettingFromQuoteSearch;
       ColumnSettingParam.value = QuoteGridColumnSetting;
       requestCategory.value = quotes;
+      searchParams.sort = "issueDate";
       break;
     case "ApprovalList":
       QuickFilterColumnListParam.value = GetApprovalFilterColumnList;
