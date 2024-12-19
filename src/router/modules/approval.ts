@@ -20,8 +20,8 @@ export default {
     },
     {
       path: "/approval/detail/:id",
-      name: "ApprovalDetail",
-      component: () => import("@/views/approval/detail.vue"),
+      name: "QuotationApprovalDetail",
+      component: () => import("@/views/approval/quotationApprovalDetail.vue"),
       meta: {
         title: $t("menus.dimercoQuotes"),
         showLink: false

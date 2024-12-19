@@ -85,7 +85,6 @@ export function listCTL() {
         break;
       }
       case contact: {
-        console.log("contact search", searchParams.ConditionalSettings);
         if (FilterLeadID && FilterLeadID.value !== "0") {
           if (!searchParams.ConditionalSettings) {
             searchParams.ConditionalSettings = [
@@ -225,7 +224,6 @@ export function listCTL() {
           QuoteSearchService.getQuoteList(searchParams)
             .then(data => {
               tableData.value = data.returnValue.results;
-              console.log(data);
               if (data) total.value = data.returnValue.totalRecord;
               loading.value = false;
             })

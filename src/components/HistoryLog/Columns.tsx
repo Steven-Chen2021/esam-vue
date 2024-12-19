@@ -10,7 +10,9 @@ export function useHistoryColumns() {
     updatedDate: string;
     updatedBy: string;
     hasChildren?: boolean;
-    children?: [] | any;
+    data?: [] | any;
+    column?: [] | any;
+    logType?: string;
   }
 
   const demo: iHistoryResult[] = [
@@ -22,10 +24,11 @@ export function useHistoryColumns() {
       updatedDate: "34yasdhg35u3",
       updatedBy: "4wtdrhjw45u4",
       hasChildren: true,
-      children: [
-        { sid: 0, userName: "jweriujgwe" },
-        { sid: 2, userName: "jweriujgwe" }
-      ]
+      data: [
+        { sid: 0, userName: "childrenjweriujgwe" },
+        { sid: 2, userName: "childrenjweriujgwe" }
+      ],
+      logType: "label"
     },
     {
       id: 1,
@@ -54,19 +57,44 @@ export function useHistoryColumns() {
     {
       label: "Updated Value",
       prop: "updatedValue",
-      cellRenderer: ({ row }) => (
-        <el-popover effect="light" trigger="hover" placement="top" width="auto">
-          {{
-            default: () => (
-              <div>
-                <div>name: {row.originalValue}</div>
-                <div>address: {row.updatedValue}</div>
-              </div>
-            ),
-            reference: () => <el-tag>{row.updatedValue}</el-tag>
-          }}
-        </el-popover>
-      )
+      cellRenderer: ({ row }) => {
+        if (row.logType === "label") {
+          return (
+            <el-popover
+              effect="light"
+              trigger="hover"
+              placement="top"
+              width="auto"
+              popper-style="box-shadow: rgb(14 18 22 / 35%) 0px 10px 38px -10px, rgb(14 18 22 / 20%) 0px 10px 20px -15px; padding: 20px;"
+            >
+              {{
+                reference: () => <el-tag>{row.columnName}</el-tag>,
+                default: () => (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "16px"
+                    }}
+                  >
+                    <pure-table
+                      data={row.data || []} // 替換 :data 為 data
+                      columns={[
+                        { label: "ID", prop: "sid" },
+                        { label: "User Name", prop: "userName" }
+                      ]} // 替換 :columns 為 columns
+                      rowKey="sid" // 使用駝峰命名法 rowKey
+                      border
+                      class="mb-6"
+                    />
+                  </div>
+                )
+              }}
+            </el-popover>
+          );
+        }
+        return <span>{row.updatedValue}</span>;
+      }
     },
     {
       label: "Update Date",
