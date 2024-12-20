@@ -7,12 +7,14 @@ import {
   type RouteParamsRaw
 } from "vue-router";
 
-export function useDetail() {
+export function useApprovalDetail() {
   const route = useRoute();
   const router = useRouter();
-  const getParameter = isEmpty(route.params) ? route.query : route.params;
+  const getApprovalParameter = isEmpty(route.params)
+    ? route.query
+    : route.params;
 
-  function toDetail(
+  function toApprovalDetail(
     parameter: LocationQueryRaw | RouteParamsRaw,
     model: "query" | "params"
   ) {
@@ -43,8 +45,8 @@ export function useDetail() {
         params: parameter,
         meta: {
           title: {
-            zh: `${parameter.qname} - Detail`,
-            en: `${parameter.qname} - Detail`
+            zh: `${parameter.title} - Approval`,
+            en: `${parameter.title} - Approval`
           }
         }
       });
@@ -52,10 +54,8 @@ export function useDetail() {
     }
   }
 
-  // 用于页面刷新，重新获取浏览器地址栏参数并保存到标签页
-  const initToDetail = (model: "query" | "params") => {
-    if (getParameter) toDetail(getParameter, model);
+  return {
+    toApprovalDetail,
+    getApprovalParameter
   };
-
-  return { toDetail, initToDetail, getParameter, router };
 }
