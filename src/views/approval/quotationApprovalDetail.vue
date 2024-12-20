@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useApprovalDetail } from "./hooks";
-const { getApprovalParameter } = useApprovalDetail();
+import { useI18n } from "vue-i18n";
 import { ApprovalDetailHooks } from "@/views/approval/detailHooks";
+
+const { getApprovalParameter } = useApprovalDetail();
+const { t } = useI18n();
 const { getApproveHeaderResult, getApproveUserResult } = ApprovalDetailHooks();
 const ApproveHeader = ref<any>({});
 
@@ -63,81 +66,13 @@ onMounted(() => {
       <!-- Quote Information -->
       <div class="bg-white shadow p-4 mt-4">
         <div class="flex flex-wrap gap-4 text-gray-700 text-sm">
-          <div class="flex flex-col min-w-[200px]">
-            <strong> t("message.required.companyName"):</strong>
-            <span class="truncate">{{ ApproveHeader.ownerStationCode }}</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Quote ID:</strong>
-            <span class="truncate">714286</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Quote No:</strong>
-            <span class="truncate">QA0180000007</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Effective Date:</strong>
-            <span class="truncate">2023-01-12</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Expired Date:</strong>
-            <span class="truncate">2023-01-13</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Issue Date:</strong>
-            <span class="truncate">2023-01-12 09:37:46</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Issued By:</strong>
-            <span class="truncate">Wilson Huang</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Status:</strong>
-            <span class="truncate">Wait for Approval</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Shipping Term:</strong>
-            <span class="truncate">DP</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Type:</strong>
-            <span class="truncate">All Year Round</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Customer Name:</strong>
-            <span class="truncate">BIXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX1</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Credit Term Code:</strong>
-            <span class="truncate">NET30</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Trade Term Code:</strong>
-            <span class="truncate">CIF</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Sales Name:</strong>
-            <span class="truncate">Wilson Huang</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Sales Mail:</strong>
-            <span class="truncate">Wilson_W_Huang@dimerco.com</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Sales Tel:</strong>
-            <span class="truncate">+886-227963660-</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Sales Mobile:</strong>
-            <span class="truncate">970052716</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Sales Title:</strong>
-            <span class="truncate">Sr. Specialist</span>
-          </div>
-          <div class="flex flex-col min-w-[200px]">
-            <strong>Customer Applied Credit Term:</strong>
-            <span class="truncate">Not yet Applied</span>
+          <div
+            v-for="(value, key) in ApproveHeader"
+            :key="key"
+            class="flex flex-col min-w-[200px]"
+          >
+            <strong>{{ $t(`approval.detail.${key}`) || key }}:</strong>
+            <span class="truncate">{{ value || "N/A" }}</span>
           </div>
         </div>
       </div>
