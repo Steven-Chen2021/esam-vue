@@ -52,6 +52,9 @@ import { QuoteDetailColumnAccessRight } from "@/types/apiRequestTypeEnum";
 import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
 import { useHistoryColumns } from "@/components/HistoryLog/Columns";
+import { useApprovalDetail } from "@/views/approval/hooks";
+const { toApprovalDetail, getApprovalParameter } = useApprovalDetail();
+
 const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
 const { t } = useI18n();
@@ -1009,7 +1012,10 @@ const saveData = () => {
 };
 
 const sendApproval = () => {
-  console.log("wilson");
+  toApprovalDetail(
+    { id: getParameter.id, title: getParameter.qname },
+    "params"
+  );
 };
 
 const previewQuote = () => {

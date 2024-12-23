@@ -570,6 +570,61 @@ approval:
     productLineCode: Product Line
     sourceType: Apply Category
     ownerStationID: Owner Station ID
+  detail:
+    ownerStationCode: Owner Station Code
+    quoteid: Quote ID
+    quoteNo: Quote#
+    pid: Product Line ID
+    productLineCode: Product Line Code
+    attentionTo: Attention To
+    effectiveDate: Effective Date
+    expiredDate: Expired Date
+    issueDate: Issue Date
+    issueById: Issue By Id
+    issueBy: Issue by
+    status: Status
+    statusCode: Status Code
+    shippingTerm: Shipping Term
+    typeCode: Type Code
+    type: Type
+    moveType: Move Type
+    reference: Reference
+    dimensionFactor: Dimension Factor
+    volumeShareForAgent: Volume Share For Agent
+    volumeShareForDimerco: Volume Share For Dimerco
+    nra: NRA
+    period: Period
+    customerName: Customer Name
+    customerHQID: Customer HQID
+    cbmToWT: CBM Rate
+    cbmToWTUOMID: CBM Rate UOM ID
+    cbmToWTUOM: CMB Rate UOM
+    creditTermCode: Credit Term Code
+    tradeTermCode: Trade Term Code
+    salesId: Sales Id
+    salesName: Sales Name
+    salesMail: Sales Mail
+    salesTel: Sales Tel
+    salesMobile: Sales Mobile
+    salesTitle: Sales Title
+    salesDepratment: Sales Depratment
+    salesStationName: Sales Station Name
+    greeting: Greeting
+    remark: Remark
+    referencecode: Reference Code
+    creditcurrency: Credit Currency
+    creditlimit: Credit Limit
+    custmerAppliedCreditTerm: Custmer Applied Credit Term
+
+
+
+
+
+
+
+
+
+
       
     
       
