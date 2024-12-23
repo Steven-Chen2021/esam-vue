@@ -182,6 +182,15 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
+  async gethandsontableColumnSettingResult(SettingID) {
+    try {
+      const url = `/api/Common/GethandsontableColumnSettingResult?_Param=${SettingID}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new CustomerQuickFilterService();
