@@ -285,6 +285,8 @@ task:
     appointmentEndTimeAlert: Please select Appointment EndTime
   action:
     title: Action Items
+    alert: Check or uncheck to update the completion status. All columns ara mandatory.
+    autoSaveFailAlert: Auto Save Failed. Please check all cells in red.
   mailNotify:
     title: eMail Notify
     send: Send

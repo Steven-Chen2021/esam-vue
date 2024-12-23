@@ -20,7 +20,7 @@ const { initToDetail, getParameter, router } = useDetail();
 // #region Tab extra
 import contactTab from "@/components/contactTab/contactTab.vue";
 import contactDetailTab from "@/views/contact/detail.vue";
-import taskTab from "@/components/taskTab/taskTab.vue";
+import taskTab from "@/components/tasks/taskTab/taskTab.vue";
 import taskDetailTab from "@/views/tasks/detail.vue";
 const ContactDetailID = ref("0");
 const searchingContact = ref(true);

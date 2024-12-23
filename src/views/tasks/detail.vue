@@ -58,7 +58,10 @@ defineOptions({
   name: "TaskDetail"
 });
 // #region eMail Notify
-import taskeMailNotify from "@/components/taskeMailNotify/taskeMailNotify.vue";
+import taskeMailNotify from "@/components/tasks/taskeMailNotify/taskeMailNotify.vue";
+// #endregion
+// #region Action Item
+import actionItem from "@/components/tasks/taskActionItem/taskActionItem.vue";
 // #endregion
 const props = defineProps({
   ParentID: {
@@ -78,7 +81,7 @@ const backToIndex = () => {
     router.go(-1);
   }
 };
-const activeName = ref(["general", "documents"]);
+const activeName = ref(["general", "actionItem", "documents"]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
 const size = ref("disabled");
@@ -824,6 +827,18 @@ onMounted(() => {
                 </div>
               </el-form>
             </div>
+          </el-collapse-item>
+          <el-collapse-item
+            v-if="CID !== '0'"
+            :title="t('task.action.title')"
+            name="actionItem"
+            class="custom-collapse-title"
+          >
+            <actionItem
+              :TaskID="CID"
+              :LeadID="LID"
+              @handleCancelEvent="cancelSaveNotify"
+            />
           </el-collapse-item>
           <el-collapse-item
             v-if="CID !== '0'"

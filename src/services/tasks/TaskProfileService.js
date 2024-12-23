@@ -39,6 +39,26 @@ class TaskProfileService {
       console.error(error);
     }
   }
+  async getTaskActionItemResult(TaskID) {
+    try {
+      const url = `/api/Task/GetTaskActionItemResult?TaskID=${TaskID}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async saveTaskActionItemResult(params) {
+    try {
+      const response = await API.post(
+        "/api/Task/SaveTaskActionItemResult",
+        params
+      );
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new TaskProfileService();
