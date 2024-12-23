@@ -136,10 +136,8 @@ export function quickFilterCTL() {
           a.filterSourceType === "API" &&
           a.filterSource
       );
-      // console.log("selectFilterList", selectFilterList);
       selectFilterList.forEach(async item => {
         const response = await commonService.getStatusList(item.filterSource);
-        console.log(`fetchStatusList ${item.filterKey}`, response);
         filterOptions.value[item.filterKey] = {};
         filterOptions.value[item.filterKey].list = response;
         filterOptions.value[item.filterKey].loading = false;
@@ -155,7 +153,6 @@ export function quickFilterCTL() {
         a => a.filterType === "dropdown" && a.filterSourceType === "api"
       );
       selectFilterList.forEach(async item => {
-        console.log(item.filterSource);
         const response = await commonService.getAutoCompleteListViaURL(
           item.filterSource
         );
@@ -275,14 +272,12 @@ export function quickFilterCTL() {
   };
   // TODO: API clcik quick filter to search
   const handleQuickFilterClick = (item: QuickFilter) => {
-    console.log(`Clicked button ${item.filterName}`);
     quickFilterList.value.forEach(a => {
       a.clicked = false;
     });
     if (quickFilterList.value.length > 0) {
       item.clicked = true;
     }
-    console.log("handleQuickFilterClick quickFilterList:", quickFilterList);
     initBasicFilter();
   };
   const getOptions = (jsonString: string) => {
@@ -344,7 +339,7 @@ export function quickFilterCTL() {
         console.log("updateQuickFilter data", data);
       })
       .catch(err => {
-        console.log("updateQuickFilter error", err);
+        console.debug("updateQuickFilter error", err);
       });
   };
   function deepClone(obj) {
@@ -392,7 +387,6 @@ export function quickFilterCTL() {
         Array.isArray(result3) &&
         result3.length === quickFilterFormInitData.filters.length
       ) {
-        console.log("result3");
         advancedFilterForm.filters = deepClone(result3);
       } else {
         advancedFilterForm.filters = deepClone(quickFilterFormInitData.filters);
@@ -402,8 +396,6 @@ export function quickFilterCTL() {
       fetchOptionsNeedParam(quickFilterFormInitData.filters);
 
       const customizedFilters = result2;
-      // console.log("filterColumns", filterColumns);
-      // console.log("filters", customizedFilters);
       customizedFilters.forEach(filterSetting => {
         const filterColumnsClone = deepClone(filterColumns);
         filterColumnsClone.forEach(filter => {
@@ -495,7 +487,7 @@ export function quickFilterCTL() {
         }
       })
       .catch(err => {
-        console.log("getAdvancedFilterSetting error", err);
+        console.debug("getAdvancedFilterSetting error", err);
       });
   };
   const initAdvancedFilter = () => {

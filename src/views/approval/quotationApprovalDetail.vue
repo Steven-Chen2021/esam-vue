@@ -3,17 +3,39 @@ import { onMounted, ref } from "vue";
 import { useApprovalDetail } from "./hooks";
 import { useI18n } from "vue-i18n";
 import { ApprovalDetailHooks } from "@/views/approval/detailHooks";
-
 const { getApprovalParameter } = useApprovalDetail();
 const { t } = useI18n();
-const { getApproveHeaderResult, getApproveUserResult } = ApprovalDetailHooks();
+const {
+  getApproveHeaderResult,
+  getApproveUserResult,
+  getApproveChargeDataResult
+} = ApprovalDetailHooks();
 const ApproveHeader = ref<any>({});
+const ApproveAvatar = ref<any>({});
+const ApproveChargeDataResult = ref<any>({});
+const freightChargeResult = ref<any>({});
+const activeTabs = ref([0]);
+
+const getTableData = fDetail => {
+  console.log(fDetail);
+  return [fDetail];
+};
 
 onMounted(() => {
-  console.log(getApprovalParameter);
   getApproveHeaderResult(getApprovalParameter.id).then(res => {
     ApproveHeader.value = res.returnValue;
-    console.log(ApproveHeader.value);
+  });
+  getApproveUserResult(getApprovalParameter.id).then(res => {
+    ApproveAvatar.value = res.returnValue;
+  });
+  getApproveChargeDataResult(getApprovalParameter.id).then(res => {
+    if (res && res.isSuccess) {
+      ApproveChargeDataResult.value = res.returnValue;
+      freightChargeResult.value = res.returnValue.frtCollection;
+    }
+
+    console.log(ApproveChargeDataResult.value);
+    console.log(freightChargeResult.value);
   });
 });
 </script>
@@ -25,13 +47,13 @@ onMounted(() => {
       <div class="bg-white p-4 shadow-md flex justify-between">
         <!-- User Info -->
         <div class="flex items-center">
-          <div class="text-gray-500">User 1</div>
-          <div class="h-1 w-4 bg-blue-500 mx-2 rounded" />
-          <div class="text-gray-500">User 2</div>
-          <div class="h-1 w-4 bg-blue-500 mx-2 rounded" />
-          <div class="text-gray-500">User 3</div>
-          <div class="h-1 w-4 bg-blue-500 mx-2 rounded" />
-          <div class="text-gray-500">User 4</div>
+          <div class="text-gray-500">
+            <el-avatar
+              v-for="(item, index) in ApproveAvatar"
+              :key="index"
+              :src="item.avatar"
+            />
+          </div>
         </div>
         <!-- Action Buttons -->
         <div class="flex space-x-2">
@@ -78,62 +100,42 @@ onMounted(() => {
       </div>
 
       <!-- Main Content Section -->
-      <div class="bg-white shadow p-4 mt-4">
-        <div class="font-bold text-gray-700 mb-2">
-          Freight Rate (Selling Rate + Flat Cost + Profit)
-        </div>
-
-        <!-- Service Level Table -->
-        <table class="w-full border-collapse border border-gray-200 text-sm">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="border border-gray-200 px-4 py-2">
-                Lane Segment (Service Level)
-              </th>
-              <th class="border border-gray-200 px-4 py-2">500 (kg)</th>
-              <th class="border border-gray-200 px-4 py-2">1K (kg)</th>
-              <th class="border border-gray-200 px-4 py-2">2K (kg)</th>
-              <th class="border border-gray-200 px-4 py-2">+3K (kg)</th>
-              <th class="border border-gray-200 px-4 py-2">+5K (kg)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="border border-gray-200 px-4 py-2">
-                Guangzhou - Taipei (Regular Service)
-              </td>
-              <td class="border border-gray-200 px-4 py-2">29 (CNY)</td>
-              <td class="border border-gray-200 px-4 py-2">24 (CNY)</td>
-              <td class="border border-gray-200 px-4 py-2">19 (CNY)</td>
-              <td class="border border-gray-200 px-4 py-2">15 (CNY)</td>
-              <td class="border border-gray-200 px-4 py-2">9 (CNY)</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- Additional Information -->
-        <div class="mt-4 text-gray-600">
-          <span class="underline text-blue-600 cursor-pointer"
-            >Show definition</span
-          >
-        </div>
-
-        <!-- Cost Summary -->
-        <div class="mt-4">
-          <div class="text-gray-800 font-bold">Last Cost Summary</div>
-          <div class="text-sm text-gray-600">
-            Last FR Cost: PAGF7809450 Expired Date: 2024/03/23
+      <el-collapse v-model="activeTabs">
+        <el-collapse-item
+          v-for="(items, key) in freightChargeResult"
+          :key="key"
+          :title="items.title"
+          :name="key"
+        >
+          <div v-for="(source, key) in items.freight" :key="key">
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-bold">{{ source.lanesegment }}</h4>
+              <span class="font-bold">Currency: {{ source.currency }}</span>
+            </div>
+            <el-table
+              v-for="(source, key) in items.freight"
+              :key="key"
+              :data="getTableData(source.fDetail)"
+              border
+              style="width: 100%"
+            >
+              <!-- 動態生成表頭 -->
+              <el-table-column
+                v-for="(obj, idx) in source.fTitle"
+                :key="idx"
+                :prop="obj.prop"
+                :label="obj.label"
+              />
+            </el-table>
           </div>
-        </div>
-
-        <!-- Charge Details -->
-        <div class="mt-4">
-          <div class="text-gray-800 font-bold">Origin Charge</div>
-          <div class="text-sm text-gray-600">Pickup Charge: CNY 500</div>
-        </div>
-      </div>
+        </el-collapse-item>
+      </el-collapse>
     </el-card>
   </div>
 </template>
 
-<!-- <style scoped></style> -->
+<style scoped>
+:deep(.el-divider--horizontal) {
+  margin: 2px;
+}
+</style>
