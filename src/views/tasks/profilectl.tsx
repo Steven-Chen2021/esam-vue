@@ -111,7 +111,6 @@ export function taskProfileCTL() {
         }
       }
 
-      console.log("profileData.value", profileData.value);
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
         if (column.visibilityLevel === 2) {
@@ -124,8 +123,6 @@ export function taskProfileCTL() {
           }
         }
       });
-      console.log("profileData", profileData.value);
-      console.log("profileFormData", profileFormData.value);
       // profileDataInit.value = ref(deepClone(profileData.value));
       if (result1.returnValue && result2.returnValue) {
         fetchOptionsNeedParam(result1.returnValue, result2.returnValue);
@@ -562,7 +559,6 @@ export function taskProfileCTL() {
             a.filterSourceType === "api" &&
             a.filterSource)
       );
-      console.log("fetchOptionsNeedParam selectFilterList", selectFilterList);
       selectFilterList.forEach(async item => {
         let resourceType = 0;
         const subParam = {
@@ -606,7 +602,6 @@ export function taskProfileCTL() {
           case "groupRepName":
             resourceType = 127;
             subParam["SelectValue"] = profileData.value["groupRepName"];
-            console.log("options groupRepName", subParam);
             break;
           default:
             resourceType = 0;

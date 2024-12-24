@@ -82,13 +82,8 @@ const backToIndex = () => {
   }
 };
 const activeName = ref(["general", "actionItem", "documents"]);
-const baseRadio = ref("default");
 const dynamicSize = ref();
-const size = ref("disabled");
 const profileFormRef = ref<FormInstance>();
-const refCity = ref(null);
-const refAgent = ref(null);
-const refLeadSourceDetail = ref(null);
 const handleDropDownChange = async (
   formEl: FormInstance | undefined,
   v,
@@ -178,6 +173,10 @@ const autoSaveForm = async (
     }
   });
 };
+const actionItems = ref([]);
+const updateActionItemTempData = actionItemsData => {
+  actionItems.value = actionItemsData;
+};
 const submitForm = async (formEl: FormInstance | undefined, disable) => {
   if (!formEl) return;
   if (disable) return;
@@ -220,6 +219,7 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       profileData.value["subjectTypeId"] = profileData.value["subjectCategory"];
       profileData.value["appointmentDate"] =
         profileData.value["appointmentStartTime"];
+      profileData.value["actionItems"] = actionItems.value;
       console.log("submit! profileData:", profileData.value);
       formLoading.value = true;
       TaskProfileService.updateTaskProfile(profileData.value)
@@ -268,7 +268,6 @@ onMounted(() => {
   if (!props.ID) {
     initToDetail("params");
   }
-  console.log("contac detail getParameter", getParameter);
   ProfileID.value = CID;
   LeadID.value = LID;
   fetchProfileData();
@@ -323,7 +322,7 @@ onMounted(() => {
           </el-button>
         </div>
       </div>
-      <div class="pb-2">
+      <div v-loading="formLoading" class="pb-2">
         <el-alert
           v-if="showAutoSaveAlert && ProfileID !== '0'"
           :title="t('customer.profile.autoSaveAlert')"
@@ -369,7 +368,7 @@ onMounted(() => {
                 </div>
               </div>
             </template>
-            <div v-loading="formLoading" style="padding: 8px">
+            <div style="padding: 8px">
               <el-form
                 ref="profileFormRef"
                 :inline="true"
@@ -829,7 +828,6 @@ onMounted(() => {
             </div>
           </el-collapse-item>
           <el-collapse-item
-            v-if="CID !== '0'"
             :title="t('task.action.title')"
             name="actionItem"
             class="custom-collapse-title"
@@ -838,6 +836,7 @@ onMounted(() => {
               :TaskID="CID"
               :LeadID="LID"
               @handleCancelEvent="cancelSaveNotify"
+              @handleUpdateActionItems="updateActionItemTempData"
             />
           </el-collapse-item>
           <el-collapse-item
@@ -882,6 +881,7 @@ onMounted(() => {
       </div>
     </el-card>
     <taskeMailNotify
+      v-if="CID !== '0'"
       :showeMailNotifyWindow="notifyWindowShow"
       :TaskID="CID"
       @handleCancelEvent="cancelSaveNotify"
