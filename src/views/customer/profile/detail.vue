@@ -696,7 +696,7 @@ onMounted(() => {
   fetchProfileData();
   fetchPLData(0);
   loadDimOrgOptions();
-  fetchDCUrl();
+  if (LID !== "0") fetchDCUrl();
 });
 const returnPL = ref({
   id: "",
@@ -969,7 +969,7 @@ const cancelForm = () => {
                   :icon="
                     useRenderIcon('material-symbols:tab-close-inactive-outline')
                   "
-                  :disabled="!userAuth['isWrite'] && LID !== '0'"
+                  :disabled="LID !== '0' && !userAuth['isWrite']"
                   @click="disQualifyDialog = true"
                 >
                   {{ t("customer.profile.disqualify") }}
@@ -981,7 +981,7 @@ const cancelForm = () => {
                   :loading-icon="useRenderIcon('ep:eleme')"
                   :loading="size !== 'disabled'"
                   :icon="useRenderIcon('ri:save-line')"
-                  :disabled="!userAuth['isWrite'] && LID !== '0'"
+                  :disabled="LID !== '0' && !userAuth['isWrite']"
                   @click="submitForm(profileFormRef, false)"
                 >
                   {{ size === "disabled" ? "Save" : "Processing" }}
