@@ -29,6 +29,7 @@ const emit = defineEmits(["handleCancelEvent", "handleUpdateActionItems"]);
 const { t } = useI18n();
 const hotTableRef = ref(null);
 const handleAfterChange = (changes, source) => {
+  if (props.TaskID == "0") return;
   if (source === "edit") {
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
