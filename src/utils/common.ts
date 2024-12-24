@@ -21,16 +21,14 @@ export function deepClone(obj) {
 }
 export function isEqualArray(arr1, arr2) {
   // 深拷贝两个数组，确保比较时不受引用问题影响
-  const arr1Copy = JSON.parse(JSON.stringify(arr1));
-  const arr2Copy = JSON.parse(JSON.stringify(arr2));
-  console.log("arr1Copy", arr1Copy);
-  console.log("arr2Copy", arr2Copy);
-  if (arr1Copy.length !== arr2Copy.length) {
+  // const arr1Copy = JSON.parse(JSON.stringify(arr1));
+  // const arr2Copy = JSON.parse(JSON.stringify(arr2));
+  if (arr1.length !== arr2.length) {
     return false;
   }
 
-  for (let i = 0; i < arr1Copy.length; i++) {
-    if (!isObjectEqual(arr1Copy[i], arr2Copy[i])) {
+  for (let i = 0; i < arr1.length; i++) {
+    if (!isObjectEqual(arr1[i], arr2[i])) {
       return false;
     }
   }

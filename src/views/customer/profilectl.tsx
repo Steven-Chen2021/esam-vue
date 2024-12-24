@@ -51,7 +51,11 @@ export function customerProfileCTL() {
         CustomerProfileService.getCustomerProfileResult(LeadID.value),
         CustomerQuickFilterService.getUserAccessByCustomer(LeadID.value, 0)
       ]);
-      userAuth.value = deepClone(result3.returnValue);
+      if (LeadID.value === "0") {
+        userAuth.value = { isWrite: true, isReadAdvanceColumn: false };
+      } else {
+        userAuth.value = deepClone(result3.returnValue);
+      }
       DCShow.value = userAuth.value["isReadAdvanceColumn"];
       loadAgentROList();
       profileData.value = deepClone(result2.returnValue);
@@ -1086,7 +1090,7 @@ export function customerProfileCTL() {
   const activePanelNames = ref(["BasicFilterForm"]);
   const disableStatus = filterItem => {
     if (filterItem.visibilityLevel === 2) {
-      return !userAuth.value["isWrite"] && LeadID.value !== "0";
+      return LeadID.value !== "0" && !userAuth.value["isWrite"];
     } else {
       if (
         filterItem.filterKey === "leadSourceGroupID" ||
@@ -1094,13 +1098,13 @@ export function customerProfileCTL() {
       ) {
         return (
           leadSourceDisable.value ||
-          ((!userAuth.value["isWrite"] ||
-            (profileData.value["agent"] &&
-              profileData.value["agent"] !== "")) &&
-            LeadID.value !== "0")
+          (LeadID.value !== "0" &&
+            (!userAuth.value["isWrite"] ||
+              (profileData.value["agent"] &&
+                profileData.value["agent"] !== "")))
         );
       } else {
-        return !userAuth.value["isWrite"] && LeadID.value !== "0";
+        return LeadID.value !== "0" && !userAuth.value["isWrite"];
       }
     }
   };

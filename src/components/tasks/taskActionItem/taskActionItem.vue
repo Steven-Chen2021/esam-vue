@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, defineComponent, onUnmounted } from "vue";
+import { ref, onMounted, defineComponent, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import CommonService from "@/services/commonService";
@@ -25,13 +25,28 @@ const props = defineProps({
     required: false
   }
 });
-const emit = defineEmits(["handleCancelEvent"]);
+const emit = defineEmits(["handleCancelEvent", "handleUpdateActionItems"]);
 const { t } = useI18n();
 const hotTableRef = ref(null);
 const handleAfterChange = (changes, source) => {
-  // console.log("handleAfterChange changes:", changes);
-  // console.log("handleAfterChange source:", source);
-  // console.log("handleAfterChange tableData:", tableSetting.value.data);
+  if (props.TaskID == "0") return;
+  if (source === "edit") {
+    setTimeout(() => {
+      const newData = tableSetting.value.data.filter(
+        item => item.actionItem && item.actionItem !== ""
+      );
+      const oldData = tableDataInit.value.filter(item => item.actionItem);
+      console.log("handleAfterChange newData", newData);
+      console.log("handleAfterChange oldData", oldData);
+      if (!isObjectEqual(newData, oldData)) {
+        updateActionItem();
+      }
+    }, 1000);
+  }
+};
+const handleRemoveRow = (index, amount) => {
+  console.debug("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
+  updateActionItem();
 };
 const userAuth = ref({});
 const tableDataInit = ref([]);
@@ -55,7 +70,7 @@ const tableSetting = ref({
   // 添加事件監聽器
   afterChange: handleAfterChange,
   // afterSelection: handleAfterSelection,
-  // afterRemoveRow: handleRemoveRow,
+  afterRemoveRow: handleRemoveRow,
   // beforeChange: handleBeforeChange,
   readOnly: false
 });
@@ -79,20 +94,57 @@ const getActionItemResult = async () => {
     // const response = await CommonService.gethandsontableColumnSettingResult(36);
     if (tableColumns != null) {
       const setting = deepClone(tableColumns.returnValue);
-      console.log("tableSetting", tableSetting.value);
       tableSetting.value["colHeaders"] = setting
         .filter(item => item.selected)
         .map(item => item.headerName);
       tableSetting.value["columns"] = setting
         .filter(item => item.selected)
         .map(item => item.hotTableColumnSetting);
-      tableSetting.value["columns"].forEach(item => {
+      tableSetting.value["columns"].forEach((item, index) => {
         if (item["type"] === "date") {
           item["dateFormat"] = "MMM DD, YYYY";
           item["correctFormat"] = true;
-        }
-        if (item["type"] === "text") {
+        } else if (item["type"] === "text") {
           item["validator"] = textValidor;
+        } else if (
+          item["type"] === "autocomplete" &&
+          item["data"] === "owner"
+        ) {
+          item["source"] = function (_query, process) {
+            const params = {
+              SearchKey: _query,
+              OptionsResourceType: 135,
+              PageSize: 10,
+              PageIndex: 1,
+              Paginator: true
+            };
+            CommonService.getAutoCompleteList(params).then(a => {
+              const a1 = a.map(item => item.text);
+              process(a1);
+            });
+          };
+          item["strict"] = true;
+          item["visibleRows"] = 15;
+          // tableSetting.value["columns"][index] = {
+          //   data: "owner",
+          //   type: "autocomplete",
+          //   visibleRows: 15,
+          //   source(_query, process) {
+          //     console.log("autocomplete query", _query);
+          //     const params = {
+          //       SearchKey: _query,
+          //       OptionsResourceType: 135,
+          //       PageSize: 10,
+          //       PageIndex: 1,
+          //       Paginator: true
+          //     };
+          //     CommonService.getAutoCompleteList(params).then(a => {
+          //       const a1 = a.map(item => item.text);
+          //       process(a1);
+          //     });
+          //   },
+          //   strict: true
+          // };
         }
         item["allowEmpty"] = false;
       });
@@ -135,8 +187,10 @@ const getActionItemResult = async () => {
           .map(item => item["data"]);
         tableData.returnValue.forEach(item => {
           dateColumns.forEach(c => {
-            console.log("item[c]", item[c]);
-            item[c] = dayjs(item[c]).format("MMM DD, YYYY");
+            item[c] = !item[c] ? "" : item[c];
+            if (item[c] && item[c] !== "") {
+              item[c] = dayjs(item[c]).format("MMM DD, YYYY");
+            }
           });
         });
         tableSetting.value["data"] = deepClone(tableData.returnValue);
@@ -150,16 +204,54 @@ const getActionItemResult = async () => {
     console.error("getChargeCodeSettingResult Error", error);
   }
 };
-const updateActionItem = newData => {
+function isObjectEqual(arr1, arr2) {
+  // 检查数组长度是否一致
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+
+  // 比较每个对象的每个属性
+  for (let i = 0; i < arr1.length; i++) {
+    const item1 = arr1[i];
+    const item2 = arr2[i];
+
+    // 比较对象的每个键和值
+    if (
+      item1.actionItem !== item2.actionItem ||
+      item1.owner !== item2.owner ||
+      item1.ownerUserid !== item2.ownerUserid ||
+      item1.dueDate !== item2.dueDate ||
+      item1.status !== item2.status
+    ) {
+      return false;
+    }
+  }
+
+  // 如果所有检查通过，返回true
+  return true;
+}
+const updateActionItem = () => {
+  const newData = tableSetting.value.data.filter(
+    item => item.actionItem && item.actionItem !== ""
+  );
+  newData.forEach(item => {
+    item["id"] = !item["id"] ? "0" : item["id"];
+  });
   const rowArray = Array.from({ length: newData.length }, (_, index) => index);
   console.log("valid rowArray", rowArray);
+  const updateParams = {
+    taskActionItems: newData,
+    taskID: props.TaskID
+  };
   hotTableRef.value.hotInstance.validateRows(rowArray, valid => {
     if (valid) {
       console.log("valid");
-      TaskProfileService.saveTaskActionItemResult(newData)
+      TaskProfileService.saveTaskActionItemResult(updateParams)
         .then(data => {
           if (data && data.isSuccess) {
             tableDataInit.value = deepClone(tableSetting.value.data);
+            console.log("updateActionItem tableDataInit", tableDataInit.value);
+            // getActionItemResult();
             ElMessage({
               message: t("customer.profile.autoSaveSucAlert"),
               grouping: true,
@@ -178,66 +270,56 @@ const updateActionItem = newData => {
         });
     } else {
       console.log("invalid");
-      ElMessage({
-        message: t("task.action.autoSaveFailAlert"),
-        grouping: true,
-        type: "error"
-      });
+      // ElMessage({
+      //   message: t("task.action.autoSaveFailAlert"),
+      //   grouping: true,
+      //   type: "error"
+      // });
       return;
     }
   });
 };
-const handleFocusOut = event => {
-  // 判断是否从 hotTableRef 移开
-  // console.log("Focus moved outside the table1");
-  const hotElement = hotTableRef.value.hotInstance.rootElement;
-  // console.log("handleFocusOut rootElement", hotElement);
-  if (hotElement && !hotElement.contains(event.relatedTarget)) {
-    console.log("Focus moved outside the table");
-    console.log(
-      "isEqual(tableSetting.value.data, tableDataInit.value)",
-      isEqualArray(
-        tableSetting.value.data.filter(item => item.actionItem),
-        tableDataInit.value.filter(item => item.actionItem)
-      )
-    );
-    const newData = tableSetting.value.data.filter(
-      item => item.actionItem && item.actionItem !== ""
-    );
-    const oldData = tableDataInit.value.filter(item => item.actionItem);
-    if (!isEqualArray(newData, oldData)) {
-      updateActionItem(newData);
-    }
-  }
-};
+// const handleFocusOut = event => {
+//   // 判断是否从 hotTableRef 移开
+//   // console.log("Focus moved outside the table1");
+//   const hotElement = hotTableRef.value.hotInstance.rootElement;
+//   // console.log("handleFocusOut rootElement", hotElement);
+//   // console.log("event.relatedTarget", event.relatedTarget);
+//   if (hotElement && !hotElement.contains(event.relatedTarget)) {
+//     console.log("Focus moved outside the table");
+//     const newData = tableSetting.value.data.filter(
+//       item => item.actionItem && item.actionItem !== ""
+//     );
+//     const oldData = tableDataInit.value.filter(item => item.actionItem);
+//     console.log("newData", newData);
+//     console.log("oldData", oldData);
+//     if (!isEqualArray(newData, oldData)) {
+//       updateActionItem();
+//     }
+//   }
+// };
 const showAutoSaveAlert = ref(true);
 onMounted(() => {
   setTimeout(() => {
     showAutoSaveAlert.value = false;
   }, 10000);
   getActionItemResult();
-  const hotElement = hotTableRef.value.hotInstance.rootElement;
-  if (hotElement) {
-    hotElement.addEventListener("blur", handleFocusOut, true);
-  }
+  // const hotElement = hotTableRef.value.hotInstance.rootElement;
+  // if (hotElement) {
+  //   hotElement.addEventListener("blur", handleFocusOut, true);
+  // }
 });
-onUnmounted(() => {
-  if (hotTableRef.value) {
-    const hotElement = hotTableRef.value.hotInstance.rootElement;
-    if (hotElement) {
-      hotElement.removeEventListener("blur", handleFocusOut, true);
-    }
-  }
+watch(tableSetting.value, newVal => {
+  const data = [
+    ...newVal["data"].filter(item => item.actionItem && item.actionItem !== "")
+  ];
+  emit("handleUpdateActionItems", data);
 });
-// onBeforeUnmount(() => {
-//   // 组件销毁时移除事件监听器
-//   document.removeEventListener("focusout", handleDocumentBlur);
-// });
 </script>
 <template>
   <div>
     <el-alert
-      v-if="showAutoSaveAlert"
+      v-if="TaskID !== '0' && showAutoSaveAlert"
       :title="t('task.action.alert')"
       type="success"
       show-icon
