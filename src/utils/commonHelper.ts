@@ -51,6 +51,16 @@ export function CommonHelper() {
     needMinutes?,
     needSeconds?
   ) {
+    if (typeof dateString === "object" && Array.isArray(dateString)) {
+      return dateString
+        .map(date =>
+          !isNaN(Date.parse(date))
+            ? formatDate(date, columnName, needHours, needMinutes, needSeconds)
+            : date
+        )
+        .join(" ~ ");
+    }
+
     if (
       columnName === "hqid" ||
       isNaN(Date.parse(dateString)) ||
@@ -58,6 +68,7 @@ export function CommonHelper() {
     ) {
       return dateString; // 如果不是有效日期，返回原本的資料
     }
+
     if (dateString === 0) {
       return "";
     }

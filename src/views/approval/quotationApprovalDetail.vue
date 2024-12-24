@@ -3,6 +3,8 @@ import { onMounted, ref } from "vue";
 import { useApprovalDetail } from "./hooks";
 import { useI18n } from "vue-i18n";
 import { ApprovalDetailHooks } from "@/views/approval/detailHooks";
+import { CommonHelper } from "@/utils/commonHelper";
+import { ElDivider } from "element-plus";
 const { getApprovalParameter } = useApprovalDetail();
 const { t } = useI18n();
 const {
@@ -10,20 +12,45 @@ const {
   getApproveUserResult,
   getApproveChargeDataResult
 } = ApprovalDetailHooks();
+const { formatDate } = CommonHelper();
+
 const ApproveHeader = ref<any>({});
 const ApproveAvatar = ref<any>({});
 const ApproveChargeDataResult = ref<any>({});
 const freightChargeResult = ref<any>({});
+const localChargeResult = ref<any>({});
 const activeTabs = ref([0]);
 
 const getTableData = fDetail => {
-  console.log(fDetail);
   return [fDetail];
+};
+
+const filteredApproveHeader = (ApproveHeader, Category) => {
+  const customerKeys = ["customerName", "customerHQID"];
+
+  if (Category === "Customer") {
+    // 只顯示 customerName 和 customerHQID
+    return Object.keys(ApproveHeader)
+      .filter(key => customerKeys.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = ApproveHeader[key];
+        return obj;
+      }, {});
+  } else {
+    // 顯示除了 customerName 和 customerHQID 以外的
+    return Object.keys(ApproveHeader)
+      .filter(key => !customerKeys.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = ApproveHeader[key];
+        return obj;
+      }, {});
+  }
 };
 
 onMounted(() => {
   getApproveHeaderResult(getApprovalParameter.id).then(res => {
     ApproveHeader.value = res.returnValue;
+    console.log(ApproveHeader.value);
   });
   getApproveUserResult(getApprovalParameter.id).then(res => {
     ApproveAvatar.value = res.returnValue;
@@ -32,10 +59,8 @@ onMounted(() => {
     if (res && res.isSuccess) {
       ApproveChargeDataResult.value = res.returnValue;
       freightChargeResult.value = res.returnValue.frtCollection;
+      localChargeResult.value = res.returnValue.localChargeList;
     }
-
-    console.log(ApproveChargeDataResult.value);
-    console.log(freightChargeResult.value);
   });
 });
 </script>
@@ -89,12 +114,29 @@ onMounted(() => {
       <div class="bg-white shadow p-4 mt-4">
         <div class="flex flex-wrap gap-4 text-gray-700 text-sm">
           <div
-            v-for="(value, key) in ApproveHeader"
+            v-for="(value, key) in filteredApproveHeader(
+              ApproveHeader,
+              'Customer'
+            )"
             :key="key"
             class="flex flex-col min-w-[200px]"
           >
             <strong>{{ $t(`approval.detail.${key}`) || key }}:</strong>
-            <span class="truncate">{{ value || "N/A" }}</span>
+            <span class="truncate">{{ formatDate(value, key) }}</span>
+          </div>
+        </div>
+        <ElDivider />
+        <div class="flex flex-wrap gap-4 text-gray-700 text-sm">
+          <div
+            v-for="(value, key) in filteredApproveHeader(
+              ApproveHeader,
+              'Others'
+            )"
+            :key="key"
+            class="flex flex-col min-w-[200px]"
+          >
+            <strong>{{ $t(`approval.detail.${key}`) || key }}:</strong>
+            <span class="truncate">{{ formatDate(value, key) }}</span>
           </div>
         </div>
       </div>
@@ -119,14 +161,59 @@ onMounted(() => {
               border
               style="width: 100%"
             >
-              <!-- 動態生成表頭 -->
               <el-table-column
                 v-for="(obj, idx) in source.fTitle"
                 :key="idx"
                 :prop="obj.prop"
-                :label="obj.label"
+                :label="obj.lable"
+                :class="idx % 2 === 0 ? 'bg-blue-400' : 'bg-blue-200'"
               />
             </el-table>
+          </div>
+        </el-collapse-item>
+        <el-collapse-item
+          v-for="(items, key) in localChargeResult"
+          :key="key"
+          :name="key"
+        >
+          <template #title>
+            <h4 class="font-bold">
+              {{ `Local Charge - ${items.title}${items.localtion}` }}
+            </h4>
+          </template>
+          <div
+            class="grid grid-cols-4 border border-gray-100 text-sm bg-gray-200"
+          >
+            <div class="border border-gray-100 px-2 py-1">Charge</div>
+            <div class="border border-gray-100 px-2 py-1">Description</div>
+            <div class="border border-gray-100 px-2 py-1">Min</div>
+            <div class="border border-gray-100 px-2 py-1">Remark</div>
+            <template v-for="(item, index) in items.detail" :key="index">
+              <div
+                :class="index % 2 === 0 ? 'bg-blue-300' : 'bg-blue-200'"
+                class="border border-gray-100 px-2 py-1"
+              >
+                {{ item.charge }}
+              </div>
+              <div
+                :class="index % 2 === 0 ? 'bg-blue-300' : 'bg-blue-200'"
+                class="border border-gray-100 px-2 py-1"
+              >
+                {{ item.description }}
+              </div>
+              <div
+                :class="index % 2 === 0 ? 'bg-blue-300' : 'bg-blue-200'"
+                class="border border-gray-100 px-2 py-1"
+              >
+                {{ item.min }}
+              </div>
+              <div
+                :class="index % 2 === 0 ? 'bg-blue-300' : 'bg-blue-200'"
+                class="border border-gray-100 px-2 py-1"
+              >
+                {{ item.remark }}
+              </div>
+            </template>
           </div>
         </el-collapse-item>
       </el-collapse>

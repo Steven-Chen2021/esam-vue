@@ -383,6 +383,15 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function SendQuotationToApprove(params) {
+    try {
+      const response = await quoteDetailService.SendQuotationToApprove(params);
+      return response;
+    } catch (error) {
+      console.log("saveFreightChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -418,6 +427,7 @@ export function QuoteDetailHooks() {
     getQuoteReferenceCodeResult,
     quoteReferenceCodeResult,
     quoteDimensionFactorResult,
-    getQuoteDimensionFactorResult
+    getQuoteDimensionFactorResult,
+    SendQuotationToApprove
   };
 }

@@ -241,6 +241,16 @@ class QuoteDetailService {
       return [];
     }
   }
+
+  async SendQuotationToApprove(params) {
+    try {
+      const url = "/api/Quote/QuoteSendToApproveResult";
+      const response = await API.post(url, params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new QuoteDetailService();

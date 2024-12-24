@@ -590,7 +590,7 @@ approval:
     moveType: Move Type
     reference: Reference
     dimensionFactor: Dimension Factor
-    volumeShareForAgent: Volume Share For Agent
+    volumeShareForAgent: Volume Share(A:D)
     volumeShareForDimerco: Volume Share For Dimerco
     nra: NRA
     period: Period
