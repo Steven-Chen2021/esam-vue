@@ -29,7 +29,6 @@ const emit = defineEmits(["handleCancelEvent", "handleUpdateActionItems"]);
 const { t } = useI18n();
 const hotTableRef = ref(null);
 const handleAfterChange = (changes, source) => {
-  if (props.TaskID == "0") return;
   if (source === "edit") {
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
@@ -245,6 +244,7 @@ const updateActionItem = () => {
   };
   hotTableRef.value.hotInstance.validateRows(rowArray, valid => {
     if (valid) {
+      if (props.TaskID == "0") return;
       console.log("valid");
       TaskProfileService.saveTaskActionItemResult(updateParams)
         .then(data => {
