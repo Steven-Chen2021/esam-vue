@@ -18,8 +18,6 @@ export function useDetail() {
     parameter: LocationQueryRaw | RouteParamsRaw,
     model: "query" | "params"
   ) {
-    // ⚠️ 这里要特别注意下，因为vue-router在解析路由参数的时候会自动转化成字符串类型，比如在使用useRoute().route.query或useRoute().route.params时，得到的参数都是字符串类型
-    // 所以在传参的时候，如果参数是数字类型，就需要在此处 toString() 一下，保证传参跟路由参数类型一致都是字符串，这是必不可少的环节！！！
     Object.keys(parameter).forEach(param => {
       if (!isString(parameter[param])) {
         parameter[param] = parameter[param].toString();

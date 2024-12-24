@@ -2,6 +2,7 @@ import quoteDetailService from "@/services/quote/QuoteDetailService";
 import commonService from "@/services/commonService";
 import { reactive, ref } from "vue";
 import type { FieldValues } from "plus-pro-components";
+// import { ContactGridColumnSetting } from "@/types/apiRequestTypeEnum";
 
 export function QuoteDetailHooks() {
   interface dropdownCtl {
@@ -152,6 +153,7 @@ export function QuoteDetailHooks() {
         PID
       );
       if (response != null) {
+        console.log(response);
         ChargeCodeSettingResult.splice(0);
         ChargeCodeSettingResult.push(...response.returnValue);
 

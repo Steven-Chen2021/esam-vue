@@ -79,7 +79,7 @@ export function listCTL() {
           })
           .catch(err => {
             tableData.value = [];
-            console.log("getCustomerList error", err);
+            console.debug("getCustomerList error", err);
             loading.value = false;
           });
         break;
@@ -135,7 +135,6 @@ export function listCTL() {
         break;
       }
       case tasks: {
-        console.log("task search", searchParams.ConditionalSettings);
         if (FilterLeadID && FilterLeadID.value !== "0") {
           if (!searchParams.ConditionalSettings) {
             searchParams.ConditionalSettings = [
@@ -213,7 +212,7 @@ export function listCTL() {
           })
           .catch(err => {
             tableData.value = [];
-            console.log("getTaskList error", err);
+            console.debug("getTaskList error", err);
             loading.value = false;
           });
         break;
@@ -228,7 +227,7 @@ export function listCTL() {
               loading.value = false;
             })
             .catch(err => {
-              console.log("getCustomerList error", err);
+              console.debug("getCustomerList error", err);
               loading.value = false;
             });
         }
@@ -239,12 +238,11 @@ export function listCTL() {
           ApprovalSearchService.getApprovalList(searchParams)
             .then(data => {
               tableData.value = data.returnValue.results;
-              console.log(data);
               if (data) total.value = data.returnValue.totalRecord;
               loading.value = false;
             })
             .catch(err => {
-              console.log("getApprovalList error", err);
+              console.debug("getApprovalList error", err);
               loading.value = false;
             });
         }
@@ -288,7 +286,6 @@ export function listCTL() {
     row: any;
     rowIndex: number;
   }) => {
-    // console.log("tableRowClassName rowIndex", rowIndex);
     if (row && rowIndex === 1) {
       return "warning-row";
     } else if (rowIndex === 3) {
@@ -314,6 +311,8 @@ export function listCTL() {
     currentPage,
     pageSize,
     total,
+    sortField,
+    sortOrder,
     handleSortChange,
     handlePageChange,
     handleSizeChange,

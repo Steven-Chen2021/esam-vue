@@ -31,6 +31,17 @@ class ApprovalSearchService {
       console.error(error);
     }
   }
+
+  async getApproveChargeData(AID) {
+    try {
+      const url = "/api/Approve/ApproveQuoteFreightLocalChargeResult";
+      const fullUrl = `${url}?ApproveID=${AID}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new ApprovalSearchService();

@@ -19,8 +19,18 @@ export function ApprovalDetailHooks() {
     }
   }
 
+  async function getApproveChargeDataResult(AID) {
+    try {
+      const response = await ApprovalSearchService.getApproveChargeData(AID);
+      return response;
+    } catch (error) {
+      console.log("getApproveUserResult", error);
+    }
+  }
+
   return {
     getApproveHeaderResult,
-    getApproveUserResult
+    getApproveUserResult,
+    getApproveChargeDataResult
   };
 }

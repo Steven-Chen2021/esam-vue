@@ -88,6 +88,7 @@ export function LocalChargeHooks() {
         location
       );
       if (response && response.returnValue) {
+        console.log(response);
         localChargeResult.value = response.returnValue;
       } else {
         throw new Error("Quotation Detail not found.");
