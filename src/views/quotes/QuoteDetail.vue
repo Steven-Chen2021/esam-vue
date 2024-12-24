@@ -385,12 +385,12 @@ const quoteDetailColumns: PlusColumn[] = [
         getChargeCodeSettingResult(qid.value, _pid);
         if (_pid === 6) {
           handleProductLineChange();
-          PLCode.value = "OMS";
+          PLCode.value = quotationDetailResult.value.productLineCode = "OMS";
           showCBMTransfer.value = true;
           hideQuoteDimensionFactor.value = true;
           hideVolumeShareForAgent.value = true;
         } else if (_pid === 2) {
-          PLCode.value = "AMS";
+          PLCode.value = quotationDetailResult.value.productLineCode = "AMS";
           hideQuoteDimensionFactor.value = false;
           hideVolumeShareForAgent.value = false;
         }
@@ -406,6 +406,7 @@ const quoteDetailColumns: PlusColumn[] = [
         }
 
         getQuoteFreightChargeResult(qid.value, _pid).then(() => {
+          console.log(freightChargeResult.value);
           freightChargeSettings.value.data = freightChargeResult.value;
           let exportPromise = Promise.resolve();
           let importPromise = Promise.resolve();
@@ -421,7 +422,8 @@ const quoteDetailColumns: PlusColumn[] = [
               handleLocalChargeResult(
                 localChargeResult,
                 quotationDetailResult.value.pid,
-                exportLocationResult
+                exportLocationResult,
+                "Export"
               );
             });
 
@@ -434,7 +436,8 @@ const quoteDetailColumns: PlusColumn[] = [
               handleLocalChargeResult(
                 localChargeResult,
                 quotationDetailResult.value.pid,
-                importLocationResult
+                importLocationResult,
+                "Import"
               );
             });
           }
@@ -444,7 +447,11 @@ const quoteDetailColumns: PlusColumn[] = [
           });
         });
 
-        if (previousValue.value != undefined && value != undefined) {
+        if (
+          previousValue.value != undefined &&
+          value != undefined &&
+          previousValue.value != value
+        ) {
           autoSaveTrigger(value, "productLineName");
         }
 
@@ -671,7 +678,8 @@ const quoteDetailColumns: PlusColumn[] = [
 const handleLocalChargeResult = (
   localChargeResult,
   quotationDetailPid,
-  LocationResult
+  LocationResult,
+  Category
 ) => {
   if (localChargeResult.value && localChargeResult.value.length > 0) {
     localChargeResult.value.forEach(localCharge => {
@@ -681,38 +689,73 @@ const handleLocalChargeResult = (
         localCharge.cityID
       ).then(res => {
         if (localCharge.cityID != 0) {
-          LocationResult.value.push({
-            cityID: localCharge.cityID,
-            city: localCharge.city,
-            detail: [],
-            hotTableSetting: {
-              data: localCharge.detail || [],
-              colHeaders: localCharge.colHeaders || [],
-              rowHeaders: false,
-              dropdownMenu: true,
-              width: "100%",
-              height: "auto",
-              colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-              columns: localCharge?.columns?.map(column => ({
-                data: column.data,
-                type: column.type,
-                source: column.source || []
-              })),
-              autoWrapRow: true,
-              autoWrapCol: true,
-              allowInsertColumn: true,
-              allowInsertRow: true,
-              allowInvalid: true,
-              licenseKey: "524eb-e5423-11952-44a09-e7a22",
-              contextMenu: true,
-              afterChange: handleLocalChargeChange,
-              afterSelection: handleAfterSelection,
-              afterRemoveRow: handleRemoveRow,
-              readOnly: !customerProductLineAccessRight.value.isWrite
-            },
-            localChargePackageList: res,
-            localChargePackageSelector: []
-          });
+          if (Category === "Export") {
+            LocationResult.value.push({
+              cityID: localCharge.cityID,
+              city: localCharge.city,
+              detail: [],
+              hotTableSetting: {
+                data: localCharge.detail || [],
+                colHeaders: localCharge.colHeaders || [],
+                rowHeaders: false,
+                dropdownMenu: true,
+                width: "100%",
+                height: "auto",
+                colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                columns: localCharge?.columns?.map(column => ({
+                  data: column.data,
+                  type: column.type,
+                  source: column.source || []
+                })),
+                autoWrapRow: true,
+                autoWrapCol: true,
+                allowInsertColumn: true,
+                allowInsertRow: true,
+                allowInvalid: true,
+                licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                contextMenu: true,
+                afterChange: handleExportLocalChargeChange,
+                afterSelection: handleAfterSelection,
+                afterRemoveRow: handleRemoveRow,
+                readOnly: !customerProductLineAccessRight.value.isWrite
+              },
+              localChargePackageList: res,
+              localChargePackageSelector: []
+            });
+          } else {
+            LocationResult.value.push({
+              cityID: localCharge.cityID,
+              city: localCharge.city,
+              detail: [],
+              hotTableSetting: {
+                data: localCharge.detail || [],
+                colHeaders: localCharge.colHeaders || [],
+                rowHeaders: false,
+                dropdownMenu: true,
+                width: "100%",
+                height: "auto",
+                colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                columns: localCharge?.columns?.map(column => ({
+                  data: column.data,
+                  type: column.type,
+                  source: column.source || []
+                })),
+                autoWrapRow: true,
+                autoWrapCol: true,
+                allowInsertColumn: true,
+                allowInsertRow: true,
+                allowInvalid: true,
+                licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                contextMenu: true,
+                afterChange: handleImportLocalChargeChange,
+                afterSelection: handleAfterSelection,
+                afterRemoveRow: handleRemoveRow,
+                readOnly: !customerProductLineAccessRight.value.isWrite
+              },
+              localChargePackageList: res,
+              localChargePackageSelector: []
+            });
+          }
         }
       });
     });
@@ -747,6 +790,14 @@ const handleAfterChange = (changes, source) => {
         frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
         frightChargeParams.value.pid = quotationDetailResult.value.pid;
         frightChargeParams.value.quoteFreights = filteredData;
+        console.log(
+          frightChargeParams.value.quoteFreights.length > 0 &&
+            changes[0][2] != changes[0][3]
+        );
+
+        console.log(changes[0][2]);
+        console.log(changes[0][3]);
+
         if (
           frightChargeParams.value.quoteFreights.length > 0 &&
           changes[0][2] != changes[0][3]
@@ -776,6 +827,7 @@ const handleAfterChange = (changes, source) => {
             true,
             newValue
           ).then(() => {
+            console.log(localChargeResult.value);
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
                 getLocalChargePackageResult(
@@ -807,7 +859,7 @@ const handleAfterChange = (changes, source) => {
                       allowInvalid: true,
                       licenseKey: "524eb-e5423-11952-44a09-e7a22",
                       contextMenu: true,
-                      afterChange: handleLocalChargeChange,
+                      afterChange: handleExportLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow,
                       readOnly: !customerProductLineAccessRight.value.isWrite
@@ -867,7 +919,7 @@ const handleAfterChange = (changes, source) => {
                       allowInvalid: true,
                       licenseKey: "524eb-e5423-11952-44a09-e7a22",
                       contextMenu: true,
-                      afterChange: handleLocalChargeChange,
+                      afterChange: handleImportLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow,
                       readOnly: !customerProductLineAccessRight.value.isWrite
@@ -885,28 +937,45 @@ const handleAfterChange = (changes, source) => {
   }
 };
 
-const handleLocalChargeChange = (changes, source) => {
+const handleExportLocalChargeChange = (changes, source) => {
   if (source === "edit") {
     if (changes[0][2] === changes[0][3]) {
       return;
     }
     const exportLocalChargeParam = {
-      quoteID: frightChargeParams.value.quoteID,
+      quoteID:
+        frightChargeParams?.value?.quoteID ??
+        quotationDetailResult.value.quoteid,
       pid: quotationDetailResult.value.pid,
       isExport: true,
       detail: exportLocationResult.value
     };
+    exportLocationResult.value.forEach(res => {
+      res.detail = res.hotTableSetting.data.filter(
+        item => item.charge !== null
+      );
+    });
+    saveLocalChargeResult(exportLocalChargeParam);
+  }
+};
+
+const handleImportLocalChargeChange = (changes, source) => {
+  if (source === "edit") {
+    if (changes[0][2] === changes[0][3]) {
+      return;
+    }
     const importLocalChargeParam = {
-      quoteID: frightChargeParams.value.quoteID,
+      quoteID:
+        frightChargeParams?.value?.quoteID ??
+        quotationDetailResult.value.quoteid,
       pid: quotationDetailResult.value.pid,
       isExport: false,
       detail: importLocationResult.value
     };
-
-    saveLocalChargeResult(exportLocalChargeParam);
     saveLocalChargeResult(importLocalChargeParam);
   }
 };
+
 const handleAfterSelection = (row, column, row2, column2) => {
   console.log(
     "handleAfterSelection",
@@ -1273,6 +1342,7 @@ watchEffect(() => {
         sourceData.push(item);
       }
     });
+    console.log(sourceData);
     freightChargeSettings.value.colHeaders = sourceData.map(
       item => item.headerName
     );

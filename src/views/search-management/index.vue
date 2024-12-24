@@ -90,6 +90,8 @@ const {
   currentPage,
   pageSize,
   total,
+  sortField,
+  sortOrder,
   handleSortChange,
   handlePageChange,
   handleSizeChange,
@@ -257,7 +259,30 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       quickFilterForm.filterID = quickFilterForm.id;
-      quickFilterForm.filterAppliedPage = 2;
+
+      switch (category.value) {
+        case "quoteSearch":
+          quickFilterForm.filterAppliedPage =
+            CustomizeQuickFilterSettingFromQuoteSearch;
+          break;
+        case "ApprovalList":
+          quickFilterForm.filterAppliedPage =
+            CustomizeQuickFilterSettingFromApprovalSearch;
+          break;
+        case "CustomerList":
+          quickFilterForm.filterAppliedPage =
+            CustomizeQuickFilterSettingFromCustomerSearch;
+          break;
+        case "ContactList":
+          quickFilterForm.filterAppliedPage =
+            CustomizeQuickFilterSettingFromContactSearch;
+          break;
+        case "TaskList":
+          quickFilterForm.filterAppliedPage =
+            CustomizeQuickFilterSettingFromTaskSearch;
+          break;
+      }
+
       quickFilterForm.filters.forEach(a => {
         if (
           a.filterType === "dropdown" &&
@@ -495,7 +520,7 @@ const handleCopyQuote = quoteID => {
         );
     })
     .catch(ex => {
-      console.log(ex);
+      console.debug(ex);
     });
 };
 
@@ -508,7 +533,9 @@ onMounted(async () => {
         CustomizeQuickFilterSettingFromQuoteSearch;
       ColumnSettingParam.value = QuoteGridColumnSetting;
       requestCategory.value = quotes;
-      searchParams.sort = "issueDate";
+      sortField.value = "issueDate";
+      sortOrder.value = "desc";
+
       break;
     case "ApprovalList":
       QuickFilterColumnListParam.value = GetApprovalFilterColumnList;
