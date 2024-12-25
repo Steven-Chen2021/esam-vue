@@ -99,7 +99,8 @@ const {
   getQuoteReferenceCodeResult,
   quoteReferenceCodeResult,
   quoteDimensionFactorResult,
-  getQuoteDimensionFactorResult
+  getQuoteDimensionFactorResult,
+  SendQuotationToApprove
 } = QuoteDetailHooks();
 
 const {
@@ -1081,10 +1082,14 @@ const saveData = () => {
 };
 
 const sendApproval = () => {
-  toApprovalDetail(
-    { id: getParameter.id, title: getParameter.qname },
-    "params"
-  );
+  const params = { quoteid: getParameter.id };
+  SendQuotationToApprove(params).then(res => {
+    console.log(res);
+  });
+  // toApprovalDetail(
+  //   { id: getParameter.id, title: getParameter.qname },
+  //   "params"
+  // );
 };
 
 const previewQuote = () => {
