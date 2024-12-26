@@ -11,8 +11,7 @@ import {
   onMounted,
   defineComponent,
   nextTick,
-  watchEffect,
-  reactive
+  watchEffect
 } from "vue";
 
 import {
@@ -608,6 +607,9 @@ const quoteDetailColumns: PlusColumn[] = [
       span: 8
     },
     fieldProps: {
+      style: {
+        width: "50%"
+      },
       onFocus: () => {
         previousValue.value = quotationDetailResult.value.typeCode;
       },
@@ -628,7 +630,7 @@ const quoteDetailColumns: PlusColumn[] = [
     }
   },
   {
-    label: "Volume Share",
+    label: "Volume(A:D)",
     prop: "volumeShareForAgent",
     valueType: "input-number",
     hideInForm: hideVolumeShareForAgent,
@@ -651,29 +653,29 @@ const quoteDetailColumns: PlusColumn[] = [
         autoSaveTrigger(value, "volumeShareForAgent");
       }
     }
-  },
-  {
-    label: "Dimerco Share",
-    prop: "volumeShareForDimerco",
-    valueType: "text",
-    hideInForm: hideVolumeShareForAgent,
-    colProps: {
-      span: 4
-    },
-    fieldProps: {
-      max: 100,
-      min: 0,
-      style: {
-        width: "50%"
-      },
-      onFocus: () => {
-        previousValue.value = quotationDetailResult.value.volumeShareForDimerco;
-      }
-      // onChange: value => {
-      //   autoSaveTrigger(value, "volumeShareForAgent");
-      // }
-    }
   }
+  // {
+  //   label: "Dimerco Share",
+  //   prop: "volumeShareForDimerco",
+  //   valueType: "text",
+  //   hideInForm: hideVolumeShareForAgent,
+  //   colProps: {
+  //     span: 4
+  //   },
+  //   fieldProps: {
+  //     max: 100,
+  //     min: 0,
+  //     style: {
+  //       width: "50%"
+  //     },
+  //     onFocus: () => {
+  //       previousValue.value = quotationDetailResult.value.volumeShareForDimerco;
+  //     }
+  //     // onChange: value => {
+  //     //   autoSaveTrigger(value, "volumeShareForAgent");
+  //     // }
+  //   }
+  // }
 ];
 
 const handleLocalChargeResult = (
@@ -973,6 +975,11 @@ const handleImportLocalChargeChange = (changes, source) => {
       isExport: false,
       detail: importLocationResult.value
     };
+    importLocationResult.value.forEach(res => {
+      res.detail = res.hotTableSetting.data.filter(
+        item => item.charge !== null
+      );
+    });
     saveLocalChargeResult(importLocalChargeParam);
   }
 };
@@ -1384,15 +1391,6 @@ onMounted(() => {
           text: quotationDetailResult.value.customerName,
           value: quotationDetailResult.value.customerHQID
         };
-
-        // const fieldProps = quoteDetailColumns[0].fieldProps as any;
-        // console.log(quoteDetailColumns[0]);
-        // if (fieldProps.onSelect) {
-        //   fieldProps.onSelect(selectedItem);
-        // } else {
-        //   console.warn("onSelect is not defined in fieldProps.");
-        // }
-
         const companyNameColumn = quoteDetailColumns.find(
           col => col.prop === "customerName"
         ) as any;
@@ -1488,14 +1486,10 @@ const formatDate = dateInput => {
   <div>
     <el-card shadow="never" class="relative h-96 overflow-hidden">
       <div class="flex justify-between items-center">
-        <!-- 左側 Label 和 Icon 按鈕 -->
         <div class="flex items-center space-x-2 pt-1 pl-3 font-bold">
           <span class="text-gray-700"> Quote Status: </span>
           <el-popover placement="right" :width="450" trigger="click">
             <template #reference>
-              <!-- <el-button style="margin-right: 16px"
-                >Click to activate</el-button
-              > -->
               <el-link @click="showQuotationStatusHistory">{{
                 quotationDetailResult.status
               }}</el-link>
@@ -1527,19 +1521,25 @@ const formatDate = dateInput => {
         <!-- 右側按鈕群組 -->
         <div class="flex space-x-1">
           <el-button
-            v-if="customerProductLineAccessRight.isWrite"
+            v-if="
+              customerProductLineAccessRight.isWrite &&
+              quotationDetailResult.status === 'Draft'
+            "
             type="primary"
             plain
             :size="dynamicSize"
             :loading-icon="useRenderIcon('ep:eleme')"
             :loading="saveLoading !== 'disabled'"
-            :icon="useRenderIcon('ri:save-line')"
+            :icon="useRenderIcon('fa-solid:sync-alt')"
             @click="saveData"
           >
             {{ saveLoading === "disabled" ? "Save" : "Processing" }}
           </el-button>
           <el-button
-            v-if="customerProductLineAccessRight.isWrite"
+            v-if="
+              customerProductLineAccessRight.isWrite &&
+              quotationDetailResult.status === 'Draft'
+            "
             type="primary"
             plain
             :size="dynamicSize"
@@ -1561,7 +1561,11 @@ const formatDate = dateInput => {
             {{ "Preview" }}
           </el-button>
           <el-button
-            v-if="customerProductLineAccessRight.isWrite && deleteBtnVisible"
+            v-if="
+              customerProductLineAccessRight.isWrite &&
+              deleteBtnVisible &&
+              quotationDetailResult.status === 'Draft'
+            "
             type="primary"
             plain
             :size="dynamicSize"
@@ -1808,7 +1812,7 @@ const formatDate = dateInput => {
               <el-input
                 v-else
                 v-model="quotationDetailResult.remark"
-                style="width: 440px"
+                style="width: 100%"
                 placeholder="Please input"
                 clearable
                 maxlength="500"

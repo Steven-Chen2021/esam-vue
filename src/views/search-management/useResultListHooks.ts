@@ -222,8 +222,12 @@ export function listCTL() {
           loading.value = true;
           QuoteSearchService.getQuoteList(searchParams)
             .then(data => {
-              tableData.value = data.returnValue.results;
-              if (data) total.value = data.returnValue.totalRecord;
+              if (data && data.isSuccess) {
+                tableData.value = data.returnValue.results;
+                if (data) total.value = data.returnValue.totalRecord;
+              } else {
+                tableData.value = null;
+              }
               loading.value = false;
             })
             .catch(err => {

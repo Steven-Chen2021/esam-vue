@@ -5,6 +5,9 @@ import { useI18n } from "vue-i18n";
 import { ApprovalDetailHooks } from "@/views/approval/detailHooks";
 import { CommonHelper } from "@/utils/commonHelper";
 import { ElDivider } from "element-plus";
+import { usePreView } from "@/views/commons/hooks";
+import { useRenderIcon } from "@/components/ReIcon/src/hooks";
+
 const { getApprovalParameter } = useApprovalDetail();
 const { t } = useI18n();
 const {
@@ -12,14 +15,15 @@ const {
   getApproveUserResult,
   getApproveChargeDataResult
 } = ApprovalDetailHooks();
-const { formatDate } = CommonHelper();
+const { formatDate, formatNumber } = CommonHelper();
+const { toPreView } = usePreView();
 
 const ApproveHeader = ref<any>({});
 const ApproveAvatar = ref<any>({});
 const ApproveChargeDataResult = ref<any>({});
 const freightChargeResult = ref<any>({});
 const localChargeResult = ref<any>({});
-const activeTabs = ref([0]);
+const activeTabs = ref([0, 1, 2]);
 
 const getTableData = fDetail => {
   return [fDetail];
@@ -27,7 +31,7 @@ const getTableData = fDetail => {
 
 const filteredApproveHeader = (ApproveHeader, Category) => {
   const customerKeys = ["customerName", "customerHQID"];
-
+  const noNeedDisplayColumns = ["quoteid", "pid"];
   if (Category === "Customer") {
     // 只顯示 customerName 和 customerHQID
     return Object.keys(ApproveHeader)
@@ -39,12 +43,24 @@ const filteredApproveHeader = (ApproveHeader, Category) => {
   } else {
     // 顯示除了 customerName 和 customerHQID 以外的
     return Object.keys(ApproveHeader)
-      .filter(key => !customerKeys.includes(key))
+      .filter(
+        key =>
+          !customerKeys.includes(key) && !noNeedDisplayColumns.includes(key)
+      )
       .reduce((obj, key) => {
         obj[key] = ApproveHeader[key];
         return obj;
       }, {});
   }
+};
+
+const previewQuote = () => {
+  toPreView({
+    category: "quotation",
+    id: ApproveHeader.value.quoteid as string,
+    displaytitle: ApproveHeader.value.quoteNo as string,
+    pid: ApproveHeader.value.pid as string
+  });
 };
 
 onMounted(() => {
@@ -69,7 +85,7 @@ onMounted(() => {
   <div>
     <el-card shadow="never" class="relative overflow-hidden">
       <!-- Header Section -->
-      <div class="bg-white p-4 shadow-md flex justify-between">
+      <div class="bg-white shadow-md flex justify-between h-fit">
         <!-- User Info -->
         <div class="flex items-center">
           <div class="text-gray-500">
@@ -82,31 +98,15 @@ onMounted(() => {
         </div>
         <!-- Action Buttons -->
         <div class="flex space-x-2">
-          <button
-            class="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600"
+          <el-button>{{ `History` }}</el-button>
+          <el-button
+            plain
+            :icon="useRenderIcon('ep:view')"
+            @click="previewQuote"
+            >{{ `Preview` }}</el-button
           >
-            History
-          </button>
-          <button
-            class="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600"
-          >
-            Deal
-          </button>
-          <button
-            class="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600"
-          >
-            Preview
-          </button>
-          <button
-            class="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600"
-          >
-            Reject
-          </button>
-          <button
-            class="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600"
-          >
-            Approve
-          </button>
+          <el-button>{{ `Reject` }}</el-button>
+          <el-button>{{ `Approve` }}</el-button>
         </div>
       </div>
 
@@ -167,6 +167,7 @@ onMounted(() => {
                 :prop="obj.prop"
                 :label="obj.lable"
                 :class="idx % 2 === 0 ? 'bg-blue-400' : 'bg-blue-200'"
+                :formatter="(row, column, cellValue) => formatNumber(cellValue)"
               />
             </el-table>
           </div>
