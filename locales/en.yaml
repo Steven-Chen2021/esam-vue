@@ -254,11 +254,21 @@ common:
 deal:
   clostBtn: Close
   profile:
+    title: Deal Maintain
     dealNo: Deal#
     dealType: Deal Type
     flag: Flag
     initialDate: Initial Date
     closeDate: Close Date
+  toDo:
+    actionItem: Action Item
+    owner: Owner
+    dueDate: Due Date
+    alert: Check or uncheck to update the completion status.
+    title: To Do
+    showAll: Show All
+  taskList:
+    title: Related Task
 task:
   quickfilter:
     priority: Priority
