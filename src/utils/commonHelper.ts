@@ -105,10 +105,23 @@ export function CommonHelper() {
     return `${month} ${day}, ${year}`;
   }
 
+  function formatNumber(value: any): string {
+    if (isNumeric(value)) {
+      const numberValue = parseFloat(value); // 將字串轉為數字
+      return numberValue.toLocaleString("en-US", { minimumFractionDigits: 0 });
+    }
+    return value; // 若非數字則返回原始值
+  }
+
+  function isNumeric(value: string): boolean {
+    return !isNaN(Number(value)) && value.trim() !== ""; // 判斷數字且非空
+  }
+
   return {
     GetColumnSettingResult,
     columnSettingResult,
     DocumentCloudResult,
-    formatDate
+    formatDate,
+    formatNumber
   };
 }

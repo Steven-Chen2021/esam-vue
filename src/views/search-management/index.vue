@@ -238,6 +238,8 @@ const handleFilterClick = filter => {
       a.value &&
       (a.value !== "" || (Array.isArray(a.value) && a.value.length > 0))
   );
+  console.log(filters);
+  console.log(filter);
   handleConditionalSearch({ filters: filters });
   handleQuickFilterClick(filter);
   activePanelNames.value = [];
@@ -934,6 +936,7 @@ watch(
       <el-table-column fixed="right" label="Operations" min-width="120">
         <template #default="scope">
           <el-button
+            v-if="router.currentRoute.value.name != 'quoteSearch'"
             link
             type="primary"
             size="small"
@@ -957,7 +960,7 @@ watch(
                 'params'
               )
             "
-            >Edit</el-button
+            >View</el-button
           >
           <el-button
             v-if="router.currentRoute.value.name === 'quoteSearch'"
