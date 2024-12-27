@@ -32,7 +32,10 @@ const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
-        item => item.actionItem && item.actionItem !== ""
+        item =>
+          (item.actionItem && item.actionItem !== "") ||
+          (item.dueDate && item.dueDate !== "") ||
+          (item.owner && item.owner !== "")
       );
       const oldData = tableDataInit.value.filter(item => item.actionItem);
       console.log("handleAfterChange newData", newData);
@@ -231,11 +234,15 @@ function isObjectEqual(arr1, arr2) {
 }
 const updateActionItem = () => {
   const newData = tableSetting.value.data.filter(
-    item => item.actionItem && item.actionItem !== ""
+    item =>
+      (item.actionItem && item.actionItem !== "") ||
+      (item.dueDate && item.dueDate !== "") ||
+      (item.owner && item.owner !== "")
   );
   newData.forEach(item => {
     item["id"] = !item["id"] ? "0" : item["id"];
   });
+  console.log("updateActionItem newData", newData);
   const rowArray = Array.from({ length: newData.length }, (_, index) => index);
   console.log("valid rowArray", rowArray);
   const updateParams = {
