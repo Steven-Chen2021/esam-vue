@@ -6,7 +6,9 @@ export function LocalChargeHooks() {
     cityID: number;
     city: string;
     detail: iLocalChargeDetailResult[] | null;
-    hotTableSetting: iLocalChargeHotTableSetting | null;
+    // hotTableSetting: iLocalChargeHotTableSetting | null;
+    generalHotTableSetting: iLocalChargeHotTableSetting | null;
+    weightBreakHotTableSetting: iLocalChargeHotTableSetting | null;
     localChargePackageList: {
       text: string;
       text1: string;
@@ -35,6 +37,8 @@ export function LocalChargeHooks() {
       source?: string[];
     }>;
     detail: [];
+    flatDetail: [];
+    wbDetail: [];
   }
 
   interface iLocalChargeHotTableSetting {
