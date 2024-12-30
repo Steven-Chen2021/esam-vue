@@ -1,7 +1,9 @@
 import { ref, reactive } from "vue";
 import commonService from "@/services/commonService";
+import { CommonHelper } from "@/utils/commonHelper";
 
 export function useHistoryColumns() {
+  const { formatDate } = CommonHelper();
   interface iHistoryResult {
     id: number;
     columnName: string;
@@ -52,13 +54,23 @@ export function useHistoryColumns() {
     },
     {
       label: "Original Value",
-      prop: "originalValue"
+      prop: "originalValue",
+      cellRenderer: ({ row }) => {
+        if (row.logType === "Table") {
+          return <span></span>;
+        }
+        return (
+          <span>
+            {formatDate(row.originalValue, "History", true, true, false)}
+          </span>
+        );
+      }
     },
     {
       label: "Updated Value",
       prop: "updatedValue",
       cellRenderer: ({ row }) => {
-        if (row.logType === "label") {
+        if (row.logType === "Table") {
           return (
             <el-popover
               effect="light"
@@ -68,7 +80,7 @@ export function useHistoryColumns() {
               popper-style="box-shadow: rgb(14 18 22 / 35%) 0px 10px 38px -10px, rgb(14 18 22 / 20%) 0px 10px 20px -15px; padding: 20px;"
             >
               {{
-                reference: () => <el-tag>{row.columnName}</el-tag>,
+                reference: () => <el-tag>{"View Content"}</el-tag>,
                 default: () => (
                   <div
                     style={{
@@ -77,23 +89,28 @@ export function useHistoryColumns() {
                       gap: "16px"
                     }}
                   >
-                    <pure-table
-                      data={row.data || []} // 替換 :data 為 data
-                      columns={[
-                        { label: "ID", prop: "sid" },
-                        { label: "User Name", prop: "userName" }
-                      ]} // 替換 :columns 為 columns
-                      rowKey="sid" // 使用駝峰命名法 rowKey
-                      border
-                      class="mb-6"
-                    />
+                    <el-scrollbar>
+                      <div class="scrollbar-flex-content">
+                        <pure-table
+                          data={row.data || []} // 替換 :data 為 data
+                          columns={row.column || []} // 替換 :data 為 data
+                          rowKey="sid" // 使用駝峰命名法 rowKey
+                          border
+                          class="mb-6"
+                        />
+                      </div>
+                    </el-scrollbar>
                   </div>
                 )
               }}
             </el-popover>
           );
         }
-        return <span>{row.updatedValue}</span>;
+        return (
+          <span>
+            {formatDate(row.updatedValue, "History", true, true, false)}
+          </span>
+        );
       }
     },
     {
@@ -113,8 +130,7 @@ export function useHistoryColumns() {
         Category,
         SourceID
       );
-      console.log("getHistoryResult", response);
-      if (response != null && response.returnValue.leng > 0) {
+      if (response != null && response.isSuccess > 0) {
         historyResult.value = response.returnValue;
       } else {
         historyResult.value = demo;

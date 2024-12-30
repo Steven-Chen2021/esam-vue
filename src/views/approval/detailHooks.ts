@@ -28,9 +28,19 @@ export function ApprovalDetailHooks() {
     }
   }
 
+  async function sendApproveResult(params) {
+    try {
+      const response = await ApprovalSearchService.sendApprove(params);
+      return response;
+    } catch (error) {
+      console.log("getApproveUserResult", error);
+    }
+  }
+
   return {
     getApproveHeaderResult,
     getApproveUserResult,
-    getApproveChargeDataResult
+    getApproveChargeDataResult,
+    sendApproveResult
   };
 }

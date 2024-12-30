@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, reactive } from "vue";
 import { useApprovalDetail } from "./hooks";
 import { useI18n } from "vue-i18n";
 import { ApprovalDetailHooks } from "@/views/approval/detailHooks";
@@ -7,23 +7,72 @@ import { CommonHelper } from "@/utils/commonHelper";
 import { ElDivider } from "element-plus";
 import { usePreView } from "@/views/commons/hooks";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-
+import type { FormRules, FormInstance } from "element-plus";
+import { ElNotification } from "element-plus";
 const { getApprovalParameter } = useApprovalDetail();
 const { t } = useI18n();
 const {
   getApproveHeaderResult,
   getApproveUserResult,
-  getApproveChargeDataResult
+  getApproveChargeDataResult,
+  sendApproveResult
 } = ApprovalDetailHooks();
 const { formatDate, formatNumber } = CommonHelper();
 const { toPreView } = usePreView();
 
 const ApproveHeader = ref<any>({});
+const reasonRows = ref<number>(5);
 const ApproveAvatar = ref<any>({});
 const ApproveChargeDataResult = ref<any>({});
 const freightChargeResult = ref<any>({});
 const localChargeResult = ref<any>({});
 const activeTabs = ref([0, 1, 2]);
+const showReason = ref<boolean>(false);
+const isApproval = ref<boolean>(false);
+const reasonLabel = ref<string>("");
+interface RuleForm {
+  reason: string;
+}
+const ruleForm = reactive<RuleForm>({
+  reason: ""
+});
+const ruleFormRef = ref<FormInstance>();
+const rules = reactive<FormRules<RuleForm>>({
+  reason: [
+    { required: true, message: "Please input reject reason", trigger: "blur" },
+    { min: 5, max: 500, message: "Length should be 5 to 500", trigger: "blur" }
+  ]
+});
+
+const submitForm = async (formEl: FormInstance | undefined) => {
+  if (!formEl) return;
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      const params = {
+        approvalID: getApprovalParameter.id,
+        isApprove: isApproval.value,
+        approveComment: ruleForm.reason
+      };
+      sendApproveResult(params).then(res => {
+        console.log(params);
+        console.log(res);
+        if (res && res.isSuccess) {
+          ElNotification({
+            title: "successfully",
+            message: "Submit Successfully!",
+            type: "success"
+          });
+        } else {
+          ElNotification({
+            title: "Submit Failed",
+            message: res.errorMessage,
+            type: "error"
+          });
+        }
+      });
+    }
+  });
+};
 
 const getTableData = fDetail => {
   return [fDetail];
@@ -61,6 +110,27 @@ const previewQuote = () => {
     displaytitle: ApproveHeader.value.quoteNo as string,
     pid: ApproveHeader.value.pid as string
   });
+};
+
+const SubmitSign = catetory => {
+  if (catetory === "reject") {
+    reasonLabel.value = "Reason";
+    isApproval.value = false;
+    rules.reason.forEach(rule => {
+      if (rule.hasOwnProperty("required")) {
+        rule.required = true;
+      }
+    });
+  } else {
+    reasonLabel.value = "Remark";
+    isApproval.value = true;
+    rules.reason.forEach(rule => {
+      if (rule.hasOwnProperty("required")) {
+        rule.required = false;
+      }
+    });
+  }
+  showReason.value = true;
 };
 
 onMounted(() => {
@@ -105,8 +175,46 @@ onMounted(() => {
             @click="previewQuote"
             >{{ `Preview` }}</el-button
           >
-          <el-button>{{ `Reject` }}</el-button>
-          <el-button>{{ `Approve` }}</el-button>
+          <el-button plain @click="SubmitSign('reject')">{{
+            `Reject`
+          }}</el-button>
+          <el-button plain @click="SubmitSign('approve')">{{
+            `Approve`
+          }}</el-button>
+        </div>
+      </div>
+      <div
+        v-if="showReason"
+        class="bg-white shadow-md flex justify-between h-fit"
+      >
+        <div class="flex items-center">
+          <div class="text-gray-500" />
+        </div>
+        <!-- Action Buttons -->
+        <div class="flex space-x-2">
+          <el-form
+            ref="ruleFormRef"
+            style="width: 355px"
+            :model="ruleForm"
+            :rules="rules"
+            label-width="auto"
+            class="demo-ruleForm"
+            status-icon
+          >
+            <el-form-item :label="reasonLabel" prop="reason">
+              <el-input
+                v-model="ruleForm.reason"
+                :rows="reasonRows"
+                type="textarea"
+                maxlength="500"
+              />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="submitForm(ruleFormRef)">
+                Send
+              </el-button>
+            </el-form-item>
+          </el-form>
         </div>
       </div>
 

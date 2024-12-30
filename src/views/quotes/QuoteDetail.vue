@@ -3,7 +3,14 @@
 import "plus-pro-components/es/components/drawer-form/style/css";
 import "handsontable/dist/handsontable.full.css";
 import "@wangeditor/editor/dist/css/style.css";
-
+import {
+  deleteChildren,
+  getNodeByUniqueId,
+  appendFieldByUniqueId
+} from "@/utils/tree";
+import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
+import { usePermissionStoreHook } from "@/store/modules/permission";
+import { clone } from "@pureadmin/utils";
 import {
   onBeforeUnmount,
   ref,
@@ -11,7 +18,8 @@ import {
   onMounted,
   defineComponent,
   nextTick,
-  watchEffect
+  watchEffect,
+  computed
 } from "vue";
 
 import {
@@ -36,7 +44,6 @@ import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
 import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
-import { VxeTableBar } from "@/components/ReVxeTableBar";
 import { AutoSaveHelper } from "@/utils/autoSaveHelper";
 
 //Editor
@@ -52,6 +59,7 @@ import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
 import { useHistoryColumns } from "@/components/HistoryLog/Columns";
 import { useApprovalDetail } from "@/views/approval/hooks";
+
 const { toApprovalDetail, getApprovalParameter } = useApprovalDetail();
 
 const { columns, historyResult, getHistoryResult } = useHistoryColumns();
@@ -1165,11 +1173,37 @@ const sendApproval = () => {
   const params = { quoteid: getParameter.id };
   SendQuotationToApprove(params).then(res => {
     console.log(res);
+    if (res && res.isSuccess) {
+      ElNotification({
+        title: "successfully",
+        message: "Send Approval Successfully!",
+        type: "success"
+      });
+      setTimeout(() => {
+        onCloseTags();
+      }, 1500); // 2000 毫秒 = 2 秒
+    }
   });
-  // toApprovalDetail(
-  //   { id: getParameter.id, title: getParameter.qname },
-  //   "params"
-  // );
+};
+
+const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
+const treeData = computed(() => {
+  return appendFieldByUniqueId(deleteChildren(menusTree), 0, {
+    disabled: true
+  });
+});
+const currentValues = ref<string[]>([]);
+const multiTags = computed(() => {
+  return useMultiTagsStoreHook()?.multiTags;
+});
+const onCloseTags = () => {
+  useMultiTagsStoreHook().handleTags(
+    "splice",
+    multiTags.value[(multiTags as any).value.length - 1].path
+  );
+  router.push({
+    path: multiTags.value[(multiTags as any).value.length - 1].path
+  });
 };
 
 const previewQuote = () => {
@@ -1216,6 +1250,7 @@ const deleteData = () => {
 const viewHistory = () => {
   historyVisible.value = true;
   getHistoryResult(Quotation, quotationDetailResult.value.quoteid).then(res => {
+    console.log(res);
     historyLoading.value = false;
   });
 };
@@ -2036,6 +2071,15 @@ const formatDate = dateInput => {
         border
         default-expand-all
         class="mb-6"
+      />
+      <el-table
+        :data="historyResult"
+        :columns="columns"
+        row-key="id"
+        border
+        default-expand-all
+        class="mb-6"
+        style="width: 100%"
       />
     </el-drawer>
   </div>
