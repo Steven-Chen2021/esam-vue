@@ -81,6 +81,31 @@ export function useDetail() {
     }
   }
 
+  function toApprovalDetail(
+    parameter: LocationQueryRaw | RouteParamsRaw,
+    model: "query" | "params"
+  ) {
+    Object.keys(parameter).forEach(param => {
+      if (!isString(parameter[param])) {
+        parameter[param] = parameter[param].toString();
+      }
+    });
+    if (model === "params") {
+      useMultiTagsStoreHook().handleTags("push", {
+        path: `/approval/detail/:id`,
+        name: "ApprovalDetail",
+        params: parameter,
+        meta: {
+          title: {
+            zh: `${parameter.title} - Approval Detail`,
+            en: `${parameter.title} - Approval Detail`
+          }
+        }
+      });
+      router.push({ name: "ApprovalDetail", params: parameter });
+    }
+  }
+
   const initToDetail = (model: "query" | "params") => {
     if (getParameter) toDetail(getParameter, model);
   };
@@ -102,6 +127,7 @@ export function useDetail() {
     route,
     router,
     pagination,
-    toQuoteDetail
+    toQuoteDetail,
+    toApprovalDetail
   };
 }

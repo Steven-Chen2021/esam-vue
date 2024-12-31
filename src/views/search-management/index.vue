@@ -6,7 +6,8 @@ import Close from "@iconify-icons/ep/close";
 import { ref, reactive, onMounted, watch, computed, nextTick } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 import { useDetail } from "./hooks";
-const { toDetail, getParameter, router, toQuoteDetail } = useDetail();
+const { toDetail, getParameter, router, toQuoteDetail, toApprovalDetail } =
+  useDetail();
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { QuickFilter, quickFilterCTL } from "./useQuickFilterHooks";
 import { listCTL } from "./useResultListHooks";
@@ -128,13 +129,22 @@ const handleViewClick = row => {
   switch (category.value) {
     case "ApprovalList":
       if (row.sourceType === "Quote") {
-        router.push({
-          name: "ApprovalDetail",
-          params: { id: row.approvalID }
-        });
+        // router.push({
+        //   name: "ApprovalDetail",
+        //   params: { id: row.approvalID }
+        // });
+        console.log(row);
+        toApprovalDetail(
+          {
+            id: row.approvalID,
+            title: row.approvalNum
+          },
+          "params"
+        );
       } else if (row.sourceType === "Credit") {
       } else {
       }
+
       break;
     case "DealList":
       break;

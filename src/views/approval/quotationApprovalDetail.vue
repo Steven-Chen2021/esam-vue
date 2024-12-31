@@ -9,6 +9,8 @@ import { usePreView } from "@/views/commons/hooks";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import type { FormRules, FormInstance } from "element-plus";
 import { ElNotification } from "element-plus";
+import { QuoteDetailHooks } from "@/views/quotes/quoteDetailHooks";
+
 const { getApprovalParameter } = useApprovalDetail();
 const { t } = useI18n();
 const {
@@ -20,6 +22,8 @@ const {
 const { formatDate, formatNumber } = CommonHelper();
 const { toPreView } = usePreView();
 
+const { getQuoteHistoryResult } = QuoteDetailHooks();
+
 const ApproveHeader = ref<any>({});
 const reasonRows = ref<number>(5);
 const ApproveAvatar = ref<any>({});
@@ -29,6 +33,7 @@ const localChargeResult = ref<any>({});
 const activeTabs = ref([0, 1, 2]);
 const showReason = ref<boolean>(false);
 const isApproval = ref<boolean>(false);
+const quoteStatusHistory = ref([]);
 const reasonLabel = ref<string>("");
 interface RuleForm {
   reason: string;
@@ -43,6 +48,12 @@ const rules = reactive<FormRules<RuleForm>>({
     { min: 5, max: 500, message: "Length should be 5 to 500", trigger: "blur" }
   ]
 });
+
+const showQuotationStatusHistory = () => {
+  getQuoteHistoryResult(ApproveHeader.value.quoteid).then(res => {
+    quoteStatusHistory.value = res.returnValue;
+  });
+};
 
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
@@ -136,7 +147,7 @@ const SubmitSign = catetory => {
 onMounted(() => {
   getApproveHeaderResult(getApprovalParameter.id).then(res => {
     ApproveHeader.value = res.returnValue;
-    console.log(ApproveHeader.value);
+    console.log("ApproveHeader Data", ApproveHeader.value);
   });
   getApproveUserResult(getApprovalParameter.id).then(res => {
     ApproveAvatar.value = res.returnValue;
@@ -168,7 +179,35 @@ onMounted(() => {
         </div>
         <!-- Action Buttons -->
         <div class="flex space-x-2">
-          <el-button>{{ `History` }}</el-button>
+          <el-popover placement="right" :width="450" trigger="click">
+            <template #reference>
+              <el-button @click="showQuotationStatusHistory">{{
+                `History`
+              }}</el-button>
+            </template>
+            <el-table :data="quoteStatusHistory">
+              <el-table-column label="Status" width="170">
+                <template #default="scope">
+                  <el-tag type="primary">{{ scope.row.status }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                width="120"
+                property="createdByName"
+                label="Updated By"
+              />
+              <el-table-column label="Updated Date" width="300">
+                <template #default="scope">
+                  <div style="display: flex; align-items: center">
+                    <span style="margin-left: 10px">{{
+                      formatDate(scope.row.createdDate, "status")
+                    }}</span>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-popover>
+
           <el-button
             plain
             :icon="useRenderIcon('ep:view')"
