@@ -1,5 +1,6 @@
 import quoteDetailService from "@/services/quote/QuoteDetailService";
 import commonService from "@/services/commonService";
+import CustomerProfileService from "@/services/customer/CustomerProfileService.js";
 import { reactive, ref } from "vue";
 import type { FieldValues } from "plus-pro-components";
 // import { ContactGridColumnSetting } from "@/types/apiRequestTypeEnum";
@@ -392,6 +393,18 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getSalesInfomation(HQID, ProductLineID) {
+    try {
+      const response = await CustomerProfileService.getPLDetailData(
+        HQID,
+        ProductLineID
+      );
+      return response;
+    } catch (error) {
+      console.log("saveFreightChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -428,6 +441,7 @@ export function QuoteDetailHooks() {
     quoteReferenceCodeResult,
     quoteDimensionFactorResult,
     getQuoteDimensionFactorResult,
-    SendQuotationToApprove
+    SendQuotationToApprove,
+    getSalesInfomation
   };
 }

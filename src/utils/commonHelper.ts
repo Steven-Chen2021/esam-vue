@@ -93,16 +93,17 @@ export function CommonHelper() {
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
     const seconds = date.getSeconds().toString().padStart(2, "0");
+    let returnDate = `${month} ${day}, ${year}`;
     if (needHours) {
-      return `${month} ${day}, ${year} ${hours}`;
+      returnDate = `${month} ${day}, ${year} ${hours}`;
     }
     if (needMinutes) {
-      return `${month} ${day}, ${year} ${hours}:${minutes}`;
+      returnDate = `${month} ${day}, ${year} ${hours}:${minutes}`;
     }
     if (needSeconds) {
-      return `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`;
+      returnDate = `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`;
     }
-    return `${month} ${day}, ${year}`;
+    return returnDate;
   }
 
   function formatNumber(value: any): string {

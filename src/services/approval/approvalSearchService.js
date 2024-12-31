@@ -42,6 +42,16 @@ class ApprovalSearchService {
       console.error(error);
     }
   }
+
+  async sendApprove(params) {
+    try {
+      const url = "/api/Approve/ApproveAction";
+      const response = await API.post(url, params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new ApprovalSearchService();

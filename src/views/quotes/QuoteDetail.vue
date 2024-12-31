@@ -3,7 +3,14 @@
 import "plus-pro-components/es/components/drawer-form/style/css";
 import "handsontable/dist/handsontable.full.css";
 import "@wangeditor/editor/dist/css/style.css";
-
+import {
+  deleteChildren,
+  getNodeByUniqueId,
+  appendFieldByUniqueId
+} from "@/utils/tree";
+import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
+import { usePermissionStoreHook } from "@/store/modules/permission";
+import { clone } from "@pureadmin/utils";
 import {
   onBeforeUnmount,
   ref,
@@ -11,7 +18,8 @@ import {
   onMounted,
   defineComponent,
   nextTick,
-  watchEffect
+  watchEffect,
+  computed
 } from "vue";
 
 import {
@@ -36,7 +44,6 @@ import { useDetail } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
 import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
-import { VxeTableBar } from "@/components/ReVxeTableBar";
 import { AutoSaveHelper } from "@/utils/autoSaveHelper";
 
 //Editor
@@ -52,6 +59,7 @@ import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
 import { useHistoryColumns } from "@/components/HistoryLog/Columns";
 import { useApprovalDetail } from "@/views/approval/hooks";
+
 const { toApprovalDetail, getApprovalParameter } = useApprovalDetail();
 
 const { columns, historyResult, getHistoryResult } = useHistoryColumns();
@@ -99,7 +107,8 @@ const {
   quoteReferenceCodeResult,
   quoteDimensionFactorResult,
   getQuoteDimensionFactorResult,
-  SendQuotationToApprove
+  SendQuotationToApprove,
+  getSalesInfomation
 } = QuoteDetailHooks();
 
 const {
@@ -161,10 +170,12 @@ const previousGreetingsValue = ref<any>();
 
 const dcUrl = ref();
 
+const salesInfomation = ref<any>({});
+
 // 方法來動態設置 HotTable 的 ref
-const setHotTableRef = city => el => {
+const setHotTableRef = (city, Category) => el => {
   if (el) {
-    hotTableRefs.value[city] = el.hotInstance;
+    hotTableRefs.value[`${city}${Category}`] = el.hotInstance;
   }
 };
 
@@ -480,6 +491,18 @@ const quoteDetailColumns: PlusColumn[] = [
             }
           });
         });
+        console.log(quotationDetailResult.value);
+        if (
+          quotationDetailResult.value.signature === null ||
+          quotationDetailResult.value.signature === ""
+        ) {
+          getSalesInfomation(
+            quotationDetailResult.value.customerHQID,
+            value
+          ).then(res => {
+            salesInfomation.value = res.returnValue;
+          });
+        }
       }
     }
   },
@@ -798,9 +821,6 @@ const handleAfterChange = (changes, source) => {
             changes[0][2] != changes[0][3]
         );
 
-        console.log(changes[0][2]);
-        console.log(changes[0][3]);
-
         if (
           frightChargeParams.value.quoteFreights.length > 0 &&
           changes[0][2] != changes[0][3]
@@ -830,20 +850,56 @@ const handleAfterChange = (changes, source) => {
             true,
             newValue
           ).then(() => {
-            console.log(localChargeResult.value);
+            const noneWeightBreakHeader = ["Condition", "Amount", "Cost"];
+            const WeightBreakHeader = ["Flat", "Flat Cost", "Min", "Min Cost"];
+
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
+                console.log(localCharge.colHeaders);
+                const filteredColHeaders = (
+                  localCharge.colHeaders || []
+                ).filter(header => !noneWeightBreakHeader.includes(header));
+                const weightBreakColHeaders = (
+                  localCharge.colHeaders || []
+                ).filter(header => !WeightBreakHeader.includes(header));
+
                 getLocalChargePackageResult(
                   quotationDetailResult.value.pid,
                   true,
                   localCharge.cityID
                 ).then(res => {
+                  console.log("getLocalChargePackageResult.res", res);
                   exportLocationResult.value.push({
                     cityID: localCharge.cityID,
                     city: localCharge.city,
                     detail: [],
-                    hotTableSetting: {
-                      data: localCharge.detail || [],
+                    generalHotTableSetting: {
+                      data: localCharge.flatDetail || [],
+                      colHeaders: filteredColHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                      columns: localCharge?.columns?.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true,
+                      afterChange: handleExportLocalChargeChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow,
+                      readOnly: !customerProductLineAccessRight.value.isWrite
+                    },
+                    weightBreakHotTableSetting: {
+                      data: localCharge.wbDetail || [],
                       colHeaders: localCharge.colHeaders || [],
                       rowHeaders: false,
                       dropdownMenu: true,
@@ -902,7 +958,32 @@ const handleAfterChange = (changes, source) => {
                     cityID: localCharge.cityID,
                     city: localCharge.city,
                     detail: [],
-                    hotTableSetting: {
+                    generalHotTableSetting: {
+                      data: localCharge.detail || [],
+                      colHeaders: localCharge.colHeaders || [],
+                      rowHeaders: false,
+                      dropdownMenu: true,
+                      width: "100%",
+                      height: "auto",
+                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                      columns: localCharge.columns.map(column => ({
+                        data: column.data,
+                        type: column.type,
+                        source: column.source || []
+                      })),
+                      autoWrapRow: true,
+                      autoWrapCol: true,
+                      allowInsertColumn: true,
+                      allowInsertRow: true,
+                      allowInvalid: true,
+                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                      contextMenu: true,
+                      afterChange: handleImportLocalChargeChange,
+                      afterSelection: handleAfterSelection,
+                      afterRemoveRow: handleRemoveRow,
+                      readOnly: !customerProductLineAccessRight.value.isWrite
+                    },
+                    weightBreakHotTableSetting: {
                       data: localCharge.detail || [],
                       colHeaders: localCharge.colHeaders || [],
                       rowHeaders: false,
@@ -1092,11 +1173,37 @@ const sendApproval = () => {
   const params = { quoteid: getParameter.id };
   SendQuotationToApprove(params).then(res => {
     console.log(res);
+    if (res && res.isSuccess) {
+      ElNotification({
+        title: "successfully",
+        message: "Send Approval Successfully!",
+        type: "success"
+      });
+      setTimeout(() => {
+        onCloseTags();
+      }, 1500); // 2000 毫秒 = 2 秒
+    }
   });
-  // toApprovalDetail(
-  //   { id: getParameter.id, title: getParameter.qname },
-  //   "params"
-  // );
+};
+
+const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
+const treeData = computed(() => {
+  return appendFieldByUniqueId(deleteChildren(menusTree), 0, {
+    disabled: true
+  });
+});
+const currentValues = ref<string[]>([]);
+const multiTags = computed(() => {
+  return useMultiTagsStoreHook()?.multiTags;
+});
+const onCloseTags = () => {
+  useMultiTagsStoreHook().handleTags(
+    "splice",
+    multiTags.value[(multiTags as any).value.length - 1].path
+  );
+  router.push({
+    path: multiTags.value[(multiTags as any).value.length - 1].path
+  });
 };
 
 const previewQuote = () => {
@@ -1143,6 +1250,7 @@ const deleteData = () => {
 const viewHistory = () => {
   historyVisible.value = true;
   getHistoryResult(Quotation, quotationDetailResult.value.quoteid).then(res => {
+    console.log(res);
     historyLoading.value = false;
   });
 };
@@ -1716,6 +1824,13 @@ const formatDate = dateInput => {
                   :label="item.city"
                 >
                   <div v-if="customerProductLineAccessRight.isWrite">
+                    <HotTable
+                      :ref="setHotTableRef(item.cityID, `general`)"
+                      :settings="item.generalHotTableSetting"
+                    />
+                    <el-divider content-position="left"
+                      >Weight Break Mode</el-divider
+                    >
                     {{ $t("quote.quotedetail.lcp") }}：
                     <el-select
                       v-model="item.localChargePackageSelector"
@@ -1734,8 +1849,8 @@ const formatDate = dateInput => {
                   </div>
                   <div @mouseleave="handleHandsonTableAutoSave('Export')">
                     <HotTable
-                      :ref="setHotTableRef(item.cityID)"
-                      :settings="item.hotTableSetting"
+                      :ref="setHotTableRef(item.cityID, `weightbreak`)"
+                      :settings="item.weightBreakHotTableSetting"
                     />
                   </div>
                 </el-tab-pane>
@@ -1752,6 +1867,13 @@ const formatDate = dateInput => {
                   :label="item.city"
                 >
                   <div v-if="customerProductLineAccessRight.isWrite">
+                    <HotTable
+                      :ref="setHotTableRef(item.cityID, `general`)"
+                      :settings="item.generalHotTableSetting"
+                    />
+                    <el-divider content-position="left"
+                      >Weight Break Mode</el-divider
+                    >
                     {{ $t("quote.quotedetail.lcp") }}：
                     <el-select
                       v-model="item.localChargePackageSelector"
@@ -1770,8 +1892,8 @@ const formatDate = dateInput => {
                   </div>
                   <div @mouseleave="handleHandsonTableAutoSave('Export')">
                     <HotTable
-                      :ref="setHotTableRef(item.cityID)"
-                      :settings="item.hotTableSetting"
+                      :ref="setHotTableRef(item.cityID, `weightbreak`)"
+                      :settings="item.weightBreakHotTableSetting"
                     />
                   </div>
                 </el-tab-pane>
@@ -1825,7 +1947,52 @@ const formatDate = dateInput => {
                 <span class="text-orange-500">SALES INFO</span>
               </template>
               <div class="flex flex-col ...">
-                <div v-html="quotationDetailResult.signature" />
+                <div
+                  v-if="quotationDetailResult.signature != ''"
+                  v-html="quotationDetailResult.signature"
+                />
+                <div
+                  v-else
+                  style="
+                    font-family: Arial, sans-serif;
+                    line-height: 1.5;
+                    color: #333;
+                  "
+                >
+                  <p>Thanks &amp; Best Regards,</p>
+                  <p>
+                    <strong>{{ salesInfomation.ownerName }}</strong
+                    ><br />
+                    {{ salesInfomation.ownerUserTitle }}<br />
+                    <strong
+                      >Dimerco Express Group ({{
+                        salesInfomation.ownerStation
+                      }})</strong
+                    ><br />
+                    Tel: {{ salesInfomation.ownerUserTel }}<br />
+                    Mobile: {{ salesInfomation.ownerUserMobile }}<br />
+                    Skype: {{ salesInfomation.ownerUserMail }}<br />
+                    <a
+                      href="http://www.dimerco.com"
+                      style="color: #1a73e8; text-decoration: none"
+                      >http://www.dimerco.com</a
+                    ><br />
+                    <em
+                      >"DIMERCO - Your China &amp; ASEAN Logistics
+                      Specialist"</em
+                    >
+                  </p>
+                  <p style="font-size: 0.9em; color: #666">
+                    All transactions are subject to the Company's Standard
+                    Trading Conditions (Copy is available on
+                    <a
+                      href="http://www.dimerco.com"
+                      style="color: #1a73e8; text-decoration: none"
+                      >www.dimerco.com</a
+                    >
+                    or upon request)
+                  </p>
+                </div>
               </div>
             </el-collapse-item>
             <el-collapse-item title="DOCUMENT CLOUD" name="9">
@@ -1904,6 +2071,15 @@ const formatDate = dateInput => {
         border
         default-expand-all
         class="mb-6"
+      />
+      <el-table
+        :data="historyResult"
+        :columns="columns"
+        row-key="id"
+        border
+        default-expand-all
+        class="mb-6"
+        style="width: 100%"
       />
     </el-drawer>
   </div>
