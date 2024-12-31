@@ -150,7 +150,10 @@ export function quickFilterCTL() {
   const fetchOptionsNeedParam = async (filterItems: QuickFilterDetail[]) => {
     try {
       const selectFilterList: QuickFilterDetail[] = filterItems.filter(
-        a => a.filterType === "dropdown" && a.filterSourceType === "api"
+        a =>
+          a.enableOnSearchView &&
+          a.filterType === "dropdown" &&
+          a.filterSourceType === "api"
       );
       selectFilterList.forEach(async item => {
         const response = await commonService.getAutoCompleteListViaURL(
