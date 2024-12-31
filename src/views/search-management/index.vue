@@ -662,6 +662,10 @@ watch(
                 v-else-if="filterItem.filterType === 'daterange'"
                 style="margin-left: 6px; font-weight: bold"
                 >{{ formattedDateRange(filterItem) }}</span
+              ><span
+                v-else-if="filterItem.filterType === 'checkbox'"
+                style="margin-left: 6px; font-weight: bold"
+                >{{ filterItem.value ? "Yes" : "No" }}</span
               >
               <el-icon style="margin: 0.1em 0 0 0.2em" :size="16">
                 <IconifyIconOffline :icon="Close" />
@@ -771,6 +775,7 @@ watch(
                       filterItem.filterSourceType === 'api'
                     "
                     v-model="filterItem.value"
+                    value-key="text"
                     :fetch-suggestions="
                       (queryString, cb) =>
                         querySearchAsync(queryString, cb, filterItem)
@@ -820,6 +825,13 @@ watch(
                     format="MMM DD"
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
+                  />
+                  <el-checkbox
+                    v-else-if="filterItem.filterType === 'checkbox'"
+                    v-model="filterItem.value"
+                    :checked="filterItem.value ? true : false"
+                    label=""
+                    @change="handleSearch(advancedFilterForm)"
                   />
                 </el-form-item>
                 <el-form-item>
