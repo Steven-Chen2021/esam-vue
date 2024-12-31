@@ -39,7 +39,7 @@ export function listCTL() {
   const requestCategory = ref<number>();
   const searchParams = reactive({
     APIRequestType: 4,
-    ConditionalSettings: null,
+    ConditionalSettings: [],
     pageSize: pageSize,
     pageIndex: currentPage,
     paginator: true,
@@ -95,17 +95,31 @@ export function listCTL() {
               }
             ];
           } else {
-            searchParams.ConditionalSettings.push({
-              enableOnSearchView: false,
-              filterKey: "hqid",
-              value: FilterLeadID.value
-            });
+            // searchParams.ConditionalSettings.push({
+            //   enableOnSearchView: false,
+            //   filterKey: "hqid",
+            //   value: FilterLeadID.value
+            // });
+            const a = searchParams.ConditionalSettings.filter(
+              item => item.filterKey === "hqid"
+            );
+            if (!a || a.length === 0) {
+              searchParams.ConditionalSettings.push({
+                enableOnSearchView: false,
+                filterKey: "hqid",
+                value: FilterLeadID.value
+              });
+            }
           }
         }
         loading.value = true;
         ContactSearchService.getContactList(searchParams)
           .then(data => {
             if (data.isSuccess) {
+              data.returnValue.results.forEach(a => {
+                a["vip"] =
+                  a["vip"] || a["vip"].toLowerCase() === "true" ? "Yes" : "No";
+              });
               tableData.value = data.returnValue.results;
               if (
                 data &&
@@ -135,6 +149,7 @@ export function listCTL() {
         break;
       }
       case tasks: {
+        console.log("task list");
         if (FilterLeadID && FilterLeadID.value !== "0") {
           if (!searchParams.ConditionalSettings) {
             searchParams.ConditionalSettings = [
@@ -145,11 +160,21 @@ export function listCTL() {
               }
             ];
           } else {
-            searchParams.ConditionalSettings.push({
-              enableOnSearchView: false,
-              filterKey: "hqid",
-              value: FilterLeadID.value
-            });
+            // searchParams.ConditionalSettings.push({
+            //   enableOnSearchView: false,
+            //   filterKey: "hqid",
+            //   value: FilterLeadID.value
+            // });
+            const a = searchParams.ConditionalSettings.filter(
+              item => item.filterKey === "hqid"
+            );
+            if (!a || a.length === 0) {
+              searchParams.ConditionalSettings.push({
+                enableOnSearchView: false,
+                filterKey: "hqid",
+                value: FilterLeadID.value
+              });
+            }
           }
         }
         loading.value = true;
@@ -277,7 +302,7 @@ export function listCTL() {
   };
 
   const handleResetConditionalSearch = () => {
-    searchParams.ConditionalSettings = null;
+    searchParams.ConditionalSettings = [];
     currentPage.value = 1;
     fetchListData(); // 重新获取排序后的数据
     // handleAdvancedReset();

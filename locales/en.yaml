@@ -251,6 +251,8 @@ common:
   save: Save
   processing: Processing
   history: History
+  cancel: Cancel
+  confirm: Confirm
 deal:
   clostBtn: Close
   profile:
@@ -268,7 +270,12 @@ deal:
     title: To Do
     showAll: Show All
   taskList:
-    title: Related Task
+    title: Linked Task
+    alert: Check/uncheck to update the link status.
+  contactList:
+    title: Linked Contact
+  quotationList:
+    title: Linked Quotation
 task:
   quickfilter:
     priority: Priority
