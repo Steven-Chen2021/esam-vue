@@ -620,6 +620,32 @@ const quoteDetailColumns: PlusColumn[] = [
       }
     }
   },
+
+  {
+    label: "Volume(A:D)",
+    prop: "volumeShareForAgent",
+    valueType: "input-number",
+    hideInForm: hideVolumeShareForAgent,
+    colProps: {
+      span: 5
+    },
+    min: 0,
+    fieldProps: {
+      onInput: value => {
+        quotationDetailResult.value.volumeShareForDimerco = 100 - value;
+      },
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.volumeShareForAgent;
+      },
+      onChange: value => {
+        if (value > 100) quotationDetailResult.value.volumeShareForAgent = 100;
+        if (value < 0) quotationDetailResult.value.volumeShareForAgent = 0;
+        quotationDetailResult.value.volumeShareForDimerco =
+          100 - (quotationDetailResult.value.volumeShareForAgent as number);
+        autoSaveTrigger(value, "volumeShareForAgent");
+      }
+    }
+  },
   {
     label: "Type",
     prop: "typeCode",
@@ -630,9 +656,6 @@ const quoteDetailColumns: PlusColumn[] = [
       span: 8
     },
     fieldProps: {
-      style: {
-        width: "50%"
-      },
       onFocus: () => {
         previousValue.value = quotationDetailResult.value.typeCode;
       },
@@ -651,54 +674,7 @@ const quoteDetailColumns: PlusColumn[] = [
     colProps: {
       span: 8
     }
-  },
-  {
-    label: "Volume(A:D)",
-    prop: "volumeShareForAgent",
-    valueType: "input-number",
-    hideInForm: hideVolumeShareForAgent,
-    colProps: {
-      span: 4
-    },
-    min: 0,
-    fieldProps: {
-      onInput: value => {
-        quotationDetailResult.value.volumeShareForDimerco = 100 - value;
-      },
-      onFocus: () => {
-        previousValue.value = quotationDetailResult.value.volumeShareForAgent;
-      },
-      onChange: value => {
-        if (value > 100) quotationDetailResult.value.volumeShareForAgent = 100;
-        if (value < 0) quotationDetailResult.value.volumeShareForAgent = 0;
-        quotationDetailResult.value.volumeShareForDimerco =
-          100 - (quotationDetailResult.value.volumeShareForAgent as number);
-        autoSaveTrigger(value, "volumeShareForAgent");
-      }
-    }
   }
-  // {
-  //   label: "Dimerco Share",
-  //   prop: "volumeShareForDimerco",
-  //   valueType: "text",
-  //   hideInForm: hideVolumeShareForAgent,
-  //   colProps: {
-  //     span: 4
-  //   },
-  //   fieldProps: {
-  //     max: 100,
-  //     min: 0,
-  //     style: {
-  //       width: "50%"
-  //     },
-  //     onFocus: () => {
-  //       previousValue.value = quotationDetailResult.value.volumeShareForDimerco;
-  //     }
-  //     // onChange: value => {
-  //     //   autoSaveTrigger(value, "volumeShareForAgent");
-  //     // }
-  //   }
-  // }
 ];
 
 const handleLocalChargeResult = (
@@ -707,6 +683,7 @@ const handleLocalChargeResult = (
   LocationResult,
   Category
 ) => {
+  console.log("handleLocalChargeResult", localChargeResult.value);
   if (localChargeResult.value && localChargeResult.value.length > 0) {
     localChargeResult.value.forEach(localCharge => {
       getLocalChargePackageResult(
@@ -719,8 +696,33 @@ const handleLocalChargeResult = (
             LocationResult.value.push({
               cityID: localCharge.cityID,
               city: localCharge.city,
-              detail: [],
-              hotTableSetting: {
+              // detail: [],
+              generalHotTableSetting: {
+                data: localCharge.detail || [],
+                colHeaders: localCharge.colHeaders || [],
+                rowHeaders: false,
+                dropdownMenu: true,
+                width: "100%",
+                height: "auto",
+                colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                columns: localCharge?.columns?.map(column => ({
+                  data: column.data,
+                  type: column.type,
+                  source: column.source || []
+                })),
+                autoWrapRow: true,
+                autoWrapCol: true,
+                allowInsertColumn: true,
+                allowInsertRow: true,
+                allowInvalid: true,
+                licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                contextMenu: true,
+                afterChange: handleExportLocalChargeChange,
+                afterSelection: handleAfterSelection,
+                afterRemoveRow: handleRemoveRow,
+                readOnly: !customerProductLineAccessRight.value.isWrite
+              },
+              weightBreakHotTableSetting: {
                 data: localCharge.detail || [],
                 colHeaders: localCharge.colHeaders || [],
                 rowHeaders: false,
@@ -855,13 +857,13 @@ const handleAfterChange = (changes, source) => {
 
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
-                console.log(localCharge.colHeaders);
-                const filteredColHeaders = (
-                  localCharge.colHeaders || []
-                ).filter(header => !noneWeightBreakHeader.includes(header));
-                const weightBreakColHeaders = (
-                  localCharge.colHeaders || []
-                ).filter(header => !WeightBreakHeader.includes(header));
+                console.log("localChargeResult", localCharge);
+                // const filteredColHeaders = (
+                //   localCharge.colHeaders || []
+                // ).filter(header => !noneWeightBreakHeader.includes(header));
+                // const weightBreakColHeaders = (
+                //   localCharge.colHeaders || []
+                // ).filter(header => !WeightBreakHeader.includes(header));
 
                 getLocalChargePackageResult(
                   quotationDetailResult.value.pid,
