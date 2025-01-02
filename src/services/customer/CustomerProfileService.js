@@ -3,7 +3,6 @@ import API from "../interceptor";
 class CustomerProfileService {
   async getPLDetailData(LID, PID) {
     try {
-      console.log("getPLDetailData", `LID:${LID} PID:${PID}`);
       const url = `/api/Customer/GetPLDetailData?LID=${LID}&PID=${PID}`;
       const response = await API.get(url);
       return response;

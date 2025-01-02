@@ -154,7 +154,7 @@ export function QuoteDetailHooks() {
         PID
       );
       if (response != null) {
-        console.log(response);
+        // console.log(response);
         ChargeCodeSettingResult.splice(0);
         ChargeCodeSettingResult.push(...response.returnValue);
 
