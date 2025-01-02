@@ -29,7 +29,8 @@ const emit = defineEmits(["handleCancelEvent", "handleUpdateActionItems"]);
 const { t } = useI18n();
 const hotTableRef = ref(null);
 const handleAfterChange = (changes, source) => {
-  if (source === "edit") {
+  console.log("handleAfterChange source", source);
+  if (source === "edit" || source === "CopyPaste.paste") {
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
         item =>
