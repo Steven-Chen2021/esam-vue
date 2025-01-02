@@ -35,6 +35,7 @@ const showReason = ref<boolean>(false);
 const isApproval = ref<boolean>(false);
 const quoteStatusHistory = ref([]);
 const reasonLabel = ref<string>("");
+const canSign = ref<boolean>(false);
 interface RuleForm {
   reason: string;
 }
@@ -214,10 +215,10 @@ onMounted(() => {
             @click="previewQuote"
             >{{ `Preview` }}</el-button
           >
-          <el-button plain @click="SubmitSign('reject')">{{
+          <el-button v-if="canSign" plain @click="SubmitSign('reject')">{{
             `Reject`
           }}</el-button>
-          <el-button plain @click="SubmitSign('approve')">{{
+          <el-button v-if="canSign" plain @click="SubmitSign('approve')">{{
             `Approve`
           }}</el-button>
         </div>
