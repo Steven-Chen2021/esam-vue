@@ -8,11 +8,15 @@ import { useRenderFlicker } from "@/components/ReFlicker";
 import { ChartBar, ChartLine, ChartRound } from "./components/charts";
 import Segmented, { type OptionsType } from "@/components/ReSegmented";
 import { chartData, barChartData, progressData, latestNewsData } from "./data";
-
+import type { CalendarDateType, CalendarInstance } from "element-plus";
+import toDoList from "@/components/mainpage/dealToDoList/dealToDoList.vue";
+import myPending from "@/components/mainpage/myPending/myPending.vue";
+import deal from "@/components/mainpage/deal/deal.vue";
+import dayjs from "dayjs";
 defineOptions({
   name: "Welcome"
 });
-
+const dateArray = ["2025-01-02", "2025-01-10", "2025-01-13"];
 const { isDark } = useDark();
 
 let curWeek = ref(1); // 0上周、1本周
@@ -24,224 +28,102 @@ const optionsBasis: Array<OptionsType> = [
     label: "本周"
   }
 ];
+const calendar = ref<CalendarInstance>();
+const selectDate = (val: CalendarDateType) => {
+  if (!calendar.value) return;
+  calendar.value.selectDate(val);
+};
 </script>
 
 <template>
-  <div>
-    <el-row :gutter="24" justify="space-around">
-      <re-col
-        v-for="(item, index) in chartData"
-        :key="index"
-        v-motion
-        class="mb-[18px]"
-        :value="6"
-        :md="12"
-        :sm="12"
-        :xs="24"
-        :initial="{
-          opacity: 0,
-          y: 100
-        }"
-        :enter="{
-          opacity: 1,
-          y: 0,
-          transition: {
-            delay: 80 * (index + 1)
-          }
-        }"
+  <div style="display: flex; flex-wrap: wrap">
+    <div
+      style="
+        display: flex;
+        flex-grow: 2;
+        flex-wrap: wrap;
+        margin: 0 10px 10px 0;
+      "
+    >
+      <div style="flex-grow: 1; min-width: 500px; margin-right: 10px">
+        <toDoList :CusID="'48013'" DealID="12" />
+      </div>
+      <div style="flex-grow: 1; min-width: 500px; margin-right: 10px">
+        <deal :CusID="'48013'" DealID="12" />
+      </div>
+      <div style="flex-grow: 1; min-width: 500px">
+        <myPending :CusID="'48013'" DealID="12" />
+      </div>
+    </div>
+    <div style="display: flex; flex-grow: 2; margin: 0 10px 10px 0">
+      <el-calendar
+        ref="calendar"
+        style="
+          flex-grow: 2;
+          min-width: 400px;
+          margin-right: 10px;
+          border-radius: 10px;
+          box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+        "
       >
-        <el-card class="line-card" shadow="never">
-          <div class="flex justify-between">
-            <span class="text-md font-medium">
-              {{ item.name }}
-            </span>
-            <div
-              class="w-8 h-8 flex justify-center items-center rounded-md"
-              :style="{
-                backgroundColor: isDark ? 'transparent' : item.bgColor
-              }"
+        <template #header="{ date }">
+          <span>{{ date }}</span>
+          <el-button-group>
+            <el-button size="small" @click="selectDate('prev-month')">
+              Previous Month
+            </el-button>
+            <el-button size="small" @click="selectDate('today')"
+              >Today</el-button
             >
-              <IconifyIconOffline
-                :icon="item.icon"
-                :color="item.color"
-                width="18"
-              />
+            <el-button size="small" @click="selectDate('next-month')">
+              Next Month
+            </el-button>
+          </el-button-group>
+        </template>
+        <template #date-cell="{ data }">
+          <p :class="data.isSelected ? 'is-selected' : ''">
+            {{ dayjs(data.day).format("D") }}
+            {{ data.isSelected ? "✔️" : "" }}
+          </p>
+          <div v-if="dateArray.includes(data.day)">
+            <div class="event-s">
+              <div class="time-bar-s" />
+              <div class="event-details-s">
+                <h4>Meeting with AXXXe</h4>
+              </div>
+            </div>
+            <div class="event-s">
+              <div class="time-bar-s" style="background: #a9d08e" />
+              <div class="event-details-s">
+                <h4>Meeting with HXXXXXS</h4>
+              </div>
             </div>
           </div>
-          <div class="flex justify-between items-start mt-3">
-            <div class="w-1/2">
-              <ReNormalCountTo
-                :duration="item.duration"
-                :fontSize="'1.6em'"
-                :startVal="100"
-                :endVal="item.value"
-              />
-              <p class="font-medium text-green-500">{{ item.percent }}</p>
-            </div>
-            <ChartLine
-              v-if="item.data.length > 1"
-              class="!w-1/2"
-              :color="item.color"
-              :data="item.data"
-            />
-            <ChartRound v-else class="!w-1/2" />
+        </template>
+      </el-calendar>
+      <div class="calendar-container">
+        <div class="date-header">
+          <div>1 月 2 日 周四</div>
+          <div class="weather">
+            <span>2°C</span>
           </div>
-        </el-card>
-      </re-col>
-
-      <re-col
-        v-motion
-        class="mb-[18px]"
-        :value="18"
-        :xs="24"
-        :initial="{
-          opacity: 0,
-          y: 100
-        }"
-        :enter="{
-          opacity: 1,
-          y: 0,
-          transition: {
-            delay: 400
-          }
-        }"
-      >
-        <el-card class="bar-card" shadow="never">
-          <div class="flex justify-between">
-            <span class="text-md font-medium">分析概览</span>
-            <Segmented v-model="curWeek" :options="optionsBasis" />
+        </div>
+        <div class="event">
+          <div class="time-bar" />
+          <div class="event-details">
+            <h4>Meeting with AXXXe</h4>
+            <p>9:00 | 30 分钟 | Microsoft Teams Meeting</p>
           </div>
-          <div class="flex justify-between items-start mt-3">
-            <ChartBar
-              :requireData="barChartData[curWeek].requireData"
-              :questionData="barChartData[curWeek].questionData"
-            />
+        </div>
+        <div class="event">
+          <div class="time-bar" style="background: #a9d08e" />
+          <div class="event-details">
+            <h4>Meeting with HXXXXXS</h4>
+            <p>10:00 | 30 分钟 | Microsoft Teams Meeting</p>
           </div>
-        </el-card>
-      </re-col>
-
-      <re-col
-        v-motion
-        class="mb-[18px]"
-        :value="6"
-        :xs="24"
-        :initial="{
-          opacity: 0,
-          y: 100
-        }"
-        :enter="{
-          opacity: 1,
-          y: 0,
-          transition: {
-            delay: 480
-          }
-        }"
-      >
-        <el-card shadow="never">
-          <div class="flex justify-between">
-            <span class="text-md font-medium">解决概率</span>
-          </div>
-          <div
-            v-for="(item, index) in progressData"
-            :key="index"
-            :class="[
-              'flex',
-              'justify-between',
-              'items-start',
-              index === 0 ? 'mt-8' : 'mt-[2.15rem]'
-            ]"
-          >
-            <el-progress
-              :text-inside="true"
-              :percentage="item.percentage"
-              :stroke-width="21"
-              :color="item.color"
-              striped
-              striped-flow
-              :duration="item.duration"
-            />
-            <span class="text-nowrap ml-2 text-text_color_regular text-sm">
-              {{ item.week }}
-            </span>
-          </div>
-        </el-card>
-      </re-col>
-
-      <re-col
-        v-motion
-        class="mb-[18px]"
-        :value="18"
-        :xs="24"
-        :initial="{
-          opacity: 0,
-          y: 100
-        }"
-        :enter="{
-          opacity: 1,
-          y: 0,
-          transition: {
-            delay: 560
-          }
-        }"
-      >
-        <el-card shadow="never" class="h-[580px]">
-          <div class="flex justify-between">
-            <span class="text-md font-medium">数据统计</span>
-          </div>
-          <WelcomeTable class="mt-3" />
-        </el-card>
-      </re-col>
-
-      <re-col
-        v-motion
-        class="mb-[18px]"
-        :value="6"
-        :xs="24"
-        :initial="{
-          opacity: 0,
-          y: 100
-        }"
-        :enter="{
-          opacity: 1,
-          y: 0,
-          transition: {
-            delay: 640
-          }
-        }"
-      >
-        <el-card shadow="never">
-          <div class="flex justify-between">
-            <span class="text-md font-medium">最新动态</span>
-          </div>
-          <el-scrollbar max-height="504" class="mt-3">
-            <el-timeline>
-              <el-timeline-item
-                v-for="(item, index) in latestNewsData"
-                :key="index"
-                center
-                placement="top"
-                :icon="
-                  markRaw(
-                    useRenderFlicker({
-                      background: randomGradient({
-                        randomizeHue: true
-                      })
-                    })
-                  )
-                "
-                :timestamp="item.date"
-              >
-                <p class="text-text_color_regular text-sm">
-                  {{
-                    `新增 ${item.requiredNumber} 条问题，${item.resolveNumber} 条已解决`
-                  }}
-                </p>
-              </el-timeline-item>
-            </el-timeline>
-          </el-scrollbar>
-        </el-card>
-      </re-col>
-    </el-row>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -272,5 +154,108 @@ const optionsBasis: Array<OptionsType> = [
 
 .main-content {
   margin: 20px 20px 0 !important;
+}
+
+.el-row {
+  margin-bottom: 20px;
+}
+
+.el-row:last-child {
+  margin-bottom: 0;
+}
+
+.el-col {
+  border-radius: 4px;
+}
+
+.grid-content {
+  min-height: 36px;
+  border-radius: 4px;
+}
+
+.calendar-container {
+  min-width: 440px;
+  padding: 20px;
+  background: white;
+  // margin: 20px auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+}
+
+.date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.weather {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #555;
+}
+
+.weather span {
+  margin-left: 5px;
+}
+
+.event {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.event-s {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 2px;
+}
+
+.time-bar {
+  width: 5px;
+  height: 30px;
+  margin-right: 10px;
+  background: #5b9bd5;
+  border-radius: 3px;
+}
+
+.time-bar-s {
+  width: 5px;
+  height: 14px;
+  margin-right: 10px;
+  background: #5b9bd5;
+  border-radius: 3px;
+}
+
+.event-details {
+  flex-grow: 1;
+}
+
+.event-details h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.event-details-s h4 {
+  margin: 0;
+  font-size: 12px;
+  color: #333;
+}
+
+.event-details p {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.repeat-icon {
+  margin-left: 10px;
+  color: #888;
+  cursor: pointer;
 }
 </style>

@@ -3,7 +3,7 @@ import { deal } from "@/router/enums";
 
 export default {
   path: "/deal",
-  redirect: "/deal/index",
+  redirect: "/deal/detail/153147/48013/DealTest",
   meta: {
     icon: "ri:hand-coin-line",
     title: $t("menus.dimercoDeal"),
@@ -12,10 +12,19 @@ export default {
   children: [
     {
       path: "/deal/index",
-      name: "Deal",
+      name: "DealList",
       component: () => import("@/views/contact/index.vue"),
       meta: {
         title: $t("menus.dimercoDeal")
+      }
+    },
+    {
+      path: "/deal/detail/:id/:lid/:qname",
+      name: "DealDetail",
+      component: () => import("@/views/deal/detail.vue"),
+      meta: {
+        title: $t("menus.dimercoDeal"),
+        showLink: false
       }
     }
   ]
