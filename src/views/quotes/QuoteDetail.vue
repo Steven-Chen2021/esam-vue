@@ -130,12 +130,9 @@ defineOptions({
 initToDetail("params");
 
 const hotTableRef = ref(null);
-const importHotTableRef = ref(null);
-// const exportHotTableRef = ref(null);
 const freightVisible = ref(false);
 const localVisible = ref(false);
 const historyVisible = ref(false);
-const deleteVisible = ref(false);
 const historyBtnVisible = ref(false);
 const deleteBtnVisible = ref(false);
 const previewBtnVisible = ref(false);
@@ -146,9 +143,9 @@ const saveLoading = ref("disabled");
 const deleteLoading = ref("disabled");
 const historyLoading = ref(true);
 const qid = ref(0);
+const saveReturnQuotationInfo = ref<any>({});
 const disabledExportLocalChargeBtn = ref(true);
 const disabledImportLocalChargeBtn = ref(true);
-const vxeTableRef = ref();
 const hideQuotationType = ref(true);
 const hideQuoteDimensionFactor = ref(true);
 const hideVolumeShareForAgent = ref(true);
@@ -789,7 +786,7 @@ const handleLocalChargeResult = (
                 allowInvalid: true,
                 licenseKey: "524eb-e5423-11952-44a09-e7a22",
                 contextMenu: true,
-                afterChange: handleExportLocalChargeChange,
+                afterChange: handleImportLocalChargeChange,
                 afterSelection: handleAfterSelection,
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite
@@ -816,7 +813,7 @@ const handleLocalChargeResult = (
                 allowInvalid: true,
                 licenseKey: "524eb-e5423-11952-44a09-e7a22",
                 contextMenu: true,
-                afterChange: handleExportLocalChargeChange,
+                afterChange: handleImportLocalChargeChange,
                 afterSelection: handleAfterSelection,
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite
@@ -1064,7 +1061,7 @@ const handleAfterChange = (changes, source) => {
 };
 
 const transformData = (
-  exportLocationResult: any[],
+  LocationResult: any[],
   quoteID: number,
   pid: number,
   isExport: boolean
@@ -1073,7 +1070,7 @@ const transformData = (
     quoteID,
     pid,
     isExport,
-    detail: exportLocationResult.map(location => {
+    detail: LocationResult.map(location => {
       const weightBreakSettings = location.weightBreakHotTableSetting.data
         .filter(
           (item: any) => item.charge !== null && item.charge.trim() !== ""
@@ -1167,7 +1164,7 @@ const handleImportLocalChargeChange = (changes, source) => {
       quotationDetailResult.value.pid as number,
       false
     );
-    console.log("transformedData export", transformedData);
+    console.log("transformedData Import", transformedData);
     saveLocalChargeResult(transformedData);
   }
 };
@@ -1223,7 +1220,8 @@ const saveData = () => {
         quotationDetailResult.value
       ).then(res => {
         if (res && res.isSuccess) {
-          frightChargeParams.value.quoteID = res.returnValue;
+          saveReturnQuotationInfo.value = res.returnValue;
+          frightChargeParams.value.quoteID = res.returnValue.quoteid;
           frightChargeParams.value.pid = quotationDetailResult.value.pid;
           frightChargeParams.value.quoteFreights =
             freightChargeSettings.value.data;
@@ -1240,19 +1238,6 @@ const saveData = () => {
               quotationDetailResult.value.pid as number,
               false
             );
-
-            // const exportLocalChargeParam = {
-            //   quoteID: frightChargeParams.value.quoteID,
-            //   pid: quotationDetailResult.value.pid,
-            //   isExport: true,
-            //   detail: exportLocationResult.value
-            // };
-            // const importLocalChargeParam = {
-            //   quoteID: frightChargeParams.value.quoteID,
-            //   pid: quotationDetailResult.value.pid,
-            //   isExport: false,
-            //   detail: importLocationResult.value
-            // };
             saveLocalChargeResult(exportTransformedData);
             saveLocalChargeResult(importTransformedData);
             ElNotification({
@@ -1260,6 +1245,18 @@ const saveData = () => {
               message: "Quotation save successfully!",
               type: "success"
             });
+            setTimeout(() => {
+              console.log(saveReturnQuotationInfo.value);
+              router.replace({
+                name: "QuoteDetail",
+                params: {
+                  id: saveReturnQuotationInfo.value.quoteid,
+                  qname: saveReturnQuotationInfo.value.quoteNo,
+                  pid: quotationDetailResult.value.pid as number,
+                  pagemode: "view"
+                }
+              });
+            }, 500); // 2000 毫秒 = 2 秒
           });
         } else {
           ElNotification({
@@ -1269,15 +1266,15 @@ const saveData = () => {
           });
         }
       });
-      console.debug(detailStatus);
-      console.debug("result", quotationDetailResult.value);
-      console.debug(
-        "freightChargeSettings-data",
-        freightChargeSettings.value.data
-      );
-      console.debug("frightChargeParams", frightChargeParams.value);
-      console.debug("exportLocationResult", exportLocationResult);
-      console.debug("importLocationResult", importLocationResult);
+      // console.debug(detailStatus);
+      // console.debug("result", quotationDetailResult.value);
+      // console.debug(
+      //   "freightChargeSettings-data",
+      //   freightChargeSettings.value.data
+      // );
+      // console.debug("frightChargeParams", frightChargeParams.value);
+      // console.debug("exportLocationResult", exportLocationResult);
+      // console.debug("importLocationResult", importLocationResult);
     })
     .catch(error => {
       console.error("Validation failed:", error);
@@ -1290,19 +1287,36 @@ const saveData = () => {
 };
 
 const sendApproval = () => {
+  saveLoading.value = "default";
   const params = { quoteid: getParameter.id };
-  SendQuotationToApprove(params).then(res => {
-    if (res && res.isSuccess) {
+  SendQuotationToApprove(params)
+    .then(res => {
+      if (res && res.isSuccess) {
+        ElNotification({
+          title: "successfully",
+          message: "Send Approval Successfully!",
+          type: "success"
+        });
+        setTimeout(() => {
+          router.replace(router.currentRoute.value.fullPath);
+        }, 500); // 2000 毫秒 = 2 秒
+      } else {
+        ElNotification({
+          title: "Failed",
+          message: "Send Approval Failed!",
+          type: "error"
+        });
+      }
+      saveLoading.value = "disabled";
+    })
+    .catch(error => {
+      saveLoading.value = "disabled";
       ElNotification({
-        title: "successfully",
-        message: "Send Approval Successfully!",
-        type: "success"
+        title: "Error",
+        message: `An error occurred: ${error.response?.status === 500 ? "Server error, please try again later." : "Network or unexpected error occurred."}`,
+        type: "error"
       });
-      setTimeout(() => {
-        onCloseTags();
-      }, 1500); // 2000 毫秒 = 2 秒
-    }
-  });
+    });
 };
 
 const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
@@ -1310,6 +1324,7 @@ const multiTags = computed(() => {
   return useMultiTagsStoreHook()?.multiTags;
 });
 const onCloseTags = () => {
+  console.log(multiTags.value[(multiTags as any).value.length - 1].path);
   useMultiTagsStoreHook().handleTags(
     "splice",
     multiTags.value[(multiTags as any).value.length - 1].path
@@ -1674,14 +1689,6 @@ onBeforeUnmount(() => {
   editor.destroy();
 });
 
-// watch(
-//   () => quoteDetailColumns,
-//   newValue => {
-//     console.log("quoteDetailColumns updated:", newValue);
-//   },
-//   { deep: true }
-// );
-
 const formatDate = dateInput => {
   const months = [
     "Jan",
@@ -1759,7 +1766,8 @@ const formatDate = dateInput => {
           <el-button
             v-if="
               customerProductLineAccessRight.isWrite &&
-              quotationDetailResult.status === 'Draft'
+              quotationDetailResult.status === 'Draft' &&
+              qid === 0
             "
             type="primary"
             plain
