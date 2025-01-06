@@ -55,11 +55,18 @@ import { UserAccessRightByCustomerProductLine } from "@/utils/auth";
 import { CommonHelper } from "@/utils/commonHelper";
 import { UrlHelper } from "@/utils/urlHelper";
 
-import { QuoteDetailColumnAccessRight } from "@/types/apiRequestTypeEnum";
+import {
+  QuoteDetailColumnAccessRight,
+  AirCity,
+  AirPort,
+  SeaCity,
+  SeaPort
+} from "@/types/apiRequestTypeEnum";
 import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
 import { useHistoryColumns } from "@/components/HistoryLog/Columns";
 import { useApprovalDetail } from "@/views/approval/hooks";
+import CommonService from "@/services/commonService";
 
 const { toApprovalDetail, getApprovalParameter } = useApprovalDetail();
 
@@ -67,8 +74,12 @@ const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
 const { t } = useI18n();
 const { toPreView } = usePreView();
-const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
-  CommonHelper();
+const {
+  GetColumnSettingResult,
+  columnSettingResult,
+  DocumentCloudResult,
+  CityAndPortResult
+} = CommonHelper();
 
 const { ReconstructDCURL } = UrlHelper();
 
@@ -179,8 +190,8 @@ const setHotTableRef = (city, Category) => el => {
 
 // 示例：在需要的時候更新某個 HotTable 的數據
 const updateHotTableData = (city, data) => {
-  if (hotTableRefs.value[city]) {
-    hotTableRefs.value[city].loadData(data);
+  if (hotTableRefs.value[`${city}general`]) {
+    hotTableRefs.value[`${city}general`].loadData(data);
   }
 };
 
@@ -201,6 +212,12 @@ const rules = {
     {
       required: true,
       message: t("message.required.period")
+    }
+  ],
+  creditTermId: [
+    {
+      required: true,
+      message: t("message.required.creditTerm")
     }
   ]
 };
@@ -381,8 +398,9 @@ let quoteDetailColumns: PlusColumn[] = [
     prop: "productLineCode",
     valueType: "select",
     options: productLineResult,
+    minWidth: "500px",
     colProps: {
-      span: 8
+      span: 5
     },
     fieldProps: {
       onFocus: () => {
@@ -522,7 +540,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: tradeTermResult,
     colProps: {
-      span: 8
+      span: 5
     },
     fieldProps: {
       onFocus: () => {
@@ -544,7 +562,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: shippingTermResult,
     colProps: {
-      span: 8
+      span: 5
     },
     fieldProps: {
       onFocus: () => {
@@ -582,7 +600,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: creditTermResult,
     colProps: {
-      span: 8
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -596,7 +614,7 @@ let quoteDetailColumns: PlusColumn[] = [
   {
     label: "Reference",
     width: 120,
-    prop: "reference",
+    prop: "refID",
     valueType: "select",
     options: quoteReferenceCodeResult,
     colProps: {
@@ -604,7 +622,7 @@ let quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onFocus: () => {
-        previousValue.value = quotationDetailResult.value.creditTermId;
+        previousValue.value = quotationDetailResult.value.refID;
       },
       onChange: value => {
         autoSaveTrigger(value, "reference");
@@ -662,7 +680,7 @@ let quoteDetailColumns: PlusColumn[] = [
     options: quoteTypeResult,
     hideInForm: hideQuotationType,
     colProps: {
-      span: 8
+      span: 10
     },
     fieldProps: {
       onFocus: () => {
@@ -841,36 +859,36 @@ const handleGreetingsFocusOut = () => {
     );
   }
 };
+
+const saveFreightCharge = () => {
+  const filteredData = freightChargeSettings.value.data.filter(item =>
+    checkProperties.some(
+      key => item[key] !== null && item[key] !== "" && item[key] !== undefined
+    )
+  );
+  frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
+  frightChargeParams.value.pid = quotationDetailResult.value.pid;
+  frightChargeParams.value.quoteFreights = filteredData;
+  saveFreightChargeResult(frightChargeParams.value).then(res => {
+    if (res && res.isSuccess) {
+      ElNotification({
+        title: "successfully",
+        message: "Freight Charge Save Successfully!",
+        type: "success"
+      });
+    }
+  });
+};
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     hotTableRef.value.hotInstance.validateCells(valid => {
-      if (valid) {
-        const filteredData = freightChargeSettings.value.data.filter(item =>
-          checkProperties.some(
-            key =>
-              item[key] !== null && item[key] !== "" && item[key] !== undefined
-          )
-        );
-
-        frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
-        frightChargeParams.value.pid = quotationDetailResult.value.pid;
-        frightChargeParams.value.quoteFreights = filteredData;
-
-        if (
-          frightChargeParams.value.quoteFreights.length > 0 &&
-          changes[0][2] != changes[0][3]
-        ) {
-          saveFreightChargeResult(frightChargeParams.value).then(res => {
-            if (res && res.isSuccess) {
-              ElNotification({
-                title: "successfully",
-                message: "Freight Charge Save Successfully!",
-                type: "success"
-              });
-            }
-          });
-        }
+      if (
+        valid &&
+        frightChargeParams.value.quoteFreights.length > 0 &&
+        changes[0][2] != changes[0][3]
+      ) {
+        saveFreightCharge;
       }
     });
 
@@ -1176,8 +1194,17 @@ const handleAfterSelection = (row, column, row2, column2) => {
   );
 };
 
-const handleRemoveRow = (index, amount) => {
-  console.debug("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
+const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
+  saveFreightCharge();
+};
+
+const handleRemoveRow = (index, amount, physicalRows, source) => {
+  console.log(
+    "handleRemoveRow",
+    `刪除了 ${amount} 行，從索引 ${index} 開始 ${{ physicalRows }}${{ source }}`
+  );
+  console.log(physicalRows);
+  console.log(source);
 };
 
 const freightChargeSettings = ref({
@@ -1186,7 +1213,7 @@ const freightChargeSettings = ref({
   rowHeaders: false,
   dropdownMenu: true,
   width: "100%",
-  height: "auto",
+  height: "180",
   columns: [],
   colWidths: [],
   autoWrapRow: true,
@@ -1196,11 +1223,9 @@ const freightChargeSettings = ref({
   allowInvalid: true,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true,
-  // 添加事件監聽器
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
-  afterRemoveRow: handleRemoveRow,
-  // beforeChange: handleBeforeChange,
+  afterRemoveRow: handleFrtRemoveRow,
   readOnly: false
 });
 
@@ -1246,14 +1271,12 @@ const saveData = () => {
               type: "success"
             });
             setTimeout(() => {
-              console.log(saveReturnQuotationInfo.value);
               router.replace({
                 name: "QuoteDetail",
                 params: {
                   id: saveReturnQuotationInfo.value.quoteid,
                   qname: saveReturnQuotationInfo.value.quoteNo,
-                  pid: quotationDetailResult.value.pid as number,
-                  pagemode: "view"
+                  pid: quotationDetailResult.value.pid as number
                 }
               });
             }, 500); // 2000 毫秒 = 2 秒
@@ -1303,7 +1326,7 @@ const sendApproval = () => {
       } else {
         ElNotification({
           title: "Failed",
-          message: "Send Approval Failed!",
+          message: `Send Approval Failed! ${res.errorMessage}`,
           type: "error"
         });
       }
@@ -1386,9 +1409,31 @@ const handleCheckboxGroupChange = (values: string[]) => {
   const selectedItems = ChargeCodeSettingResult.filter(item =>
     values.includes(item.columnName)
   );
+
   freightChargeSettings.value.colHeaders = selectedItems.map(
     item => item.headerName
   );
+
+  const testobj = selectedItems.map(item => item.hotTableColumnSetting);
+  console.log(testobj);
+  testobj.forEach(i => {
+    if (i.data === "pReceipt") {
+      i.source = function (_query, process) {
+        const params = {
+          SearchKey: _query,
+          OptionsResourceType: 135,
+          PageSize: 10,
+          PageIndex: 1,
+          Paginator: true
+        };
+        CommonService.getAutoCompleteList(params).then(a => {
+          const a1 = a.map(item => item.text);
+          process(a1);
+        });
+      };
+    }
+  });
+
   freightChargeSettings.value.columns = selectedItems.map(
     item => item.hotTableColumnSetting
   );
@@ -1423,10 +1468,14 @@ const AddLCPItems = (source, isExport) => {
     isExport,
     source.localChargePackageSelector
   ).then(res => {
+    console.clear();
+    console.log(source);
+    console.log(isExport);
     if (isExport) {
       exportLocationResult.value.forEach(f => {
+        console.log(f.cityID);
+        console.log(source.cityID);
         if (f.cityID === source.cityID) {
-          // f.hotTableSetting.data = res;
           updateHotTableData(source.cityID, res);
         }
       });
@@ -1592,12 +1641,43 @@ const handleHandsonTableAutoSave = category => {
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
+
     ChargeCodeSettingResult.forEach(item => {
       if (item.selected) {
+        let apiRequestType = 0;
+        switch (item.columnName) {
+          case "pReceipt":
+          case "pDelivery":
+            apiRequestType =
+              quotationDetailResult.value.pid === 6 ? SeaCity : AirCity;
+            break;
+          case "pLoading":
+          case "pDischarge":
+            apiRequestType =
+              quotationDetailResult.value.pid === 6 ? SeaPort : AirPort;
+            break;
+        }
+        if (apiRequestType > 0) {
+          // item.hotTableColumnSetting.type = "autocomplete";
+          item.hotTableColumnSetting.visibleRows = 15;
+          item.hotTableColumnSetting.strict = true;
+          item.hotTableColumnSetting.source = function (_query, process) {
+            const params = {
+              searchKey: _query,
+              requestType: apiRequestType,
+              PageSize: 10,
+              PageIndex: 1,
+              Paginator: true
+            };
+            CommonService.getCityAndPortResult(params).then(a => {
+              const a1 = a.map(item => item.text);
+              process(a1);
+            });
+          };
+        }
         sourceData.push(item);
       }
     });
-    // console.log(sourceData);
     freightChargeSettings.value.colHeaders = sourceData.map(
       item => item.headerName
     );
@@ -1730,6 +1810,10 @@ const formatDate = dateInput => {
     <el-card shadow="never" class="relative h-96 overflow-hidden">
       <div class="flex justify-between items-center">
         <div class="flex items-center space-x-2 pt-1 pl-3 font-bold">
+          <span class="text-gray-700"> Quote No:</span>
+          <span class="text-orange-500 font-normal">
+            {{ quotationDetailResult.quoteNo }}</span
+          >
           <span class="text-gray-700"> Quote Status: </span>
           <el-popover placement="right" :width="450" trigger="click">
             <template #reference>
@@ -1849,6 +1933,7 @@ const formatDate = dateInput => {
                 :row-props="{ gutter: 20 }"
                 label-width="auto"
                 :hasFooter="false"
+                class="custom-margin-bottom"
               />
 
               <div
@@ -1959,13 +2044,6 @@ const formatDate = dateInput => {
                   :key="item.cityID"
                   :label="item.city"
                 >
-                  <HotTable
-                    :ref="setHotTableRef(item.cityID, `general`)"
-                    :settings="item.generalHotTableSetting"
-                  />
-                  <el-divider content-position="left"
-                    >Weight Break Mode</el-divider
-                  >
                   {{ $t("quote.quotedetail.lcp") }}：
                   <el-select
                     v-model="item.localChargePackageSelector"
@@ -1982,7 +2060,13 @@ const formatDate = dateInput => {
                       :value="c.value"
                     />
                   </el-select>
-
+                  <HotTable
+                    :ref="setHotTableRef(item.cityID, `general`)"
+                    :settings="item.generalHotTableSetting"
+                  />
+                  <el-divider content-position="left"
+                    >Weight Break Mode</el-divider
+                  >
                   <div @mouseleave="handleHandsonTableAutoSave('Export')">
                     <HotTable
                       :ref="setHotTableRef(item.cityID, `weightbreak`)"
@@ -2002,13 +2086,6 @@ const formatDate = dateInput => {
                   :key="item.cityID"
                   :label="item.city"
                 >
-                  <HotTable
-                    :ref="setHotTableRef(item.cityID, `general`)"
-                    :settings="item.generalHotTableSetting"
-                  />
-                  <el-divider content-position="left"
-                    >Weight Break Mode</el-divider
-                  >
                   {{ $t("quote.quotedetail.lcp") }}：
                   <el-select
                     v-model="item.localChargePackageSelector"
@@ -2025,6 +2102,13 @@ const formatDate = dateInput => {
                       :value="c.value"
                     />
                   </el-select>
+                  <HotTable
+                    :ref="setHotTableRef(item.cityID, `general`)"
+                    :settings="item.generalHotTableSetting"
+                  />
+                  <el-divider content-position="left"
+                    >Weight Break Mode</el-divider
+                  >
                   <div @mouseleave="handleHandsonTableAutoSave('Import')">
                     <HotTable
                       :ref="setHotTableRef(item.cityID, `weightbreak`)"
@@ -2287,5 +2371,9 @@ const formatDate = dateInput => {
   line-height: 1.5;
   word-break: break-word;
   white-space: normal;
+}
+
+.custom-margin-bottom {
+  margin-bottom: 20px;
 }
 </style>

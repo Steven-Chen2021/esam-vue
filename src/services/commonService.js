@@ -191,6 +191,18 @@ class CustomerQuickFilterService {
       console.error(error);
     }
   }
+
+  async getCityAndPortResult(params) {
+    try {
+      const url = "/api/Common/CityAndPortList";
+      const queryString = new URLSearchParams(params).toString();
+      const fullUrl = `${url}?${queryString}`;
+      const response = await API.get(fullUrl);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new CustomerQuickFilterService();

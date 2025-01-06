@@ -571,6 +571,7 @@ message:
     companyName: Company Name Is Required.
     productLine: Product LineIs Required.
     period: Effective And Expired Is Required.
+    creditTerm: Credit Term Is Required.
 approval:
   list: Approval Management
   quickfilter:

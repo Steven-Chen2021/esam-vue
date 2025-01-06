@@ -543,11 +543,11 @@ const handleCopyQuote = quoteID => {
   };
   copyQuote(params)
     .then(res => {
-      if (res.isSuccess && res.returnValue > 0)
-        toQuoteDetail(
-          { id: res.returnValue, qname: "Copy Quote", pagemode: "edit" },
-          "params"
-        );
+      if (res.isSuccess && res.returnValue > 0) console.log(res);
+      toQuoteDetail(
+        { id: res.returnValue, qname: "Copy Quote", pagemode: "edit" },
+        "params"
+      );
     })
     .catch(ex => {
       console.debug(ex);

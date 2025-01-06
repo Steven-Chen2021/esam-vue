@@ -27,7 +27,10 @@ export function QuoteDetailHooks() {
   interface iHotTableColumnSetting {
     data: string;
     type: string;
-    source: [];
+    source: any;
+    visibleRows: number | null;
+    strict: boolean | null;
+    height: number | null;
   }
 
   interface iAccessRightSetting {
