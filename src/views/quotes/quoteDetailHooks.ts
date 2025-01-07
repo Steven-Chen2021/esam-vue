@@ -27,7 +27,10 @@ export function QuoteDetailHooks() {
   interface iHotTableColumnSetting {
     data: string;
     type: string;
-    source: [];
+    source: any;
+    visibleRows: number | null;
+    strict: boolean | null;
+    height: number | null;
   }
 
   interface iAccessRightSetting {
@@ -154,7 +157,7 @@ export function QuoteDetailHooks() {
         PID
       );
       if (response != null) {
-        console.log(response);
+        // console.log(response);
         ChargeCodeSettingResult.splice(0);
         ChargeCodeSettingResult.push(...response.returnValue);
 

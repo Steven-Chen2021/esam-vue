@@ -334,6 +334,7 @@ message:
     companyName: 公司名称必填
     productLine: 产品线必填
     period: 日期区间必填
+    creditTerm: 信用條件必填
 approval:
   list: 簽核管理
   quickfilter:

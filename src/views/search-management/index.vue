@@ -368,9 +368,27 @@ const handleDeleteQuickFilter = (item: QuickFilter) => {
 };
 const deleteQuickFilter = () => {
   dialogVisible.value = false;
+  let PageCategory = -1;
+  switch (category.value) {
+    case "quoteSearch":
+      PageCategory = CustomizeQuickFilterSettingFromQuoteSearch;
+      break;
+    case "ApprovalList":
+      PageCategory = CustomizeQuickFilterSettingFromApprovalSearch;
+      break;
+    case "CustomerList":
+      PageCategory = CustomizeQuickFilterSettingFromCustomerSearch;
+      break;
+    case "ContactList":
+      PageCategory = CustomizeQuickFilterSettingFromContactSearch;
+      break;
+    case "TaskList":
+      PageCategory = CustomizeQuickFilterSettingFromTaskSearch;
+      break;
+  }
   const params = {
     filterID: deleteQuickFilterID.value,
-    filterAppliedPage: 2
+    filterAppliedPage: PageCategory
   };
   CustomerQuickFilterService.deleteQuickFilter(params)
     .then(data => {
@@ -525,11 +543,11 @@ const handleCopyQuote = quoteID => {
   };
   copyQuote(params)
     .then(res => {
-      if (res.isSuccess && res.returnValue > 0)
-        toQuoteDetail(
-          { id: res.returnValue, qname: "Copy Quote", pagemode: "edit" },
-          "params"
-        );
+      if (res.isSuccess && res.returnValue > 0) console.log(res);
+      toQuoteDetail(
+        { id: res.returnValue, qname: "Copy Quote", pagemode: "edit" },
+        "params"
+      );
     })
     .catch(ex => {
       console.debug(ex);

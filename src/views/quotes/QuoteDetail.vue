@@ -20,6 +20,7 @@ import {
   nextTick,
   watchEffect,
   computed
+  // watch
 } from "vue";
 
 import {
@@ -54,11 +55,18 @@ import { UserAccessRightByCustomerProductLine } from "@/utils/auth";
 import { CommonHelper } from "@/utils/commonHelper";
 import { UrlHelper } from "@/utils/urlHelper";
 
-import { QuoteDetailColumnAccessRight } from "@/types/apiRequestTypeEnum";
+import {
+  QuoteDetailColumnAccessRight,
+  AirCity,
+  AirPort,
+  SeaCity,
+  SeaPort
+} from "@/types/apiRequestTypeEnum";
 import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
 import { useHistoryColumns } from "@/components/HistoryLog/Columns";
 import { useApprovalDetail } from "@/views/approval/hooks";
+import CommonService from "@/services/commonService";
 
 const { toApprovalDetail, getApprovalParameter } = useApprovalDetail();
 
@@ -66,8 +74,12 @@ const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
 const { t } = useI18n();
 const { toPreView } = usePreView();
-const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
-  CommonHelper();
+const {
+  GetColumnSettingResult,
+  columnSettingResult,
+  DocumentCloudResult,
+  CityAndPortResult
+} = CommonHelper();
 
 const { ReconstructDCURL } = UrlHelper();
 
@@ -129,12 +141,9 @@ defineOptions({
 initToDetail("params");
 
 const hotTableRef = ref(null);
-const importHotTableRef = ref(null);
-// const exportHotTableRef = ref(null);
 const freightVisible = ref(false);
 const localVisible = ref(false);
 const historyVisible = ref(false);
-const deleteVisible = ref(false);
 const historyBtnVisible = ref(false);
 const deleteBtnVisible = ref(false);
 const previewBtnVisible = ref(false);
@@ -145,9 +154,9 @@ const saveLoading = ref("disabled");
 const deleteLoading = ref("disabled");
 const historyLoading = ref(true);
 const qid = ref(0);
+const saveReturnQuotationInfo = ref<any>({});
 const disabledExportLocalChargeBtn = ref(true);
 const disabledImportLocalChargeBtn = ref(true);
-const vxeTableRef = ref();
 const hideQuotationType = ref(true);
 const hideQuoteDimensionFactor = ref(true);
 const hideVolumeShareForAgent = ref(true);
@@ -181,8 +190,8 @@ const setHotTableRef = (city, Category) => el => {
 
 // 示例：在需要的時候更新某個 HotTable 的數據
 const updateHotTableData = (city, data) => {
-  if (hotTableRefs.value[city]) {
-    hotTableRefs.value[city].loadData(data);
+  if (hotTableRefs.value[`${city}general`]) {
+    hotTableRefs.value[`${city}general`].loadData(data);
   }
 };
 
@@ -203,6 +212,12 @@ const rules = {
     {
       required: true,
       message: t("message.required.period")
+    }
+  ],
+  creditTermId: [
+    {
+      required: true,
+      message: t("message.required.creditTerm")
     }
   ]
 };
@@ -232,9 +247,12 @@ const dataPermissionExtension = () => {
               break;
             case "productLineName":
               ctl = quoteDetailColumns.find(f => f.prop === "productLineCode");
+              ctl.colProps.span = 2;
+              quotationDetailResult.value.productLineCode = `${quotationDetailResult.value.productLineCode} `;
               break;
             case "attentionTo":
               ctl = quoteDetailColumns.find(f => f.prop === "attentionTo");
+              quotationDetailResult.value.attentionTo = `${quotationDetailResult.value.attentionTo} `;
               break;
             case "effectiveDate":
               ctl = quoteDetailColumns.find(f => f.prop === "period");
@@ -261,6 +279,7 @@ const dataPermissionExtension = () => {
               break;
             case "shppingTerm":
               ctl = quoteDetailColumns.find(f => f.prop === "shippingTerm");
+              quotationDetailResult.value.shippingTerm = `${quotationDetailResult.value.shippingTerm} `;
               break;
             case "creditTerm":
               ctl = quoteDetailColumns.find(f => f.prop === "creditTermId");
@@ -279,9 +298,21 @@ const dataPermissionExtension = () => {
               break;
             case "reference":
               ctl = quoteDetailColumns.find(f => f.prop === "reference");
+              quotationDetailResult.value.reference = `${quotationDetailResult.value.reference} `;
               break;
             case "customerName":
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
+              quotationDetailResult.value.customerName = `${quotationDetailResult.value.customerName} `;
+              break;
+            case "dimensionFactor":
+              ctl = quoteDetailColumns.find(f => f.prop === "dimensionFactor");
+              quotationDetailResult.value.dimensionFactor = `${quotationDetailResult.value.dimensionFactor} `;
+              break;
+            case "volumeShareForAgent":
+              ctl = quoteDetailColumns.find(
+                f => f.prop === "volumeShareForAgent"
+              );
+              quotationDetailResult.value.volumeShareForAgent = `${quotationDetailResult.value.volumeShareForAgent}:${quotationDetailResult.value.volumeShareForDimerco}`;
               break;
           }
           if (
@@ -299,7 +330,7 @@ const dataPermissionExtension = () => {
     });
   }
 };
-const quoteDetailColumns: PlusColumn[] = [
+let quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
     prop: "customerName",
@@ -367,8 +398,9 @@ const quoteDetailColumns: PlusColumn[] = [
     prop: "productLineCode",
     valueType: "select",
     options: productLineResult,
+    minWidth: "500px",
     colProps: {
-      span: 8
+      span: 5
     },
     fieldProps: {
       onFocus: () => {
@@ -412,12 +444,7 @@ const quoteDetailColumns: PlusColumn[] = [
           _pid
         );
 
-        if (_pid === 2) {
-          console.log(quoteDimensionFactorResult);
-        }
-
         getQuoteFreightChargeResult(qid.value, _pid).then(() => {
-          console.log(freightChargeResult.value);
           freightChargeSettings.value.data = freightChargeResult.value;
           let exportPromise = Promise.resolve();
           let importPromise = Promise.resolve();
@@ -491,7 +518,7 @@ const quoteDetailColumns: PlusColumn[] = [
             }
           });
         });
-        console.log(quotationDetailResult.value);
+
         if (
           quotationDetailResult.value.signature === null ||
           quotationDetailResult.value.signature === ""
@@ -513,7 +540,7 @@ const quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: tradeTermResult,
     colProps: {
-      span: 8
+      span: 5
     },
     fieldProps: {
       onFocus: () => {
@@ -535,7 +562,7 @@ const quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: shippingTermResult,
     colProps: {
-      span: 8
+      span: 5
     },
     fieldProps: {
       onFocus: () => {
@@ -573,7 +600,7 @@ const quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: creditTermResult,
     colProps: {
-      span: 8
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -587,7 +614,7 @@ const quoteDetailColumns: PlusColumn[] = [
   {
     label: "Reference",
     width: 120,
-    prop: "reference",
+    prop: "refID",
     valueType: "select",
     options: quoteReferenceCodeResult,
     colProps: {
@@ -595,7 +622,7 @@ const quoteDetailColumns: PlusColumn[] = [
     },
     fieldProps: {
       onFocus: () => {
-        previousValue.value = quotationDetailResult.value.creditTermId;
+        previousValue.value = quotationDetailResult.value.refID;
       },
       onChange: value => {
         autoSaveTrigger(value, "reference");
@@ -653,7 +680,7 @@ const quoteDetailColumns: PlusColumn[] = [
     options: quoteTypeResult,
     hideInForm: hideQuotationType,
     colProps: {
-      span: 8
+      span: 10
     },
     fieldProps: {
       onFocus: () => {
@@ -683,7 +710,6 @@ const handleLocalChargeResult = (
   LocationResult,
   Category
 ) => {
-  console.log("handleLocalChargeResult", localChargeResult.value);
   if (localChargeResult.value && localChargeResult.value.length > 0) {
     localChargeResult.value.forEach(localCharge => {
       getLocalChargePackageResult(
@@ -693,19 +719,20 @@ const handleLocalChargeResult = (
       ).then(res => {
         if (localCharge.cityID != 0) {
           if (Category === "Export") {
+            console.log("Export localCharge", localCharge);
             LocationResult.value.push({
               cityID: localCharge.cityID,
               city: localCharge.city,
               // detail: [],
               generalHotTableSetting: {
-                data: localCharge.detail || [],
-                colHeaders: localCharge.colHeaders || [],
+                data: localCharge?.generalSettings?.detail || [],
+                colHeaders: localCharge?.generalSettings?.colHeader || [],
                 rowHeaders: false,
                 dropdownMenu: true,
                 width: "100%",
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                columns: localCharge?.columns?.map(column => ({
+                columns: localCharge?.generalSettings?.columns?.map(column => ({
                   data: column.data,
                   type: column.type,
                   source: column.source || []
@@ -723,18 +750,20 @@ const handleLocalChargeResult = (
                 readOnly: !customerProductLineAccessRight.value.isWrite
               },
               weightBreakHotTableSetting: {
-                data: localCharge.detail || [],
-                colHeaders: localCharge.colHeaders || [],
+                data: localCharge?.weightBreakSettings?.detail || [],
+                colHeaders: localCharge?.weightBreakSettings?.colHeader || [],
                 rowHeaders: false,
                 dropdownMenu: true,
                 width: "100%",
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                columns: localCharge?.columns?.map(column => ({
-                  data: column.data,
-                  type: column.type,
-                  source: column.source || []
-                })),
+                columns: localCharge?.weightBreakSettings?.columns?.map(
+                  column => ({
+                    data: column.data,
+                    type: column.type,
+                    source: column.source || []
+                  })
+                ),
                 autoWrapRow: true,
                 autoWrapCol: true,
                 allowInsertColumn: true,
@@ -751,23 +780,50 @@ const handleLocalChargeResult = (
               localChargePackageSelector: []
             });
           } else {
+            console.log("Import localCharge", localCharge);
             LocationResult.value.push({
               cityID: localCharge.cityID,
               city: localCharge.city,
-              detail: [],
-              hotTableSetting: {
-                data: localCharge.detail || [],
-                colHeaders: localCharge.colHeaders || [],
+              generalHotTableSetting: {
+                data: localCharge?.generalSettings?.detail || [],
+                colHeaders: localCharge?.generalSettings?.colHeader || [],
                 rowHeaders: false,
                 dropdownMenu: true,
                 width: "100%",
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                columns: localCharge?.columns?.map(column => ({
+                columns: localCharge?.generalSettings?.columns?.map(column => ({
                   data: column.data,
                   type: column.type,
                   source: column.source || []
                 })),
+                autoWrapRow: true,
+                autoWrapCol: true,
+                allowInsertColumn: true,
+                allowInsertRow: true,
+                allowInvalid: true,
+                licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                contextMenu: true,
+                afterChange: handleImportLocalChargeChange,
+                afterSelection: handleAfterSelection,
+                afterRemoveRow: handleRemoveRow,
+                readOnly: !customerProductLineAccessRight.value.isWrite
+              },
+              weightBreakHotTableSetting: {
+                data: localCharge?.weightBreakSettings?.detail || [],
+                colHeaders: localCharge?.weightBreakSettings?.colHeader || [],
+                rowHeaders: false,
+                dropdownMenu: true,
+                width: "100%",
+                height: "auto",
+                colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                columns: localCharge?.weightBreakSettings?.columns?.map(
+                  column => ({
+                    data: column.data,
+                    type: column.type,
+                    source: column.source || []
+                  })
+                ),
                 autoWrapRow: true,
                 autoWrapCol: true,
                 allowInsertColumn: true,
@@ -803,40 +859,36 @@ const handleGreetingsFocusOut = () => {
     );
   }
 };
+
+const saveFreightCharge = () => {
+  const filteredData = freightChargeSettings.value.data.filter(item =>
+    checkProperties.some(
+      key => item[key] !== null && item[key] !== "" && item[key] !== undefined
+    )
+  );
+  frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
+  frightChargeParams.value.pid = quotationDetailResult.value.pid;
+  frightChargeParams.value.quoteFreights = filteredData;
+  saveFreightChargeResult(frightChargeParams.value).then(res => {
+    if (res && res.isSuccess) {
+      ElNotification({
+        title: "successfully",
+        message: "Freight Charge Save Successfully!",
+        type: "success"
+      });
+    }
+  });
+};
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     hotTableRef.value.hotInstance.validateCells(valid => {
-      if (valid) {
-        const filteredData = freightChargeSettings.value.data.filter(item =>
-          checkProperties.some(
-            key =>
-              item[key] !== null && item[key] !== "" && item[key] !== undefined
-          )
-        );
-
-        frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
-        frightChargeParams.value.pid = quotationDetailResult.value.pid;
-        frightChargeParams.value.quoteFreights = filteredData;
-        console.log(
-          frightChargeParams.value.quoteFreights.length > 0 &&
-            changes[0][2] != changes[0][3]
-        );
-
-        if (
-          frightChargeParams.value.quoteFreights.length > 0 &&
-          changes[0][2] != changes[0][3]
-        ) {
-          saveFreightChargeResult(frightChargeParams.value).then(res => {
-            if (res && res.isSuccess) {
-              ElNotification({
-                title: "successfully",
-                message: "Freight Charge Save Successfully!",
-                type: "success"
-              });
-            }
-          });
-        }
+      if (
+        valid &&
+        frightChargeParams.value.quoteFreights.length > 0 &&
+        changes[0][2] != changes[0][3]
+      ) {
+        saveFreightCharge;
       }
     });
 
@@ -852,42 +904,37 @@ const handleAfterChange = (changes, source) => {
             true,
             newValue
           ).then(() => {
-            const noneWeightBreakHeader = ["Condition", "Amount", "Cost"];
-            const WeightBreakHeader = ["Flat", "Flat Cost", "Min", "Min Cost"];
-
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
-                console.log("localChargeResult", localCharge);
-                // const filteredColHeaders = (
-                //   localCharge.colHeaders || []
-                // ).filter(header => !noneWeightBreakHeader.includes(header));
-                // const weightBreakColHeaders = (
-                //   localCharge.colHeaders || []
-                // ).filter(header => !WeightBreakHeader.includes(header));
-
+                console.log("handleAfterChange localCharge", localCharge);
+                console.log(
+                  "handleAfterChange localCharge",
+                  localCharge?.generalSettings?.detail
+                );
                 getLocalChargePackageResult(
                   quotationDetailResult.value.pid,
                   true,
                   localCharge.cityID
                 ).then(res => {
-                  console.log("getLocalChargePackageResult.res", res);
                   exportLocationResult.value.push({
                     cityID: localCharge.cityID,
                     city: localCharge.city,
                     detail: [],
                     generalHotTableSetting: {
-                      data: localCharge.flatDetail || [],
-                      colHeaders: filteredColHeaders || [],
+                      data: localCharge?.generalSettings?.detail || [],
+                      colHeaders: localCharge?.generalSettings?.colHeader || [],
                       rowHeaders: false,
                       dropdownMenu: true,
                       width: "100%",
                       height: "auto",
                       colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.columns?.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
+                      columns: localCharge?.generalSettings?.columns?.map(
+                        column => ({
+                          data: column.data,
+                          type: column.type,
+                          source: column.source || []
+                        })
+                      ),
                       autoWrapRow: true,
                       autoWrapCol: true,
                       allowInsertColumn: true,
@@ -901,18 +948,21 @@ const handleAfterChange = (changes, source) => {
                       readOnly: !customerProductLineAccessRight.value.isWrite
                     },
                     weightBreakHotTableSetting: {
-                      data: localCharge.wbDetail || [],
-                      colHeaders: localCharge.colHeaders || [],
+                      data: localCharge?.weightBreakSettings?.detail || [],
+                      colHeaders:
+                        localCharge?.weightBreakSettings?.colHeader || [],
                       rowHeaders: false,
                       dropdownMenu: true,
                       width: "100%",
                       height: "auto",
                       colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.columns?.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
+                      columns: localCharge?.weightBreakSettings?.columns?.map(
+                        column => ({
+                          data: column.data,
+                          type: column.type,
+                          source: column.source || []
+                        })
+                      ),
                       autoWrapRow: true,
                       autoWrapCol: true,
                       allowInsertColumn: true,
@@ -961,18 +1011,20 @@ const handleAfterChange = (changes, source) => {
                     city: localCharge.city,
                     detail: [],
                     generalHotTableSetting: {
-                      data: localCharge.detail || [],
-                      colHeaders: localCharge.colHeaders || [],
+                      data: localCharge?.generalSettings?.detail || [],
+                      colHeaders: localCharge?.generalSettings?.colHeader || [],
                       rowHeaders: false,
                       dropdownMenu: true,
                       width: "100%",
                       height: "auto",
                       colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge.columns.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
+                      columns: localCharge?.generalSettings?.columns?.map(
+                        column => ({
+                          data: column.data,
+                          type: column.type,
+                          source: column.source || []
+                        })
+                      ),
                       autoWrapRow: true,
                       autoWrapCol: true,
                       allowInsertColumn: true,
@@ -986,18 +1038,21 @@ const handleAfterChange = (changes, source) => {
                       readOnly: !customerProductLineAccessRight.value.isWrite
                     },
                     weightBreakHotTableSetting: {
-                      data: localCharge.detail || [],
-                      colHeaders: localCharge.colHeaders || [],
+                      data: localCharge?.weightBreakSettings?.detail || [],
+                      colHeaders:
+                        localCharge?.weightBreakSettings?.colHeader || [],
                       rowHeaders: false,
                       dropdownMenu: true,
                       width: "100%",
                       height: "auto",
                       colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge.columns.map(column => ({
-                        data: column.data,
-                        type: column.type,
-                        source: column.source || []
-                      })),
+                      columns: localCharge?.weightBreakSettings?.columns?.map(
+                        column => ({
+                          data: column.data,
+                          type: column.type,
+                          source: column.source || []
+                        })
+                      ),
                       autoWrapRow: true,
                       autoWrapCol: true,
                       allowInsertColumn: true,
@@ -1023,47 +1078,112 @@ const handleAfterChange = (changes, source) => {
   }
 };
 
+const transformData = (
+  LocationResult: any[],
+  quoteID: number,
+  pid: number,
+  isExport: boolean
+) => {
+  return {
+    quoteID,
+    pid,
+    isExport,
+    detail: LocationResult.map(location => {
+      const weightBreakSettings = location.weightBreakHotTableSetting.data
+        .filter(
+          (item: any) => item.charge !== null && item.charge.trim() !== ""
+        )
+        .map((item: any) => ({
+          city: item.city,
+          recordChargeID: item.recordChargeID,
+          chargeID: item.chargeID,
+          charge: item.charge,
+          displayName: item.displayName,
+          condition: item.condition,
+          currency: item.currency,
+          uom: item.uom,
+          unit: item.unit,
+          remark: item.remark,
+          amount: item.amount,
+          cost: item.cost,
+          flat: null,
+          min: null,
+          flatCost: null,
+          minCost: null
+        }));
+
+      const generalSettings = location.generalHotTableSetting.data
+        .filter(
+          (item: any) => item.charge !== null && item.charge.trim() !== ""
+        )
+        .map((item: any) => ({
+          city: item.city,
+          recordChargeID: item.recordChargeID,
+          chargeID: item.chargeID,
+          charge: item.charge,
+          displayName: item.displayName,
+          condition: null,
+          currency: item.currency,
+          uom: item.uom,
+          unit: null,
+          remark: item.remark,
+          amount: 0.0,
+          cost: null,
+          flat: item.flat,
+          min: item.min,
+          flatCost: item.flatCost,
+          minCost: item.minCost
+        }));
+
+      return {
+        cityID: location.cityID,
+        city: location.city,
+        generalSettings,
+        weightBreakSettings
+      };
+    })
+  };
+};
+
 const handleExportLocalChargeChange = (changes, source) => {
-  if (source === "edit") {
+  if (
+    source === "edit" &&
+    (frightChargeParams?.value?.quoteID ??
+      quotationDetailResult.value.quoteid) > 0
+  ) {
     if (changes[0][2] === changes[0][3]) {
       return;
     }
-    const exportLocalChargeParam = {
-      quoteID:
-        frightChargeParams?.value?.quoteID ??
-        quotationDetailResult.value.quoteid,
-      pid: quotationDetailResult.value.pid,
-      isExport: true,
-      detail: exportLocationResult.value
-    };
-    exportLocationResult.value.forEach(res => {
-      res.detail = res.hotTableSetting.data.filter(
-        item => item.charge !== null
-      );
-    });
-    saveLocalChargeResult(exportLocalChargeParam);
+
+    const transformedData = transformData(
+      exportLocationResult.value,
+      frightChargeParams?.value?.quoteID ?? quotationDetailResult.value.quoteid,
+      quotationDetailResult.value.pid as number,
+      true
+    );
+    console.log("transformedData export", transformedData);
+    saveLocalChargeResult(transformedData);
   }
 };
 
 const handleImportLocalChargeChange = (changes, source) => {
-  if (source === "edit") {
+  if (
+    source === "edit" &&
+    (frightChargeParams?.value?.quoteID ??
+      quotationDetailResult.value.quoteid) > 0
+  ) {
     if (changes[0][2] === changes[0][3]) {
       return;
     }
-    const importLocalChargeParam = {
-      quoteID:
-        frightChargeParams?.value?.quoteID ??
-        quotationDetailResult.value.quoteid,
-      pid: quotationDetailResult.value.pid,
-      isExport: false,
-      detail: importLocationResult.value
-    };
-    importLocationResult.value.forEach(res => {
-      res.detail = res.hotTableSetting.data.filter(
-        item => item.charge !== null
-      );
-    });
-    saveLocalChargeResult(importLocalChargeParam);
+
+    const transformedData = transformData(
+      importLocationResult.value,
+      frightChargeParams?.value?.quoteID ?? quotationDetailResult.value.quoteid,
+      quotationDetailResult.value.pid as number,
+      false
+    );
+    console.log("transformedData Import", transformedData);
+    saveLocalChargeResult(transformedData);
   }
 };
 
@@ -1074,8 +1194,17 @@ const handleAfterSelection = (row, column, row2, column2) => {
   );
 };
 
-const handleRemoveRow = (index, amount) => {
-  console.debug("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
+const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
+  saveFreightCharge();
+};
+
+const handleRemoveRow = (index, amount, physicalRows, source) => {
+  console.log(
+    "handleRemoveRow",
+    `刪除了 ${amount} 行，從索引 ${index} 開始 ${{ physicalRows }}${{ source }}`
+  );
+  console.log(physicalRows);
+  console.log(source);
 };
 
 const freightChargeSettings = ref({
@@ -1084,7 +1213,7 @@ const freightChargeSettings = ref({
   rowHeaders: false,
   dropdownMenu: true,
   width: "100%",
-  height: "auto",
+  height: "180",
   columns: [],
   colWidths: [],
   autoWrapRow: true,
@@ -1094,11 +1223,9 @@ const freightChargeSettings = ref({
   allowInvalid: true,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true,
-  // 添加事件監聽器
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
-  afterRemoveRow: handleRemoveRow,
-  // beforeChange: handleBeforeChange,
+  afterRemoveRow: handleFrtRemoveRow,
   readOnly: false
 });
 
@@ -1118,30 +1245,41 @@ const saveData = () => {
         quotationDetailResult.value
       ).then(res => {
         if (res && res.isSuccess) {
-          frightChargeParams.value.quoteID = res.returnValue;
+          saveReturnQuotationInfo.value = res.returnValue;
+          frightChargeParams.value.quoteID = res.returnValue.quoteid;
           frightChargeParams.value.pid = quotationDetailResult.value.pid;
           frightChargeParams.value.quoteFreights =
             freightChargeSettings.value.data;
           saveFreightChargeResult(frightChargeParams.value).then(res => {
-            const exportLocalChargeParam = {
-              quoteID: frightChargeParams.value.quoteID,
-              pid: quotationDetailResult.value.pid,
-              isExport: true,
-              detail: exportLocationResult.value
-            };
-            const importLocalChargeParam = {
-              quoteID: frightChargeParams.value.quoteID,
-              pid: quotationDetailResult.value.pid,
-              isExport: false,
-              detail: importLocationResult.value
-            };
-            saveLocalChargeResult(exportLocalChargeParam);
-            saveLocalChargeResult(importLocalChargeParam);
+            const exportTransformedData = transformData(
+              exportLocationResult.value,
+              frightChargeParams.value.quoteID,
+              quotationDetailResult.value.pid as number,
+              true
+            );
+            const importTransformedData = transformData(
+              importLocationResult.value,
+              frightChargeParams.value.quoteID,
+              quotationDetailResult.value.pid as number,
+              false
+            );
+            saveLocalChargeResult(exportTransformedData);
+            saveLocalChargeResult(importTransformedData);
             ElNotification({
               title: "successfully",
               message: "Quotation save successfully!",
               type: "success"
             });
+            setTimeout(() => {
+              router.replace({
+                name: "QuoteDetail",
+                params: {
+                  id: saveReturnQuotationInfo.value.quoteid,
+                  qname: saveReturnQuotationInfo.value.quoteNo,
+                  pid: quotationDetailResult.value.pid as number
+                }
+              });
+            }, 500); // 2000 毫秒 = 2 秒
           });
         } else {
           ElNotification({
@@ -1151,15 +1289,15 @@ const saveData = () => {
           });
         }
       });
-      console.debug(detailStatus);
-      console.debug("result", quotationDetailResult.value);
-      console.debug(
-        "freightChargeSettings-data",
-        freightChargeSettings.value.data
-      );
-      console.debug("frightChargeParams", frightChargeParams.value);
-      console.debug("exportLocationResult", exportLocationResult);
-      console.debug("importLocationResult", importLocationResult);
+      // console.debug(detailStatus);
+      // console.debug("result", quotationDetailResult.value);
+      // console.debug(
+      //   "freightChargeSettings-data",
+      //   freightChargeSettings.value.data
+      // );
+      // console.debug("frightChargeParams", frightChargeParams.value);
+      // console.debug("exportLocationResult", exportLocationResult);
+      // console.debug("importLocationResult", importLocationResult);
     })
     .catch(error => {
       console.error("Validation failed:", error);
@@ -1172,33 +1310,44 @@ const saveData = () => {
 };
 
 const sendApproval = () => {
+  saveLoading.value = "default";
   const params = { quoteid: getParameter.id };
-  SendQuotationToApprove(params).then(res => {
-    console.log(res);
-    if (res && res.isSuccess) {
+  SendQuotationToApprove(params)
+    .then(res => {
+      if (res && res.isSuccess) {
+        ElNotification({
+          title: "successfully",
+          message: "Send Approval Successfully!",
+          type: "success"
+        });
+        setTimeout(() => {
+          router.replace(router.currentRoute.value.fullPath);
+        }, 500); // 2000 毫秒 = 2 秒
+      } else {
+        ElNotification({
+          title: "Failed",
+          message: `Send Approval Failed! ${res.errorMessage}`,
+          type: "error"
+        });
+      }
+      saveLoading.value = "disabled";
+    })
+    .catch(error => {
+      saveLoading.value = "disabled";
       ElNotification({
-        title: "successfully",
-        message: "Send Approval Successfully!",
-        type: "success"
+        title: "Error",
+        message: `An error occurred: ${error.response?.status === 500 ? "Server error, please try again later." : "Network or unexpected error occurred."}`,
+        type: "error"
       });
-      setTimeout(() => {
-        onCloseTags();
-      }, 1500); // 2000 毫秒 = 2 秒
-    }
-  });
+    });
 };
 
 const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
-const treeData = computed(() => {
-  return appendFieldByUniqueId(deleteChildren(menusTree), 0, {
-    disabled: true
-  });
-});
-const currentValues = ref<string[]>([]);
 const multiTags = computed(() => {
   return useMultiTagsStoreHook()?.multiTags;
 });
 const onCloseTags = () => {
+  console.log(multiTags.value[(multiTags as any).value.length - 1].path);
   useMultiTagsStoreHook().handleTags(
     "splice",
     multiTags.value[(multiTags as any).value.length - 1].path
@@ -1252,7 +1401,6 @@ const deleteData = () => {
 const viewHistory = () => {
   historyVisible.value = true;
   getHistoryResult(Quotation, quotationDetailResult.value.quoteid).then(res => {
-    console.log(res);
     historyLoading.value = false;
   });
 };
@@ -1261,9 +1409,31 @@ const handleCheckboxGroupChange = (values: string[]) => {
   const selectedItems = ChargeCodeSettingResult.filter(item =>
     values.includes(item.columnName)
   );
+
   freightChargeSettings.value.colHeaders = selectedItems.map(
     item => item.headerName
   );
+
+  const testobj = selectedItems.map(item => item.hotTableColumnSetting);
+  console.log(testobj);
+  testobj.forEach(i => {
+    if (i.data === "pReceipt") {
+      i.source = function (_query, process) {
+        const params = {
+          SearchKey: _query,
+          OptionsResourceType: 135,
+          PageSize: 10,
+          PageIndex: 1,
+          Paginator: true
+        };
+        CommonService.getAutoCompleteList(params).then(a => {
+          const a1 = a.map(item => item.text);
+          process(a1);
+        });
+      };
+    }
+  });
+
   freightChargeSettings.value.columns = selectedItems.map(
     item => item.hotTableColumnSetting
   );
@@ -1298,10 +1468,14 @@ const AddLCPItems = (source, isExport) => {
     isExport,
     source.localChargePackageSelector
   ).then(res => {
+    console.clear();
+    console.log(source);
+    console.log(isExport);
     if (isExport) {
       exportLocationResult.value.forEach(f => {
+        console.log(f.cityID);
+        console.log(source.cityID);
         if (f.cityID === source.cityID) {
-          // f.hotTableSetting.data = res;
           updateHotTableData(source.cityID, res);
         }
       });
@@ -1315,9 +1489,17 @@ const AddLCPItems = (source, isExport) => {
   });
 };
 
+const setPreviousValue = CurrnetValue => {
+  previousValue.value = CurrnetValue;
+};
+
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
-  console.log(columnName);
-  if (newValue != previousValue.value && getParameter.id != "0") {
+  if (
+    customerProductLineAccessRight.value.isWrite === true &&
+    quotationDetailResult.value.status === "Draft" &&
+    newValue != previousValue.value &&
+    getParameter.id != "0"
+  ) {
     AutoSaveItem.value.TableName = "saquotes";
     if (tableName2 != null) {
       AutoSaveItem.value.TableName2 = tableName2;
@@ -1459,12 +1641,43 @@ const handleHandsonTableAutoSave = category => {
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
+
     ChargeCodeSettingResult.forEach(item => {
       if (item.selected) {
+        let apiRequestType = 0;
+        switch (item.columnName) {
+          case "pReceipt":
+          case "pDelivery":
+            apiRequestType =
+              quotationDetailResult.value.pid === 6 ? SeaCity : AirCity;
+            break;
+          case "pLoading":
+          case "pDischarge":
+            apiRequestType =
+              quotationDetailResult.value.pid === 6 ? SeaPort : AirPort;
+            break;
+        }
+        if (apiRequestType > 0) {
+          // item.hotTableColumnSetting.type = "autocomplete";
+          item.hotTableColumnSetting.visibleRows = 15;
+          item.hotTableColumnSetting.strict = true;
+          item.hotTableColumnSetting.source = function (_query, process) {
+            const params = {
+              searchKey: _query,
+              requestType: apiRequestType,
+              PageSize: 10,
+              PageIndex: 1,
+              Paginator: true
+            };
+            CommonService.getCityAndPortResult(params).then(a => {
+              const a1 = a.map(item => item.text);
+              process(a1);
+            });
+          };
+        }
         sourceData.push(item);
       }
     });
-    console.log(sourceData);
     freightChargeSettings.value.colHeaders = sourceData.map(
       item => item.headerName
     );
@@ -1597,6 +1810,10 @@ const formatDate = dateInput => {
     <el-card shadow="never" class="relative h-96 overflow-hidden">
       <div class="flex justify-between items-center">
         <div class="flex items-center space-x-2 pt-1 pl-3 font-bold">
+          <span class="text-gray-700"> Quote No:</span>
+          <span class="text-orange-500 font-normal">
+            {{ quotationDetailResult.quoteNo }}</span
+          >
           <span class="text-gray-700"> Quote Status: </span>
           <el-popover placement="right" :width="450" trigger="click">
             <template #reference>
@@ -1633,7 +1850,8 @@ const formatDate = dateInput => {
           <el-button
             v-if="
               customerProductLineAccessRight.isWrite &&
-              quotationDetailResult.status === 'Draft'
+              quotationDetailResult.status === 'Draft' &&
+              qid === 0
             "
             type="primary"
             plain
@@ -1715,6 +1933,7 @@ const formatDate = dateInput => {
                 :row-props="{ gutter: 20 }"
                 label-width="auto"
                 :hasFooter="false"
+                class="custom-margin-bottom"
               />
 
               <div
@@ -1821,34 +2040,33 @@ const formatDate = dateInput => {
               </template>
               <el-tabs v-if="!disabledExportLocalChargeBtn" type="border-card">
                 <el-tab-pane
-                  v-for="(item, index) in exportLocationResult"
-                  :key="index"
+                  v-for="item in exportLocationResult"
+                  :key="item.cityID"
                   :label="item.city"
                 >
-                  <div v-if="customerProductLineAccessRight.isWrite">
-                    <HotTable
-                      :ref="setHotTableRef(item.cityID, `general`)"
-                      :settings="item.generalHotTableSetting"
+                  {{ $t("quote.quotedetail.lcp") }}：
+                  <el-select
+                    v-model="item.localChargePackageSelector"
+                    filterable
+                    clearable
+                    placeholder="Select"
+                    style="width: 280px; padding-bottom: 5px"
+                    @change="AddLCPItems(item, true)"
+                  >
+                    <el-option
+                      v-for="c in item.localChargePackageList"
+                      :key="c.value"
+                      :label="c.text"
+                      :value="c.value"
                     />
-                    <el-divider content-position="left"
-                      >Weight Break Mode</el-divider
-                    >
-                    {{ $t("quote.quotedetail.lcp") }}：
-                    <el-select
-                      v-model="item.localChargePackageSelector"
-                      filterable
-                      placeholder="Select"
-                      style="width: 280px; padding-bottom: 5px"
-                      @change="AddLCPItems(item, true)"
-                    >
-                      <el-option
-                        v-for="c in item.localChargePackageList"
-                        :key="c.value"
-                        :label="c.text"
-                        :value="c.value"
-                      />
-                    </el-select>
-                  </div>
+                  </el-select>
+                  <HotTable
+                    :ref="setHotTableRef(item.cityID, `general`)"
+                    :settings="item.generalHotTableSetting"
+                  />
+                  <el-divider content-position="left"
+                    >Weight Break Mode</el-divider
+                  >
                   <div @mouseleave="handleHandsonTableAutoSave('Export')">
                     <HotTable
                       :ref="setHotTableRef(item.cityID, `weightbreak`)"
@@ -1864,35 +2082,34 @@ const formatDate = dateInput => {
               </template>
               <el-tabs v-if="!disabledImportLocalChargeBtn" type="border-card">
                 <el-tab-pane
-                  v-for="(item, index) in importLocationResult"
-                  :key="index"
+                  v-for="item in importLocationResult"
+                  :key="item.cityID"
                   :label="item.city"
                 >
-                  <div v-if="customerProductLineAccessRight.isWrite">
-                    <HotTable
-                      :ref="setHotTableRef(item.cityID, `general`)"
-                      :settings="item.generalHotTableSetting"
+                  {{ $t("quote.quotedetail.lcp") }}：
+                  <el-select
+                    v-model="item.localChargePackageSelector"
+                    filterable
+                    clearable
+                    placeholder="Select"
+                    style="width: 280px; padding-bottom: 5px"
+                    @change="AddLCPItems(item, false)"
+                  >
+                    <el-option
+                      v-for="c in item.localChargePackageList"
+                      :key="c.value"
+                      :label="c.text"
+                      :value="c.value"
                     />
-                    <el-divider content-position="left"
-                      >Weight Break Mode</el-divider
-                    >
-                    {{ $t("quote.quotedetail.lcp") }}：
-                    <el-select
-                      v-model="item.localChargePackageSelector"
-                      filterable
-                      placeholder="Select"
-                      style="width: 280px; padding-bottom: 5px"
-                      @change="AddLCPItems(item, false)"
-                    >
-                      <el-option
-                        v-for="c in item.localChargePackageList"
-                        :key="c.value"
-                        :label="c.text"
-                        :value="c.value"
-                      />
-                    </el-select>
-                  </div>
-                  <div @mouseleave="handleHandsonTableAutoSave('Export')">
+                  </el-select>
+                  <HotTable
+                    :ref="setHotTableRef(item.cityID, `general`)"
+                    :settings="item.generalHotTableSetting"
+                  />
+                  <el-divider content-position="left"
+                    >Weight Break Mode</el-divider
+                  >
+                  <div @mouseleave="handleHandsonTableAutoSave('Import')">
                     <HotTable
                       :ref="setHotTableRef(item.cityID, `weightbreak`)"
                       :settings="item.weightBreakHotTableSetting"
@@ -1935,13 +2152,17 @@ const formatDate = dateInput => {
               </div>
               <el-input
                 v-else
-                v-model="quotationDetailResult.remark"
+                v-model="quotationDetailResult.remark as string"
                 style="width: 100%"
                 placeholder="Please input"
                 clearable
                 maxlength="500"
                 show-word-limit
                 type="textarea"
+                @focus="setPreviousValue(quotationDetailResult.remark)"
+                @change="
+                  autoSaveTrigger(quotationDetailResult.remark, 'remark', '')
+                "
               />
             </el-collapse-item>
             <el-collapse-item title="SALES INFO" name="8">
@@ -2150,5 +2371,9 @@ const formatDate = dateInput => {
   line-height: 1.5;
   word-break: break-word;
   white-space: normal;
+}
+
+.custom-margin-bottom {
+  margin-bottom: 20px;
 }
 </style>

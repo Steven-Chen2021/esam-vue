@@ -22,7 +22,7 @@ const {
 const { formatDate, formatNumber } = CommonHelper();
 const { toPreView } = usePreView();
 
-const { getQuoteHistoryResult } = QuoteDetailHooks();
+const { getQuoteHistoryResult, getQuotePreviewResult } = QuoteDetailHooks();
 
 const ApproveHeader = ref<any>({});
 const reasonRows = ref<number>(5);
@@ -35,6 +35,9 @@ const showReason = ref<boolean>(false);
 const isApproval = ref<boolean>(false);
 const quoteStatusHistory = ref([]);
 const reasonLabel = ref<string>("");
+const canSign = ref<boolean>(false);
+const authorizedSigner = ref<boolean>(false);
+const unauthorizedSignerMSG = ref<string>("");
 interface RuleForm {
   reason: string;
 }
@@ -57,6 +60,7 @@ const showQuotationStatusHistory = () => {
 
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
+  canSign.value = false;
   await formEl.validate((valid, fields) => {
     if (valid) {
       const params = {
@@ -72,6 +76,12 @@ const submitForm = async (formEl: FormInstance | undefined) => {
             title: "successfully",
             message: "Submit Successfully!",
             type: "success"
+          });
+          getQuotePreviewResult(
+            ApproveHeader.value.quoteid,
+            ApproveHeader.value.pid
+          ).then(res => {
+            console.log(res.returnValue);
           });
         } else {
           ElNotification({
@@ -90,27 +100,39 @@ const getTableData = fDetail => {
 };
 
 const filteredApproveHeader = (ApproveHeader, Category) => {
-  const customerKeys = ["customerName", "customerHQID"];
-  const noNeedDisplayColumns = ["quoteid", "pid"];
-  if (Category === "Customer") {
-    // 只顯示 customerName 和 customerHQID
-    return Object.keys(ApproveHeader)
-      .filter(key => customerKeys.includes(key))
-      .reduce((obj, key) => {
-        obj[key] = ApproveHeader[key];
-        return obj;
-      }, {});
-  } else {
-    // 顯示除了 customerName 和 customerHQID 以外的
-    return Object.keys(ApproveHeader)
-      .filter(
-        key =>
-          !customerKeys.includes(key) && !noNeedDisplayColumns.includes(key)
-      )
-      .reduce((obj, key) => {
-        obj[key] = ApproveHeader[key];
-        return obj;
-      }, {});
+  if (ApproveHeader != null) {
+    const customerKeys = ["customerName", "customerHQID"];
+    const noNeedDisplayColumns = [
+      "quoteid",
+      "pid",
+      "statusCode",
+      "canUseApprovalBtn",
+      "cspProjectID",
+      "currentUserID",
+      "currentStationID",
+      "lang",
+      "errors"
+    ];
+    if (Category === "Customer") {
+      // 只顯示 customerName 和 customerHQID
+      return Object.keys(ApproveHeader)
+        .filter(key => customerKeys.includes(key))
+        .reduce((obj, key) => {
+          obj[key] = ApproveHeader[key];
+          return obj;
+        }, {});
+    } else {
+      // 顯示除了 customerName 和 customerHQID 以外的
+      return Object.keys(ApproveHeader)
+        .filter(
+          key =>
+            !customerKeys.includes(key) && !noNeedDisplayColumns.includes(key)
+        )
+        .reduce((obj, key) => {
+          obj[key] = ApproveHeader[key];
+          return obj;
+        }, {});
+    }
   }
 };
 
@@ -146,11 +168,19 @@ const SubmitSign = catetory => {
 
 onMounted(() => {
   getApproveHeaderResult(getApprovalParameter.id).then(res => {
-    ApproveHeader.value = res.returnValue;
-    console.log("ApproveHeader Data", ApproveHeader.value);
+    authorizedSigner.value = res.isSuccess;
+    if (res.isSuccess) {
+      ApproveHeader.value = res.returnValue;
+      if (ApproveHeader?.value?.statusCode === "Q2") {
+        canSign.value = true;
+      }
+    } else {
+      unauthorizedSignerMSG.value = res.errorMessage;
+    }
   });
   getApproveUserResult(getApprovalParameter.id).then(res => {
     ApproveAvatar.value = res.returnValue;
+    console.log(ApproveAvatar.value);
   });
   getApproveChargeDataResult(getApprovalParameter.id).then(res => {
     if (res && res.isSuccess) {
@@ -163,18 +193,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div v-if="authorizedSigner">
     <el-card shadow="never" class="relative overflow-hidden">
       <!-- Header Section -->
       <div class="bg-white shadow-md flex justify-between h-fit">
         <!-- User Info -->
         <div class="flex items-center">
           <div class="text-gray-500">
-            <el-avatar
-              v-for="(item, index) in ApproveAvatar"
-              :key="index"
-              :src="item.avatar"
-            />
+            <el-tooltip v-for="(item, index) in ApproveAvatar" :key="index">
+              <template #content>
+                {{ `User: (${item.userID})${item.userName}` }}<br />
+                {{ `Reason: ${item.remark}` }}<br />
+                {{ `Sign Date: ${item.signDate}` }}<br />
+              </template>
+              <el-avatar :src="item.avatar" />
+            </el-tooltip>
           </div>
         </div>
         <!-- Action Buttons -->
@@ -214,10 +247,10 @@ onMounted(() => {
             @click="previewQuote"
             >{{ `Preview` }}</el-button
           >
-          <el-button plain @click="SubmitSign('reject')">{{
+          <el-button v-if="canSign" plain @click="SubmitSign('reject')">{{
             `Reject`
           }}</el-button>
-          <el-button plain @click="SubmitSign('approve')">{{
+          <el-button v-if="canSign" plain @click="SubmitSign('approve')">{{
             `Approve`
           }}</el-button>
         </div>
@@ -249,7 +282,7 @@ onMounted(() => {
               />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="submitForm(ruleFormRef)">
+              <el-button v-if="canSign" type="primary" @click="submitForm(ruleFormRef)">
                 Send
               </el-button>
             </el-form-item>
@@ -367,6 +400,9 @@ onMounted(() => {
       </el-collapse>
     </el-card>
   </div>
+  <el-card v-else shadow="never" class="relative overflow-hidden">
+    {{ unauthorizedSignerMSG }}
+  </el-card>
 </template>
 
 <style scoped>

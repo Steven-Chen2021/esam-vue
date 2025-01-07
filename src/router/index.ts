@@ -115,7 +115,7 @@ const sleep = ms => {
 router.beforeEach(async (to: ToRouteType, _from, next) => {
   // // OIDC 驗證邏輯
   const user = await getUser(); // 檢查是否已有登入的用戶;
-  console.log("router.beforeEach", user);
+  // console.log("router.beforeEach", user);
   await sleep(500);
   if (!user && to.path !== "/callback") {
     login();
