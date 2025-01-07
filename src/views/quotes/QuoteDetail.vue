@@ -74,12 +74,8 @@ const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
 const { t } = useI18n();
 const { toPreView } = usePreView();
-const {
-  GetColumnSettingResult,
-  columnSettingResult,
-  DocumentCloudResult,
-  CityAndPortResult
-} = CommonHelper();
+const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
+  CommonHelper();
 
 const { ReconstructDCURL } = UrlHelper();
 
