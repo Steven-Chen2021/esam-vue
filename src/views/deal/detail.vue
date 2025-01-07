@@ -61,9 +61,7 @@ defineOptions({
 });
 import toDoList from "@/components/deal/dealToDoList/dealToDoList.vue";
 import dealRelatedList from "@/components/deal/dealRelatedList/dealRelatedList.vue";
-// #region eMail Notify
-import taskeMailNotify from "@/components/tasks/taskeMailNotify/taskeMailNotify.vue";
-// #endregion
+import dealPLList from "@/components/deal/dealPLList/dealPLList.vue";
 const props = defineProps({
   ParentID: {
     type: String,
@@ -82,7 +80,14 @@ const backToIndex = () => {
     router.go(-1);
   }
 };
-const activeName = ref(["general", "documents", "task"]);
+const activeName = ref([
+  "general",
+  "documents",
+  "task",
+  "detailList",
+  "contact",
+  "quote"
+]);
 const baseRadio = ref("default");
 const dynamicSize = ref();
 const size = ref("disabled");
@@ -274,7 +279,7 @@ onMounted(() => {
   LeadID.value = LID;
   loadDealTypeOptions();
   fetchProfileData();
-  // fetchDCUrl();
+  fetchDCUrl();
 });
 // #region Deal
 const dealFormRef = ref<FormInstance>();
@@ -487,37 +492,38 @@ const dealFormRules = {
                   </div>
                 </div>
                 <div>
-                  <toDoList :CusID="LID" DealID="12" />
+                  <toDoList :CusID="LID" :DealID="CID" />
                 </div>
               </div>
-
-              <!-- <el-form
-                ref="profileFormRef"
-                :model="profileData"
-                :rules="rules"
-                label-width="auto"
-                status-icon
-                label-position="left"
-              >
-                <el-form-item :label="t('deal.profile.dealNo')">
-                  <el-input v-model="profileData['dealNo']" />
-                </el-form-item>
-              </el-form> -->
             </div>
+          </el-collapse-item>
+          <el-collapse-item
+            :title="t('deal.detailList.title')"
+            name="detailList"
+            class="custom-collapse-title"
+          >
+            <dealPLList :DealID="CID" :LeadID="LID" />
+          </el-collapse-item>
+          <el-collapse-item
+            :title="t('deal.quotationList.title')"
+            name="quote"
+            class="custom-collapse-title"
+          >
+            <dealRelatedList :CusID="LID" :DealID="CID" Type="quoteSearch" />
           </el-collapse-item>
           <el-collapse-item
             :title="t('deal.taskList.title')"
             name="task"
             class="custom-collapse-title"
           >
-            <dealRelatedList :CusID="LID" DealID="12" Type="TaskList" />
+            <dealRelatedList :CusID="LID" :DealID="CID" Type="TaskList" />
           </el-collapse-item>
           <el-collapse-item
             :title="t('deal.contactList.title')"
-            name="task"
+            name="contact"
             class="custom-collapse-title"
           >
-            <dealRelatedList :CusID="LID" DealID="12" Type="ContactList" />
+            <dealRelatedList :CusID="LID" :DealID="CID" Type="ContactList" />
           </el-collapse-item>
           <el-collapse-item
             v-if="CID !== '0'"

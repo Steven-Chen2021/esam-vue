@@ -276,6 +276,8 @@ deal:
     title: Linked Contact
   quotationList:
     title: Linked Quotation
+  detailList:
+    title: Details
 task:
   quickfilter:
     priority: Priority

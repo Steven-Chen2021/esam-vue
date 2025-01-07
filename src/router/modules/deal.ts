@@ -3,7 +3,7 @@ import { deal } from "@/router/enums";
 
 export default {
   path: "/deal",
-  redirect: "/deal/detail/153147/48013/DealTest",
+  redirect: "/deal/detail/4/46394/DealTest",
   meta: {
     icon: "ri:hand-coin-line",
     title: $t("menus.dimercoDeal"),
