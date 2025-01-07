@@ -13,21 +13,21 @@ import {
 import type { TableInstance } from "element-plus";
 import { listCTL } from "../../../views/search-management/useResultListHooks";
 import { quickFilterCTL } from "../../../views/search-management/useQuickFilterHooks";
+import DealProfileService from "@/services/deal/DealProfileService";
+import CommonService from "@/services/commonService";
+import { ElMessage } from "element-plus";
+import { deepClone } from "@/utils/common";
 import { useDetail } from "../../../views/search-management/hooks";
 const { router, toQuoteDetail } = useDetail();
 const {
-  fetchListData,
-  tableData,
   currentPage,
   pageSize,
   total,
   sortField,
   sortOrder,
-  handleSortChange,
   handlePageChange,
   handleSizeChange,
   handleConditionalSearch,
-  searchParams,
   handleResetConditionalSearch,
   loading,
   requestCategory,
@@ -46,7 +46,6 @@ const {
   handleQuickFilterClick,
   fetchData,
   fetchQuickFilterData,
-  fetchAdvancedFilterData,
   advancedFilterForm,
   basicFilterTopForm,
   initAdvancedFilter,
@@ -159,45 +158,152 @@ const multipleSelection = ref([]);
 const selectRow = (selection, row) => {
   console.log("selectRwo selection", selection);
   console.log("selectRwo row", row);
-  const selectID = ref([]);
+  const selectID = row["id"];
+  const type = ref("");
   switch (props.Type) {
-    case "TaskList":
-      selectID.value = row["taskID"];
+    case "quoteSearch":
+      type.value = "quote";
       break;
     case "ContactList":
-      selectID.value = row["id"];
+      type.value = "contact";
+      break;
+    case "TaskList":
+      type.value = "task";
       break;
   }
-  if (selection && selection.length > 0) {
-    console.log("checked");
-    updateSelectRow([selectID.value], true);
-  } else {
-    console.log("unchecked");
-    updateSelectRow([selectID.value], false);
-  }
+  const linked = selection.filter(item => item["id"] === selectID);
+  const param = {
+    DealID: props.DealID,
+    Type: type.value,
+    SourceID: selectID,
+    Linked: linked && linked.length > 0 ? true : false
+  };
+  DealProfileService.updateLinkData(param)
+    .then(d => {
+      console.log("autosave data", d);
+      ElMessage({
+        message: t("customer.profile.autoSaveSucAlert"),
+        grouping: true,
+        type: "success"
+      });
+      // fetchListData();
+    })
+    .catch(err => {
+      console.log("autosave error", err);
+      ElMessage({
+        message: t("customer.profile.autoSaveFailAlert"),
+        grouping: true,
+        type: "warning"
+      });
+    });
 };
 const handleSelectionChange = val => {
   multipleSelection.value = val;
   console.log("handleSelectionChange val", val);
 };
-const handleSelectAll = val => {
-  // dialogVisible.value = true;
-  console.log("handleSelectAll val", val);
-  const selectIDs = ref([]);
-  switch (props.Type) {
-    case "TaskList":
-      selectIDs.value = val.map(item => item.taskID);
-      break;
-    case "ContactList":
-      selectIDs.value = val.map(item => item.id);
-      break;
-  }
-  console.log("selectIDs", selectIDs.value);
-};
 const updateSelectRow = (detailIDs, updateType) => {};
 // const dialogVisible = ref(false);
 const listTableRef = ref<TableInstance>();
 const showAutoSaveAlert = ref(true);
+const tableData = ref([]);
+const searchParams = ref({});
+const fetchListData = async () => {
+  switch (requestCategory.value) {
+    case tasks:
+      loading.value = true;
+      DealProfileService.getLinkedTaskDataList(searchParams.value)
+        .then(data => {
+          if (data.isSuccess) {
+            tableData.value = data.returnValue;
+            checkList();
+          } else {
+            tableData.value = [];
+            total.value = 0;
+            ElMessage({
+              message: data.errorMessage,
+              grouping: true,
+              type: "warning"
+            });
+          }
+          loading.value = false;
+        })
+        .catch(err => {
+          tableData.value = [];
+          console.debug("getCustomerList error", err);
+          loading.value = false;
+        });
+      break;
+    case contact:
+      loading.value = true;
+      DealProfileService.getLinkedContactDataList(searchParams.value)
+        .then(data => {
+          if (data.isSuccess) {
+            tableData.value = data.returnValue;
+            checkList();
+          } else {
+            tableData.value = [];
+            total.value = 0;
+            ElMessage({
+              message: data.errorMessage,
+              grouping: true,
+              type: "warning"
+            });
+          }
+          loading.value = false;
+        })
+        .catch(err => {
+          tableData.value = [];
+          console.debug("getCustomerList error", err);
+          loading.value = false;
+        });
+      break;
+    case quotes:
+      loading.value = true;
+      DealProfileService.getLinkedQuoteDataList(searchParams.value)
+        .then(data => {
+          if (data.isSuccess) {
+            tableData.value = data.returnValue;
+            checkList();
+          } else {
+            tableData.value = [];
+            total.value = 0;
+            ElMessage({
+              message: data.errorMessage,
+              grouping: true,
+              type: "warning"
+            });
+          }
+          loading.value = false;
+        })
+        .catch(err => {
+          tableData.value = [];
+          console.debug("getCustomerList error", err);
+          loading.value = false;
+        });
+      break;
+  }
+};
+const checkList = () => {
+  const selectList = tableData.value.filter(item => item.used === 1);
+  console.log("selectList", selectList);
+
+  // 使用 nextTick 确保 table 已经渲染完毕
+  nextTick(() => {
+    selectList.forEach(row => {
+      listTableRef.value!.toggleRowSelection(row, true);
+    });
+  });
+};
+const cellClass = ({ column }) => {
+  if (column.type === "selection") {
+    return "all-disabled";
+  }
+};
+const handleSortChange = ({ prop, order }) => {
+  searchParams.value["sort"] = prop;
+  searchParams.value["order"] = order === "ascending" ? "asc" : "desc";
+  fetchListData(); // 重新获取排序后的数据
+};
 onMounted(() => {
   setTimeout(() => {
     showAutoSaveAlert.value = false;
@@ -217,19 +323,19 @@ onMounted(() => {
       ColumnSettingParam.value = ContactGridColumnSetting;
       requestCategory.value = contact;
       break;
+    case "quoteSearch":
+      QuickFilterColumnListParam.value = GetQuoteQuickFilterColumnList;
+      CustomizeQuickFilterSettingParam.value =
+        CustomizeQuickFilterSettingFromQuoteSearch;
+      ColumnSettingParam.value = QuoteGridColumnSetting;
+      requestCategory.value = quotes;
+      break;
   }
+  searchParams.value["DealID"] = props.DealID;
   pageSize.value = 500;
-  // TODO: update
-  searchParams.ConditionalSettings = [
-    {
-      enableOnSearchView: false,
-      filterKey: "hqid",
-      value: "48013"
-    }
-  ];
-  fetchListData();
   fetchData();
-  fetchAdvancedFilterData();
+  fetchListData();
+  // fetchAdvancedFilterData();
 });
 </script>
 <template>
@@ -250,9 +356,9 @@ onMounted(() => {
       style="width: 100%; min-height: 200px"
       :max-height="300"
       stripe
+      :header-cell-class-name="cellClass"
       @sort-change="handleSortChange"
       @select="selectRow"
-      @select-all="handleSelectAll"
     >
       <el-table-column type="selection" width="55" />
       <el-table-column
@@ -320,6 +426,10 @@ onMounted(() => {
   </div>
 </template>
 <style scoped>
+::v-deep .all-disabled .el-checkbox__input .el-checkbox__inner {
+  display: none;
+}
+
 :deep(#quick-filter-drawer .el-form-item--default) {
   margin-bottom: 18px !important;
 }

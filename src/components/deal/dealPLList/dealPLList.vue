@@ -4,7 +4,8 @@ import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import CommonService from "@/services/commonService";
 import TaskProfileService from "@/services/tasks/TaskProfileService";
-import { deepClone, isEqualArray } from "@/utils/common";
+import DealProfileService from "@/services/deal/DealProfileService";
+import { deepClone } from "@/utils/common";
 import "handsontable/dist/handsontable.full.css";
 import { HotTable } from "@handsontable/vue3";
 import { registerAllModules } from "handsontable/registry";
@@ -16,7 +17,7 @@ defineComponent({
   }
 });
 const props = defineProps({
-  TaskID: {
+  DealID: {
     type: String,
     required: false
   },
@@ -42,14 +43,14 @@ const handleAfterChange = (changes, source) => {
       console.log("handleAfterChange newData", newData);
       console.log("handleAfterChange oldData", oldData);
       if (!isObjectEqual(newData, oldData)) {
-        updateActionItem();
+        // updateActionItem();
       }
     }, 1000);
   }
 };
 const handleRemoveRow = (index, amount) => {
   console.debug("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
-  updateActionItem();
+  // updateActionItem();
 };
 const userAuth = ref({});
 const tableDataInit = ref([]);
@@ -87,14 +88,13 @@ const textValidor = (value, callback) => {
 const getActionItemResult = async () => {
   try {
     const [tableColumns, tableData, result3] = await Promise.all([
-      CommonService.gethandsontableColumnSettingResult(36),
-      TaskProfileService.getTaskActionItemResult(props.TaskID),
+      CommonService.gethandsontableColumnSettingResult(37),
+      DealProfileService.getDealDetailsResult(props.DealID),
       CommonService.getUserAccessByCustomer(props.LeadID, 0)
     ]);
     userAuth.value = deepClone(result3.returnValue);
     tableSetting.value.readOnly = !userAuth.value["isWrite"];
     tableSetting.value.dropdownMenu = userAuth.value["isWrite"];
-    // const response = await CommonService.gethandsontableColumnSettingResult(36);
     if (tableColumns != null) {
       const setting = deepClone(tableColumns.returnValue);
       tableSetting.value["colHeaders"] = setting
@@ -108,46 +108,23 @@ const getActionItemResult = async () => {
           item["dateFormat"] = "MMM DD, YYYY";
           item["correctFormat"] = true;
         } else if (item["type"] === "text") {
-          item["validator"] = textValidor;
-        } else if (
-          item["type"] === "autocomplete" &&
-          item["data"] === "owner"
-        ) {
-          item["source"] = function (_query, process) {
-            const params = {
-              SearchKey: _query,
-              OptionsResourceType: 135,
-              PageSize: 10,
-              PageIndex: 1,
-              Paginator: true
-            };
-            CommonService.getAutoCompleteList(params).then(a => {
-              const a1 = a.map(item => item.text);
-              process(a1);
-            });
-          };
+          // item["validator"] = textValidor;
+        } else if (item["type"] === "autocomplete") {
+          // item["source"] = function (_query, process) {
+          //   const params = {
+          //     SearchKey: _query,
+          //     OptionsResourceType: 137,
+          //     PageSize: 10,
+          //     PageIndex: 1,
+          //     Paginator: true
+          //   };
+          //   CommonService.getAutoCompleteList(params).then(a => {
+          //     const a1 = a.map(item => item.text);
+          //     process(a1);
+          //   });
+          // };
           item["strict"] = true;
           item["visibleRows"] = 15;
-          // tableSetting.value["columns"][index] = {
-          //   data: "owner",
-          //   type: "autocomplete",
-          //   visibleRows: 15,
-          //   source(_query, process) {
-          //     console.log("autocomplete query", _query);
-          //     const params = {
-          //       SearchKey: _query,
-          //       OptionsResourceType: 135,
-          //       PageSize: 10,
-          //       PageIndex: 1,
-          //       Paginator: true
-          //     };
-          //     CommonService.getAutoCompleteList(params).then(a => {
-          //       const a1 = a.map(item => item.text);
-          //       process(a1);
-          //     });
-          //   },
-          //   strict: true
-          // };
         }
         item["allowEmpty"] = false;
       });
@@ -163,17 +140,17 @@ const getActionItemResult = async () => {
         tableData.returnValue &&
         Array.isArray(tableData.returnValue)
       ) {
-        const dateColumns = tableSetting.value["columns"]
-          .filter(item => item["type"] === "date")
-          .map(item => item["data"]);
-        tableData.returnValue.forEach(item => {
-          dateColumns.forEach(c => {
-            item[c] = !item[c] ? "" : item[c];
-            if (item[c] && item[c] !== "") {
-              item[c] = dayjs(item[c]).format("MMM DD, YYYY");
-            }
-          });
-        });
+        // const dateColumns = tableSetting.value["columns"]
+        //   .filter(item => item["type"] === "date")
+        //   .map(item => item["data"]);
+        // tableData.returnValue.forEach(item => {
+        //   dateColumns.forEach(c => {
+        //     item[c] = !item[c] ? "" : item[c];
+        //     if (item[c] && item[c] !== "") {
+        //       item[c] = dayjs(item[c]).format("MMM DD, YYYY");
+        //     }
+        //   });
+        // });
         tableSetting.value["data"] = deepClone(tableData.returnValue);
         tableDataInit.value = deepClone(tableData.returnValue);
       }
@@ -226,11 +203,11 @@ const updateActionItem = () => {
   console.log("valid rowArray", rowArray);
   const updateParams = {
     taskActionItems: newData,
-    taskID: props.TaskID
+    taskID: props.DealID
   };
   hotTableRef.value.hotInstance.validateRows(rowArray, valid => {
     if (valid) {
-      if (props.TaskID == "0") return;
+      if (props.DealID == "0") return;
       console.log("valid");
       TaskProfileService.saveTaskActionItemResult(updateParams)
         .then(data => {
@@ -265,25 +242,6 @@ const updateActionItem = () => {
     }
   });
 };
-// const handleFocusOut = event => {
-//   // 判断是否从 hotTableRef 移开
-//   // console.log("Focus moved outside the table1");
-//   const hotElement = hotTableRef.value.hotInstance.rootElement;
-//   // console.log("handleFocusOut rootElement", hotElement);
-//   // console.log("event.relatedTarget", event.relatedTarget);
-//   if (hotElement && !hotElement.contains(event.relatedTarget)) {
-//     console.log("Focus moved outside the table");
-//     const newData = tableSetting.value.data.filter(
-//       item => item.actionItem && item.actionItem !== ""
-//     );
-//     const oldData = tableDataInit.value.filter(item => item.actionItem);
-//     console.log("newData", newData);
-//     console.log("oldData", oldData);
-//     if (!isEqualArray(newData, oldData)) {
-//       updateActionItem();
-//     }
-//   }
-// };
 const showAutoSaveAlert = ref(true);
 onMounted(() => {
   setTimeout(() => {
@@ -305,7 +263,7 @@ watch(tableSetting.value, newVal => {
 <template>
   <div>
     <el-alert
-      v-if="TaskID !== '0' && showAutoSaveAlert"
+      v-if="DealID !== '0' && showAutoSaveAlert"
       :title="t('task.action.alert')"
       type="success"
       show-icon
