@@ -60,6 +60,7 @@ const showQuotationStatusHistory = () => {
 
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
+  canSign.value = false;
   await formEl.validate((valid, fields) => {
     if (valid) {
       const params = {
@@ -76,7 +77,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
             message: "Submit Successfully!",
             type: "success"
           });
-          canSign.value = false;
           getQuotePreviewResult(
             ApproveHeader.value.quoteid,
             ApproveHeader.value.pid
@@ -282,7 +282,7 @@ onMounted(() => {
               />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="submitForm(ruleFormRef)">
+              <el-button v-if="canSign" type="primary" @click="submitForm(ruleFormRef)">
                 Send
               </el-button>
             </el-form-item>
