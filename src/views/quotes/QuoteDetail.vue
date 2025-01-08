@@ -74,12 +74,8 @@ const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
 const { t } = useI18n();
 const { toPreView } = usePreView();
-const {
-  GetColumnSettingResult,
-  columnSettingResult,
-  DocumentCloudResult,
-  CityAndPortResult
-} = CommonHelper();
+const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
+  CommonHelper();
 
 const { ReconstructDCURL } = UrlHelper();
 
@@ -1195,6 +1191,14 @@ const handleAfterSelection = (row, column, row2, column2) => {
 };
 
 const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
+  console.log(index);
+  console.log(amount);
+  console.log(physicalRows);
+  console.log(source);
+  console.log(freightChargeResult);
+  console.log(freightChargeSettings);
+  console.log(exportLocationResult);
+  console.log(importLocationResult);
   saveFreightCharge();
 };
 
@@ -1289,15 +1293,6 @@ const saveData = () => {
           });
         }
       });
-      // console.debug(detailStatus);
-      // console.debug("result", quotationDetailResult.value);
-      // console.debug(
-      //   "freightChargeSettings-data",
-      //   freightChargeSettings.value.data
-      // );
-      // console.debug("frightChargeParams", frightChargeParams.value);
-      // console.debug("exportLocationResult", exportLocationResult);
-      // console.debug("importLocationResult", importLocationResult);
     })
     .catch(error => {
       console.error("Validation failed:", error);
@@ -1417,21 +1412,50 @@ const handleCheckboxGroupChange = (values: string[]) => {
   const testobj = selectedItems.map(item => item.hotTableColumnSetting);
   console.log(testobj);
   testobj.forEach(i => {
-    if (i.data === "pReceipt") {
+    let apiRequestType = 0;
+    switch (i.data) {
+      case "pReceipt":
+      case "pDelivery":
+        apiRequestType =
+          quotationDetailResult.value.pid === 6 ? SeaCity : AirCity;
+        break;
+      case "pLoading":
+      case "pDischarge":
+        apiRequestType =
+          quotationDetailResult.value.pid === 6 ? SeaPort : AirPort;
+        break;
+    }
+    if (apiRequestType > 0) {
       i.source = function (_query, process) {
         const params = {
-          SearchKey: _query,
-          OptionsResourceType: 135,
+          searchKey: _query,
+          requestType: apiRequestType,
           PageSize: 10,
           PageIndex: 1,
           Paginator: true
         };
-        CommonService.getAutoCompleteList(params).then(a => {
+        CommonService.getCityAndPortResult(params).then(a => {
           const a1 = a.map(item => item.text);
           process(a1);
         });
       };
     }
+
+    // if (i.data === "pReceipt") {
+    //   i.source = function (_query, process) {
+    //     const params = {
+    //       SearchKey: _query,
+    //       OptionsResourceType: 135,
+    //       PageSize: 10,
+    //       PageIndex: 1,
+    //       Paginator: true
+    //     };
+    //     CommonService.getAutoCompleteList(params).then(a => {
+    //       const a1 = a.map(item => item.text);
+    //       process(a1);
+    //     });
+    //   };
+    // }
   });
 
   freightChargeSettings.value.columns = selectedItems.map(
@@ -1933,7 +1957,7 @@ const formatDate = dateInput => {
                 :row-props="{ gutter: 20 }"
                 label-width="auto"
                 :hasFooter="false"
-                class="custom-margin-bottom"
+                style="margin-bottom: 10px"
               />
 
               <div
@@ -2375,5 +2399,9 @@ const formatDate = dateInput => {
 
 .custom-margin-bottom {
   margin-bottom: 20px;
+}
+
+::v-deep(.el-col.is-guttered) {
+  margin-bottom: 10px;
 }
 </style>

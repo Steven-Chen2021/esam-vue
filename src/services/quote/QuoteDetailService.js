@@ -179,7 +179,7 @@ class QuoteDetailService {
   async getQuoteLCPResult(PLCode, IsExport, cityID) {
     try {
       const url = "/api/Quote/QuoteLCPList";
-      const fullUrl = `${url}?productLineCode=${PLCode}&IsExport=${IsExport}&cityID=${cityID}`;
+      const fullUrl = `${url}?PID=${PLCode}&IsExport=${IsExport}&cityID=${cityID}`;
       const response = await API.get(fullUrl);
       return response;
     } catch (error) {
