@@ -214,6 +214,34 @@ const fetchListData = async () => {
       DealProfileService.getLinkedTaskDataList(searchParams.value)
         .then(data => {
           if (data.isSuccess) {
+            data.returnValue.forEach(a => {
+              if (
+                a["appointmentStartDate"] &&
+                a["appointmentStartDate"] !== ""
+              ) {
+                if (a["appointmentEndDate"] && a["appointmentEndDate"] !== "") {
+                  const date1 = dayjs(a["appointmentStartDate"]);
+                  const date2 = dayjs(a["appointmentEndDate"]);
+
+                  // 比较两个日期的 date 部分是否相同
+                  const isSameDate = date1.isSame(date2, "date");
+                  if (isSameDate) {
+                    a["appointmentStartDate"] =
+                      `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("HH:mm")}`;
+                  } else {
+                    a["appointmentStartDate"] =
+                      `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("MMM DD, YYYY, HH:mm")}`;
+                  }
+                } else {
+                  a["appointmentStartDate"] =
+                    `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")}`;
+                }
+              }
+              if (a["dueDate"] && a["dueDate"] !== "") {
+                a["dueDate"] = `${dayjs(a["dueDate"]).format("MMM DD, YYYY")}`;
+              }
+              a["taskStatus"] = a["status"];
+            });
             tableData.value = data.returnValue;
             checkList();
           } else {
@@ -238,6 +266,10 @@ const fetchListData = async () => {
       DealProfileService.getLinkedContactDataList(searchParams.value)
         .then(data => {
           if (data.isSuccess) {
+            data.returnValue.forEach(a => {
+              a["vip"] =
+                a["vip"] || a["vip"].toLowerCase() === "true" ? "Yes" : "No";
+            });
             tableData.value = data.returnValue;
             checkList();
           } else {
@@ -392,6 +424,18 @@ onMounted(() => {
             </template>
           </el-popover>
         </template>
+        <!-- <template #default="scope">
+          <el-popover
+            placement="top-start"
+            trigger="hover"
+            :content="scope.row[col.filterKey]"
+            effect="dark"
+          >
+            <template #reference>
+              {{ scope.row[col.filterKey] }}
+            </template>
+          </el-popover>
+        </template> -->
       </el-table-column>
       <el-table-column fixed="right" label="Operations" min-width="120">
         <template #default="scope">

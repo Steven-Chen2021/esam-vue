@@ -102,7 +102,10 @@ const getActionItemResult = async () => {
         .map(item => item.headerName);
       tableSetting.value["columns"] = setting
         .filter(item => item.selected)
-        .map(item => item.hotTableColumnSetting);
+        .map(item => ({
+          ...item.hotTableColumnSetting,
+          apisource: item.apisource
+        }));
       tableSetting.value["columns"].forEach((item, index) => {
         if (item["type"] === "date") {
           item["dateFormat"] = "MMM DD, YYYY";
@@ -110,19 +113,18 @@ const getActionItemResult = async () => {
         } else if (item["type"] === "text") {
           // item["validator"] = textValidor;
         } else if (item["type"] === "autocomplete") {
-          // item["source"] = function (_query, process) {
-          //   const params = {
-          //     SearchKey: _query,
-          //     OptionsResourceType: 137,
-          //     PageSize: 10,
-          //     PageIndex: 1,
-          //     Paginator: true
-          //   };
-          //   CommonService.getAutoCompleteList(params).then(a => {
-          //     const a1 = a.map(item => item.text);
-          //     process(a1);
-          //   });
-          // };
+          console.log("apisource", item.apisource);
+          item["source"] = function (_query, process) {
+            const params = {
+              SearchKey: _query
+            };
+            CommonService.getAutoCompleteListNew(item.apisource, params).then(
+              a => {
+                const a1 = a.map(item => item.text);
+                process(a1);
+              }
+            );
+          };
           item["strict"] = true;
           item["visibleRows"] = 15;
         }

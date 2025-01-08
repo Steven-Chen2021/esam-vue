@@ -21,6 +21,18 @@ class CustomerQuickFilterService {
       return [];
     }
   }
+  async getAutoCompleteListNew(url, params) {
+    try {
+      // const url = "/api/Common/OptionsResource";
+      const queryString = new URLSearchParams(params).toString();
+      const fullUrl = `${url}&${queryString}`;
+      const response = await API.get(fullUrl);
+      return response.returnValue;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
   async getDropdownList(Url) {
     try {
       const response = await API.get(Url);
