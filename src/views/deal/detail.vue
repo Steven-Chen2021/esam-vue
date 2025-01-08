@@ -504,25 +504,24 @@ const dealFormRules = {
           >
             <dealPLList :DealID="CID" :LeadID="LID" />
           </el-collapse-item>
-          <el-collapse-item
-            :title="t('deal.quotationList.title')"
-            name="quote"
-            class="custom-collapse-title"
-          >
+          <el-collapse-item name="quote" class="custom-collapse-title">
+            <template #title>
+              {{ t("deal.quotationList.title") }} ({{
+                profileData["quoteCount"]
+              }})
+            </template>
             <dealRelatedList :CusID="LID" :DealID="CID" Type="quoteSearch" />
           </el-collapse-item>
-          <el-collapse-item
-            :title="t('deal.taskList.title')"
-            name="task"
-            class="custom-collapse-title"
-          >
+          <el-collapse-item name="task" class="custom-collapse-title"
+            ><template #title>
+              {{ t("deal.taskList.title") }} ({{ profileData["taskCount"] }})
+            </template>
             <dealRelatedList :CusID="LID" :DealID="CID" Type="TaskList" />
           </el-collapse-item>
-          <el-collapse-item
-            :title="t('deal.contactList.title')"
-            name="contact"
-            class="custom-collapse-title"
-          >
+          <el-collapse-item name="contact" class="custom-collapse-title"
+            ><template #title>
+              {{ t("deal.contactList.title") }} ({{ profileData["taskCount"] }})
+            </template>
             <dealRelatedList :CusID="LID" :DealID="CID" Type="ContactList" />
           </el-collapse-item>
           <el-collapse-item
