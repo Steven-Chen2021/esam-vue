@@ -558,15 +558,23 @@ const handleFilterBtnClick = item => {
 };
 // #endregion
 
-const handleCopyQuote = quoteID => {
+const handleCopyQuote = (quoteID, PID) => {
   const params = {
     quoteid: quoteID
   };
   copyQuote(params)
     .then(res => {
-      if (res.isSuccess && res.returnValue > 0) console.log(res);
+      if (res && res.isSuccess) {
+        console.log(res);
+      }
+
       toQuoteDetail(
-        { id: res.returnValue, qname: "Copy Quote", pagemode: "edit" },
+        {
+          id: res.returnValue.quoteid,
+          qname: res.returnValue.quoteNo,
+          pid: PID,
+          pagemode: "copy"
+        },
         "params"
       );
     })
@@ -1044,7 +1052,12 @@ watch(
             link
             type="primary"
             size="small"
-            @click="handleCopyQuote(scope.row.qid)"
+            @click="
+              handleCopyQuote(
+                scope.row.qid,
+                scope.row.productLineName === 'Ocean' ? '6' : '2'
+              )
+            "
             >{{ `Copy` }}</el-button
           >
         </template>

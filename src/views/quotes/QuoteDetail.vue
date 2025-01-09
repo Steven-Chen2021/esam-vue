@@ -299,6 +299,7 @@ const dataPermissionExtension = () => {
             case "customerName":
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
               quotationDetailResult.value.customerName = `${quotationDetailResult.value.customerName} `;
+              console.log(customerProductLineAccessRight.value.isWrite);
               break;
             case "dimensionFactor":
               ctl = quoteDetailColumns.find(f => f.prop === "dimensionFactor");
@@ -311,9 +312,11 @@ const dataPermissionExtension = () => {
               quotationDetailResult.value.volumeShareForAgent = `${quotationDetailResult.value.volumeShareForAgent}:${quotationDetailResult.value.volumeShareForDimerco}`;
               break;
           }
+
           if (
-            ctl != undefined &&
-            customerProductLineAccessRight.value.isWrite === false
+            (ctl != undefined &&
+              customerProductLineAccessRight.value.isWrite === false) ||
+            (getParameter.pagemode === "copy" && ctl.prop === "productLineCode")
           ) {
             ctl.valueType = "text"; // 確保 ctl 存在後操作
           }
@@ -347,7 +350,9 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onSelect: (item: { text: string; value: number }) => {
         quotationDetailResult.value.customerHQID = item.value;
-        getProductLineByCustomerResult(item.value);
+        if (getParameter.pagemode === "copy") {
+          getProductLineByCustomerResult(item.value);
+        }
         getAttentionToResult(item.value);
         if (previousValue.value != undefined && item.value != undefined) {
           autoSaveTrigger(item.value, "customerName");
@@ -393,8 +398,8 @@ let quoteDetailColumns: PlusColumn[] = [
     label: "Product Line",
     prop: "productLineCode",
     valueType: "select",
+    width: 120,
     options: productLineResult,
-    minWidth: "500px",
     colProps: {
       span: 5
     },
@@ -491,30 +496,31 @@ let quoteDetailColumns: PlusColumn[] = [
 
         if (getParameter.id === "0") {
         }
-        UserAccessRightByCustomerProductLine(
-          quotationDetailResult.value.customerHQID,
-          _pid
-        ).then(res => {
-          customerProductLineAccessRight.value = res.returnValue;
-          customerProductLineAccessRight.value.isWrite =
-            getParameter.pagemode === "view"
-              ? false
-              : customerProductLineAccessRight.value.isWrite;
+        if (getParameter.pagemode != "copy") {
+          UserAccessRightByCustomerProductLine(
+            quotationDetailResult.value.customerHQID,
+            _pid
+          ).then(res => {
+            customerProductLineAccessRight.value = res.returnValue;
+            customerProductLineAccessRight.value.isWrite =
+              getParameter.pagemode === "view"
+                ? false
+                : customerProductLineAccessRight.value.isWrite;
 
-          const dcParams = { KeyValue: qid.value, DCType: "NRA" };
-          DocumentCloudResult(dcParams).then(res => {
-            if (res && res.isSuccess) {
-              const result = ReconstructDCURL(
-                res.returnValue,
-                customerProductLineAccessRight.value.isWrite,
-                customerProductLineAccessRight.value.isReadAdvanceColumn,
-                "NRA"
-              );
-              dcUrl.value = result;
-            }
+            const dcParams = { KeyValue: qid.value, DCType: "NRA" };
+            DocumentCloudResult(dcParams).then(res => {
+              if (res && res.isSuccess) {
+                const result = ReconstructDCURL(
+                  res.returnValue,
+                  customerProductLineAccessRight.value.isWrite,
+                  customerProductLineAccessRight.value.isReadAdvanceColumn,
+                  "NRA"
+                );
+                dcUrl.value = result;
+              }
+            });
           });
-        });
-
+        }
         if (
           quotationDetailResult.value.signature === null ||
           quotationDetailResult.value.signature === ""
@@ -865,12 +871,20 @@ const saveFreightCharge = () => {
   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
   frightChargeParams.value.pid = quotationDetailResult.value.pid;
   frightChargeParams.value.quoteFreights = filteredData;
+  console.log("saveFreightCharge");
   saveFreightChargeResult(frightChargeParams.value).then(res => {
+    console.log(res);
     if (res && res.isSuccess) {
       ElNotification({
         title: "successfully",
         message: "Freight Charge Save Successfully!",
         type: "success"
+      });
+    } else {
+      ElNotification({
+        title: "Failed.",
+        message: res.errorMessage,
+        type: "error"
       });
     }
   });
@@ -878,13 +892,15 @@ const saveFreightCharge = () => {
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
+    console.log(changes[0][2] != changes[0][3]);
     hotTableRef.value.hotInstance.validateCells(valid => {
       if (
-        valid &&
-        frightChargeParams.value.quoteFreights.length > 0 &&
+        // valid &&
+        // frightChargeParams.value.quoteFreights.length > 0 &&
         changes[0][2] != changes[0][3]
       ) {
-        saveFreightCharge;
+        console.log("save");
+        saveFreightCharge();
       }
     });
 
@@ -1190,16 +1206,31 @@ const handleAfterSelection = (row, column, row2, column2) => {
   );
 };
 
+const handleFrtBeforeRemoveRow = (index, amount, physicalRows, source) => {
+  exportLocationResult.value = exportLocationResult.value
+    .filter(item => item.city !== freightChargeResult.value[index].pReceipt)
+    .filter(item => item.city !== freightChargeResult.value[index].pLoading);
+
+  importLocationResult.value = importLocationResult.value
+    .filter(item => item.city !== freightChargeResult.value[index].pDelivery)
+    .filter(item => item.city !== freightChargeResult.value[index].pDischarge);
+};
 const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
-  console.log(index);
-  console.log(amount);
-  console.log(physicalRows);
-  console.log(source);
-  console.log(freightChargeResult);
-  console.log(freightChargeSettings);
-  console.log(exportLocationResult);
-  console.log(importLocationResult);
   saveFreightCharge();
+  const exportTransformedData = transformData(
+    exportLocationResult.value,
+    frightChargeParams.value.quoteID,
+    quotationDetailResult.value.pid as number,
+    true
+  );
+  const importTransformedData = transformData(
+    importLocationResult.value,
+    frightChargeParams.value.quoteID,
+    quotationDetailResult.value.pid as number,
+    false
+  );
+  saveLocalChargeResult(exportTransformedData);
+  saveLocalChargeResult(importTransformedData);
 };
 
 const handleRemoveRow = (index, amount, physicalRows, source) => {
@@ -1230,6 +1261,7 @@ const freightChargeSettings = ref({
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
   afterRemoveRow: handleFrtRemoveRow,
+  beforeRemoveRow: handleFrtBeforeRemoveRow,
   readOnly: false
 });
 
@@ -1728,7 +1760,6 @@ onMounted(() => {
     const _pid = Array.isArray(getParameter.pid)
       ? parseInt(getParameter.pid[0], 10)
       : parseInt(getParameter.pid, 10);
-
     getQuotationDetailResult(qid.value, _pid).then(() => {
       historyBtnVisible.value = true;
       deleteBtnVisible.value = true;
@@ -1768,11 +1799,14 @@ onMounted(() => {
         quotationDetailResult.value.customerHQID,
         _pid
       ).then(res => {
+        console.log(res);
         customerProductLineAccessRight.value = res.returnValue;
         customerProductLineAccessRight.value.isWrite =
           getParameter.pagemode === "view"
             ? false
-            : customerProductLineAccessRight.value.isWrite;
+            : getParameter.pagemode === "copy"
+              ? true
+              : customerProductLineAccessRight.value.isWrite;
         dataPermissionExtension();
       });
     });
