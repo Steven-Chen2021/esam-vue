@@ -8,6 +8,9 @@ const GetCustomerQuickFilterColumnList = 1,
   QuoteGridColumnSetting = 72,
   QuoteGridResult = 73,
   QuoteDetailColumnAccessRight = 205,
+  GetDealQuickFilterColumnList = 100,
+  CustomizeQuickFilterSettingFromDealSearch = 101,
+  DealGridColumnSetting = 102,
   AirCity = 9,
   AirPort = 10,
   SeaCity = 11,
@@ -57,5 +60,8 @@ export {
   CustomizeQuickFilterSettingFromApprovalSearch,
   ApprovalGridColumnSetting,
   ApprovalGridResult,
-  ApprovalColumnList
+  ApprovalColumnList,
+  GetDealQuickFilterColumnList,
+  CustomizeQuickFilterSettingFromDealSearch,
+  DealGridColumnSetting
 };
