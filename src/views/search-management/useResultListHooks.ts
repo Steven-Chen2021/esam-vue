@@ -2,9 +2,17 @@ import CustomerSearchService from "@/services/customer/CustomerSearchService";
 import ContactSearchService from "@/services/contact/ContactSearchService";
 import TaskSearchService from "@/services/tasks/TaskSearchService";
 import QuoteSearchService from "@/services/quote/QuoteSearchService";
+import DealSearchService from "@/services/deal/DealSearchService";
 import ApprovalSearchService from "@/services/approval/approvalSearchService";
 import { ElMessage } from "element-plus";
-import { contact, customer, tasks, quotes, approval } from "@/router/enums";
+import {
+  contact,
+  customer,
+  tasks,
+  quotes,
+  approval,
+  deal
+} from "@/router/enums";
 import dayjs from "dayjs";
 import { reactive, ref } from "vue";
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
@@ -272,6 +280,25 @@ export function listCTL() {
             })
             .catch(err => {
               console.debug("getApprovalList error", err);
+              loading.value = false;
+            });
+        }
+        break;
+      case deal:
+        {
+          loading.value = true;
+          DealSearchService.getDealList(searchParams)
+            .then(data => {
+              if (data && data.isSuccess) {
+                tableData.value = data.returnValue.results;
+                if (data) total.value = data.returnValue.totalRecord;
+              } else {
+                tableData.value = null;
+              }
+              loading.value = false;
+            })
+            .catch(err => {
+              console.debug("getCustomerList error", err);
               loading.value = false;
             });
         }

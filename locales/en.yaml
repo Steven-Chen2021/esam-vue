@@ -254,6 +254,15 @@ common:
   cancel: Cancel
   confirm: Confirm
 deal:
+  quickfilter:
+    lid: HQID
+    company: Company
+    dealNo: Deal#
+    dealType: Deal Type
+    flag: Flag
+    plDetail: PL Details
+    createDate: Initial Date
+    closeDate: Close Date
   clostBtn: Close
   profile:
     title: Deal Maintain
