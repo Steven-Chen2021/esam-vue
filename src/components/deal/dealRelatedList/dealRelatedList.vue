@@ -19,6 +19,8 @@ import { ElMessage } from "element-plus";
 import { deepClone } from "@/utils/common";
 import { useDetail } from "../../../views/search-management/hooks";
 const { router, toQuoteDetail } = useDetail();
+import { CommonHelper } from "@/utils/commonHelper";
+const { formatDate } = CommonHelper();
 const {
   currentPage,
   pageSize,
@@ -396,9 +398,10 @@ onMounted(() => {
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
           c =>
+            c.enableOnSearchView &&
+            c['showOnDealView'] &&
             c.filterType !== 'cascadingdropdown' &&
-            c.showOnGrid &&
-            c.enableOnSearchView
+            c.showOnGrid
         )"
         :key="col.filterKey"
         :prop="col.filterKey"
@@ -424,18 +427,33 @@ onMounted(() => {
             </template>
           </el-popover>
         </template>
-        <!-- <template #default="scope">
-          <el-popover
-            placement="top-start"
-            trigger="hover"
-            :content="scope.row[col.filterKey]"
-            effect="dark"
+        <template #default="scope">
+          <span v-if="col.filterKey !== 'combatTeamPL'">{{
+            formatDate(scope.row[col.filterKey], col.filterKey)
+          }}</span>
+          <div
+            v-else-if="
+              scope.row[col.filterKey] &&
+              Array.isArray(scope.row[col.filterKey])
+            "
+            style="display: flex"
           >
-            <template #reference>
-              {{ scope.row[col.filterKey] }}
-            </template>
-          </el-popover>
-        </template> -->
+            <div
+              v-for="ava in scope.row[col.filterKey]"
+              :key="ava.CombatTeamUserID"
+              style="margin-right: 0.3rem"
+            >
+              <el-tooltip
+                class="box-item"
+                effect="dark"
+                :content="ava.combatTeamUserName"
+                placement="top-start"
+              >
+                <el-avatar size="small" :src="ava.combatTeamAvatar" />
+              </el-tooltip>
+            </div>
+          </div>
+        </template>
       </el-table-column>
       <el-table-column fixed="right" label="Operations" min-width="120">
         <template #default="scope">

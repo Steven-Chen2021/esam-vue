@@ -2,8 +2,10 @@ import { $t } from "@/plugins/i18n";
 import { deal } from "@/router/enums";
 
 export default {
+  // path: "/deal",
+  // redirect: "/deal/detail/4/46394/DealTest",
   path: "/deal",
-  redirect: "/deal/detail/4/46394/DealTest",
+  redirect: "/deal/index",
   meta: {
     icon: "ri:hand-coin-line",
     title: $t("menus.dimercoDeal"),
@@ -12,10 +14,11 @@ export default {
   children: [
     {
       path: "/deal/index",
-      name: "DealList",
-      component: () => import("@/views/contact/index.vue"),
+      name: "dealSearch",
+      component: () => import("@/views/search-management/index.vue"),
       meta: {
-        title: $t("menus.dimercoDeal")
+        title: $t("menus.dimercoDeal"),
+        keepAlive: true
       }
     },
     {

@@ -51,10 +51,20 @@ import {
   CustomizeQuickFilterSettingFromApprovalSearch,
   ApprovalGridColumnSetting,
   ApprovalGridResult,
-  ApprovalColumnList
+  ApprovalColumnList,
+  GetDealQuickFilterColumnList,
+  CustomizeQuickFilterSettingFromDealSearch,
+  DealGridColumnSetting
 } from "@/types/apiRequestTypeEnum";
 
-import { contact, customer, tasks, quotes, approval } from "@/router/enums";
+import {
+  contact,
+  customer,
+  tasks,
+  quotes,
+  approval,
+  deal
+} from "@/router/enums";
 import { CommonHelper } from "@/utils/commonHelper";
 const { formatDate } = CommonHelper();
 
@@ -146,7 +156,11 @@ const handleViewClick = row => {
       }
 
       break;
-    case "DealList":
+    case "dealSearch":
+      router.push({
+        name: "DealDetail",
+        params: { id: row.id, lid: row.lid, qname: row.dealNo }
+      });
       break;
     case "CustomerList":
       router.push({
@@ -293,6 +307,10 @@ const submitQuickFilterForm = async (formEl: FormInstance | undefined) => {
           quickFilterForm.filterAppliedPage =
             CustomizeQuickFilterSettingFromTaskSearch;
           break;
+        case "dealSearch":
+          quickFilterForm.filterAppliedPage =
+            CustomizeQuickFilterSettingFromDealSearch;
+          break;
       }
 
       quickFilterForm.filters.forEach(a => {
@@ -384,6 +402,9 @@ const deleteQuickFilter = () => {
       break;
     case "TaskList":
       PageCategory = CustomizeQuickFilterSettingFromTaskSearch;
+      break;
+    case "dealSearch":
+      PageCategory = CustomizeQuickFilterSettingFromDealSearch;
       break;
   }
   const params = {
@@ -595,6 +616,16 @@ onMounted(async () => {
       ColumnSettingParam.value = TaskGridColumnSetting;
       requestCategory.value = tasks;
       break;
+    case "dealSearch":
+      QuickFilterColumnListParam.value = GetDealQuickFilterColumnList;
+      CustomizeQuickFilterSettingParam.value =
+        CustomizeQuickFilterSettingFromDealSearch;
+      ColumnSettingParam.value = DealGridColumnSetting;
+      requestCategory.value = deal;
+      sortField.value = "createDate";
+      sortOrder.value = "desc";
+
+      break;
   }
   dataResultAPIRequestType.value = customer;
   filterRequestType.value = customer;
@@ -789,6 +820,7 @@ watch(
                     placeholder=""
                     style="width: 338px"
                     filterable
+                    @change="handleSearch(advancedFilterForm)"
                   >
                     <el-option
                       v-for="option in filterOptions[filterItem.filterKey].list"
@@ -810,12 +842,15 @@ watch(
                     "
                     placeholder=""
                     style="width: 338px"
+                    @keydown.enter="handleSearch(advancedFilterForm)"
+                    @select="handleSearch(advancedFilterForm)"
                   />
                   <el-input
                     v-else-if="filterItem.filterType === 'input'"
                     v-model="filterItem.value"
                     placeholder=""
                     style="width: 338px"
+                    @keydown.enter="handleSearch(advancedFilterForm)"
                   />
                   <el-date-picker
                     v-if="filterItem.filterType === 'daterange'"
@@ -832,6 +867,7 @@ watch(
                     format="MMM DD"
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
+                    @change="handleSearch(advancedFilterForm)"
                   />
                   <span
                     v-if="filterItem.filterType === 'daterange'"
@@ -853,6 +889,7 @@ watch(
                     format="MMM DD"
                     value-format="YYYY-MM-DD"
                     style="width: 110px"
+                    @change="handleSearch(advancedFilterForm)"
                   />
                   <el-checkbox
                     v-else-if="filterItem.filterType === 'checkbox'"
@@ -1094,7 +1131,6 @@ watch(
                 "
                 v-model="filterItem.selectValue"
                 placeholder=""
-                style="width: 338px"
                 filterable
               >
                 <el-option

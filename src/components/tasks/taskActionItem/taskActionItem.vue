@@ -102,7 +102,10 @@ const getActionItemResult = async () => {
         .map(item => item.headerName);
       tableSetting.value["columns"] = setting
         .filter(item => item.selected)
-        .map(item => item.hotTableColumnSetting);
+        .map(item => ({
+          ...item.hotTableColumnSetting,
+          apisource: item.apisource
+        }));
       tableSetting.value["columns"].forEach((item, index) => {
         if (item["type"] === "date") {
           item["dateFormat"] = "MMM DD, YYYY";
@@ -115,39 +118,17 @@ const getActionItemResult = async () => {
         ) {
           item["source"] = function (_query, process) {
             const params = {
-              SearchKey: _query,
-              OptionsResourceType: 135,
-              PageSize: 10,
-              PageIndex: 1,
-              Paginator: true
+              SearchKey: _query
             };
-            CommonService.getAutoCompleteList(params).then(a => {
-              const a1 = a.map(item => item.text);
-              process(a1);
-            });
+            CommonService.getAutoCompleteListNew(item.apisource, params).then(
+              a => {
+                const a1 = a.map(item => item.text);
+                process(a1);
+              }
+            );
           };
           item["strict"] = true;
           item["visibleRows"] = 15;
-          // tableSetting.value["columns"][index] = {
-          //   data: "owner",
-          //   type: "autocomplete",
-          //   visibleRows: 15,
-          //   source(_query, process) {
-          //     console.log("autocomplete query", _query);
-          //     const params = {
-          //       SearchKey: _query,
-          //       OptionsResourceType: 135,
-          //       PageSize: 10,
-          //       PageIndex: 1,
-          //       Paginator: true
-          //     };
-          //     CommonService.getAutoCompleteList(params).then(a => {
-          //       const a1 = a.map(item => item.text);
-          //       process(a1);
-          //     });
-          //   },
-          //   strict: true
-          // };
         }
         item["allowEmpty"] = false;
       });
