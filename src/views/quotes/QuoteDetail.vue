@@ -19,8 +19,8 @@ import {
   defineComponent,
   nextTick,
   watchEffect,
-  computed
-  // watch
+  computed,
+  h
 } from "vue";
 
 import {
@@ -172,11 +172,8 @@ const quoteStatusHistory = ref([]);
 const hotTableRefs = ref({});
 const previousValue = ref<any>();
 const previousGreetingsValue = ref<any>();
-
 const dcUrl = ref();
-
 const salesInfomation = ref<any>({});
-
 // 方法來動態設置 HotTable 的 ref
 const setHotTableRef = (city, Category) => el => {
   if (el) {
@@ -243,7 +240,6 @@ const dataPermissionExtension = () => {
               break;
             case "productLineName":
               ctl = quoteDetailColumns.find(f => f.prop === "productLineCode");
-              ctl.colProps.span = 2;
               quotationDetailResult.value.productLineCode = `${quotationDetailResult.value.productLineCode} `;
               break;
             case "attentionTo":
@@ -314,9 +310,11 @@ const dataPermissionExtension = () => {
           }
 
           if (
-            (ctl != undefined &&
-              customerProductLineAccessRight.value.isWrite === false) ||
-            (getParameter.pagemode === "copy" && ctl.prop === "productLineCode")
+            ctl != undefined &&
+            (customerProductLineAccessRight.value.isWrite === false ||
+              ((getParameter.pagemode === "copy" ||
+                quotationDetailResult.value.bookmark === true) &&
+                ctl.prop === "productLineCode"))
           ) {
             ctl.valueType = "text"; // 確保 ctl 存在後操作
           }
@@ -340,17 +338,19 @@ let quoteDetailColumns: PlusColumn[] = [
     fieldProps: {
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
+        console.log(customerResult);
         const results = queryString
           ? customerResult.customers.filter(createFilter(queryString))
           : customerResult.customers;
         cb(results);
       },
       onFocus: () => {
+        console.log(quotationDetailResult.value.customerHQID);
         previousValue.value = quotationDetailResult.value.customerHQID;
       },
       onSelect: (item: { text: string; value: number }) => {
         quotationDetailResult.value.customerHQID = item.value;
-        if (getParameter.pagemode === "copy") {
+        if (getParameter.pagemode != "copy") {
           getProductLineByCustomerResult(item.value);
         }
         getAttentionToResult(item.value);
@@ -398,7 +398,6 @@ let quoteDetailColumns: PlusColumn[] = [
     label: "Product Line",
     prop: "productLineCode",
     valueType: "select",
-    width: 120,
     options: productLineResult,
     colProps: {
       span: 5
@@ -897,7 +896,8 @@ const handleAfterChange = (changes, source) => {
       if (
         // valid &&
         // frightChargeParams.value.quoteFreights.length > 0 &&
-        changes[0][2] != changes[0][3]
+        changes[0][2] != changes[0][3] &&
+        qid.value != 0
       ) {
         console.log("save");
         saveFreightCharge();
@@ -1373,16 +1373,6 @@ const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
 const multiTags = computed(() => {
   return useMultiTagsStoreHook()?.multiTags;
 });
-const onCloseTags = () => {
-  console.log(multiTags.value[(multiTags as any).value.length - 1].path);
-  useMultiTagsStoreHook().handleTags(
-    "splice",
-    multiTags.value[(multiTags as any).value.length - 1].path
-  );
-  router.push({
-    path: multiTags.value[(multiTags as any).value.length - 1].path
-  });
-};
 
 const previewQuote = () => {
   toPreView({
@@ -1472,22 +1462,6 @@ const handleCheckboxGroupChange = (values: string[]) => {
         });
       };
     }
-
-    // if (i.data === "pReceipt") {
-    //   i.source = function (_query, process) {
-    //     const params = {
-    //       SearchKey: _query,
-    //       OptionsResourceType: 135,
-    //       PageSize: 10,
-    //       PageIndex: 1,
-    //       Paginator: true
-    //     };
-    //     CommonService.getAutoCompleteList(params).then(a => {
-    //       const a1 = a.map(item => item.text);
-    //       process(a1);
-    //     });
-    //   };
-    // }
   });
 
   freightChargeSettings.value.columns = selectedItems.map(
@@ -1496,6 +1470,7 @@ const handleCheckboxGroupChange = (values: string[]) => {
   freightChargeSettings.value.colWidths = selectedItems.map(
     item => item.columnWidth
   );
+  console.log(freightChargeSettings.value.columns);
 };
 
 const handleProductLineChange = () => {
@@ -1547,6 +1522,14 @@ const AddLCPItems = (source, isExport) => {
 
 const setPreviousValue = CurrnetValue => {
   previousValue.value = CurrnetValue;
+};
+
+const handleCBMChange = value => {
+  autoSaveTrigger(value, "cbmToWT");
+};
+
+const handleCBMUOMChange = value => {
+  autoSaveTrigger(value, "cbmToWTUOMID");
 };
 
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
@@ -1747,6 +1730,19 @@ watchEffect(() => {
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
+
+  if (
+    quotationDetailResult.value.customerHQID != null &&
+    getParameter.pagemode === "copy"
+  ) {
+    console.log(quotationDetailResult.value);
+    const isLegalCustomer = customerResult.customers.some(
+      c => c.text === quotationDetailResult.value.customerName
+    );
+    if (!isLegalCustomer) {
+      quotationDetailResult.value.customerName = null;
+    }
+  }
 });
 
 onMounted(() => {
@@ -1799,7 +1795,6 @@ onMounted(() => {
         quotationDetailResult.value.customerHQID,
         _pid
       ).then(res => {
-        console.log(res);
         customerProductLineAccessRight.value = res.returnValue;
         customerProductLineAccessRight.value.isWrite =
           getParameter.pagemode === "view"
@@ -1811,7 +1806,11 @@ onMounted(() => {
       });
     });
   }
-  getCustomerByOwnerUserResult();
+  let PID = null;
+  if (getParameter.pagemode === "copy") {
+    PID = getParameter.pid;
+  }
+  getCustomerByOwnerUserResult(PID);
   getTradeTermResult().then(itme => {
     console.debug("getTradeTermResult", tradeTermResult);
   });
@@ -1819,6 +1818,7 @@ onMounted(() => {
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+  console.log(quoteDetailColumns);
 });
 
 onBeforeUnmount(() => {
@@ -1860,6 +1860,17 @@ const formatDate = dateInput => {
 
   // 處理單一日期
   return formatSingleDate(dateInput);
+};
+
+const handleNumberInput = value => {
+  // 過濾掉非數字和小數點的輸入，只允許數字和小數點
+  const numericValue = value.replace(/[^\d.]/g, "");
+  // 防止輸入多個小數點
+  const validValue =
+    numericValue.split(".").length > 2
+      ? numericValue.slice(0, numericValue.lastIndexOf("."))
+      : numericValue;
+  quotationDetailResult.value.cbmToWT = validValue;
 };
 </script>
 
@@ -2007,17 +2018,31 @@ const formatDate = dateInput => {
                   v-if="customerProductLineAccessRight.isWrite === true"
                   class="el-form-item__content"
                 >
-                  1:
-                  <el-input-number
+                  1:<el-input
+                    v-model="quotationDetailResult.cbmToWT"
+                    style="width: 120px"
+                    placeholder="Please input"
+                    :formatter="
+                      value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    "
+                    :parser="value => value.replace(/\$\s?|(,*)/g, '')"
+                    @input="handleNumberInput"
+                    @change="handleCBMChange"
+                    @focus="setPreviousValue(quotationDetailResult.cbmToWT)"
+                  />
+                  <!-- <el-input-number
                     v-model="quotationDetailResult.cbmToWT"
                     :min="0"
                     controls-position="right"
                     style="width: 120px; padding-left: 5px"
-                  />
+                    
+                  /> -->
                   <el-select
                     v-model="quotationDetailResult.cbmToWTUOMID"
                     placeholder="Select"
                     style="width: 80px; height: 32px; margin-left: 5px"
+                    @change="handleCBMUOMChange"
+                    @focus="setPreviousValue(quotationDetailResult.cbmToWT)"
                   >
                     <el-option
                       v-for="item in cbmTransferUOMResult"

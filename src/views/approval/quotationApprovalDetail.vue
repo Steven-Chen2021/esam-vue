@@ -282,7 +282,11 @@ onMounted(() => {
               />
             </el-form-item>
             <el-form-item>
-              <el-button v-if="canSign" type="primary" @click="submitForm(ruleFormRef)">
+              <el-button
+                v-if="canSign"
+                type="primary"
+                @click="submitForm(ruleFormRef)"
+              >
                 Send
               </el-button>
             </el-form-item>
@@ -335,8 +339,6 @@ onMounted(() => {
               <span class="font-bold">Currency: {{ source.currency }}</span>
             </div>
             <el-table
-              v-for="(source, key) in items.freight"
-              :key="key"
               :data="getTableData(source.fDetail)"
               border
               style="width: 100%"

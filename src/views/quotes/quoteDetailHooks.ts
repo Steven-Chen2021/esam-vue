@@ -132,11 +132,11 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function getCustomerByOwnerUserResult() {
+  async function getCustomerByOwnerUserResult(PID?: number) {
     customerResult.loading = true; // 開始撈取資料，設置 loading 為 true
     customerResult.error = null; // 清空之前的錯誤信息
     try {
-      const response = await quoteDetailService.getCustomerByOwnerUserData();
+      const response = await quoteDetailService.getCustomerByOwnerUserData(PID);
       if (response != null) {
         customerResult.customers = response.returnValue.map((item: any) => ({
           text: item.customerName,
