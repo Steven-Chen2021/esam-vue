@@ -31,6 +31,8 @@ export function QuoteDetailHooks() {
     visibleRows: number | null;
     strict: boolean | null;
     height: number | null;
+    sourceValues?: string[]; // 新增: 用於儲存來源值列表
+    validator?: (value: any, callback: (valid: boolean) => void) => void; // 新增: 自訂驗證函數
   }
 
   interface iAccessRightSetting {

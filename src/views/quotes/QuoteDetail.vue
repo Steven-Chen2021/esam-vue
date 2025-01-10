@@ -20,7 +20,7 @@ import {
   nextTick,
   watchEffect,
   computed,
-  h
+  watch
 } from "vue";
 
 import {
@@ -164,7 +164,6 @@ const editorRef = shallowRef();
 const toolbarConfig: any = { excludeKeys: "fullScreen" };
 const editorConfig = { placeholder: "请输入内容..." };
 const handleCreated = editor => {
-  // 记录 editor 实例，重要！
   editorRef.value = editor;
 };
 const quoteStatusHistory = ref([]);
@@ -211,6 +210,42 @@ const rules = {
     {
       required: true,
       message: t("message.required.creditTerm")
+    }
+  ],
+  tradeTermId: [
+    {
+      required: true,
+      message: t("message.required.tradeTerm")
+    }
+  ],
+  shippingTerm: [
+    {
+      required: true,
+      message: t("message.required.shippingTerm")
+    }
+  ],
+  attentionTo: [
+    {
+      required: true,
+      message: t("message.required.attentionTo")
+    }
+  ],
+  dimensionFactor: [
+    {
+      required: true,
+      message: t("message.required.dimensionFactor")
+    }
+  ],
+  volumeShareForAgent: [
+    {
+      required: true,
+      message: t("message.required.volumeShareForAgent")
+    }
+  ],
+  typeCode: [
+    {
+      required: true,
+      message: t("message.required.typeCode")
     }
   ]
 };
@@ -400,13 +435,14 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: productLineResult,
     colProps: {
-      span: 5
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
         previousValue.value = quotationDetailResult.value.productLineCode;
       },
       onChange: (value: number) => {
+        console.log(quotationDetailResult.value);
         if (qid.value < 1) {
           const _customerHQID = quotationDetailResult.value.customerHQID;
           const _customerName = quotationDetailResult.value.customerName;
@@ -541,7 +577,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: tradeTermResult,
     colProps: {
-      span: 5
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -563,7 +599,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: shippingTermResult,
     colProps: {
-      span: 5
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -573,24 +609,6 @@ let quoteDetailColumns: PlusColumn[] = [
         if (previousValue.value != undefined && value != undefined) {
           autoSaveTrigger(value, "shppingTerm");
         }
-      }
-    }
-  },
-  {
-    label: "Attention To",
-    width: 360,
-    prop: "attentionTo",
-    valueType: "select",
-    options: attentionToResult,
-    colProps: {
-      span: 8
-    },
-    fieldProps: {
-      onFocus: () => {
-        previousValue.value = quotationDetailResult.value.attentionTo;
-      },
-      onChange: value => {
-        autoSaveTrigger(value, "attentionTo");
       }
     }
   },
@@ -613,13 +631,32 @@ let quoteDetailColumns: PlusColumn[] = [
     }
   },
   {
+    label: "Attention To",
+    width: 360,
+    prop: "attentionTo",
+    valueType: "select",
+    options: attentionToResult,
+    colProps: {
+      span: 6
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.attentionTo;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "attentionTo");
+      }
+    }
+  },
+
+  {
     label: "Reference",
     width: 120,
     prop: "refID",
     valueType: "select",
     options: quoteReferenceCodeResult,
     colProps: {
-      span: 8
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -637,7 +674,7 @@ let quoteDetailColumns: PlusColumn[] = [
     options: quoteDimensionFactorResult,
     hideInForm: hideQuoteDimensionFactor,
     colProps: {
-      span: 5
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -648,14 +685,13 @@ let quoteDetailColumns: PlusColumn[] = [
       }
     }
   },
-
   {
     label: "Volume(A:D)",
     prop: "volumeShareForAgent",
     valueType: "input-number",
     hideInForm: hideVolumeShareForAgent,
     colProps: {
-      span: 5
+      span: 6
     },
     min: 0,
     fieldProps: {
@@ -681,7 +717,7 @@ let quoteDetailColumns: PlusColumn[] = [
     options: quoteTypeResult,
     hideInForm: hideQuotationType,
     colProps: {
-      span: 10
+      span: 8
     },
     fieldProps: {
       onFocus: () => {
@@ -700,7 +736,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "text", // 僅顯示文字
     hideInForm: hideOTPCode,
     colProps: {
-      span: 8
+      span: 4
     }
   }
 ];
@@ -1255,18 +1291,34 @@ const freightChargeSettings = ref({
   autoWrapCol: true,
   allowInsertColumn: true,
   allowInsertRow: true,
-  allowInvalid: true,
+  allowInvalid: false,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true,
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
   afterRemoveRow: handleFrtRemoveRow,
   beforeRemoveRow: handleFrtBeforeRemoveRow,
-  readOnly: false
+  readOnly: false,
+  validate: true
 });
 
 const saveData = () => {
   saveLoading.value = "default";
+
+  const hotInstance = hotTableRef.value.hotInstance;
+
+  if (hotInstance) {
+    hotInstance.validateCells(isValid => {
+      if (isValid) {
+        alert("驗證成功，送出資料");
+        // 執行送出邏輯
+      } else {
+        alert("驗證失敗，請檢查表格內容");
+      }
+    });
+  }
+
+  return;
   quotationForm.value.formInstance
     .validate()
     .then(() => {
@@ -1338,6 +1390,64 @@ const saveData = () => {
 
 const sendApproval = () => {
   saveLoading.value = "default";
+
+  const hotInstance = hotTableRef.value.hotInstance;
+  let hasInvalid = false; // 標記是否有驗證失敗的單元格
+
+  // 定義需要驗證的欄位名稱陣列
+  const requiredFields = ["pReceipt", "pDelivery", "currency"];
+  // 定義需要驗證的 sellingRate 欄位群組
+  const sellingRateFields = [
+    "sellingRate2",
+    "sellingRate3",
+    "sellingRate4",
+    "sellingRate5",
+    "sellingRate6",
+    "sellingRate7"
+  ];
+  // 遍歷所有資料列
+  hotInstance.getData().forEach((rowData, rowIndex) => {
+    requiredFields.forEach(field => {
+      const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+      const fieldValue = rowData[colIndex]; // 取得欄位值
+      if (!fieldValue || fieldValue.trim() === "") {
+        hasInvalid = true;
+        // 標記該單元格為無效
+        hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
+      } else {
+        // 清除無效標記（如果之前標記過無效）
+        hotInstance.setCellMeta(rowIndex, colIndex, "valid", true);
+      }
+    });
+
+    const sellingRatesFilled = sellingRateFields.some(field => {
+      const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+      const fieldValue = rowData[colIndex]; // 取得欄位值
+      return (
+        fieldValue &&
+        (typeof fieldValue === "string" ? fieldValue.trim() !== "" : true)
+      ); // 檢查是否有填寫
+    });
+
+    if (!sellingRatesFilled) {
+      hasInvalid = true;
+      sellingRateFields.forEach(field => {
+        const colIndex = hotInstance.propToCol(field);
+        hotInstance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記所有 sellingRate 欄位為無效
+      });
+    } else {
+      sellingRateFields.forEach(field => {
+        const colIndex = hotInstance.propToCol(field);
+        hotInstance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記所有 sellingRate 欄位為有效
+      });
+    }
+  });
+
+  if (hasInvalid) {
+    hotInstance.render(); // 重新渲染表格，顯示驗證失敗樣式
+    return;
+  }
+
   const params = { quoteid: getParameter.id };
   SendQuotationToApprove(params)
     .then(res => {
@@ -1431,9 +1541,10 @@ const handleCheckboxGroupChange = (values: string[]) => {
     item => item.headerName
   );
 
-  const testobj = selectedItems.map(item => item.hotTableColumnSetting);
-  console.log(testobj);
-  testobj.forEach(i => {
+  const hotTableColumnSettingResult = selectedItems.map(
+    item => item.hotTableColumnSetting
+  );
+  hotTableColumnSettingResult.forEach(i => {
     let apiRequestType = 0;
     switch (i.data) {
       case "pReceipt":
@@ -1459,18 +1570,25 @@ const handleCheckboxGroupChange = (values: string[]) => {
         CommonService.getCityAndPortResult(params).then(a => {
           const a1 = a.map(item => item.text);
           process(a1);
+          // i.sourceValues = a1; // 儲存來源值
         });
       };
+      // if (i.data === "pReceipt" || i.data === "pDelivery") {
+      //   i.validator = (value, callback) => {
+      //     const sourceValues = i.sourceValues || [];
+      //     const isValid = sourceValues.includes(value) && value.trim() !== "";
+      //     callback(isValid); // 驗證結果
+      //   };
+      // }
     }
   });
-
   freightChargeSettings.value.columns = selectedItems.map(
     item => item.hotTableColumnSetting
   );
+
   freightChargeSettings.value.colWidths = selectedItems.map(
     item => item.columnWidth
   );
-  console.log(freightChargeSettings.value.columns);
 };
 
 const handleProductLineChange = () => {
@@ -1682,6 +1800,7 @@ watchEffect(() => {
     const sourceData = [];
 
     ChargeCodeSettingResult.forEach(item => {
+      console.log(item);
       if (item.selected) {
         let apiRequestType = 0;
         switch (item.columnName) {
@@ -1711,7 +1830,12 @@ watchEffect(() => {
             CommonService.getCityAndPortResult(params).then(a => {
               const a1 = a.map(item => item.text);
               process(a1);
+              // item.hotTableColumnSetting.source = a1; // 儲存來源值
             });
+          };
+          item.hotTableColumnSetting.validator = (value, callback) => {
+            const isValid = value && value.trim() !== ""; // 只檢查是否為空值
+            callback(isValid);
           };
         }
         sourceData.push(item);
@@ -1730,7 +1854,7 @@ watchEffect(() => {
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
-
+  console.log("quotationDetailResult changed:", quotationDetailResult.value);
   if (
     quotationDetailResult.value.customerHQID != null &&
     getParameter.pagemode === "copy"
@@ -1744,6 +1868,15 @@ watchEffect(() => {
     }
   }
 });
+
+watch(
+  () => quotationDetailResult.value,
+  (newVal, oldVal) => {
+    console.log("quotationDetailResult changed:", newVal);
+    // 在這裡執行你想要的邏輯
+  },
+  { deep: true } // 如果是對象或數組，使用 deep 來監聽內部變化
+);
 
 onMounted(() => {
   if (getParameter.id != "0") {
@@ -2339,10 +2472,11 @@ const handleNumberInput = value => {
             :label="item.headerName"
             :value="item.columnName"
             class="flex items-center"
+            :disabled="item.isReadOnly"
           >
             <template #default>
               <div>
-                <input v-model="item.headerName" placeholder="Type here" />
+                {{ item.headerName }}
               </div>
             </template>
           </el-checkbox>
