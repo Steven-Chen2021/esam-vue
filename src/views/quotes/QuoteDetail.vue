@@ -1388,6 +1388,51 @@ const saveData = () => {
   }, 3000);
 };
 
+const checkLocalCharge = () => {
+  hotTableRefs.value.forEach(refObj => {
+    const hotInstance = refObj.hotInstance;
+    // 遍歷所有資料列
+    hotInstance.getData().forEach((rowData, rowIndex) => {
+      console.log(rowData);
+      console.log(rowIndex);
+      // requiredFields.forEach(field => {
+      //   const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+      //   const fieldValue = rowData[colIndex]; // 取得欄位值
+      //   if (!fieldValue || fieldValue.trim() === "") {
+      //     hasInvalid = true;
+      //     // 標記該單元格為無效
+      //     hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
+      //   } else {
+      //     // 清除無效標記（如果之前標記過無效）
+      //     hotInstance.setCellMeta(rowIndex, colIndex, "valid", true);
+      //   }
+      // });
+
+      // const sellingRatesFilled = sellingRateFields.some(field => {
+      //   const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+      //   const fieldValue = rowData[colIndex]; // 取得欄位值
+      //   return (
+      //     fieldValue &&
+      //     (typeof fieldValue === "string" ? fieldValue.trim() !== "" : true)
+      //   ); // 檢查是否有填寫
+      // });
+
+      // if (!sellingRatesFilled) {
+      //   hasInvalid = true;
+      //   sellingRateFields.forEach(field => {
+      //     const colIndex = hotInstance.propToCol(field);
+      //     hotInstance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記所有 sellingRate 欄位為無效
+      //   });
+      // } else {
+      //   sellingRateFields.forEach(field => {
+      //     const colIndex = hotInstance.propToCol(field);
+      //     hotInstance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記所有 sellingRate 欄位為有效
+      //   });
+      // }
+    });
+  });
+};
+
 const sendApproval = () => {
   saveLoading.value = "default";
 
@@ -1657,6 +1702,10 @@ const handleTermAndCondition = value => {
 };
 
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
+  console.log(customerProductLineAccessRight.value.isWrite);
+  console.log(quotationDetailResult.value.status);
+  console.log(newValue != previousValue.value);
+  console.log(getParameter.id);
   if (
     customerProductLineAccessRight.value.isWrite === true &&
     quotationDetailResult.value.status === "Draft" &&
@@ -1672,6 +1721,7 @@ const autoSaveTrigger = (newValue, columnName, tableName2?) => {
     AutoSaveItem.value.CustID =
       quotationDetailResult.value.customerHQID.toString();
     if (tableName2 != null && tableName2 === "SAQuoteTerms") {
+      console.log(1);
       AutoSaveItem.value.NewEntity = newValue;
     } else {
       AutoSaveItem.value.OldValue = previousValue.value;
