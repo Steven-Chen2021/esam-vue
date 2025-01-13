@@ -10,7 +10,7 @@ import {
 } from "@/utils/tree";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
-import { clone } from "@pureadmin/utils";
+import { clone, isNumber } from "@pureadmin/utils";
 import {
   onBeforeUnmount,
   ref,
@@ -1305,20 +1305,20 @@ const freightChargeSettings = ref({
 const saveData = () => {
   saveLoading.value = "default";
 
-  const hotInstance = hotTableRef.value.hotInstance;
+  // const hotInstance = hotTableRef.value.hotInstance;
 
-  if (hotInstance) {
-    hotInstance.validateCells(isValid => {
-      if (isValid) {
-        alert("驗證成功，送出資料");
-        // 執行送出邏輯
-      } else {
-        alert("驗證失敗，請檢查表格內容");
-      }
-    });
-  }
+  // if (hotInstance) {
+  //   hotInstance.validateCells(isValid => {
+  //     if (isValid) {
+  //       alert("驗證成功，送出資料");
+  //       // 執行送出邏輯
+  //     } else {
+  //       alert("驗證失敗，請檢查表格內容");
+  //     }
+  //   });
+  // }
 
-  return;
+  // return;
   quotationForm.value.formInstance
     .validate()
     .then(() => {
@@ -1388,49 +1388,58 @@ const saveData = () => {
   }, 3000);
 };
 
-const checkLocalCharge = () => {
-  hotTableRefs.value.forEach(refObj => {
-    const hotInstance = refObj.hotInstance;
-    // 遍歷所有資料列
-    hotInstance.getData().forEach((rowData, rowIndex) => {
-      console.log(rowData);
-      console.log(rowIndex);
-      // requiredFields.forEach(field => {
-      //   const colIndex = hotInstance.propToCol(field); // 取得欄位索引
-      //   const fieldValue = rowData[colIndex]; // 取得欄位值
-      //   if (!fieldValue || fieldValue.trim() === "") {
-      //     hasInvalid = true;
-      //     // 標記該單元格為無效
-      //     hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
-      //   } else {
-      //     // 清除無效標記（如果之前標記過無效）
-      //     hotInstance.setCellMeta(rowIndex, colIndex, "valid", true);
-      //   }
-      // });
+const validateLocalCharge = (instance, type) => {
+  let hasInvalid = false;
 
-      // const sellingRatesFilled = sellingRateFields.some(field => {
-      //   const colIndex = hotInstance.propToCol(field); // 取得欄位索引
-      //   const fieldValue = rowData[colIndex]; // 取得欄位值
-      //   return (
-      //     fieldValue &&
-      //     (typeof fieldValue === "string" ? fieldValue.trim() !== "" : true)
-      //   ); // 檢查是否有填寫
-      // });
+  // 定義檢查邏輯
+  const validationRules = {
+    general: {
+      requiredWhenChargeHasValue: ["uom", "currency", "flat"] // charge 有值時檢查的欄位
+    },
+    weightbreak: {
+      requiredWhenChargeHasValue: [
+        "condition",
+        "unit",
+        "uom",
+        "currency",
+        "amount"
+      ] // charge 有值時檢查的欄位
+    }
+  };
 
-      // if (!sellingRatesFilled) {
-      //   hasInvalid = true;
-      //   sellingRateFields.forEach(field => {
-      //     const colIndex = hotInstance.propToCol(field);
-      //     hotInstance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記所有 sellingRate 欄位為無效
-      //   });
-      // } else {
-      //   sellingRateFields.forEach(field => {
-      //     const colIndex = hotInstance.propToCol(field);
-      //     hotInstance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記所有 sellingRate 欄位為有效
-      //   });
-      // }
-    });
+  // 根據類型獲取規則
+  const rules = validationRules[type];
+
+  if (!rules) {
+    console.error(`無效的表格類型: ${type}`);
+    return false;
+  }
+
+  // 遍歷表格資料
+  instance.getData().forEach((rowData, rowIndex) => {
+    const chargeIndex = instance.propToCol("charge");
+    const chargeValue = rowData[chargeIndex];
+
+    // 如果 charge 有值，檢查對應欄位
+    if (chargeValue && chargeValue.trim() !== "") {
+      rules.requiredWhenChargeHasValue.forEach(field => {
+        const colIndex = instance.propToCol(field); // 獲取欄位對應的索引
+        const fieldValue = rowData[colIndex]; // 獲取欄位值
+
+        if (!fieldValue || fieldValue.trim() === "") {
+          hasInvalid = true;
+          instance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記為無效
+        } else {
+          instance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記為有效
+        }
+      });
+    }
   });
+
+  // 重新渲染表格以應用元數據變更
+  instance.render();
+
+  return hasInvalid;
 };
 
 const sendApproval = () => {
@@ -1450,7 +1459,6 @@ const sendApproval = () => {
     "sellingRate6",
     "sellingRate7"
   ];
-  // 遍歷所有資料列
   hotInstance.getData().forEach((rowData, rowIndex) => {
     requiredFields.forEach(field => {
       const colIndex = hotInstance.propToCol(field); // 取得欄位索引
@@ -1467,6 +1475,7 @@ const sendApproval = () => {
 
     const sellingRatesFilled = sellingRateFields.some(field => {
       const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+      console.log(isNumber(colIndex));
       const fieldValue = rowData[colIndex]; // 取得欄位值
       return (
         fieldValue &&
@@ -1478,50 +1487,65 @@ const sendApproval = () => {
       hasInvalid = true;
       sellingRateFields.forEach(field => {
         const colIndex = hotInstance.propToCol(field);
-        hotInstance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記所有 sellingRate 欄位為無效
+        if (isNumber(colIndex))
+          hotInstance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記所有 sellingRate 欄位為無效
       });
     } else {
       sellingRateFields.forEach(field => {
         const colIndex = hotInstance.propToCol(field);
-        hotInstance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記所有 sellingRate 欄位為有效
+        if (isNumber(colIndex))
+          hotInstance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記所有 sellingRate 欄位為有效
       });
     }
   });
 
   if (hasInvalid) {
     hotInstance.render(); // 重新渲染表格，顯示驗證失敗樣式
-    return;
   }
-
-  const params = { quoteid: getParameter.id };
-  SendQuotationToApprove(params)
-    .then(res => {
-      if (res && res.isSuccess) {
+  Object.entries(hotTableRefs.value).forEach(([key, instance]) => {
+    if (key.endsWith("general")) {
+      // 驗證 general 表格
+      const invalid = validateLocalCharge(instance, "general");
+      hasInvalid = hasInvalid || invalid;
+    } else if (key.endsWith("weightbreak")) {
+      // 驗證 weightbreak 表格
+      const invalid = validateLocalCharge(instance, "weightbreak");
+      hasInvalid = hasInvalid || invalid;
+    }
+  });
+  if (hasInvalid) {
+    return;
+  } else {
+    const params = { quoteid: getParameter.id };
+    SendQuotationToApprove(params)
+      .then(res => {
+        if (res && res.isSuccess) {
+          ElNotification({
+            title: "successfully",
+            message: "Send Approval Successfully!",
+            type: "success"
+          });
+          setTimeout(() => {
+            router.replace(router.currentRoute.value.fullPath);
+          }, 500); // 2000 毫秒 = 2 秒
+        } else {
+          ElNotification({
+            title: "Failed",
+            message: `Send Approval Failed! ${res.errorMessage}`,
+            type: "error"
+          });
+        }
+        saveLoading.value = "disabled";
+      })
+      .catch(error => {
+        saveLoading.value = "disabled";
         ElNotification({
-          title: "successfully",
-          message: "Send Approval Successfully!",
-          type: "success"
-        });
-        setTimeout(() => {
-          router.replace(router.currentRoute.value.fullPath);
-        }, 500); // 2000 毫秒 = 2 秒
-      } else {
-        ElNotification({
-          title: "Failed",
-          message: `Send Approval Failed! ${res.errorMessage}`,
+          title: "Error",
+          message: `An error occurred: ${error.response?.status === 500 ? "Server error, please try again later." : "Network or unexpected error occurred."}`,
           type: "error"
         });
-      }
-      saveLoading.value = "disabled";
-    })
-    .catch(error => {
-      saveLoading.value = "disabled";
-      ElNotification({
-        title: "Error",
-        message: `An error occurred: ${error.response?.status === 500 ? "Server error, please try again later." : "Network or unexpected error occurred."}`,
-        type: "error"
       });
-    });
+  }
 };
 
 const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
@@ -1894,10 +1918,10 @@ watchEffect(() => {
               // item.hotTableColumnSetting.source = a1; // 儲存來源值
             });
           };
-          item.hotTableColumnSetting.validator = (value, callback) => {
-            const isValid = value && value.trim() !== ""; // 只檢查是否為空值
-            callback(isValid);
-          };
+          // item.hotTableColumnSetting.validator = (value, callback) => {
+          //   const isValid = value && value.trim() !== ""; // 只檢查是否為空值
+          //   callback(isValid);
+          // };
         }
         sourceData.push(item);
       }
@@ -2414,7 +2438,7 @@ const handleNumberInput = value => {
                       v-model="term.isSelected"
                       :disabled="!customerProductLineAccessRight.isWrite"
                       class="checkbox-content"
-                      @click="handleTermAndCondition"
+                      @change="handleTermAndCondition"
                     />
                     <span class="checkbox-label">{{ term.contents }}</span>
                   </div>
