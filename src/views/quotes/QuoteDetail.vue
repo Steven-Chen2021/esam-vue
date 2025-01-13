@@ -1650,6 +1650,12 @@ const handleCBMUOMChange = value => {
   autoSaveTrigger(value, "cbmToWTUOMID");
 };
 
+const handleTermAndCondition = value => {
+  console.log(quotationDetailResult.value.terms);
+  const jsonString = JSON.stringify(quotationDetailResult.value.terms);
+  autoSaveTrigger(jsonString, "Contents", "SAQuoteTerms");
+};
+
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
   if (
     customerProductLineAccessRight.value.isWrite === true &&
@@ -1665,8 +1671,13 @@ const autoSaveTrigger = (newValue, columnName, tableName2?) => {
     AutoSaveItem.value.Id = quotationDetailResult.value.quoteid as number;
     AutoSaveItem.value.CustID =
       quotationDetailResult.value.customerHQID.toString();
-    AutoSaveItem.value.OldValue = previousValue.value;
-    AutoSaveItem.value.Value = newValue;
+    if (tableName2 != null && tableName2 === "SAQuoteTerms") {
+      AutoSaveItem.value.NewEntity = newValue;
+    } else {
+      AutoSaveItem.value.OldValue = previousValue.value;
+      AutoSaveItem.value.Value = newValue;
+    }
+
     AutoSave(AutoSaveItem.value);
   }
 };
@@ -2353,6 +2364,7 @@ const handleNumberInput = value => {
                       v-model="term.isSelected"
                       :disabled="!customerProductLineAccessRight.isWrite"
                       class="checkbox-content"
+                      @click="handleTermAndCondition"
                     />
                     <span class="checkbox-label">{{ term.contents }}</span>
                   </div>
