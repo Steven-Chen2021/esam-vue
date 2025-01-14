@@ -175,6 +175,7 @@ onMounted(() => {
         canSign.value = true;
       }
     } else {
+      canSign.value = false;
       unauthorizedSignerMSG.value = res.errorMessage;
     }
   });

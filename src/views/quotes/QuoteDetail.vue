@@ -184,6 +184,12 @@ const setHotTableRef = (city, Category) => el => {
 const updateHotTableData = (city, data) => {
   if (hotTableRefs.value[`${city}general`]) {
     hotTableRefs.value[`${city}general`].loadData(data);
+    const targetCity = exportLocationResult.value.find(
+      item => item.cityID === city
+    );
+    if (targetCity) {
+      (targetCity.generalHotTableSetting.data as any[]) = [...data];
+    }
   }
 };
 
@@ -251,10 +257,12 @@ const rules = {
 };
 
 const dataPermissionExtension = () => {
+  console.log("dataPermissionExtension", quoteDetailColumns);
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
     GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
       if (res && res.isSuccess) {
         const columnSettings = res.returnValue;
+        console.log(columnSettings);
         columnSettings.forEach(element => {
           let ctl: PlusColumn | undefined; // 明確定義類型
           switch (element.filterKey) {
@@ -324,13 +332,13 @@ const dataPermissionExtension = () => {
               }
               break;
             case "reference":
-              ctl = quoteDetailColumns.find(f => f.prop === "reference");
-              quotationDetailResult.value.reference = `${quotationDetailResult.value.reference} `;
+              console.log(quotationDetailResult.value);
+              ctl = quoteDetailColumns.find(f => f.prop === "refID");
+              quotationDetailResult.value.refID = `${quotationDetailResult?.value?.refID ?? ""} `;
               break;
             case "customerName":
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
               quotationDetailResult.value.customerName = `${quotationDetailResult.value.customerName} `;
-              console.log(customerProductLineAccessRight.value.isWrite);
               break;
             case "dimensionFactor":
               ctl = quoteDetailColumns.find(f => f.prop === "dimensionFactor");
@@ -373,14 +381,12 @@ let quoteDetailColumns: PlusColumn[] = [
     fieldProps: {
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
-        console.log(customerResult);
         const results = queryString
           ? customerResult.customers.filter(createFilter(queryString))
           : customerResult.customers;
         cb(results);
       },
       onFocus: () => {
-        console.log(quotationDetailResult.value.customerHQID);
         previousValue.value = quotationDetailResult.value.customerHQID;
       },
       onSelect: (item: { text: string; value: number }) => {
@@ -442,7 +448,6 @@ let quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.productLineCode;
       },
       onChange: (value: number) => {
-        console.log(quotationDetailResult.value);
         if (qid.value < 1) {
           const _customerHQID = quotationDetailResult.value.customerHQID;
           const _customerName = quotationDetailResult.value.customerName;
@@ -756,7 +761,6 @@ const handleLocalChargeResult = (
       ).then(res => {
         if (localCharge.cityID != 0) {
           if (Category === "Export") {
-            console.log("Export localCharge", localCharge);
             LocationResult.value.push({
               cityID: localCharge.cityID,
               city: localCharge.city,
@@ -817,7 +821,6 @@ const handleLocalChargeResult = (
               localChargePackageSelector: []
             });
           } else {
-            console.log("Import localCharge", localCharge);
             LocationResult.value.push({
               cityID: localCharge.cityID,
               city: localCharge.city,
@@ -906,9 +909,7 @@ const saveFreightCharge = () => {
   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
   frightChargeParams.value.pid = quotationDetailResult.value.pid;
   frightChargeParams.value.quoteFreights = filteredData;
-  console.log("saveFreightCharge");
   saveFreightChargeResult(frightChargeParams.value).then(res => {
-    console.log(res);
     if (res && res.isSuccess) {
       ElNotification({
         title: "successfully",
@@ -927,7 +928,6 @@ const saveFreightCharge = () => {
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
-    console.log(changes[0][2] != changes[0][3]);
     hotTableRef.value.hotInstance.validateCells(valid => {
       if (
         // valid &&
@@ -935,7 +935,6 @@ const handleAfterChange = (changes, source) => {
         changes[0][2] != changes[0][3] &&
         qid.value != 0
       ) {
-        console.log("save");
         saveFreightCharge();
       }
     });
@@ -954,11 +953,6 @@ const handleAfterChange = (changes, source) => {
           ).then(() => {
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
-                console.log("handleAfterChange localCharge", localCharge);
-                console.log(
-                  "handleAfterChange localCharge",
-                  localCharge?.generalSettings?.detail
-                );
                 getLocalChargePackageResult(
                   quotationDetailResult.value.pid,
                   true,
@@ -1209,7 +1203,6 @@ const handleExportLocalChargeChange = (changes, source) => {
       quotationDetailResult.value.pid as number,
       true
     );
-    console.log("transformedData export", transformedData);
     saveLocalChargeResult(transformedData);
   }
 };
@@ -1230,7 +1223,6 @@ const handleImportLocalChargeChange = (changes, source) => {
       quotationDetailResult.value.pid as number,
       false
     );
-    console.log("transformedData Import", transformedData);
     saveLocalChargeResult(transformedData);
   }
 };
@@ -1274,8 +1266,6 @@ const handleRemoveRow = (index, amount, physicalRows, source) => {
     "handleRemoveRow",
     `刪除了 ${amount} 行，從索引 ${index} 開始 ${{ physicalRows }}${{ source }}`
   );
-  console.log(physicalRows);
-  console.log(source);
 };
 
 const freightChargeSettings = ref({
@@ -1426,7 +1416,10 @@ const validateLocalCharge = (instance, type) => {
         const colIndex = instance.propToCol(field); // 獲取欄位對應的索引
         const fieldValue = rowData[colIndex]; // 獲取欄位值
 
-        if (!fieldValue || fieldValue.trim() === "") {
+        if (
+          !fieldValue ||
+          (typeof fieldValue === "string" && fieldValue.trim() === "")
+        ) {
           hasInvalid = true;
           instance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記為無效
         } else {
@@ -1452,6 +1445,7 @@ const sendApproval = () => {
   const requiredFields = ["pReceipt", "pDelivery", "currency"];
   // 定義需要驗證的 sellingRate 欄位群組
   const sellingRateFields = [
+    "sellingRate1",
     "sellingRate2",
     "sellingRate3",
     "sellingRate4",
@@ -1463,8 +1457,10 @@ const sendApproval = () => {
     requiredFields.forEach(field => {
       const colIndex = hotInstance.propToCol(field); // 取得欄位索引
       const fieldValue = rowData[colIndex]; // 取得欄位值
+
       if (!fieldValue || fieldValue.trim() === "") {
         hasInvalid = true;
+
         // 標記該單元格為無效
         hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
       } else {
@@ -1475,14 +1471,12 @@ const sendApproval = () => {
 
     const sellingRatesFilled = sellingRateFields.some(field => {
       const colIndex = hotInstance.propToCol(field); // 取得欄位索引
-      console.log(isNumber(colIndex));
       const fieldValue = rowData[colIndex]; // 取得欄位值
       return (
         fieldValue &&
         (typeof fieldValue === "string" ? fieldValue.trim() !== "" : true)
       ); // 檢查是否有填寫
     });
-
     if (!sellingRatesFilled) {
       hasInvalid = true;
       sellingRateFields.forEach(field => {
@@ -1525,8 +1519,16 @@ const sendApproval = () => {
             message: "Send Approval Successfully!",
             type: "success"
           });
+          customerProductLineAccessRight.value.isWrite = false;
           setTimeout(() => {
-            router.replace(router.currentRoute.value.fullPath);
+            router.replace({
+              name: "QuoteDetail",
+              params: {
+                id: saveReturnQuotationInfo.value.quoteid,
+                qname: saveReturnQuotationInfo.value.quoteNo,
+                pid: quotationDetailResult.value.pid as number
+              }
+            });
           }, 500); // 2000 毫秒 = 2 秒
         } else {
           ElNotification({
@@ -1686,13 +1688,8 @@ const AddLCPItems = (source, isExport) => {
     isExport,
     source.localChargePackageSelector
   ).then(res => {
-    console.clear();
-    console.log(source);
-    console.log(isExport);
     if (isExport) {
       exportLocationResult.value.forEach(f => {
-        console.log(f.cityID);
-        console.log(source.cityID);
         if (f.cityID === source.cityID) {
           updateHotTableData(source.cityID, res);
         }
@@ -1720,16 +1717,11 @@ const handleCBMUOMChange = value => {
 };
 
 const handleTermAndCondition = value => {
-  console.log(quotationDetailResult.value.terms);
   const jsonString = JSON.stringify(quotationDetailResult.value.terms);
   autoSaveTrigger(jsonString, "Contents", "SAQuoteTerms");
 };
 
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
-  console.log(customerProductLineAccessRight.value.isWrite);
-  console.log(quotationDetailResult.value.status);
-  console.log(newValue != previousValue.value);
-  console.log(getParameter.id);
   if (
     customerProductLineAccessRight.value.isWrite === true &&
     quotationDetailResult.value.status === "Draft" &&
@@ -1745,7 +1737,6 @@ const autoSaveTrigger = (newValue, columnName, tableName2?) => {
     AutoSaveItem.value.CustID =
       quotationDetailResult.value.customerHQID.toString();
     if (tableName2 != null && tableName2 === "SAQuoteTerms") {
-      console.log(1);
       AutoSaveItem.value.NewEntity = newValue;
     } else {
       AutoSaveItem.value.OldValue = previousValue.value;
@@ -1885,7 +1876,6 @@ watchEffect(() => {
     const sourceData = [];
 
     ChargeCodeSettingResult.forEach(item => {
-      console.log(item);
       if (item.selected) {
         let apiRequestType = 0;
         switch (item.columnName) {
@@ -1939,12 +1929,10 @@ watchEffect(() => {
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
-  console.log("quotationDetailResult changed:", quotationDetailResult.value);
   if (
     quotationDetailResult.value.customerHQID != null &&
     getParameter.pagemode === "copy"
   ) {
-    console.log(quotationDetailResult.value);
     const isLegalCustomer = customerResult.customers.some(
       c => c.text === quotationDetailResult.value.customerName
     );
@@ -1952,16 +1940,20 @@ watchEffect(() => {
       quotationDetailResult.value.customerName = null;
     }
   }
+
+  if (getParameter.id != "0" && quotationDetailResult.value.status != "Draft") {
+    customerProductLineAccessRight.value.isWrite = false;
+  }
 });
 
-watch(
-  () => quotationDetailResult.value,
-  (newVal, oldVal) => {
-    console.log("quotationDetailResult changed:", newVal);
-    // 在這裡執行你想要的邏輯
-  },
-  { deep: true } // 如果是對象或數組，使用 deep 來監聽內部變化
-);
+// watch(
+//   () => quotationDetailResult.value,
+//   (newVal, oldVal) => {
+//     console.log("quotationDetailResult changed:", newVal);
+//     // 在這裡執行你想要的邏輯
+//   },
+//   { deep: true } // 如果是對象或數組，使用 deep 來監聽內部變化
+// );
 
 onMounted(() => {
   if (getParameter.id != "0") {
