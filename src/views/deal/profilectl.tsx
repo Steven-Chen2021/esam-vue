@@ -887,7 +887,7 @@ export function dealProfilectl() {
         ProfileID.value
       );
       dealStatusOptions.value = response.returnValue.status;
-      dealCurrentStep.value = response.returnValue.status.findIndex(
+      dealCurrentStep.value = response.returnValue.status.findLastIndex(
         item => item.isshow === 1
       );
       console.log("dealStatusOptions", dealStatusOptions.value);
