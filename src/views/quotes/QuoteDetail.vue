@@ -181,14 +181,23 @@ const setHotTableRef = (city, Category) => el => {
 };
 
 // 示例：在需要的時候更新某個 HotTable 的數據
-const updateHotTableData = (city, data) => {
+const updateHotTableData = (city, data, isExport) => {
   if (hotTableRefs.value[`${city}general`]) {
     hotTableRefs.value[`${city}general`].loadData(data);
-    const targetCity = exportLocationResult.value.find(
-      item => item.cityID === city
-    );
-    if (targetCity) {
-      (targetCity.generalHotTableSetting.data as any[]) = [...data];
+    if (isExport) {
+      const targetCity = exportLocationResult.value.find(
+        item => item.cityID === city
+      );
+      if (targetCity) {
+        (targetCity.generalHotTableSetting.data as any[]) = [...data];
+      }
+    } else {
+      const targetCity = importLocationResult.value.find(
+        item => item.cityID === city
+      );
+      if (targetCity) {
+        (targetCity.generalHotTableSetting.data as any[]) = [...data];
+      }
     }
   }
 };
@@ -756,7 +765,7 @@ const handleLocalChargeResult = (
     localChargeResult.value.forEach(localCharge => {
       getLocalChargePackageResult(
         quotationDetailPid,
-        true,
+        Category === "Export" ? true : false,
         localCharge.cityID
       ).then(res => {
         if (localCharge.cityID != 0) {
@@ -1691,13 +1700,13 @@ const AddLCPItems = (source, isExport) => {
     if (isExport) {
       exportLocationResult.value.forEach(f => {
         if (f.cityID === source.cityID) {
-          updateHotTableData(source.cityID, res);
+          updateHotTableData(source.cityID, res, isExport);
         }
       });
     } else {
       importLocationResult.value.forEach(f => {
         if (f.cityID === source.cityID) {
-          updateHotTableData(source.cityID, res);
+          updateHotTableData(source.cityID, res, isExport);
         }
       });
     }
@@ -1892,7 +1901,7 @@ watchEffect(() => {
         }
         if (apiRequestType > 0) {
           // item.hotTableColumnSetting.type = "autocomplete";
-          item.hotTableColumnSetting.visibleRows = 15;
+          // item.hotTableColumnSetting.visibleRows = 15;
           item.hotTableColumnSetting.strict = true;
           item.hotTableColumnSetting.source = function (_query, process) {
             const params = {
