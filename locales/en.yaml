@@ -583,6 +583,12 @@ message:
     productLine: Product LineIs Required.
     period: Effective And Expired Is Required.
     creditTerm: Credit Term Is Required.
+    tradeTerm: Trade Term Is Required.
+    shippingTerm: Shipping Term Is Required.
+    attentionTo: Attention To Is Required.
+    dimensionFactor: Dimension Factor Is Required.
+    volumeShareForAgent: Volume Share Is Required.
+    typeCode: Type Is Required.
 approval:
   list: Approval Management
   quickfilter:

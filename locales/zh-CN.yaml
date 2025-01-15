@@ -335,6 +335,12 @@ message:
     productLine: 产品线必填
     period: 日期区间必填
     creditTerm: 信用條件必填
+    tradeTerm: Trade Term Is Required.
+    shippingTerm: Shipping Term Is Required.
+    attentionTo: Attention To Is Required.
+    dimensionFactor: Dimension Factor Is Required.
+    volumeShareForAgent: Volume Share Is Required.
+    typeCode: Type Is Required.
 approval:
   list: 簽核管理
   quickfilter:

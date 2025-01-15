@@ -31,6 +31,8 @@ export function QuoteDetailHooks() {
     visibleRows: number | null;
     strict: boolean | null;
     height: number | null;
+    sourceValues?: string[]; // 新增: 用於儲存來源值列表
+    validator?: (value: any, callback: (valid: boolean) => void) => void; // 新增: 自訂驗證函數
   }
 
   interface iAccessRightSetting {
@@ -132,11 +134,11 @@ export function QuoteDetailHooks() {
     }
   }
 
-  async function getCustomerByOwnerUserResult() {
+  async function getCustomerByOwnerUserResult(PID?: number) {
     customerResult.loading = true; // 開始撈取資料，設置 loading 為 true
     customerResult.error = null; // 清空之前的錯誤信息
     try {
-      const response = await quoteDetailService.getCustomerByOwnerUserData();
+      const response = await quoteDetailService.getCustomerByOwnerUserData(PID);
       if (response != null) {
         customerResult.customers = response.returnValue.map((item: any) => ({
           text: item.customerName,

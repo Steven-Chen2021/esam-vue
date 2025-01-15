@@ -10,7 +10,7 @@ import {
 } from "@/utils/tree";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
-import { clone } from "@pureadmin/utils";
+import { clone, isNumber } from "@pureadmin/utils";
 import {
   onBeforeUnmount,
   ref,
@@ -19,8 +19,8 @@ import {
   defineComponent,
   nextTick,
   watchEffect,
-  computed
-  // watch
+  computed,
+  watch
 } from "vue";
 
 import {
@@ -164,7 +164,6 @@ const editorRef = shallowRef();
 const toolbarConfig: any = { excludeKeys: "fullScreen" };
 const editorConfig = { placeholder: "请输入内容..." };
 const handleCreated = editor => {
-  // 记录 editor 实例，重要！
   editorRef.value = editor;
 };
 const quoteStatusHistory = ref([]);
@@ -172,11 +171,8 @@ const quoteStatusHistory = ref([]);
 const hotTableRefs = ref({});
 const previousValue = ref<any>();
 const previousGreetingsValue = ref<any>();
-
 const dcUrl = ref();
-
 const salesInfomation = ref<any>({});
-
 // 方法來動態設置 HotTable 的 ref
 const setHotTableRef = (city, Category) => el => {
   if (el) {
@@ -188,6 +184,12 @@ const setHotTableRef = (city, Category) => el => {
 const updateHotTableData = (city, data) => {
   if (hotTableRefs.value[`${city}general`]) {
     hotTableRefs.value[`${city}general`].loadData(data);
+    const targetCity = exportLocationResult.value.find(
+      item => item.cityID === city
+    );
+    if (targetCity) {
+      (targetCity.generalHotTableSetting.data as any[]) = [...data];
+    }
   }
 };
 
@@ -215,14 +217,52 @@ const rules = {
       required: true,
       message: t("message.required.creditTerm")
     }
+  ],
+  tradeTermId: [
+    {
+      required: true,
+      message: t("message.required.tradeTerm")
+    }
+  ],
+  shippingTerm: [
+    {
+      required: true,
+      message: t("message.required.shippingTerm")
+    }
+  ],
+  attentionTo: [
+    {
+      required: true,
+      message: t("message.required.attentionTo")
+    }
+  ],
+  dimensionFactor: [
+    {
+      required: true,
+      message: t("message.required.dimensionFactor")
+    }
+  ],
+  volumeShareForAgent: [
+    {
+      required: true,
+      message: t("message.required.volumeShareForAgent")
+    }
+  ],
+  typeCode: [
+    {
+      required: true,
+      message: t("message.required.typeCode")
+    }
   ]
 };
 
 const dataPermissionExtension = () => {
+  console.log("dataPermissionExtension", quoteDetailColumns);
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
     GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
       if (res && res.isSuccess) {
         const columnSettings = res.returnValue;
+        console.log(columnSettings);
         columnSettings.forEach(element => {
           let ctl: PlusColumn | undefined; // 明確定義類型
           switch (element.filterKey) {
@@ -243,7 +283,6 @@ const dataPermissionExtension = () => {
               break;
             case "productLineName":
               ctl = quoteDetailColumns.find(f => f.prop === "productLineCode");
-              ctl.colProps.span = 2;
               quotationDetailResult.value.productLineCode = `${quotationDetailResult.value.productLineCode} `;
               break;
             case "attentionTo":
@@ -293,13 +332,13 @@ const dataPermissionExtension = () => {
               }
               break;
             case "reference":
-              ctl = quoteDetailColumns.find(f => f.prop === "reference");
-              quotationDetailResult.value.reference = `${quotationDetailResult.value.reference} `;
+              console.log(quotationDetailResult.value);
+              ctl = quoteDetailColumns.find(f => f.prop === "refID");
+              quotationDetailResult.value.refID = `${quotationDetailResult?.value?.refID ?? ""} `;
               break;
             case "customerName":
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
               quotationDetailResult.value.customerName = `${quotationDetailResult.value.customerName} `;
-              console.log(customerProductLineAccessRight.value.isWrite);
               break;
             case "dimensionFactor":
               ctl = quoteDetailColumns.find(f => f.prop === "dimensionFactor");
@@ -314,9 +353,11 @@ const dataPermissionExtension = () => {
           }
 
           if (
-            (ctl != undefined &&
-              customerProductLineAccessRight.value.isWrite === false) ||
-            (getParameter.pagemode === "copy" && ctl.prop === "productLineCode")
+            ctl != undefined &&
+            (customerProductLineAccessRight.value.isWrite === false ||
+              ((getParameter.pagemode === "copy" ||
+                quotationDetailResult.value.bookmark === true) &&
+                ctl.prop === "productLineCode"))
           ) {
             ctl.valueType = "text"; // 確保 ctl 存在後操作
           }
@@ -350,7 +391,7 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onSelect: (item: { text: string; value: number }) => {
         quotationDetailResult.value.customerHQID = item.value;
-        if (getParameter.pagemode === "copy") {
+        if (getParameter.pagemode != "copy") {
           getProductLineByCustomerResult(item.value);
         }
         getAttentionToResult(item.value);
@@ -398,10 +439,9 @@ let quoteDetailColumns: PlusColumn[] = [
     label: "Product Line",
     prop: "productLineCode",
     valueType: "select",
-    width: 120,
     options: productLineResult,
     colProps: {
-      span: 5
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -542,7 +582,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: tradeTermResult,
     colProps: {
-      span: 5
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -564,7 +604,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "select",
     options: shippingTermResult,
     colProps: {
-      span: 5
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -574,24 +614,6 @@ let quoteDetailColumns: PlusColumn[] = [
         if (previousValue.value != undefined && value != undefined) {
           autoSaveTrigger(value, "shppingTerm");
         }
-      }
-    }
-  },
-  {
-    label: "Attention To",
-    width: 360,
-    prop: "attentionTo",
-    valueType: "select",
-    options: attentionToResult,
-    colProps: {
-      span: 8
-    },
-    fieldProps: {
-      onFocus: () => {
-        previousValue.value = quotationDetailResult.value.attentionTo;
-      },
-      onChange: value => {
-        autoSaveTrigger(value, "attentionTo");
       }
     }
   },
@@ -614,13 +636,32 @@ let quoteDetailColumns: PlusColumn[] = [
     }
   },
   {
+    label: "Attention To",
+    width: 360,
+    prop: "attentionTo",
+    valueType: "select",
+    options: attentionToResult,
+    colProps: {
+      span: 6
+    },
+    fieldProps: {
+      onFocus: () => {
+        previousValue.value = quotationDetailResult.value.attentionTo;
+      },
+      onChange: value => {
+        autoSaveTrigger(value, "attentionTo");
+      }
+    }
+  },
+
+  {
     label: "Reference",
     width: 120,
     prop: "refID",
     valueType: "select",
     options: quoteReferenceCodeResult,
     colProps: {
-      span: 8
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -638,7 +679,7 @@ let quoteDetailColumns: PlusColumn[] = [
     options: quoteDimensionFactorResult,
     hideInForm: hideQuoteDimensionFactor,
     colProps: {
-      span: 5
+      span: 6
     },
     fieldProps: {
       onFocus: () => {
@@ -649,14 +690,13 @@ let quoteDetailColumns: PlusColumn[] = [
       }
     }
   },
-
   {
     label: "Volume(A:D)",
     prop: "volumeShareForAgent",
     valueType: "input-number",
     hideInForm: hideVolumeShareForAgent,
     colProps: {
-      span: 5
+      span: 6
     },
     min: 0,
     fieldProps: {
@@ -682,7 +722,7 @@ let quoteDetailColumns: PlusColumn[] = [
     options: quoteTypeResult,
     hideInForm: hideQuotationType,
     colProps: {
-      span: 10
+      span: 8
     },
     fieldProps: {
       onFocus: () => {
@@ -701,7 +741,7 @@ let quoteDetailColumns: PlusColumn[] = [
     valueType: "text", // 僅顯示文字
     hideInForm: hideOTPCode,
     colProps: {
-      span: 8
+      span: 4
     }
   }
 ];
@@ -721,7 +761,6 @@ const handleLocalChargeResult = (
       ).then(res => {
         if (localCharge.cityID != 0) {
           if (Category === "Export") {
-            console.log("Export localCharge", localCharge);
             LocationResult.value.push({
               cityID: localCharge.cityID,
               city: localCharge.city,
@@ -782,7 +821,6 @@ const handleLocalChargeResult = (
               localChargePackageSelector: []
             });
           } else {
-            console.log("Import localCharge", localCharge);
             LocationResult.value.push({
               cityID: localCharge.cityID,
               city: localCharge.city,
@@ -871,9 +909,7 @@ const saveFreightCharge = () => {
   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
   frightChargeParams.value.pid = quotationDetailResult.value.pid;
   frightChargeParams.value.quoteFreights = filteredData;
-  console.log("saveFreightCharge");
   saveFreightChargeResult(frightChargeParams.value).then(res => {
-    console.log(res);
     if (res && res.isSuccess) {
       ElNotification({
         title: "successfully",
@@ -892,14 +928,13 @@ const saveFreightCharge = () => {
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
-    console.log(changes[0][2] != changes[0][3]);
     hotTableRef.value.hotInstance.validateCells(valid => {
       if (
         // valid &&
         // frightChargeParams.value.quoteFreights.length > 0 &&
-        changes[0][2] != changes[0][3]
+        changes[0][2] != changes[0][3] &&
+        qid.value != 0
       ) {
-        console.log("save");
         saveFreightCharge();
       }
     });
@@ -918,11 +953,6 @@ const handleAfterChange = (changes, source) => {
           ).then(() => {
             if (localChargeResult.value && localChargeResult.value.length > 0) {
               localChargeResult.value.forEach(localCharge => {
-                console.log("handleAfterChange localCharge", localCharge);
-                console.log(
-                  "handleAfterChange localCharge",
-                  localCharge?.generalSettings?.detail
-                );
                 getLocalChargePackageResult(
                   quotationDetailResult.value.pid,
                   true,
@@ -1173,7 +1203,6 @@ const handleExportLocalChargeChange = (changes, source) => {
       quotationDetailResult.value.pid as number,
       true
     );
-    console.log("transformedData export", transformedData);
     saveLocalChargeResult(transformedData);
   }
 };
@@ -1194,7 +1223,6 @@ const handleImportLocalChargeChange = (changes, source) => {
       quotationDetailResult.value.pid as number,
       false
     );
-    console.log("transformedData Import", transformedData);
     saveLocalChargeResult(transformedData);
   }
 };
@@ -1238,8 +1266,6 @@ const handleRemoveRow = (index, amount, physicalRows, source) => {
     "handleRemoveRow",
     `刪除了 ${amount} 行，從索引 ${index} 開始 ${{ physicalRows }}${{ source }}`
   );
-  console.log(physicalRows);
-  console.log(source);
 };
 
 const freightChargeSettings = ref({
@@ -1255,18 +1281,34 @@ const freightChargeSettings = ref({
   autoWrapCol: true,
   allowInsertColumn: true,
   allowInsertRow: true,
-  allowInvalid: true,
+  allowInvalid: false,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true,
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
   afterRemoveRow: handleFrtRemoveRow,
   beforeRemoveRow: handleFrtBeforeRemoveRow,
-  readOnly: false
+  readOnly: false,
+  validate: true
 });
 
 const saveData = () => {
   saveLoading.value = "default";
+
+  // const hotInstance = hotTableRef.value.hotInstance;
+
+  // if (hotInstance) {
+  //   hotInstance.validateCells(isValid => {
+  //     if (isValid) {
+  //       alert("驗證成功，送出資料");
+  //       // 執行送出邏輯
+  //     } else {
+  //       alert("驗證失敗，請檢查表格內容");
+  //     }
+  //   });
+  // }
+
+  // return;
   quotationForm.value.formInstance
     .validate()
     .then(() => {
@@ -1336,53 +1378,182 @@ const saveData = () => {
   }, 3000);
 };
 
+const validateLocalCharge = (instance, type) => {
+  let hasInvalid = false;
+
+  // 定義檢查邏輯
+  const validationRules = {
+    general: {
+      requiredWhenChargeHasValue: ["uom", "currency", "flat"] // charge 有值時檢查的欄位
+    },
+    weightbreak: {
+      requiredWhenChargeHasValue: [
+        "condition",
+        "unit",
+        "uom",
+        "currency",
+        "amount"
+      ] // charge 有值時檢查的欄位
+    }
+  };
+
+  // 根據類型獲取規則
+  const rules = validationRules[type];
+
+  if (!rules) {
+    console.error(`無效的表格類型: ${type}`);
+    return false;
+  }
+
+  // 遍歷表格資料
+  instance.getData().forEach((rowData, rowIndex) => {
+    const chargeIndex = instance.propToCol("charge");
+    const chargeValue = rowData[chargeIndex];
+
+    // 如果 charge 有值，檢查對應欄位
+    if (chargeValue && chargeValue.trim() !== "") {
+      rules.requiredWhenChargeHasValue.forEach(field => {
+        const colIndex = instance.propToCol(field); // 獲取欄位對應的索引
+        const fieldValue = rowData[colIndex]; // 獲取欄位值
+
+        if (
+          !fieldValue ||
+          (typeof fieldValue === "string" && fieldValue.trim() === "")
+        ) {
+          hasInvalid = true;
+          instance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記為無效
+        } else {
+          instance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記為有效
+        }
+      });
+    }
+  });
+
+  // 重新渲染表格以應用元數據變更
+  instance.render();
+
+  return hasInvalid;
+};
+
 const sendApproval = () => {
   saveLoading.value = "default";
-  const params = { quoteid: getParameter.id };
-  SendQuotationToApprove(params)
-    .then(res => {
-      if (res && res.isSuccess) {
-        ElNotification({
-          title: "successfully",
-          message: "Send Approval Successfully!",
-          type: "success"
-        });
-        setTimeout(() => {
-          router.replace(router.currentRoute.value.fullPath);
-        }, 500); // 2000 毫秒 = 2 秒
+
+  const hotInstance = hotTableRef.value.hotInstance;
+  let hasInvalid = false; // 標記是否有驗證失敗的單元格
+
+  // 定義需要驗證的欄位名稱陣列
+  const requiredFields = ["pReceipt", "pDelivery", "currency"];
+  // 定義需要驗證的 sellingRate 欄位群組
+  const sellingRateFields = [
+    "sellingRate1",
+    "sellingRate2",
+    "sellingRate3",
+    "sellingRate4",
+    "sellingRate5",
+    "sellingRate6",
+    "sellingRate7"
+  ];
+  hotInstance.getData().forEach((rowData, rowIndex) => {
+    requiredFields.forEach(field => {
+      const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+      const fieldValue = rowData[colIndex]; // 取得欄位值
+
+      if (!fieldValue || fieldValue.trim() === "") {
+        hasInvalid = true;
+
+        // 標記該單元格為無效
+        hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
       } else {
+        // 清除無效標記（如果之前標記過無效）
+        hotInstance.setCellMeta(rowIndex, colIndex, "valid", true);
+      }
+    });
+
+    const sellingRatesFilled = sellingRateFields.some(field => {
+      const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+      const fieldValue = rowData[colIndex]; // 取得欄位值
+      return (
+        fieldValue &&
+        (typeof fieldValue === "string" ? fieldValue.trim() !== "" : true)
+      ); // 檢查是否有填寫
+    });
+    if (!sellingRatesFilled) {
+      hasInvalid = true;
+      sellingRateFields.forEach(field => {
+        const colIndex = hotInstance.propToCol(field);
+        if (isNumber(colIndex))
+          hotInstance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記所有 sellingRate 欄位為無效
+      });
+    } else {
+      sellingRateFields.forEach(field => {
+        const colIndex = hotInstance.propToCol(field);
+        if (isNumber(colIndex))
+          hotInstance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記所有 sellingRate 欄位為有效
+      });
+    }
+  });
+
+  if (hasInvalid) {
+    hotInstance.render(); // 重新渲染表格，顯示驗證失敗樣式
+  }
+  Object.entries(hotTableRefs.value).forEach(([key, instance]) => {
+    if (key.endsWith("general")) {
+      // 驗證 general 表格
+      const invalid = validateLocalCharge(instance, "general");
+      hasInvalid = hasInvalid || invalid;
+    } else if (key.endsWith("weightbreak")) {
+      // 驗證 weightbreak 表格
+      const invalid = validateLocalCharge(instance, "weightbreak");
+      hasInvalid = hasInvalid || invalid;
+    }
+  });
+  if (hasInvalid) {
+    return;
+  } else {
+    const params = { quoteid: getParameter.id };
+    SendQuotationToApprove(params)
+      .then(res => {
+        if (res && res.isSuccess) {
+          ElNotification({
+            title: "successfully",
+            message: "Send Approval Successfully!",
+            type: "success"
+          });
+          customerProductLineAccessRight.value.isWrite = false;
+          setTimeout(() => {
+            router.replace({
+              name: "QuoteDetail",
+              params: {
+                id: saveReturnQuotationInfo.value.quoteid,
+                qname: saveReturnQuotationInfo.value.quoteNo,
+                pid: quotationDetailResult.value.pid as number
+              }
+            });
+          }, 500); // 2000 毫秒 = 2 秒
+        } else {
+          ElNotification({
+            title: "Failed",
+            message: `Send Approval Failed! ${res.errorMessage}`,
+            type: "error"
+          });
+        }
+        saveLoading.value = "disabled";
+      })
+      .catch(error => {
+        saveLoading.value = "disabled";
         ElNotification({
-          title: "Failed",
-          message: `Send Approval Failed! ${res.errorMessage}`,
+          title: "Error",
+          message: `An error occurred: ${error.response?.status === 500 ? "Server error, please try again later." : "Network or unexpected error occurred."}`,
           type: "error"
         });
-      }
-      saveLoading.value = "disabled";
-    })
-    .catch(error => {
-      saveLoading.value = "disabled";
-      ElNotification({
-        title: "Error",
-        message: `An error occurred: ${error.response?.status === 500 ? "Server error, please try again later." : "Network or unexpected error occurred."}`,
-        type: "error"
       });
-    });
+  }
 };
 
 const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
 const multiTags = computed(() => {
   return useMultiTagsStoreHook()?.multiTags;
 });
-const onCloseTags = () => {
-  console.log(multiTags.value[(multiTags as any).value.length - 1].path);
-  useMultiTagsStoreHook().handleTags(
-    "splice",
-    multiTags.value[(multiTags as any).value.length - 1].path
-  );
-  router.push({
-    path: multiTags.value[(multiTags as any).value.length - 1].path
-  });
-};
 
 const previewQuote = () => {
   toPreView({
@@ -1441,9 +1612,10 @@ const handleCheckboxGroupChange = (values: string[]) => {
     item => item.headerName
   );
 
-  const testobj = selectedItems.map(item => item.hotTableColumnSetting);
-  console.log(testobj);
-  testobj.forEach(i => {
+  const hotTableColumnSettingResult = selectedItems.map(
+    item => item.hotTableColumnSetting
+  );
+  hotTableColumnSettingResult.forEach(i => {
     let apiRequestType = 0;
     switch (i.data) {
       case "pReceipt":
@@ -1469,30 +1641,22 @@ const handleCheckboxGroupChange = (values: string[]) => {
         CommonService.getCityAndPortResult(params).then(a => {
           const a1 = a.map(item => item.text);
           process(a1);
+          // i.sourceValues = a1; // 儲存來源值
         });
       };
+      // if (i.data === "pReceipt" || i.data === "pDelivery") {
+      //   i.validator = (value, callback) => {
+      //     const sourceValues = i.sourceValues || [];
+      //     const isValid = sourceValues.includes(value) && value.trim() !== "";
+      //     callback(isValid); // 驗證結果
+      //   };
+      // }
     }
-
-    // if (i.data === "pReceipt") {
-    //   i.source = function (_query, process) {
-    //     const params = {
-    //       SearchKey: _query,
-    //       OptionsResourceType: 135,
-    //       PageSize: 10,
-    //       PageIndex: 1,
-    //       Paginator: true
-    //     };
-    //     CommonService.getAutoCompleteList(params).then(a => {
-    //       const a1 = a.map(item => item.text);
-    //       process(a1);
-    //     });
-    //   };
-    // }
   });
-
   freightChargeSettings.value.columns = selectedItems.map(
     item => item.hotTableColumnSetting
   );
+
   freightChargeSettings.value.colWidths = selectedItems.map(
     item => item.columnWidth
   );
@@ -1524,13 +1688,8 @@ const AddLCPItems = (source, isExport) => {
     isExport,
     source.localChargePackageSelector
   ).then(res => {
-    console.clear();
-    console.log(source);
-    console.log(isExport);
     if (isExport) {
       exportLocationResult.value.forEach(f => {
-        console.log(f.cityID);
-        console.log(source.cityID);
         if (f.cityID === source.cityID) {
           updateHotTableData(source.cityID, res);
         }
@@ -1549,6 +1708,19 @@ const setPreviousValue = CurrnetValue => {
   previousValue.value = CurrnetValue;
 };
 
+const handleCBMChange = value => {
+  autoSaveTrigger(value, "cbmToWT");
+};
+
+const handleCBMUOMChange = value => {
+  autoSaveTrigger(value, "cbmToWTUOMID");
+};
+
+const handleTermAndCondition = value => {
+  const jsonString = JSON.stringify(quotationDetailResult.value.terms);
+  autoSaveTrigger(jsonString, "Contents", "SAQuoteTerms");
+};
+
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
   if (
     customerProductLineAccessRight.value.isWrite === true &&
@@ -1564,8 +1736,13 @@ const autoSaveTrigger = (newValue, columnName, tableName2?) => {
     AutoSaveItem.value.Id = quotationDetailResult.value.quoteid as number;
     AutoSaveItem.value.CustID =
       quotationDetailResult.value.customerHQID.toString();
-    AutoSaveItem.value.OldValue = previousValue.value;
-    AutoSaveItem.value.Value = newValue;
+    if (tableName2 != null && tableName2 === "SAQuoteTerms") {
+      AutoSaveItem.value.NewEntity = newValue;
+    } else {
+      AutoSaveItem.value.OldValue = previousValue.value;
+      AutoSaveItem.value.Value = newValue;
+    }
+
     AutoSave(AutoSaveItem.value);
   }
 };
@@ -1728,8 +1905,13 @@ watchEffect(() => {
             CommonService.getCityAndPortResult(params).then(a => {
               const a1 = a.map(item => item.text);
               process(a1);
+              // item.hotTableColumnSetting.source = a1; // 儲存來源值
             });
           };
+          // item.hotTableColumnSetting.validator = (value, callback) => {
+          //   const isValid = value && value.trim() !== ""; // 只檢查是否為空值
+          //   callback(isValid);
+          // };
         }
         sourceData.push(item);
       }
@@ -1747,7 +1929,31 @@ watchEffect(() => {
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
+  if (
+    quotationDetailResult.value.customerHQID != null &&
+    getParameter.pagemode === "copy"
+  ) {
+    const isLegalCustomer = customerResult.customers.some(
+      c => c.text === quotationDetailResult.value.customerName
+    );
+    if (!isLegalCustomer) {
+      quotationDetailResult.value.customerName = null;
+    }
+  }
+
+  if (getParameter.id != "0" && quotationDetailResult.value.status != "Draft") {
+    customerProductLineAccessRight.value.isWrite = false;
+  }
 });
+
+// watch(
+//   () => quotationDetailResult.value,
+//   (newVal, oldVal) => {
+//     console.log("quotationDetailResult changed:", newVal);
+//     // 在這裡執行你想要的邏輯
+//   },
+//   { deep: true } // 如果是對象或數組，使用 deep 來監聽內部變化
+// );
 
 onMounted(() => {
   if (getParameter.id != "0") {
@@ -1799,7 +2005,6 @@ onMounted(() => {
         quotationDetailResult.value.customerHQID,
         _pid
       ).then(res => {
-        console.log(res);
         customerProductLineAccessRight.value = res.returnValue;
         customerProductLineAccessRight.value.isWrite =
           getParameter.pagemode === "view"
@@ -1811,7 +2016,11 @@ onMounted(() => {
       });
     });
   }
-  getCustomerByOwnerUserResult();
+  let PID = null;
+  if (getParameter.pagemode === "copy") {
+    PID = getParameter.pid;
+  }
+  getCustomerByOwnerUserResult(PID);
   getTradeTermResult().then(itme => {
     console.debug("getTradeTermResult", tradeTermResult);
   });
@@ -1819,6 +2028,7 @@ onMounted(() => {
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+  console.log(quoteDetailColumns);
 });
 
 onBeforeUnmount(() => {
@@ -1860,6 +2070,17 @@ const formatDate = dateInput => {
 
   // 處理單一日期
   return formatSingleDate(dateInput);
+};
+
+const handleNumberInput = value => {
+  // 過濾掉非數字和小數點的輸入，只允許數字和小數點
+  const numericValue = value.replace(/[^\d.]/g, "");
+  // 防止輸入多個小數點
+  const validValue =
+    numericValue.split(".").length > 2
+      ? numericValue.slice(0, numericValue.lastIndexOf("."))
+      : numericValue;
+  quotationDetailResult.value.cbmToWT = validValue;
 };
 </script>
 
@@ -2007,17 +2228,31 @@ const formatDate = dateInput => {
                   v-if="customerProductLineAccessRight.isWrite === true"
                   class="el-form-item__content"
                 >
-                  1:
-                  <el-input-number
+                  1:<el-input
+                    v-model="quotationDetailResult.cbmToWT"
+                    style="width: 120px"
+                    placeholder="Please input"
+                    :formatter="
+                      value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    "
+                    :parser="value => value.replace(/\$\s?|(,*)/g, '')"
+                    @input="handleNumberInput"
+                    @change="handleCBMChange"
+                    @focus="setPreviousValue(quotationDetailResult.cbmToWT)"
+                  />
+                  <!-- <el-input-number
                     v-model="quotationDetailResult.cbmToWT"
                     :min="0"
                     controls-position="right"
                     style="width: 120px; padding-left: 5px"
-                  />
+                    
+                  /> -->
                   <el-select
                     v-model="quotationDetailResult.cbmToWTUOMID"
                     placeholder="Select"
                     style="width: 80px; height: 32px; margin-left: 5px"
+                    @change="handleCBMUOMChange"
+                    @focus="setPreviousValue(quotationDetailResult.cbmToWT)"
                   >
                     <el-option
                       v-for="item in cbmTransferUOMResult"
@@ -2195,6 +2430,7 @@ const formatDate = dateInput => {
                       v-model="term.isSelected"
                       :disabled="!customerProductLineAccessRight.isWrite"
                       class="checkbox-content"
+                      @change="handleTermAndCondition"
                     />
                     <span class="checkbox-label">{{ term.contents }}</span>
                   </div>
@@ -2314,10 +2550,11 @@ const formatDate = dateInput => {
             :label="item.headerName"
             :value="item.columnName"
             class="flex items-center"
+            :disabled="item.isReadOnly"
           >
             <template #default>
               <div>
-                <input v-model="item.headerName" placeholder="Type here" />
+                {{ item.headerName }}
               </div>
             </template>
           </el-checkbox>
