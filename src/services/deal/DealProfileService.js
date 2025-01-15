@@ -70,6 +70,37 @@ class DealProfileService {
       console.error(error);
     }
   }
+  async saveDealDetailsResult(params) {
+    try {
+      const response = await API.post(
+        "/api/Deal/SaveDealDetailsResult",
+        params
+      );
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async getDealStatusResult(DealID) {
+    try {
+      const url = `/api/Deal/GetDealStatusResult?DealID=${DealID}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+  async getDealRefSummaryResult(DealID) {
+    try {
+      const url = `/api/Deal/GetDealRefSummaryResult?DealID=${DealID}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
 }
 
 export default new DealProfileService();

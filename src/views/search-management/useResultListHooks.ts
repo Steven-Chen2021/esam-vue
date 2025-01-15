@@ -126,7 +126,7 @@ export function listCTL() {
             if (data.isSuccess) {
               data.returnValue.results.forEach(a => {
                 a["vip"] =
-                  a["vip"] || a["vip"].toLowerCase() === "true" ? "Yes" : "No";
+                  a["vip"] && a["vip"].toLowerCase() === "true" ? "Yes" : "No";
               });
               tableData.value = data.returnValue.results;
               if (

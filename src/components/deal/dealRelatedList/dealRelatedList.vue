@@ -106,6 +106,7 @@ const props = defineProps({
     required: false
   }
 });
+const emit = defineEmits(["update"]);
 const handleViewClick = row => {
   switch (props.Type) {
     case "ApprovalList":
@@ -188,7 +189,8 @@ const selectRow = (selection, row) => {
         grouping: true,
         type: "success"
       });
-      // fetchListData();
+      fetchListData();
+      emit("update");
     })
     .catch(err => {
       console.log("autosave error", err);
@@ -270,7 +272,7 @@ const fetchListData = async () => {
           if (data.isSuccess) {
             data.returnValue.forEach(a => {
               a["vip"] =
-                a["vip"] || a["vip"].toLowerCase() === "true" ? "Yes" : "No";
+                a["vip"] && a["vip"].toLowerCase() === "true" ? "Yes" : "No";
             });
             tableData.value = data.returnValue;
             checkList();
