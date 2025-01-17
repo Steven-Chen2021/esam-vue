@@ -159,7 +159,12 @@ const handleViewClick = row => {
     case "dealSearch":
       router.push({
         name: "DealDetail",
-        params: { id: row.id, lid: row.lid, qname: row.dealNo }
+        params: {
+          id: row.id,
+          lid: row.lid,
+          qname: row.dealNo,
+          customerName: row.company
+        }
       });
       break;
     case "CustomerList":
@@ -632,7 +637,6 @@ onMounted(async () => {
       requestCategory.value = deal;
       sortField.value = "createDate";
       sortOrder.value = "desc";
-
       break;
   }
   dataResultAPIRequestType.value = customer;

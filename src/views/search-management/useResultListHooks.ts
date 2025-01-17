@@ -286,6 +286,28 @@ export function listCTL() {
         break;
       case deal:
         {
+          if (FilterLeadID && FilterLeadID.value !== "0") {
+            if (!searchParams.ConditionalSettings) {
+              searchParams.ConditionalSettings = [
+                {
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                }
+              ];
+            } else {
+              const a = searchParams.ConditionalSettings.filter(
+                item => item.filterKey === "hqid"
+              );
+              if (!a || a.length === 0) {
+                searchParams.ConditionalSettings.push({
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                });
+              }
+            }
+          }
           loading.value = true;
           DealSearchService.getDealList(searchParams)
             .then(data => {

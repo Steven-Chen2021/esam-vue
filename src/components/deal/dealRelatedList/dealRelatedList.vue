@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, defineComponent, nextTick } from "vue";
+import { ref, onMounted, watch, nextTick } from "vue";
 import dayjs from "dayjs";
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
@@ -106,7 +106,7 @@ const props = defineProps({
     required: false
   }
 });
-const emit = defineEmits(["update"]);
+const emit = defineEmits(["update", "updateToDoList"]);
 const handleViewClick = row => {
   switch (props.Type) {
     case "ApprovalList":
@@ -191,6 +191,9 @@ const selectRow = (selection, row) => {
       });
       fetchListData();
       emit("update");
+      if (props.Type === "TaskList") {
+        emit("updateToDoList");
+      }
     })
     .catch(err => {
       console.log("autosave error", err);
@@ -219,6 +222,7 @@ const fetchListData = async () => {
         .then(data => {
           if (data.isSuccess) {
             data.returnValue.forEach(a => {
+              a["linked"] = a["used"] === 1 ? "Yes" : "No";
               if (
                 a["appointmentStartDate"] &&
                 a["appointmentStartDate"] !== ""
@@ -247,7 +251,9 @@ const fetchListData = async () => {
               a["taskStatus"] = a["status"];
             });
             tableData.value = data.returnValue;
-            checkList();
+            if (userAccess.value && userAccess.value["isWrite"]) {
+              checkList();
+            }
           } else {
             tableData.value = [];
             total.value = 0;
@@ -271,11 +277,14 @@ const fetchListData = async () => {
         .then(data => {
           if (data.isSuccess) {
             data.returnValue.forEach(a => {
+              a["linked"] = a["used"] === 1 ? "Yes" : "No";
               a["vip"] =
                 a["vip"] && a["vip"].toLowerCase() === "true" ? "Yes" : "No";
             });
             tableData.value = data.returnValue;
-            checkList();
+            if (userAccess.value && userAccess.value["isWrite"]) {
+              checkList();
+            }
           } else {
             tableData.value = [];
             total.value = 0;
@@ -298,8 +307,13 @@ const fetchListData = async () => {
       DealProfileService.getLinkedQuoteDataList(searchParams.value)
         .then(data => {
           if (data.isSuccess) {
+            data.returnValue.forEach(a => {
+              a["linked"] = a["used"] === 1 ? "Yes" : "No";
+            });
             tableData.value = data.returnValue;
-            checkList();
+            if (userAccess.value && userAccess.value["isWrite"]) {
+              checkList();
+            }
           } else {
             tableData.value = [];
             total.value = 0;
@@ -340,6 +354,7 @@ const handleSortChange = ({ prop, order }) => {
   searchParams.value["order"] = order === "ascending" ? "asc" : "desc";
   fetchListData(); // 重新获取排序后的数据
 };
+const userAccess = ref(null);
 onMounted(() => {
   setTimeout(() => {
     showAutoSaveAlert.value = false;
@@ -370,20 +385,34 @@ onMounted(() => {
   searchParams.value["DealID"] = props.DealID;
   pageSize.value = 500;
   fetchData();
-  fetchListData();
+  CommonService.getUserAccessByCustomer(props.CusID, 0)
+    .then(data => {
+      userAccess.value = data.returnValue;
+      fetchListData();
+    })
+    .catch(err => {
+      console.log("getUserAccessByCustomer error", err);
+    });
+  // getUserAccessByCustomer();
   // fetchAdvancedFilterData();
 });
 </script>
 <template>
   <div>
     <el-alert
-      v-if="DealID !== '0' && showAutoSaveAlert"
+      v-if="
+        DealID !== '0' &&
+        showAutoSaveAlert &&
+        userAccess &&
+        userAccess['isWrite']
+      "
       :title="t('deal.taskList.alert')"
       type="success"
       show-icon
       style="margin-bottom: 10px"
     />
     <el-table
+      v-if="userAccess"
       ref="listTableRef"
       v-loading="loading"
       border
@@ -396,7 +425,17 @@ onMounted(() => {
       @sort-change="handleSortChange"
       @select="selectRow"
     >
-      <el-table-column type="selection" width="55" />
+      <el-table-column
+        v-if="userAccess['isWrite']"
+        type="selection"
+        width="55"
+      />
+      <el-table-column
+        v-else
+        prop="linked"
+        :label="t('deal.quickfilter.linked')"
+        width="80"
+      />
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
           c =>

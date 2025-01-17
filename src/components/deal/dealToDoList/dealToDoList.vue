@@ -7,8 +7,8 @@ import dayjs from "dayjs";
 import { deepClone } from "@/utils/common";
 import CommonService from "@/services/commonService";
 import type { TableInstance } from "element-plus";
-import TaskProfileService from "@/services/tasks/TaskProfileService";
 import DealProfileService from "@/services/deal/DealProfileService";
+
 const props = defineProps({
   CusID: {
     type: String,
@@ -26,6 +26,9 @@ const listAllData = ref([]);
 const getListData = async () => {
   toDoLoading.value = true;
   const dt = await DealProfileService.getDealTodolistResult(props.DealID);
+  dt.returnValue.forEach(a => {
+    a["completed"] = a["status"] ? "Yes" : "No";
+  });
   listAllData.value = deepClone(dt.returnValue);
   if (showAll.value) {
     listData.value = deepClone(dt.returnValue);
@@ -33,12 +36,13 @@ const getListData = async () => {
     listData.value = deepClone(dt.returnValue.filter(item => !item.status));
   }
 
-  checkList();
+  if (userAccess.value && userAccess.value["isWrite"]) {
+    checkList();
+  }
   toDoLoading.value = false;
 };
 const checkList = () => {
   const selectList = listData.value.filter(item => item.status);
-  console.log("selectList", selectList);
 
   // 使用 nextTick 确保 table 已经渲染完毕
   nextTick(() => {
@@ -47,6 +51,7 @@ const checkList = () => {
     });
   });
 };
+defineExpose({ getListData });
 const multipleSelection = ref([]);
 const handleSelectionChange = val => {
   multipleSelection.value = val;
@@ -119,12 +124,19 @@ const cellClass = ({ column }) => {
     return "all-disabled";
   }
 };
+const userAccess = ref(null);
 onMounted(() => {
   setTimeout(() => {
     showAutoSaveAlert.value = false;
   }, 10000);
-  getListData();
-  console.log("DealID", props.DealID);
+  CommonService.getUserAccessByCustomer(props.CusID, 0)
+    .then(data => {
+      userAccess.value = data.returnValue;
+      getListData();
+    })
+    .catch(err => {
+      console.log("getUserAccessByCustomer error", err);
+    });
 });
 </script>
 <template>
@@ -142,13 +154,19 @@ onMounted(() => {
       />
     </div>
     <el-alert
-      v-if="DealID !== '0' && showAutoSaveAlert"
+      v-if="
+        DealID !== '0' &&
+        showAutoSaveAlert &&
+        userAccess &&
+        userAccess['isWrite']
+      "
       :title="t('deal.toDo.alert')"
       type="success"
       show-icon
       style="margin-bottom: 10px"
     />
     <el-table
+      v-if="userAccess"
       ref="listTableRef"
       :data="listData"
       style="
@@ -162,7 +180,17 @@ onMounted(() => {
       @select="selectRow"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column type="selection" width="55" />
+      <el-table-column
+        v-if="userAccess['isWrite']"
+        type="selection"
+        width="55"
+      />
+      <el-table-column
+        v-else
+        prop="completed"
+        :label="t('deal.toDo.status')"
+        width="80"
+      />
       <el-table-column
         property="actionItem"
         :label="t('deal.toDo.actionItem')"
@@ -170,7 +198,7 @@ onMounted(() => {
         show-overflow-tooltip
       >
         <template #default="scope">
-          <el-link type="primary">{{ scope.row.actionItem }}</el-link>
+          {{ scope.row.actionItem }}
         </template></el-table-column
       >
       <el-table-column

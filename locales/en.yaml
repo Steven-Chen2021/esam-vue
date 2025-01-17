@@ -254,6 +254,7 @@ common:
   cancel: Cancel
   confirm: Confirm
 deal:
+  tabTitle: Deal Search
   quickfilter:
     lid: HQID
     company: Company
@@ -264,6 +265,7 @@ deal:
     createDate: Initial Date
     closeDate: Close Date
     statusRemark: Status
+    linked: Linked
   clostBtn: Close
   profile:
     title: Deal Maintain
@@ -279,6 +281,7 @@ deal:
     alert: Check or uncheck to update the completion status.
     title: To Do
     showAll: Show All
+    status: Status
   taskList:
     title: Linked Task
     alert: Check/uncheck to update the link status.

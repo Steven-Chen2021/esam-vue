@@ -39,8 +39,14 @@ const handleAfterChange = (changes, source) => {
           (item.origin && item.origin !== "") ||
           (item.destination && item.destination !== "")
       );
-      const oldData = tableDataInit.value.filter(item => item.actionItem);
+      const oldData = tableDataInit.value.filter(
+        item =>
+          (item.pl && item.pl !== "") ||
+          (item.origin && item.origin !== "") ||
+          (item.destination && item.destination !== "")
+      );
       console.log("handleAfterChange newData", newData);
+      console.log("handleAfterChange tableDataInit", tableDataInit.value);
       console.log("handleAfterChange oldData", oldData);
       if (!isObjectEqual(newData, oldData)) {
         updateActionItem();
@@ -106,12 +112,15 @@ const getActionItemResult = async () => {
           ...item.hotTableColumnSetting,
           apisource: item.apisource
         }));
+      if (!userAuth.value["isWrite"]) {
+        tableSetting.value["columns"] = tableSetting.value["columns"].filter(
+          item => !item.isAdvance
+        );
+      }
       tableSetting.value["columns"].forEach((item, index) => {
         if (item["type"] === "date") {
           item["dateFormat"] = "MMM DD, YYYY";
           item["correctFormat"] = true;
-        } else if (item["type"] === "text") {
-          // item["validator"] = textValidor;
         } else if (item["type"] === "autocomplete") {
           console.log("apisource", item.apisource);
           item["source"] = function (_query, process) {
@@ -128,7 +137,7 @@ const getActionItemResult = async () => {
           item["strict"] = true;
           item["visibleRows"] = 15;
         }
-        item["allowEmpty"] = false;
+        // item["allowEmpty"] = false;
       });
       tableSetting.value["colWidths"] = setting
         .filter(item => item.selected)

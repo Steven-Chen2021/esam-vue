@@ -18,6 +18,8 @@ import { useDetail } from "../hooks";
 import CommonService from "@/services/commonService";
 const { initToDetail, getParameter, router } = useDetail();
 // #region Tab extra
+import customerSubTab from "@/components/customerSubTab/customerSubTab.vue";
+import dealDetailTab from "@/views/deal/detail.vue";
 import contactTab from "@/components/contactTab/contactTab.vue";
 import contactDetailTab from "@/views/contact/detail.vue";
 import taskTab from "@/components/tasks/taskTab/taskTab.vue";
@@ -45,6 +47,18 @@ const handleTabEditEventTask = (TaskID, LeadDetailID) => {
   );
   searchingTask.value = false;
   TaskDetailID.value = TaskID;
+};
+const DealDetailID = ref("0");
+const searchingDeal = ref(true);
+const handleTabEditEventNew = (DetailID, LeadID, Type) => {
+  console.log(
+    `handleTabEditEvent- DetailID: ${DetailID}, LeadID: ${LeadID}, Type: ${Type}`
+  );
+  searchingDeal.value = false;
+  DealDetailID.value = DetailID;
+};
+const handleBackEventDeal = () => {
+  searchingDeal.value = true;
 };
 // #endregion
 const {
@@ -685,7 +699,6 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
 const username = useUserStoreHook()?.username;
 const dialogVisible = ref(false);
 const LID = isArray(getParameter.id) ? getParameter.id[0] : getParameter.id;
-
 onMounted(() => {
   // if (isArray(getParameter.id)) {
   //   console.log("getParameter.id[]", getParameter.id[0]);
@@ -1983,29 +1996,21 @@ const cancelForm = () => {
             </div>
           </el-drawer></el-tab-pane
         >
-        <el-tab-pane v-if="LID !== '0'" :label="t('customer.deal.title')"
-          ><div class="flex justify-center items-center h-[640px]">
-            <div class="ml-12">
-              <p
-                v-motion
-                class="font-medium text-4xl mb-4 dark:text-white"
-                :initial="{
-                  opacity: 0,
-                  y: 100
-                }"
-                :enter="{
-                  opacity: 1,
-                  y: 0,
-                  transition: {
-                    delay: 80
-                  }
-                }"
-              >
-                Welcome to the Deal Page
-              </p>
-            </div>
-          </div></el-tab-pane
-        >
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.deal.title')">
+          <customerSubTab
+            v-if="searchingDeal"
+            :SearchLeadID="LID"
+            SearchType="dealSearch"
+            @handleTabEditEvent="handleTabEditEventNew"
+          />
+          <dealDetailTab
+            v-else
+            :ParentID="LID"
+            :ID="DealDetailID"
+            :CustomerName="profileDataInit.customerName"
+            @handleBackEvent="handleBackEventDeal"
+          />
+        </el-tab-pane>
         <el-tab-pane v-if="LID !== '0'" :label="t('customer.contact.title')">
           <contactTab
             v-if="searchingContact"

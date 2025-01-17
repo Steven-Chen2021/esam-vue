@@ -771,25 +771,8 @@ export function dealProfilectl() {
     }
   });
   const activePanelNames = ref(["BasicFilterForm"]);
-  const disableStatus = filterItem => {
-    if (filterItem.visibilityLevel === 2) {
-      return !userAuth.value["isWrite"] && ProfileID.value !== "0";
-    } else {
-      if (
-        filterItem.filterKey === "leadSourceGroupID" ||
-        filterItem.filterKey === "leadSourceID"
-      ) {
-        return (
-          leadSourceDisable.value ||
-          ((!userAuth.value["isWrite"] ||
-            (profileData.value["agent"] &&
-              profileData.value["agent"] !== "")) &&
-            ProfileID.value !== "0")
-        );
-      } else {
-        return !userAuth.value["isWrite"] && ProfileID.value !== "0";
-      }
-    }
+  const disableStatus = () => {
+    return !userAuth.value["isWrite"] && ProfileID.value !== "0";
   };
   const inActiveContact = async () => {
     formLoading.value = true;
