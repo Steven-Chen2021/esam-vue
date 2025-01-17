@@ -58,6 +58,17 @@ export default {
         }
 
         const user = await userManager.signinRedirectCallback();
+        // 取得原始的 redirectUrl
+        let redirectUrl = `${window.location.origin}/#/welcome`;
+
+        if (
+          user.state &&
+          typeof user.state === "object" &&
+          "redirectUrl" in user.state
+        ) {
+          redirectUrl = (user.state as { redirectUrl: string }).redirectUrl;
+        }
+
         //重建Vue-Pure-Admin需要的Token Entity
         const tokenData: UserResult = {
           success: true,
@@ -72,7 +83,8 @@ export default {
           }
         };
         setToken(tokenData.data);
-        window.location.href = `${window.location.origin}/#/welcome`;
+        // 跳轉回原始頁面
+        window.location.href = redirectUrl;
       } catch (error) {
         console.error("Callback handling failed:", error);
         router.push("/error");

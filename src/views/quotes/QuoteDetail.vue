@@ -276,6 +276,7 @@ const dataPermissionExtension = () => {
           let ctl: PlusColumn | undefined; // 明確定義類型
           switch (element.filterKey) {
             case "sType":
+            case "shipmentQualityType":
               ctl = quoteDetailColumns.find(f => f.prop === "typeCode");
               if (
                 element.visibilityLevel === 2 &&
@@ -286,9 +287,24 @@ const dataPermissionExtension = () => {
               } else if (
                 customerProductLineAccessRight.value.isWrite === false
               ) {
-                quotationDetailResult.value.typeCode =
-                  quotationDetailResult.value.type;
+                const option = columnSettings.find(
+                  x => x.filterKey === "shipmentQualityType"
+                );
+                const filterSource = JSON.parse(option.filterSource); // 將 filterSource 轉為物件
+                const typeCode = quotationDetailResult.value.typeCode; // 假設此為要匹配的值
+                const match = filterSource.find(
+                  item => item.value === typeCode
+                ); // 尋找匹配的項目
+                if (match) {
+                  quotationDetailResult.value.typeCode = match.text;
+                }
+                // else {
+                //   quotationDetailResult.value.typeCode =
+                //     quotationDetailResult.value.type;
+                // }
+                // console.log(quotationDetailResult.value);
               }
+
               break;
             case "productLineName":
               ctl = quoteDetailColumns.find(f => f.prop === "productLineCode");
@@ -937,16 +953,16 @@ const saveFreightCharge = () => {
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
-    hotTableRef.value.hotInstance.validateCells(valid => {
-      if (
-        // valid &&
-        // frightChargeParams.value.quoteFreights.length > 0 &&
-        changes[0][2] != changes[0][3] &&
-        qid.value != 0
-      ) {
-        saveFreightCharge();
-      }
-    });
+    // hotTableRef.value.hotInstance.validateCells(valid => {
+    if (
+      // valid &&
+      // frightChargeParams.value.quoteFreights.length > 0 &&
+      changes[0][2] != changes[0][3] &&
+      qid.value != 0
+    ) {
+      saveFreightCharge();
+    }
+    // });
 
     changes.forEach(([row, prop, oldValue, newValue]) => {
       if (prop === "pReceipt") {
@@ -1290,15 +1306,15 @@ const freightChargeSettings = ref({
   autoWrapCol: true,
   allowInsertColumn: true,
   allowInsertRow: true,
-  allowInvalid: false,
+  allowInvalid: true,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true,
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
   afterRemoveRow: handleFrtRemoveRow,
   beforeRemoveRow: handleFrtBeforeRemoveRow,
-  readOnly: false,
-  validate: true
+  readOnly: false
+  // validate: true
 });
 
 const saveData = () => {
@@ -1446,7 +1462,7 @@ const validateLocalCharge = (instance, type) => {
 
 const sendApproval = () => {
   saveLoading.value = "default";
-
+  let invalidMsg = "";
   const hotInstance = hotTableRef.value.hotInstance;
   let hasInvalid = false; // 標記是否有驗證失敗的單元格
 
@@ -1486,8 +1502,10 @@ const sendApproval = () => {
         (typeof fieldValue === "string" ? fieldValue.trim() !== "" : true)
       ); // 檢查是否有填寫
     });
+
     if (!sellingRatesFilled) {
       hasInvalid = true;
+      invalidMsg = "";
       sellingRateFields.forEach(field => {
         const colIndex = hotInstance.propToCol(field);
         if (isNumber(colIndex))
@@ -1503,20 +1521,40 @@ const sendApproval = () => {
   });
 
   if (hasInvalid) {
+    invalidMsg =
+      invalidMsg +
+      `<strong>At least one quote is required for freight charge</strong><br />`;
     hotInstance.render(); // 重新渲染表格，顯示驗證失敗樣式
   }
   Object.entries(hotTableRefs.value).forEach(([key, instance]) => {
     if (key.endsWith("general")) {
       // 驗證 general 表格
       const invalid = validateLocalCharge(instance, "general");
+      if (invalid) {
+        invalidMsg =
+          invalidMsg +
+          `<strong>The required fields in the local charge(export) must be filled in completely</strong><br />`;
+      }
       hasInvalid = hasInvalid || invalid;
     } else if (key.endsWith("weightbreak")) {
       // 驗證 weightbreak 表格
       const invalid = validateLocalCharge(instance, "weightbreak");
+      if (invalid) {
+        invalidMsg =
+          invalidMsg +
+          `<strong>The required fields in the local charge(import) must be filled in completely</strong><br />`;
+      }
       hasInvalid = hasInvalid || invalid;
     }
   });
   if (hasInvalid) {
+    ElNotification({
+      title: "Failed",
+      message: `${invalidMsg}`,
+      dangerouslyUseHTMLString: true,
+      type: "error"
+    });
+    saveLoading.value = "disabled";
     return;
   } else {
     const params = { quoteid: getParameter.id };
@@ -1650,16 +1688,8 @@ const handleCheckboxGroupChange = (values: string[]) => {
         CommonService.getCityAndPortResult(params).then(a => {
           const a1 = a.map(item => item.text);
           process(a1);
-          // i.sourceValues = a1; // 儲存來源值
         });
       };
-      // if (i.data === "pReceipt" || i.data === "pDelivery") {
-      //   i.validator = (value, callback) => {
-      //     const sourceValues = i.sourceValues || [];
-      //     const isValid = sourceValues.includes(value) && value.trim() !== "";
-      //     callback(isValid); // 驗證結果
-      //   };
-      // }
     }
   });
   freightChargeSettings.value.columns = selectedItems.map(
@@ -1733,7 +1763,8 @@ const handleTermAndCondition = value => {
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
   if (
     customerProductLineAccessRight.value.isWrite === true &&
-    quotationDetailResult.value.status === "Draft" &&
+    (quotationDetailResult.value.status === "Draft" ||
+      quotationDetailResult.value.status === "Rejected") &&
     newValue != previousValue.value &&
     getParameter.id != "0"
   ) {
@@ -1828,62 +1859,11 @@ const amsCostAdjust = item => {
 
 const handleHandsonTableAutoSave = category => {
   return false;
-  switch (category) {
-    case "Freight":
-      frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
-      frightChargeParams.value.pid = quotationDetailResult.value.pid;
-      frightChargeParams.value.quoteFreights = freightChargeSettings.value.data;
-      saveFreightChargeResult(frightChargeParams.value).then(res => {
-        if (res && res.isSuccess) {
-          ElNotification({
-            title: "successfully",
-            message: "Freight Charge Save Successfully!",
-            type: "success"
-          });
-        }
-      });
-      break;
-    case "Export":
-      const exportLocalChargeParam = {
-        quoteID: frightChargeParams.value.quoteID,
-        pid: quotationDetailResult.value.pid,
-        isExport: true,
-        detail: exportLocationResult.value
-      };
-      saveLocalChargeResult(exportLocalChargeParam).then(res => {
-        if (res && res.isSuccess) {
-          ElNotification({
-            title: "successfully",
-            message: "Export Local Charge Save Successfully!",
-            type: "success"
-          });
-        }
-      });
-      break;
-    case "Import":
-      const importLocalChargeParam = {
-        quoteID: frightChargeParams.value.quoteID,
-        pid: quotationDetailResult.value.pid,
-        isExport: false,
-        detail: importLocationResult.value
-      };
-      saveLocalChargeResult(importLocalChargeParam).then(res => {
-        if (res && res.isSuccess) {
-          ElNotification({
-            title: "successfully",
-            message: "Import Local Charge Save Successfully!",
-            type: "success"
-          });
-        }
-      });
-      break;
-  }
 };
 
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
-
     ChargeCodeSettingResult.forEach(item => {
       if (item.selected) {
         let apiRequestType = 0;
@@ -1902,7 +1882,7 @@ watchEffect(() => {
         if (apiRequestType > 0) {
           // item.hotTableColumnSetting.type = "autocomplete";
           // item.hotTableColumnSetting.visibleRows = 15;
-          item.hotTableColumnSetting.strict = true;
+          // item.hotTableColumnSetting.strict = false;
           item.hotTableColumnSetting.source = function (_query, process) {
             const params = {
               searchKey: _query,
@@ -1914,13 +1894,9 @@ watchEffect(() => {
             CommonService.getCityAndPortResult(params).then(a => {
               const a1 = a.map(item => item.text);
               process(a1);
-              // item.hotTableColumnSetting.source = a1; // 儲存來源值
             });
           };
-          // item.hotTableColumnSetting.validator = (value, callback) => {
-          //   const isValid = value && value.trim() !== ""; // 只檢查是否為空值
-          //   callback(isValid);
-          // };
+          console.log(freightChargeSettings);
         }
         sourceData.push(item);
       }
@@ -1950,20 +1926,14 @@ watchEffect(() => {
     }
   }
 
-  if (getParameter.id != "0" && quotationDetailResult.value.status != "Draft") {
+  if (
+    getParameter.id != "0" &&
+    quotationDetailResult.value.status != "Draft" &&
+    quotationDetailResult.value.status != "Rejected"
+  ) {
     customerProductLineAccessRight.value.isWrite = false;
   }
 });
-
-// watch(
-//   () => quotationDetailResult.value,
-//   (newVal, oldVal) => {
-//     console.log("quotationDetailResult changed:", newVal);
-//     // 在這裡執行你想要的邏輯
-//   },
-//   { deep: true } // 如果是對象或數組，使用 deep 來監聽內部變化
-// );
-
 onMounted(() => {
   if (getParameter.id != "0") {
     const id = Array.isArray(getParameter.id)
@@ -2138,7 +2108,8 @@ const handleNumberInput = value => {
           <el-button
             v-if="
               customerProductLineAccessRight.isWrite &&
-              quotationDetailResult.status === 'Draft' &&
+              (quotationDetailResult.status === 'Draft' ||
+                quotationDetailResult.status === 'Rejected') &&
               qid === 0
             "
             type="primary"
@@ -2154,7 +2125,8 @@ const handleNumberInput = value => {
           <el-button
             v-if="
               customerProductLineAccessRight.isWrite &&
-              quotationDetailResult.status === 'Draft'
+              (quotationDetailResult.status === 'Draft' ||
+                quotationDetailResult.status === 'Rejected')
             "
             type="primary"
             plain
@@ -2300,9 +2272,7 @@ const handleNumberInput = value => {
                 />
                 <EditorBase />
               </div>
-              <div v-else>
-                {{ quotationDetailResult.greeting }}
-              </div>
+              <div v-else v-html="quotationDetailResult.greeting" />
             </el-collapse-item>
             <el-collapse-item title="FREIGHT CHARGE" name="3">
               <template #title>

@@ -3,7 +3,13 @@ import userManager from "@/utils/oidcConfig";
 export const login = async () => {
   try {
     // 執行登入並生成 state
-    await userManager.signinRedirect();
+    // await userManager.signinRedirect();
+    const targetUrl = window.location.href;
+    console.log("Setting state with redirectUrl:", targetUrl);
+
+    userManager.signinRedirect({
+      state: { redirectUrl: targetUrl }
+    });
 
     // 調試：檢查登入後的 stateStore
     const allKeys = await userManager.settings.stateStore.getAllKeys();

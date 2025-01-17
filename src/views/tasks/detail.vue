@@ -90,8 +90,6 @@ const handleDropDownChange = async (
   filterItem,
   subValue
 ) => {
-  console.log("handleDropDownChange value", v);
-  console.log("handleDropDownChange filterItem", filterItem);
   autoSaveForm(formEl, filterItem, v);
 };
 //formEl: FormInstance | undefined,
@@ -114,8 +112,6 @@ const autoSaveForm = async (
     if (!fields || fieldValid) {
       const data = profileData.value;
       const dataInit = profileDataInit.value;
-      console.log("dataInit", dataInit);
-      console.log("data", data);
       const param = {
         tableName: "sasalestask",
         fieldName: filterItem.filterKey,
@@ -220,7 +216,6 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       profileData.value["appointmentDate"] =
         profileData.value["appointmentStartTime"];
       profileData.value["actionItems"] = actionItems.value;
-      console.log("submit! profileData:", profileData.value);
       formLoading.value = true;
       TaskProfileService.updateTaskProfile(profileData.value)
         .then(data => {
@@ -241,7 +236,6 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
           formLoading.value = false;
         })
         .catch(err => {
-          console.log("updateTaskProfile error", err);
           ElMessage({
             message: t("customer.profile.fullSaveFailAlert"),
             grouping: true,
@@ -279,13 +273,7 @@ onMounted(() => {
   <div>
     <el-card shadow="never" class="relative">
       <div class="flex ...">
-        <div class="grow h-8 ...">
-          <!-- <el-button :icon="useRenderIcon(buttonList[0].icon)" @click="goBack">
-            <template v-if="baseRadio !== 'circle'" #default>
-              <p>{{ buttonList[0].text }}</p>
-            </template>
-          </el-button> -->
-        </div>
+        <div class="grow h-8 ..." />
         <div class="grow-0 h-8 ..." style="margin-bottom: 8px">
           <el-button
             v-if="ProfileID !== '0'"

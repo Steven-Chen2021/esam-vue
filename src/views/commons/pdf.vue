@@ -37,6 +37,20 @@ const onPrint = () => {
   pdfRef.value.print();
 };
 
+const downloadPdf = () => {
+  if (source.value) {
+    // 建立一個 URL 物件來處理檔案名稱
+    const url = new URL(source.value);
+    const fileName = url.pathname.split("/").pop() || "file.pdf"; // 擷取 URL 中的檔案名稱
+
+    const link = document.createElement("a");
+    link.href = source.value; // 使用來源 URL 作為下載的 URL
+    link.download = fileName; // 使用擷取到的檔案名稱
+    link.click();
+  } else {
+    console.error("PDF 資料尚未加載，無法下載！");
+  }
+};
 onMounted(() => {
   if (getParameter.id != "0") {
     if (getParameter.category === "quotation") {
@@ -96,6 +110,20 @@ onMounted(() => {
             class="cursor-pointer outline-transparent"
             @click="onPrint"
           />
+
+          <IconifyIconOnline
+            v-tippy="{
+              maxWidth: 'none',
+              content: 'Download PDF'
+            }"
+            icon="ri:download-cloud-2-line"
+            class="cursor-pointer outline-transparent"
+            @click="downloadPdf"
+          />
+
+          <!-- <el-button type="primary" size="small" @click="downloadPdf">
+            下载 PDF
+          </el-button> -->
         </div>
       </div>
       <el-scrollbar>
