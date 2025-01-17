@@ -54,7 +54,12 @@ const {
   notifyWindowShow,
   cancelSaveNotify,
   dealTypeOptions,
-  loadDealTypeOptions
+  loadDealTypeOptions,
+  dealCurrentStep,
+  dealStatusOptions,
+  getDealStatusResult,
+  dealRefSummary,
+  getDealRefSummaryResult
 } = dealProfilectl();
 defineOptions({
   name: "TaskDetail"
@@ -278,6 +283,8 @@ onMounted(() => {
   ProfileID.value = CID;
   LeadID.value = LID;
   loadDealTypeOptions();
+  getDealStatusResult();
+  getDealRefSummaryResult();
   fetchProfileData();
   fetchDCUrl();
 });
@@ -434,14 +441,14 @@ const dealFormRules = {
                   <el-steps
                     style="max-width: 600px"
                     :space="200"
-                    :active="1"
+                    :active="dealCurrentStep"
                     finish-status="success"
                   >
-                    <el-step title="Prospecting" />
-                    <el-step title="Approaching" />
-                    <el-step title="Quoting" />
-                    <el-step title="Negotiation" />
-                    <el-step title="Won" />
+                    <el-step
+                      v-for="item in dealStatusOptions"
+                      :key="item.remark"
+                      :title="item.remark"
+                    />
                   </el-steps>
                   <div style="display: flex; margin-top: 20px">
                     <el-form
@@ -507,22 +514,39 @@ const dealFormRules = {
           <el-collapse-item name="quote" class="custom-collapse-title">
             <template #title>
               {{ t("deal.quotationList.title") }} ({{
-                profileData["quoteCount"]
+                dealRefSummary["quoteCount"]
               }})
             </template>
-            <dealRelatedList :CusID="LID" :DealID="CID" Type="quoteSearch" />
+            <dealRelatedList
+              :CusID="LID"
+              :DealID="CID"
+              Type="quoteSearch"
+              @update="getDealRefSummaryResult"
+            />
           </el-collapse-item>
           <el-collapse-item name="task" class="custom-collapse-title"
             ><template #title>
-              {{ t("deal.taskList.title") }} ({{ profileData["taskCount"] }})
+              {{ t("deal.taskList.title") }} ({{ dealRefSummary["taskCount"] }})
             </template>
-            <dealRelatedList :CusID="LID" :DealID="CID" Type="TaskList" />
+            <dealRelatedList
+              :CusID="LID"
+              :DealID="CID"
+              Type="TaskList"
+              @update="getDealRefSummaryResult"
+            />
           </el-collapse-item>
           <el-collapse-item name="contact" class="custom-collapse-title"
             ><template #title>
-              {{ t("deal.contactList.title") }} ({{ profileData["taskCount"] }})
+              {{ t("deal.contactList.title") }} ({{
+                dealRefSummary["contactCount"]
+              }})
             </template>
-            <dealRelatedList :CusID="LID" :DealID="CID" Type="ContactList" />
+            <dealRelatedList
+              :CusID="LID"
+              :DealID="CID"
+              Type="ContactList"
+              @update="getDealRefSummaryResult"
+            />
           </el-collapse-item>
           <el-collapse-item
             v-if="CID !== '0'"

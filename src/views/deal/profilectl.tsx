@@ -46,14 +46,17 @@ export function dealProfilectl() {
   // TODO: 补全所有栏位
   const fetchProfileData = async () => {
     try {
-      const [result2, result3] = await Promise.all([
-        DealProfileService.getDealProfileResult(1),
-        CommonService.getUserAccessByCustomer(LeadID.value, 0)
+      const [result2, result3, result1] = await Promise.all([
+        DealProfileService.getDealProfileResult(ProfileID.value),
+        CommonService.getUserAccessByCustomer(LeadID.value, 0),
+        DealProfileService.getDealRefSummaryResult(ProfileID.value)
       ]);
       userAuth.value = deepClone(result3.returnValue);
       DCShow.value = userAuth.value["isReadAdvanceColumn"];
       profileData.value = deepClone(result2.returnValue);
-
+      if (result1 && result1.returnValue) {
+        profileData.value = { ...profileData.value, ...result1.returnValue };
+      }
       console.log("profileData.value", profileData.value);
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
@@ -876,6 +879,33 @@ export function dealProfilectl() {
       console.error("获取选项时出错:", error);
     }
   };
+  const dealStatusOptions = ref([]);
+  const dealCurrentStep = ref(0);
+  const getDealStatusResult = async () => {
+    try {
+      const response = await DealProfileService.getDealStatusResult(
+        ProfileID.value
+      );
+      dealStatusOptions.value = response.returnValue.status;
+      dealCurrentStep.value = response.returnValue.status.findLastIndex(
+        item => item.isshow === 1
+      );
+      console.log("dealStatusOptions", dealStatusOptions.value);
+    } catch (error) {
+      console.error("获取选项时出错:", error);
+    }
+  };
+  const dealRefSummary = ref({});
+  const getDealRefSummaryResult = async () => {
+    try {
+      const response = await DealProfileService.getDealRefSummaryResult(
+        ProfileID.value
+      );
+      dealRefSummary.value = response.returnValue;
+    } catch (error) {
+      console.error("获取选项时出错:", error);
+    }
+  };
   return {
     membersFormData,
     loadDimOrgOptions,
@@ -951,6 +981,11 @@ export function dealProfilectl() {
     notifyWindowShow,
     cancelSaveNotify,
     dealTypeOptions,
-    loadDealTypeOptions
+    loadDealTypeOptions,
+    dealCurrentStep,
+    dealStatusOptions,
+    getDealStatusResult,
+    dealRefSummary,
+    getDealRefSummaryResult
   };
 }

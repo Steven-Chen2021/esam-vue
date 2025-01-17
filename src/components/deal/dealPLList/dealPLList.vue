@@ -35,22 +35,22 @@ const handleAfterChange = (changes, source) => {
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
         item =>
-          (item.actionItem && item.actionItem !== "") ||
-          (item.dueDate && item.dueDate !== "") ||
-          (item.owner && item.owner !== "")
+          (item.pl && item.pl !== "") ||
+          (item.origin && item.origin !== "") ||
+          (item.destination && item.destination !== "")
       );
       const oldData = tableDataInit.value.filter(item => item.actionItem);
       console.log("handleAfterChange newData", newData);
       console.log("handleAfterChange oldData", oldData);
       if (!isObjectEqual(newData, oldData)) {
-        // updateActionItem();
+        updateActionItem();
       }
     }, 1000);
   }
 };
 const handleRemoveRow = (index, amount) => {
   console.debug("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
-  // updateActionItem();
+  updateActionItem();
 };
 const userAuth = ref({});
 const tableDataInit = ref([]);
@@ -154,6 +154,7 @@ const getActionItemResult = async () => {
         //   });
         // });
         tableSetting.value["data"] = deepClone(tableData.returnValue);
+        console.log("table data,", tableSetting.value);
         tableDataInit.value = deepClone(tableData.returnValue);
       }
       if (hotTableRef.value) {
@@ -177,11 +178,13 @@ function isObjectEqual(arr1, arr2) {
 
     // 比较对象的每个键和值
     if (
-      item1.actionItem !== item2.actionItem ||
-      item1.owner !== item2.owner ||
-      item1.ownerUserid !== item2.ownerUserid ||
-      item1.dueDate !== item2.dueDate ||
-      item1.status !== item2.status
+      item1.pl !== item2.pl ||
+      item1.origin !== item2.origin ||
+      item1.destination !== item2.destination ||
+      item1.currency !== item2.currency ||
+      item1.estVolperMonth !== item2.estVolperMonth ||
+      item1.estRevenue !== item2.estRevenue ||
+      item1.estGP !== item2.estGP
     ) {
       return false;
     }
@@ -193,9 +196,9 @@ function isObjectEqual(arr1, arr2) {
 const updateActionItem = () => {
   const newData = tableSetting.value.data.filter(
     item =>
-      (item.actionItem && item.actionItem !== "") ||
-      (item.dueDate && item.dueDate !== "") ||
-      (item.owner && item.owner !== "")
+      (item.pl && item.pl !== "") ||
+      (item.origin && item.origin !== "") ||
+      (item.destination && item.destination !== "")
   );
   newData.forEach(item => {
     item["id"] = !item["id"] ? "0" : item["id"];
@@ -204,14 +207,14 @@ const updateActionItem = () => {
   const rowArray = Array.from({ length: newData.length }, (_, index) => index);
   console.log("valid rowArray", rowArray);
   const updateParams = {
-    taskActionItems: newData,
-    taskID: props.DealID
+    dealDetails: newData,
+    dealid: props.DealID
   };
   hotTableRef.value.hotInstance.validateRows(rowArray, valid => {
     if (valid) {
       if (props.DealID == "0") return;
       console.log("valid");
-      TaskProfileService.saveTaskActionItemResult(updateParams)
+      DealProfileService.saveDealDetailsResult(updateParams)
         .then(data => {
           if (data && data.isSuccess) {
             tableDataInit.value = deepClone(tableSetting.value.data);
