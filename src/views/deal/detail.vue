@@ -60,7 +60,8 @@ const {
   dealStatusOptions,
   getDealStatusResult,
   dealRefSummary,
-  getDealRefSummaryResult
+  getDealRefSummaryResult,
+  dealClose
 } = dealProfilectl();
 defineOptions({
   name: "TaskDetail"
@@ -87,6 +88,17 @@ const refreshToDoList = () => {
   if (toDoListRef.value) {
     toDoListRef.value.getListData();
   }
+};
+const dealPLListRef = ref();
+const refreshDealPLList = () => {
+  if (dealPLListRef.value) {
+    dealPLListRef.value.fetchListData();
+  }
+};
+const dealQuoteListRef = ref();
+const handlePLUpdate = plList => {
+  console.log("handlePLUpdate", plList);
+  dealQuoteListRef.value.updateSelectable(plList);
 };
 const emit = defineEmits(["handleBackEvent"]);
 const backToIndex = () => {
@@ -201,6 +213,14 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
             console.log("LeadID.value", LeadID.value);
             fetchProfileData();
             fetchDCUrl();
+            activeName.value = [
+              "general",
+              "documents",
+              "task",
+              "detailList",
+              "contact",
+              "quote"
+            ];
           }
           formLoading.value = false;
         })
@@ -233,6 +253,31 @@ const cName = props.CustomerName
   : isArray(getParameter.customerName)
     ? getParameter.customerName[0]
     : getParameter.customerName;
+const dialogVisible = ref(false);
+const closeDeal = async () => {
+  dialogVisible.value = false;
+  formLoading.value = true;
+  DealProfileService.closeDealResult(ProfileID.value)
+    .then(d => {
+      ElMessage({
+        message: t("deal.profile.closeAlert"),
+        grouping: true,
+        type: "success"
+      });
+      fetchProfileData();
+      getDealStatusResult();
+    })
+    .catch(err => {
+      ElMessage({
+        message: t("customer.profile.disQualifyFailAlert"),
+        grouping: true,
+        type: "warning"
+      });
+    })
+    .finally(() => {
+      formLoading.value = false;
+    });
+};
 onMounted(() => {
   if (!props.ID) {
     initToDetail("params");
@@ -245,8 +290,6 @@ onMounted(() => {
   getDealRefSummaryResult();
   fetchProfileData();
   fetchDCUrl();
-  console.log("deal leadID", LID);
-  console.log("deal customerName", cName);
 });
 // #region Deal
 
@@ -266,7 +309,8 @@ onMounted(() => {
             :size="dynamicSize"
             :loading="formLoading"
             :icon="useRenderIcon('mingcute:close-line')"
-            :disabled="!userAuth['isWrite'] && ProfileID !== '0'"
+            :disabled="!userAuth['isWrite'] || dealClose"
+            @click="dialogVisible = true"
           >
             {{ t("deal.clostBtn") }}
           </el-button>
@@ -276,12 +320,12 @@ onMounted(() => {
             :size="dynamicSize"
             :loading="formLoading"
             :icon="useRenderIcon('ri:save-line')"
-            :disabled="!userAuth['isWrite'] && LID !== '0'"
+            :disabled="!userAuth['isWrite'] || dealClose"
             @click="submitForm(profileFormRef, false)"
           >
             {{ formLoading ? t("common.processing") : t("common.save") }}
           </el-button>
-          <el-button
+          <!-- <el-button
             type="primary"
             plain
             :size="dynamicSize"
@@ -291,7 +335,7 @@ onMounted(() => {
             @click="backToIndex"
           >
             {{ t("common.history") }}
-          </el-button>
+          </el-button> -->
           <el-button
             type="primary"
             plain
@@ -390,7 +434,7 @@ onMounted(() => {
                           v-model="profileData['dealType']"
                           placeholder="please select your zone"
                           style="min-width: 200px"
-                          :disabled="disableStatus()"
+                          :disabled="disableStatus() || dealClose"
                           @change="
                             v =>
                               handleDropDownChange(
@@ -414,7 +458,7 @@ onMounted(() => {
                       <el-form-item :label="t('deal.profile.flag')">
                         <el-input
                           v-model="profileData['flag']"
-                          :disabled="disableStatus()"
+                          :disabled="disableStatus() || dealClose"
                           @focusout="
                             autoSaveForm(
                               profileFormRef,
@@ -442,7 +486,12 @@ onMounted(() => {
                   </div>
                 </div>
                 <div v-if="CID !== '0'">
-                  <toDoList ref="toDoListRef" :CusID="LID" :DealID="CID" />
+                  <toDoList
+                    ref="toDoListRef"
+                    :CusID="LID"
+                    :DealID="CID"
+                    :DealStatus="dealClose"
+                  />
                 </div>
               </div>
             </div>
@@ -453,7 +502,13 @@ onMounted(() => {
             name="detailList"
             class="custom-collapse-title"
           >
-            <dealPLList :DealID="CID" :LeadID="LID" />
+            <dealPLList
+              ref="dealPLListRef"
+              :DealID="CID"
+              :LeadID="LID"
+              :DealStatus="dealClose"
+              @updateEvent="handlePLUpdate"
+            />
           </el-collapse-item>
           <el-collapse-item
             v-if="CID !== '0'"
@@ -466,10 +521,13 @@ onMounted(() => {
               }})
             </template>
             <dealRelatedList
+              ref="dealQuoteListRef"
               :CusID="LID"
               :DealID="CID"
               Type="quoteSearch"
+              :DealStatus="dealClose"
               @update="getDealRefSummaryResult"
+              @updateDealStatus="getDealStatusResult"
             />
           </el-collapse-item>
           <el-collapse-item
@@ -483,6 +541,7 @@ onMounted(() => {
               :CusID="LID"
               :DealID="CID"
               Type="TaskList"
+              :DealStatus="dealClose"
               @update="getDealRefSummaryResult"
               @updateToDoList="refreshToDoList"
             />
@@ -500,6 +559,7 @@ onMounted(() => {
               :CusID="LID"
               :DealID="CID"
               Type="ContactList"
+              :DealStatus="dealClose"
               @update="getDealRefSummaryResult"
             />
           </el-collapse-item>
@@ -544,6 +604,23 @@ onMounted(() => {
         </el-collapse>
       </div>
     </el-card>
+    <el-dialog
+      v-model="dialogVisible"
+      :title="t('customer.list.quickFilter.warnTitle')"
+      width="500"
+    >
+      <span>{{ t("customer.list.quickFilter.delWarnText") }}</span>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">{{
+            t("common.cancel")
+          }}</el-button>
+          <el-button type="primary" @click="closeDeal">
+            {{ t("common.confirm") }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

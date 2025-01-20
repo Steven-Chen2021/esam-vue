@@ -655,6 +655,7 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
             console.log("LeadID.value", LeadID.value);
             fetchProfileData();
             fetchDCUrl();
+            activeName.value = ["general", "documents"];
           }
         })
         .catch(err => {

@@ -18,12 +18,14 @@ import { useDetail } from "../hooks";
 import CommonService from "@/services/commonService";
 const { initToDetail, getParameter, router } = useDetail();
 // #region Tab extra
+import quoteDetailTab from "@/views/quotes/QuoteDetail.vue";
 import customerSubTab from "@/components/customerSubTab/customerSubTab.vue";
 import dealDetailTab from "@/views/deal/detail.vue";
 import contactTab from "@/components/contactTab/contactTab.vue";
 import contactDetailTab from "@/views/contact/detail.vue";
 import taskTab from "@/components/tasks/taskTab/taskTab.vue";
 import taskDetailTab from "@/views/tasks/detail.vue";
+import { deepClone } from "@/utils/common";
 const ContactDetailID = ref("0");
 const searchingContact = ref(true);
 const handleBackEvent = () => {
@@ -50,7 +52,7 @@ const handleTabEditEventTask = (TaskID, LeadDetailID) => {
 };
 const DealDetailID = ref("0");
 const searchingDeal = ref(true);
-const handleTabEditEventNew = (DetailID, LeadID, Type) => {
+const handleTabEditEventDeal = (DetailID, LeadID, Type) => {
   console.log(
     `handleTabEditEvent- DetailID: ${DetailID}, LeadID: ${LeadID}, Type: ${Type}`
   );
@@ -59,6 +61,16 @@ const handleTabEditEventNew = (DetailID, LeadID, Type) => {
 };
 const handleBackEventDeal = () => {
   searchingDeal.value = true;
+};
+
+const quoteDetail = ref(null);
+const searchingQuote = ref(true);
+const handleTabEditEventQuote = item => {
+  searchingQuote.value = false;
+  quoteDetail.value = deepClone(item);
+};
+const handleBackEventQuote = () => {
+  searchingQuote.value = true;
 };
 // #endregion
 const {
@@ -2001,7 +2013,7 @@ const cancelForm = () => {
             v-if="searchingDeal"
             :SearchLeadID="LID"
             SearchType="dealSearch"
-            @handleTabEditEvent="handleTabEditEventNew"
+            @handleTabEditEvent="handleTabEditEventDeal"
           />
           <dealDetailTab
             v-else
@@ -2047,29 +2059,20 @@ const cancelForm = () => {
             </div>
           </div></el-tab-pane
         >
-        <el-tab-pane v-if="LID !== '0'" :label="t('customer.quotation.title')"
-          ><div class="flex justify-center items-center h-[640px]">
-            <div class="ml-12">
-              <p
-                v-motion
-                class="font-medium text-4xl mb-4 dark:text-white"
-                :initial="{
-                  opacity: 0,
-                  y: 100
-                }"
-                :enter="{
-                  opacity: 1,
-                  y: 0,
-                  transition: {
-                    delay: 80
-                  }
-                }"
-              >
-                Welcome to the Quotation Page
-              </p>
-            </div>
-          </div></el-tab-pane
-        >
+        <el-tab-pane v-if="LID !== '0'" :label="t('customer.quotation.title')">
+          <customerSubTab
+            v-if="searchingQuote"
+            :SearchLeadID="LID"
+            SearchType="quoteSearch"
+            @handleTabEditEvent="handleTabEditEventQuote"
+          />
+          <quoteDetailTab
+            v-else
+            :ParentID="LID"
+            :PropsParam="quoteDetail"
+            @handleBackEvent="handleBackEventQuote"
+          />
+        </el-tab-pane>
         <el-tab-pane v-if="LID !== '0'" :label="t('customer.iRFQ.title')"
           ><div class="flex justify-center items-center h-[640px]">
             <div class="ml-12">

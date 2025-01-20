@@ -104,9 +104,13 @@ const props = defineProps({
   Type: {
     type: String,
     required: false
+  },
+  DealStatus: {
+    type: Boolean,
+    required: false
   }
 });
-const emit = defineEmits(["update", "updateToDoList"]);
+const emit = defineEmits(["update", "updateToDoList", "updateDealStatus"]);
 const handleViewClick = row => {
   switch (props.Type) {
     case "ApprovalList":
@@ -161,11 +165,45 @@ const multipleSelection = ref([]);
 const selectRow = (selection, row) => {
   console.log("selectRwo selection", selection);
   console.log("selectRwo row", row);
+  if (!userAccess.value || !userAccess.value["isWrite"]) {
+    listTableRef.value!.toggleRowSelection(row, undefined);
+    ElMessage({
+      message: t("common.unauthorizedAlert"),
+      grouping: true,
+      type: "warning"
+    });
+    return;
+  }
+  if (dealCloseStatus.value) {
+    listTableRef.value!.toggleRowSelection(row, undefined);
+    ElMessage({
+      message: t("deal.linkWarning"),
+      grouping: true,
+      type: "warning"
+    });
+    return;
+  }
   const selectID = row["id"];
   const type = ref("");
   switch (props.Type) {
     case "quoteSearch":
       type.value = "quote";
+      console.log("getSelectionRows", listTableRef.value!.getSelectionRows());
+      if (
+        listTableRef
+          .value!.getSelectionRows()
+          .some(item => item.productLineName === row.productLineName) &&
+        !plList.value.includes(row.productLineName)
+      ) {
+        // 取消勾选
+        listTableRef.value!.toggleRowSelection(row, undefined);
+        ElMessage({
+          message: t("deal.linkAlert"),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      }
       break;
     case "ContactList":
       type.value = "contact";
@@ -193,6 +231,8 @@ const selectRow = (selection, row) => {
       emit("update");
       if (props.Type === "TaskList") {
         emit("updateToDoList");
+      } else if (props.Type === "quoteSearch") {
+        emit("updateDealStatus");
       }
     })
     .catch(err => {
@@ -251,9 +291,7 @@ const fetchListData = async () => {
               a["taskStatus"] = a["status"];
             });
             tableData.value = data.returnValue;
-            if (userAccess.value && userAccess.value["isWrite"]) {
-              checkList();
-            }
+            checkList();
           } else {
             tableData.value = [];
             total.value = 0;
@@ -282,9 +320,7 @@ const fetchListData = async () => {
                 a["vip"] && a["vip"].toLowerCase() === "true" ? "Yes" : "No";
             });
             tableData.value = data.returnValue;
-            if (userAccess.value && userAccess.value["isWrite"]) {
-              checkList();
-            }
+            checkList();
           } else {
             tableData.value = [];
             total.value = 0;
@@ -311,9 +347,7 @@ const fetchListData = async () => {
               a["linked"] = a["used"] === 1 ? "Yes" : "No";
             });
             tableData.value = data.returnValue;
-            if (userAccess.value && userAccess.value["isWrite"]) {
-              checkList();
-            }
+            checkList();
           } else {
             tableData.value = [];
             total.value = 0;
@@ -335,7 +369,6 @@ const fetchListData = async () => {
 };
 const checkList = () => {
   const selectList = tableData.value.filter(item => item.used === 1);
-  console.log("selectList", selectList);
 
   // 使用 nextTick 确保 table 已经渲染完毕
   nextTick(() => {
@@ -355,6 +388,27 @@ const handleSortChange = ({ prop, order }) => {
   fetchListData(); // 重新获取排序后的数据
 };
 const userAccess = ref(null);
+const plList = ref([]);
+const selectable = row =>
+  props.Type !== "quoteSearch" || plList.value.includes(row.productLineName);
+const updateSelectable = list => {
+  plList.value = [];
+  if (list.includes("AMS")) {
+    plList.value.push("Air");
+  } else if (list.includes("OMS")) {
+    plList.value.push("Ocean");
+  }
+  console.log("updateSelectable", plList.value);
+};
+defineExpose({ updateSelectable });
+const dealCloseStatus = ref(false);
+watch(
+  () => props.DealStatus,
+  (newVal, oldVal) => {
+    console.log(`DealStatus changed from ${oldVal} to ${newVal}`);
+    dealCloseStatus.value = props.DealStatus;
+  }
+);
 onMounted(() => {
   setTimeout(() => {
     showAutoSaveAlert.value = false;
@@ -404,7 +458,8 @@ onMounted(() => {
         DealID !== '0' &&
         showAutoSaveAlert &&
         userAccess &&
-        userAccess['isWrite']
+        userAccess['isWrite'] &&
+        !dealCloseStatus
       "
       :title="t('deal.taskList.alert')"
       type="success"
@@ -425,21 +480,12 @@ onMounted(() => {
       @sort-change="handleSortChange"
       @select="selectRow"
     >
-      <el-table-column
-        v-if="userAccess['isWrite']"
-        type="selection"
-        width="55"
-      />
-      <el-table-column
-        v-else
-        prop="linked"
-        :label="t('deal.quickfilter.linked')"
-        width="80"
-      />
+      <el-table-column type="selection" width="55" />
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
           c =>
             c.enableOnSearchView &&
+            c['enableOnFilter'] &&
             c['showOnDealView'] &&
             c.filterType !== 'cascadingdropdown' &&
             c.showOnGrid

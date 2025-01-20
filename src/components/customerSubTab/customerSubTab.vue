@@ -94,7 +94,8 @@ const getUserAccessByCustomer = () => {
 };
 const addButtonActiveTypeList = ["dealSearch", "CustomerList", "quoteSearch"];
 const emit = defineEmits(["handleTabEditEvent"]);
-const openQuoteDetail = (item, type) => {
+const openQuoteDetail = (item, params) => {
+  emit("handleTabEditEvent", item);
   // toQuoteDetail(
   //   {
   //     id: scope.row.qid,
@@ -297,6 +298,7 @@ const handleResetSearch = () => {
   handleAdvancedReset();
 };
 const handleSearch = filterForm => {
+  console.log("handleSearch", filterForm);
   activePanelNames.value = [];
   handleConditionalSearch(filterForm);
   quickFilterList.value.forEach(a => {
@@ -306,6 +308,22 @@ const handleSearch = filterForm => {
 const handleFilterBtnClick = item => {
   handleBasicFilterBtnClick(item);
   handleConditionalSearch(advancedFilterForm);
+};
+const getTitle = () => {
+  let title = "";
+  switch (category.value) {
+    case "dealSearch":
+      title = t("deal.tabTitle");
+      break;
+    case "quoteSearch":
+      title = t("quote.tabTitle");
+      break;
+    case "ContactList":
+      break;
+    case "TaskList":
+      break;
+  }
+  return title;
 };
 onMounted(async () => {
   getUserAccessByCustomer();
@@ -429,7 +447,7 @@ onMounted(async () => {
       </el-form>
       <el-collapse v-model="activePanelNames">
         <el-collapse-item
-          :title="t('deal.tabTitle')"
+          :title="getTitle()"
           name="BasicFilterForm"
           class="custom-collapse-title"
         >
@@ -605,7 +623,11 @@ onMounted(async () => {
                     }}</el-button
                   >
                   <el-button
-                    v-if="addButtonActiveTypeList.includes(props.SearchType)"
+                    v-if="
+                      userAccess &&
+                      userAccess['isWrite'] &&
+                      addButtonActiveTypeList.includes(props.SearchType)
+                    "
                     :icon="Plus"
                     @click="handleAddCustomer"
                     >{{ $t("customer.add") }}</el-button

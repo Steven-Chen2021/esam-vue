@@ -109,6 +109,15 @@ class DealProfileService {
       console.error(error);
     }
   }
+  async closeDealResult(DealID) {
+    try {
+      const url = `/api/Deal/CloseDealResult?DealID=${DealID}`;
+      const response = await API.post(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new DealProfileService();

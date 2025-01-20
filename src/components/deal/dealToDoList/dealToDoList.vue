@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, defineComponent, nextTick } from "vue";
+import { ref, onMounted, defineComponent, nextTick, watch } from "vue";
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 import { ElMessage } from "element-plus";
@@ -16,6 +16,10 @@ const props = defineProps({
   },
   DealID: {
     type: String,
+    required: false
+  },
+  DealStatus: {
+    type: Boolean,
     required: false
   }
 });
@@ -125,6 +129,7 @@ const cellClass = ({ column }) => {
   }
 };
 const userAccess = ref(null);
+
 onMounted(() => {
   setTimeout(() => {
     showAutoSaveAlert.value = false;
@@ -138,9 +143,17 @@ onMounted(() => {
       console.log("getUserAccessByCustomer error", err);
     });
 });
+const dealCloseStatus = ref(false);
+watch(
+  () => props.DealStatus,
+  (newVal, oldVal) => {
+    console.log(`DealStatus changed from ${oldVal} to ${newVal}`);
+    dealCloseStatus.value = props.DealStatus;
+  }
+);
 </script>
 <template>
-  <div v-loading="toDoLoading">
+  <div v-if="DealID !== '0'" v-loading="toDoLoading">
     <div style="display: flex; align-items: center">
       <span style="margin-left: 12px; font-size: 16px">{{
         t("deal.toDo.title")
@@ -158,7 +171,8 @@ onMounted(() => {
         DealID !== '0' &&
         showAutoSaveAlert &&
         userAccess &&
-        userAccess['isWrite']
+        userAccess['isWrite'] &&
+        !dealCloseStatus
       "
       :title="t('deal.toDo.alert')"
       type="success"
@@ -181,7 +195,7 @@ onMounted(() => {
       @selection-change="handleSelectionChange"
     >
       <el-table-column
-        v-if="userAccess['isWrite']"
+        v-if="userAccess['isWrite'] && !dealCloseStatus"
         type="selection"
         width="55"
       />

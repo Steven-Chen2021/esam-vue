@@ -43,6 +43,7 @@ export function dealProfilectl() {
   const profileDataInit = ref({ customerName: "" });
   const profileFormData = ref([]);
   const profileData = ref({});
+  const dealClose = ref(false);
   // TODO: 补全所有栏位
   const fetchProfileData = async () => {
     try {
@@ -57,7 +58,10 @@ export function dealProfilectl() {
       if (result1 && result1.returnValue) {
         profileData.value = { ...profileData.value, ...result1.returnValue };
       }
-      console.log("profileData.value", profileData.value);
+      dealClose.value =
+        profileData.value["status"] === "D6" ||
+        profileData.value["status"] === "D5";
+      console.log("deal close", dealClose.value);
       profileDataInit.value = deepClone(result2.returnValue);
       profileFormData.value.forEach(column => {
         if (column.visibilityLevel === 2) {
@@ -70,8 +74,6 @@ export function dealProfilectl() {
           }
         }
       });
-      console.log("profileData", profileData.value);
-      console.log("profileFormData", profileFormData.value);
       formLoading.value = false;
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -863,16 +865,16 @@ export function dealProfilectl() {
     }
   };
   const dealStatusOptions = ref([]);
-  const dealCurrentStep = ref(0);
+  const dealCurrentStep = ref(1);
   const getDealStatusResult = async () => {
     try {
       const response = await DealProfileService.getDealStatusResult(
         ProfileID.value
       );
       dealStatusOptions.value = response.returnValue.status;
-      dealCurrentStep.value = response.returnValue.status.findLastIndex(
-        item => item.isshow === 1
-      );
+      dealCurrentStep.value =
+        response.returnValue.status.findLastIndex(item => item.isshow === 1) +
+        1;
       console.log("dealStatusOptions", dealStatusOptions.value);
     } catch (error) {
       console.error("获取选项时出错:", error);
@@ -969,6 +971,7 @@ export function dealProfilectl() {
     dealStatusOptions,
     getDealStatusResult,
     dealRefSummary,
-    getDealRefSummaryResult
+    getDealRefSummaryResult,
+    dealClose
   };
 }

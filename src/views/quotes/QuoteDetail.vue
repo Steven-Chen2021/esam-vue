@@ -78,7 +78,43 @@ const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
   CommonHelper();
 
 const { ReconstructDCURL } = UrlHelper();
-
+// #region customer profile tab
+const props = defineProps({
+  ParentID: {
+    type: String,
+    required: false
+  },
+  PropsParam: {
+    type: Object,
+    required: false
+  }
+  // ID: {
+  //   type: String,
+  //   required: false
+  // },
+  // qname: {
+  //   type: String,
+  //   required: false
+  // },
+  // pid: {
+  //   type: String,
+  //   required: false
+  // },
+  // pagemode: {
+  //   type: String,
+  //   required: false
+  // }
+});
+const pageParams = ref({ id: "", qname: "", pagemode: "", pid: "" });
+const emit = defineEmits(["handleBackEvent"]);
+const backToIndex = () => {
+  if (props.ParentID && props.ParentID !== "") {
+    emit("handleBackEvent");
+  } else {
+    router.go(-1);
+  }
+};
+// #endregion
 const {
   getCustomerByOwnerUserResult,
   customerResult,
@@ -134,7 +170,7 @@ const { AutoSaveItem, AutoSave } = AutoSaveHelper();
 defineOptions({
   name: "QuoteDetail"
 });
-initToDetail("params");
+// initToDetail("params");
 
 const hotTableRef = ref(null);
 const freightVisible = ref(false);
@@ -380,7 +416,7 @@ const dataPermissionExtension = () => {
           if (
             ctl != undefined &&
             (customerProductLineAccessRight.value.isWrite === false ||
-              ((getParameter.pagemode === "copy" ||
+              ((pageParams.value.pagemode === "copy" ||
                 quotationDetailResult.value.bookmark === true) &&
                 ctl.prop === "productLineCode"))
           ) {
@@ -416,7 +452,7 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onSelect: (item: { text: string; value: number }) => {
         quotationDetailResult.value.customerHQID = item.value;
-        if (getParameter.pagemode != "copy") {
+        if (pageParams.value.pagemode != "copy") {
           getProductLineByCustomerResult(item.value);
         }
         getAttentionToResult(item.value);
@@ -559,16 +595,16 @@ let quoteDetailColumns: PlusColumn[] = [
           autoSaveTrigger(value, "productLineName");
         }
 
-        if (getParameter.id === "0") {
+        if (pageParams.value.id === "0") {
         }
-        if (getParameter.pagemode != "copy") {
+        if (pageParams.value.pagemode != "copy") {
           UserAccessRightByCustomerProductLine(
             quotationDetailResult.value.customerHQID,
             _pid
           ).then(res => {
             customerProductLineAccessRight.value = res.returnValue;
             customerProductLineAccessRight.value.isWrite =
-              getParameter.pagemode === "view"
+              pageParams.value.pagemode === "view"
                 ? false
                 : customerProductLineAccessRight.value.isWrite;
 
@@ -1557,7 +1593,7 @@ const sendApproval = () => {
     saveLoading.value = "disabled";
     return;
   } else {
-    const params = { quoteid: getParameter.id };
+    const params = { quoteid: pageParams.value.id };
     SendQuotationToApprove(params)
       .then(res => {
         if (res && res.isSuccess) {
@@ -1607,7 +1643,7 @@ const previewQuote = () => {
     category: "quotation",
     id: quotationDetailResult.value.quoteid as string,
     displaytitle: (quotationDetailResult.value.quoteNo ??
-      getParameter.qname) as string,
+      pageParams.value.qname) as string,
     pid: quotationDetailResult.value.pid as string
   });
 };
@@ -1766,7 +1802,7 @@ const autoSaveTrigger = (newValue, columnName, tableName2?) => {
     (quotationDetailResult.value.status === "Draft" ||
       quotationDetailResult.value.status === "Rejected") &&
     newValue != previousValue.value &&
-    getParameter.id != "0"
+    pageParams.value.id != "0"
   ) {
     AutoSaveItem.value.TableName = "saquotes";
     if (tableName2 != null) {
@@ -1916,7 +1952,7 @@ watchEffect(() => {
   }
   if (
     quotationDetailResult.value.customerHQID != null &&
-    getParameter.pagemode === "copy"
+    pageParams.value.pagemode === "copy"
   ) {
     const isLegalCustomer = customerResult.customers.some(
       c => c.text === quotationDetailResult.value.customerName
@@ -1927,7 +1963,7 @@ watchEffect(() => {
   }
 
   if (
-    getParameter.id != "0" &&
+    pageParams.value.id != "0" &&
     quotationDetailResult.value.status != "Draft" &&
     quotationDetailResult.value.status != "Rejected"
   ) {
@@ -1935,16 +1971,39 @@ watchEffect(() => {
   }
 });
 onMounted(() => {
-  if (getParameter.id != "0") {
-    const id = Array.isArray(getParameter.id)
-      ? parseInt(getParameter.id[0], 10)
-      : parseInt(getParameter.id, 10);
+  if (!props.PropsParam) {
+    initToDetail("params");
+    pageParams.value.id = Array.isArray(getParameter.id)
+      ? getParameter.id[0]
+      : getParameter.id;
+    pageParams.value["pid"] = Array.isArray(getParameter.pid)
+      ? getParameter.pid[0]
+      : getParameter.pid;
+    pageParams.value["pagemode"] = Array.isArray(getParameter.pagemode)
+      ? getParameter.pagemode[0]
+      : getParameter.pagemode;
+    pageParams.value["qname"] = Array.isArray(getParameter.qname)
+      ? getParameter.qname[0]
+      : getParameter.qname;
+  } else {
+    pageParams.value.id = props.PropsParam["id"];
+    pageParams.value.pid = props.PropsParam["pid"];
+    pageParams.value.pagemode = props.PropsParam["pagemode"];
+    pageParams.value.qname = props.PropsParam["qname"];
+  }
+  console.log("pageParams", pageParams.value);
+  if (pageParams.value.id != "0") {
+    // const id = Array.isArray(getParameter.id)
+    //   ? parseInt(getParameter.id[0], 10)
+    //   : parseInt(getParameter.id, 10);
+    const id = parseInt(pageParams.value.id, 10);
     if (!isNaN(id)) {
       qid.value = id;
     }
-    const _pid = Array.isArray(getParameter.pid)
-      ? parseInt(getParameter.pid[0], 10)
-      : parseInt(getParameter.pid, 10);
+    // const _pid = Array.isArray(getParameter.pid)
+    //   ? parseInt(getParameter.pid[0], 10)
+    //   : parseInt(getParameter.pid, 10);
+    const _pid = parseInt(pageParams.value.pid, 10);
     getQuotationDetailResult(qid.value, _pid).then(() => {
       historyBtnVisible.value = true;
       deleteBtnVisible.value = true;
@@ -1986,9 +2045,9 @@ onMounted(() => {
       ).then(res => {
         customerProductLineAccessRight.value = res.returnValue;
         customerProductLineAccessRight.value.isWrite =
-          getParameter.pagemode === "view"
+          pageParams.value.pagemode === "view"
             ? false
-            : getParameter.pagemode === "copy"
+            : pageParams.value.pagemode === "copy"
               ? true
               : customerProductLineAccessRight.value.isWrite;
         dataPermissionExtension();
@@ -1996,8 +2055,8 @@ onMounted(() => {
     });
   }
   let PID = null;
-  if (getParameter.pagemode === "copy") {
-    PID = getParameter.pid;
+  if (pageParams.value.pagemode === "copy") {
+    PID = pageParams.value.pid;
   }
   getCustomerByOwnerUserResult(PID);
   getTradeTermResult().then(itme => {
@@ -2173,6 +2232,14 @@ const handleNumberInput = value => {
             @click="viewHistory"
           >
             {{ $t("buttons.pureHistoryLog") }}
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :size="dynamicSize"
+            @click="backToIndex"
+          >
+            {{ t("common.back") }}
           </el-button>
         </div>
       </div>
