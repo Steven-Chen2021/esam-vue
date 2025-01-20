@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, defineComponent, nextTick } from "vue";
+import { ref, onMounted, watch, nextTick } from "vue";
 import dayjs from "dayjs";
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
@@ -104,9 +104,13 @@ const props = defineProps({
   Type: {
     type: String,
     required: false
+  },
+  DealStatus: {
+    type: Boolean,
+    required: false
   }
 });
-const emit = defineEmits(["update"]);
+const emit = defineEmits(["update", "updateToDoList", "updateDealStatus"]);
 const handleViewClick = row => {
   switch (props.Type) {
     case "ApprovalList":
@@ -161,11 +165,45 @@ const multipleSelection = ref([]);
 const selectRow = (selection, row) => {
   console.log("selectRwo selection", selection);
   console.log("selectRwo row", row);
+  if (!userAccess.value || !userAccess.value["isWrite"]) {
+    listTableRef.value!.toggleRowSelection(row, undefined);
+    ElMessage({
+      message: t("common.unauthorizedAlert"),
+      grouping: true,
+      type: "warning"
+    });
+    return;
+  }
+  if (dealCloseStatus.value) {
+    listTableRef.value!.toggleRowSelection(row, undefined);
+    ElMessage({
+      message: t("deal.linkWarning"),
+      grouping: true,
+      type: "warning"
+    });
+    return;
+  }
   const selectID = row["id"];
   const type = ref("");
   switch (props.Type) {
     case "quoteSearch":
       type.value = "quote";
+      console.log("getSelectionRows", listTableRef.value!.getSelectionRows());
+      if (
+        listTableRef
+          .value!.getSelectionRows()
+          .some(item => item.productLineName === row.productLineName) &&
+        !plList.value.includes(row.productLineName)
+      ) {
+        // 取消勾选
+        listTableRef.value!.toggleRowSelection(row, undefined);
+        ElMessage({
+          message: t("deal.linkAlert"),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      }
       break;
     case "ContactList":
       type.value = "contact";
@@ -191,6 +229,11 @@ const selectRow = (selection, row) => {
       });
       fetchListData();
       emit("update");
+      if (props.Type === "TaskList") {
+        emit("updateToDoList");
+      } else if (props.Type === "quoteSearch") {
+        emit("updateDealStatus");
+      }
     })
     .catch(err => {
       console.log("autosave error", err);
@@ -219,6 +262,7 @@ const fetchListData = async () => {
         .then(data => {
           if (data.isSuccess) {
             data.returnValue.forEach(a => {
+              a["linked"] = a["used"] === 1 ? "Yes" : "No";
               if (
                 a["appointmentStartDate"] &&
                 a["appointmentStartDate"] !== ""
@@ -271,6 +315,7 @@ const fetchListData = async () => {
         .then(data => {
           if (data.isSuccess) {
             data.returnValue.forEach(a => {
+              a["linked"] = a["used"] === 1 ? "Yes" : "No";
               a["vip"] =
                 a["vip"] && a["vip"].toLowerCase() === "true" ? "Yes" : "No";
             });
@@ -298,6 +343,9 @@ const fetchListData = async () => {
       DealProfileService.getLinkedQuoteDataList(searchParams.value)
         .then(data => {
           if (data.isSuccess) {
+            data.returnValue.forEach(a => {
+              a["linked"] = a["used"] === 1 ? "Yes" : "No";
+            });
             tableData.value = data.returnValue;
             checkList();
           } else {
@@ -321,7 +369,6 @@ const fetchListData = async () => {
 };
 const checkList = () => {
   const selectList = tableData.value.filter(item => item.used === 1);
-  console.log("selectList", selectList);
 
   // 使用 nextTick 确保 table 已经渲染完毕
   nextTick(() => {
@@ -340,6 +387,28 @@ const handleSortChange = ({ prop, order }) => {
   searchParams.value["order"] = order === "ascending" ? "asc" : "desc";
   fetchListData(); // 重新获取排序后的数据
 };
+const userAccess = ref(null);
+const plList = ref([]);
+const selectable = row =>
+  props.Type !== "quoteSearch" || plList.value.includes(row.productLineName);
+const updateSelectable = list => {
+  plList.value = [];
+  if (list.includes("AMS")) {
+    plList.value.push("Air");
+  } else if (list.includes("OMS")) {
+    plList.value.push("Ocean");
+  }
+  console.log("updateSelectable", plList.value);
+};
+defineExpose({ updateSelectable });
+const dealCloseStatus = ref(false);
+watch(
+  () => props.DealStatus,
+  (newVal, oldVal) => {
+    console.log(`DealStatus changed from ${oldVal} to ${newVal}`);
+    dealCloseStatus.value = props.DealStatus;
+  }
+);
 onMounted(() => {
   setTimeout(() => {
     showAutoSaveAlert.value = false;
@@ -370,20 +439,35 @@ onMounted(() => {
   searchParams.value["DealID"] = props.DealID;
   pageSize.value = 500;
   fetchData();
-  fetchListData();
+  CommonService.getUserAccessByCustomer(props.CusID, 0)
+    .then(data => {
+      userAccess.value = data.returnValue;
+      fetchListData();
+    })
+    .catch(err => {
+      console.log("getUserAccessByCustomer error", err);
+    });
+  // getUserAccessByCustomer();
   // fetchAdvancedFilterData();
 });
 </script>
 <template>
   <div>
     <el-alert
-      v-if="DealID !== '0' && showAutoSaveAlert"
+      v-if="
+        DealID !== '0' &&
+        showAutoSaveAlert &&
+        userAccess &&
+        userAccess['isWrite'] &&
+        !dealCloseStatus
+      "
       :title="t('deal.taskList.alert')"
       type="success"
       show-icon
       style="margin-bottom: 10px"
     />
     <el-table
+      v-if="userAccess"
       ref="listTableRef"
       v-loading="loading"
       border
@@ -401,6 +485,7 @@ onMounted(() => {
         v-for="col in advancedFilterForm.filters.filter(
           c =>
             c.enableOnSearchView &&
+            c['enableOnFilter'] &&
             c['showOnDealView'] &&
             c.filterType !== 'cascadingdropdown' &&
             c.showOnGrid

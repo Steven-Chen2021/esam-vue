@@ -244,6 +244,7 @@ login:
 common:
   dc: Documents
   unauthorized: No permission to view
+  unauthorizedAlert: No permission
   back: Back
   mailFormatErrorAlert: Please check eMail format.
   dateTimeStartPlaceholder: Start Time
@@ -254,6 +255,7 @@ common:
   cancel: Cancel
   confirm: Confirm
 deal:
+  tabTitle: Deal Search
   quickfilter:
     lid: HQID
     company: Company
@@ -264,7 +266,11 @@ deal:
     createDate: Initial Date
     closeDate: Close Date
     statusRemark: Status
+    linked: Linked
+    dealPercentage: Percentage
   clostBtn: Close
+  linkAlert: Please check PL details first.
+  linkWarning: Forbidden, Deal Closed.
   profile:
     title: Deal Maintain
     dealNo: Deal#
@@ -272,6 +278,8 @@ deal:
     flag: Flag
     initialDate: Initial Date
     closeDate: Close Date
+    closeAlert: Close Successfully.
+    closeFailAlert: Close Failed.
   toDo:
     actionItem: Action Item
     owner: Owner
@@ -279,6 +287,7 @@ deal:
     alert: Check or uncheck to update the completion status.
     title: To Do
     showAll: Show All
+    status: Status
   taskList:
     title: Linked Task
     alert: Check/uncheck to update the link status.
@@ -545,7 +554,8 @@ customer:
     title: Shipment Report
   setting:
     title: Setting
-quote:     
+quote:
+  tabTitle: Quote Search  
   quickfilter:
       productLineName: PL
       quoteNo: Quote#

@@ -101,6 +101,23 @@ class DealProfileService {
       return [];
     }
   }
+  async saveDealResult(params) {
+    try {
+      const response = await API.post("/api/Deal/SaveDealResult", params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async closeDealResult(DealID) {
+    try {
+      const url = `/api/Deal/CloseDealResult?DealID=${DealID}`;
+      const response = await API.post(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new DealProfileService();

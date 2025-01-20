@@ -24,13 +24,16 @@ const props = defineProps({
   LeadID: {
     type: String,
     required: false
+  },
+  DealStatus: {
+    type: Boolean,
+    required: false
   }
 });
-const emit = defineEmits(["handleCancelEvent", "handleUpdateActionItems"]);
+const emit = defineEmits(["updateEvent", "handleUpdateActionItems"]);
 const { t } = useI18n();
 const hotTableRef = ref(null);
 const handleAfterChange = (changes, source) => {
-  console.log("handleAfterChange source", source);
   if (source === "edit" || source === "CopyPaste.paste") {
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
@@ -39,8 +42,14 @@ const handleAfterChange = (changes, source) => {
           (item.origin && item.origin !== "") ||
           (item.destination && item.destination !== "")
       );
-      const oldData = tableDataInit.value.filter(item => item.actionItem);
+      const oldData = tableDataInit.value.filter(
+        item =>
+          (item.pl && item.pl !== "") ||
+          (item.origin && item.origin !== "") ||
+          (item.destination && item.destination !== "")
+      );
       console.log("handleAfterChange newData", newData);
+      console.log("handleAfterChange tableDataInit", tableDataInit.value);
       console.log("handleAfterChange oldData", oldData);
       if (!isObjectEqual(newData, oldData)) {
         updateActionItem();
@@ -106,14 +115,16 @@ const getActionItemResult = async () => {
           ...item.hotTableColumnSetting,
           apisource: item.apisource
         }));
+      if (!userAuth.value["isWrite"]) {
+        tableSetting.value["columns"] = tableSetting.value["columns"].filter(
+          item => !item.isAdvance
+        );
+      }
       tableSetting.value["columns"].forEach((item, index) => {
         if (item["type"] === "date") {
           item["dateFormat"] = "MMM DD, YYYY";
           item["correctFormat"] = true;
-        } else if (item["type"] === "text") {
-          // item["validator"] = textValidor;
         } else if (item["type"] === "autocomplete") {
-          console.log("apisource", item.apisource);
           item["source"] = function (_query, process) {
             const params = {
               SearchKey: _query
@@ -128,7 +139,7 @@ const getActionItemResult = async () => {
           item["strict"] = true;
           item["visibleRows"] = 15;
         }
-        item["allowEmpty"] = false;
+        // item["allowEmpty"] = false;
       });
       tableSetting.value["colWidths"] = setting
         .filter(item => item.selected)
@@ -218,7 +229,6 @@ const updateActionItem = () => {
         .then(data => {
           if (data && data.isSuccess) {
             tableDataInit.value = deepClone(tableSetting.value.data);
-            console.log("updateActionItem tableDataInit", tableDataInit.value);
             // getActionItemResult();
             ElMessage({
               message: t("customer.profile.autoSaveSucAlert"),
@@ -260,15 +270,40 @@ onMounted(() => {
 });
 watch(tableSetting.value, newVal => {
   const data = [
-    ...newVal["data"].filter(item => item.actionItem && item.actionItem !== "")
+    ...newVal["data"]
+      .filter(
+        item =>
+          (item.pl && item.pl !== "") ||
+          (item.origin && item.origin !== "") ||
+          (item.destination && item.destination !== "")
+      )
+      .map(item => item.pl)
   ];
-  emit("handleUpdateActionItems", data);
+  console.log("tableSetting update", data);
+  emit("updateEvent", data);
 });
+const dealCloseStatus = ref(false);
+watch(
+  () => props.DealStatus,
+  (newVal, oldVal) => {
+    console.log(`DealStatus changed from ${oldVal} to ${newVal}`);
+    dealCloseStatus.value = props.DealStatus;
+    tableSetting.value.readOnly =
+      tableSetting.value.readOnly || dealCloseStatus.value;
+    tableSetting.value.dropdownMenu =
+      tableSetting.value.dropdownMenu && !dealCloseStatus.value;
+    console.log("tableSetting.value.readOnly", tableSetting.value.readOnly);
+    console.log(
+      "tableSetting.value.dropdownMenu",
+      tableSetting.value.dropdownMenu
+    );
+  }
+);
 </script>
 <template>
   <div>
     <el-alert
-      v-if="DealID !== '0' && showAutoSaveAlert"
+      v-if="DealID !== '0' && showAutoSaveAlert && !dealCloseStatus"
       :title="t('task.action.alert')"
       type="success"
       show-icon

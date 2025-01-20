@@ -15,6 +15,7 @@ import {
 } from "@/router/enums";
 import dayjs from "dayjs";
 import { reactive, ref } from "vue";
+import { deepClone } from "@/utils/common";
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 export interface ColumnDetailVM {
   label: string;
@@ -103,12 +104,7 @@ export function listCTL() {
               }
             ];
           } else {
-            // searchParams.ConditionalSettings.push({
-            //   enableOnSearchView: false,
-            //   filterKey: "hqid",
-            //   value: FilterLeadID.value
-            // });
-            const a = searchParams.ConditionalSettings.filter(
+            const a = searchParams.ConditionalSettings.find(
               item => item.filterKey === "hqid"
             );
             if (!a || a.length === 0) {
@@ -117,6 +113,9 @@ export function listCTL() {
                 filterKey: "hqid",
                 value: FilterLeadID.value
               });
+              console.log("ConditionalSettings", searchParams);
+            } else {
+              a["value"] = FilterLeadID.value;
             }
           }
         }
@@ -168,12 +167,7 @@ export function listCTL() {
               }
             ];
           } else {
-            // searchParams.ConditionalSettings.push({
-            //   enableOnSearchView: false,
-            //   filterKey: "hqid",
-            //   value: FilterLeadID.value
-            // });
-            const a = searchParams.ConditionalSettings.filter(
+            const a = searchParams.ConditionalSettings.find(
               item => item.filterKey === "hqid"
             );
             if (!a || a.length === 0) {
@@ -182,6 +176,9 @@ export function listCTL() {
                 filterKey: "hqid",
                 value: FilterLeadID.value
               });
+              console.log("ConditionalSettings", searchParams);
+            } else {
+              a["value"] = FilterLeadID.value;
             }
           }
         }
@@ -252,8 +249,34 @@ export function listCTL() {
       }
       case quotes:
         {
+          const searchP = deepClone(searchParams);
+          if (FilterLeadID && FilterLeadID.value !== "0") {
+            if (!searchP) {
+              searchP.ConditionalSettings = [
+                {
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                }
+              ];
+            } else {
+              const a = searchP.ConditionalSettings.find(
+                item => item.filterKey === "hqid"
+              );
+              if (!a || a.length === 0) {
+                searchP.ConditionalSettings.push({
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                });
+              } else {
+                a["value"] = FilterLeadID.value;
+              }
+            }
+          }
+          console.log("ConditionalSettings", searchP);
           loading.value = true;
-          QuoteSearchService.getQuoteList(searchParams)
+          QuoteSearchService.getQuoteList(searchP)
             .then(data => {
               if (data && data.isSuccess) {
                 tableData.value = data.returnValue.results;
@@ -286,6 +309,31 @@ export function listCTL() {
         break;
       case deal:
         {
+          if (FilterLeadID && FilterLeadID.value !== "0") {
+            if (!searchParams.ConditionalSettings) {
+              searchParams.ConditionalSettings = [
+                {
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                }
+              ];
+            } else {
+              const a = searchParams.ConditionalSettings.find(
+                item => item.filterKey === "hqid"
+              );
+              if (!a || a.length === 0) {
+                searchParams.ConditionalSettings.push({
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                });
+                console.log("ConditionalSettings", searchParams);
+              } else {
+                a["value"] = FilterLeadID.value;
+              }
+            }
+          }
           loading.value = true;
           DealSearchService.getDealList(searchParams)
             .then(data => {

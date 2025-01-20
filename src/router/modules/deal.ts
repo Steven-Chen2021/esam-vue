@@ -22,7 +22,7 @@ export default {
       }
     },
     {
-      path: "/deal/detail/:id/:lid/:qname",
+      path: "/deal/detail/:id/:lid/:qname/:customerName",
       name: "DealDetail",
       component: () => import("@/views/deal/detail.vue"),
       meta: {

@@ -213,6 +213,14 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       profileData.value["taskOwnerId"] = profileData.value["taskOwner"];
       profileData.value["taskOwnerBranch"] = profileData.value["ownerBranch"];
       profileData.value["subjectTypeId"] = profileData.value["subjectCategory"];
+      console.log("options", filterOptions.value);
+      const l = filterOptions.value["subjectCategory"]["list"].filter(
+        a => a.value === profileData.value["subjectCategory"]
+      );
+      console.log("subjectCategory", l);
+      if (l && l.length === 1) {
+        profileData.value["subjectType"] = l[0].text;
+      }
       profileData.value["appointmentDate"] =
         profileData.value["appointmentStartTime"];
       profileData.value["actionItems"] = actionItems.value;
@@ -232,6 +240,7 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
             console.log("LeadID.value", LeadID.value);
             fetchProfileData();
             fetchDCUrl();
+            activeName.value = ["general", "actionItem", "documents"];
           }
           formLoading.value = false;
         })
