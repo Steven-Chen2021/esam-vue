@@ -79,6 +79,7 @@ export interface QuickFilterDetail {
   width: number;
   controlTypeOnDetail: string;
   enableOnSearchView: boolean;
+  enableOnFilter: boolean;
 }
 export interface QuickFilter {
   filterName: string;
