@@ -454,7 +454,8 @@ const initQuickFilter = () => {
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
     controlTypeOnDetail: "",
-    enableOnSearchView: filter.enableOnSearchView
+    enableOnSearchView: filter.enableOnSearchView,
+    enableOnFilter: filter.enableOnFilter
   }));
 };
 const handleQuickFilterOpen = () => {
@@ -486,7 +487,8 @@ const handleEditQuickFilter = (item: QuickFilter) => {
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
     controlTypeOnDetail: "",
-    enableOnSearchView: filter.enableOnSearchView
+    enableOnSearchView: filter.enableOnSearchView,
+    enableOnFilter: filter.enableOnFilter
   }));
 };
 const dialogVisible = ref(false);
@@ -1107,7 +1109,7 @@ watch(
               v-for="filterItem in quickFilterForm.filters.filter(
                 c =>
                   c.enableOnSearchView &&
-                  c['enableOnFilter'] &&
+                  c.enableOnFilter &&
                   c.filterType !== 'cascadingdropdown'
               )"
               :key="filterItem.filterKey"
