@@ -262,12 +262,19 @@ const autoSaveForm = async (
         case "relationship": {
           CommonService.autoSave(param)
             .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -288,11 +295,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -316,11 +331,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -337,11 +360,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -364,11 +395,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -391,11 +430,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -418,11 +465,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -445,11 +500,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -472,11 +535,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -493,11 +564,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
               const paramFullname = {
                 tableName: "smcustomercontact",
                 fieldName: "fullName",
@@ -511,11 +590,19 @@ const autoSaveForm = async (
               CommonService.autoSave(paramFullname)
                 .then(d => {
                   console.log("autosave data", d);
-                  ElMessage({
-                    message: t("customer.profile.autoSaveSucAlert"),
-                    grouping: true,
-                    type: "success"
-                  });
+                  if (d && d.isSuccess) {
+                    ElMessage({
+                      message: t("customer.profile.autoSaveSucAlert"),
+                      grouping: true,
+                      type: "success"
+                    });
+                  } else {
+                    ElMessage({
+                      message: t("customer.profile.autoSaveFailAlert"),
+                      grouping: true,
+                      type: "warning"
+                    });
+                  }
                 })
                 .catch(err => {
                   console.log("autosave error", err);
@@ -542,11 +629,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);
@@ -563,11 +658,19 @@ const autoSaveForm = async (
           CommonService.autoSave(param)
             .then(d => {
               console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
+              if (d && d.isSuccess) {
+                ElMessage({
+                  message: t("customer.profile.autoSaveSucAlert"),
+                  grouping: true,
+                  type: "success"
+                });
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
             })
             .catch(err => {
               console.log("autosave error", err);

@@ -377,23 +377,6 @@ const autoSaveForm = async (
         case "customerAnnualRevenue":
         case "customerEstRevenue":
         case "remark": {
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
           break;
         }
         case "city":
@@ -416,23 +399,6 @@ const autoSaveForm = async (
               return;
             }
           }
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
           break;
         }
         case "leadSourceID": {
@@ -452,23 +418,7 @@ const autoSaveForm = async (
             });
             return;
           }
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
+
           break;
         }
         case "industryID": {
@@ -487,23 +437,7 @@ const autoSaveForm = async (
             });
             return;
           }
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
+
           break;
         }
         case "leadSourceDetail": {
@@ -523,28 +457,36 @@ const autoSaveForm = async (
               return;
             }
           }
-          CommonService.autoSave(param)
-            .then(d => {
-              console.log("autosave data", d);
-              ElMessage({
-                message: t("customer.profile.autoSaveSucAlert"),
-                grouping: true,
-                type: "success"
-              });
-            })
-            .catch(err => {
-              console.log("autosave error", err);
-              ElMessage({
-                message: t("customer.profile.autoSaveFailAlert"),
-                grouping: true,
-                type: "warning"
-              });
-            });
           break;
         }
         default:
           break;
       }
+      CommonService.autoSave(param)
+        .then(d => {
+          console.log("autosave data", d);
+          if (d && d.isSuccess) {
+            ElMessage({
+              message: t("customer.profile.autoSaveSucAlert"),
+              grouping: true,
+              type: "success"
+            });
+          } else {
+            ElMessage({
+              message: t("customer.profile.autoSaveFailAlert"),
+              grouping: true,
+              type: "warning"
+            });
+          }
+        })
+        .catch(err => {
+          console.log("autosave error", err);
+          ElMessage({
+            message: t("customer.profile.autoSaveFailAlert"),
+            grouping: true,
+            type: "warning"
+          });
+        });
     } else {
       console.log("error submit!", fields);
     }
