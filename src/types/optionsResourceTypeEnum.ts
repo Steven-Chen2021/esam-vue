@@ -51,6 +51,7 @@ const customerName = 0,
   userformat2 = 127,
   cityformat2BySearchKey = 128,
   contactBycustomerid = 129,
+  taskContact = 201,
   stationCustID = 130;
 
 export {
@@ -107,5 +108,6 @@ export {
   userformat2,
   cityformat2BySearchKey,
   contactBycustomerid,
-  stationCustID
+  stationCustID,
+  taskContact
 };

@@ -186,6 +186,7 @@ export function listCTL() {
         TaskSearchService.getTaskList(searchParams)
           .then(data => {
             if (data.isSuccess) {
+              console.log("task search ", data.returnValue.results);
               data.returnValue.results.forEach(a => {
                 a["appointmentStartDateInit"] = a["appointmentStartDate"];
                 if (
@@ -202,14 +203,14 @@ export function listCTL() {
                     // 比较两个日期的 date 部分是否相同
                     const isSameDate = date1.isSame(date2, "date");
                     if (isSameDate) {
-                      a["appointmentStartDate"] =
+                      a["appointmentStartTime"] =
                         `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("HH:mm")}`;
                     } else {
-                      a["appointmentStartDate"] =
+                      a["appointmentStartTime"] =
                         `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("MMM DD, YYYY, HH:mm")}`;
                     }
                   } else {
-                    a["appointmentStartDate"] =
+                    a["appointmentStartTime"] =
                       `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")}`;
                   }
                 }
@@ -218,6 +219,7 @@ export function listCTL() {
                     `${dayjs(a["dueDate"]).format("MMM DD, YYYY")}`;
                 }
                 a["taskStatus"] = a["status"];
+                a["taskContact"] = a["contact"];
               });
               tableData.value = data.returnValue.results;
               if (

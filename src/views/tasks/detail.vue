@@ -124,7 +124,7 @@ const autoSaveForm = async (
       };
       console.log("autosave param", param);
       switch (filterItem.filterKey) {
-        case "contact":
+        case "taskContact":
           param.value = data["contactArray"].join(", ");
           break;
         case "attendees":
@@ -150,11 +150,19 @@ const autoSaveForm = async (
       CommonService.autoSave(param)
         .then(d => {
           console.log("autosave data", d);
-          ElMessage({
-            message: t("customer.profile.autoSaveSucAlert"),
-            grouping: true,
-            type: "success"
-          });
+          if (d && d.isSuccess) {
+            ElMessage({
+              message: t("customer.profile.autoSaveSucAlert"),
+              grouping: true,
+              type: "success"
+            });
+          } else {
+            ElMessage({
+              message: t("customer.profile.autoSaveFailAlert"),
+              grouping: true,
+              type: "warning"
+            });
+          }
         })
         .catch(err => {
           console.log("autosave error", err);
@@ -402,86 +410,6 @@ onMounted(() => {
                       "
                       >{{ profileData[filterItem.filterKey] }}</el-text
                     >
-                    <!-- <el-autocomplete
-                      v-else-if="
-                        filterItem.filterType === 'autocomplete' &&
-                        filterItem.filterSourceType === 'api'
-                      "
-                      v-model="profileData[filterItem.filterKey]"
-                      value-key="text"
-                      :fetch-suggestions="
-                        (queryString, cb) =>
-                          querySearchAsync(queryString, cb, filterItem)
-                      "
-                      placeholder=""
-                      :disabled="disableStatus(filterItem)"
-                      style="width: 338px"
-                      @change="
-                        v =>
-                          handleDropDownChange(
-                            profileFormRef,
-                            v,
-                            filterItem,
-                            null
-                          )
-                      "
-                    /> -->
-                    <!-- <div
-                      v-else-if="
-                        filterOptions[filterItem.filterKey] &&
-                        filterItem.filterType === 'dropdown' &&
-                        filterItem.filterSourceType === 'api' &&
-                        filterItem.filterKey === 'locationCity'
-                      "
-                    >
-                      <el-select
-                        v-model="profileData[filterItem.filterKey]"
-                        :disabled="disableStatus(filterItem)"
-                        :placeholder="
-                          t('customer.list.quickFilter.holderSelectText')
-                        "
-                        style="width: 258px"
-                        filterable
-                        remote
-                        :loading="remoteFilterAttendeesloading"
-                        :remote-method="
-                          queryString =>
-                            querySearchSeleteAsync(queryString, filterItem)
-                        "
-                        @change="
-                          v =>
-                            handleDropDownChange(
-                              profileFormRef,
-                              v,
-                              filterItem,
-                              null
-                            )
-                        "
-                      >
-                        <el-option
-                          v-for="option in filterOptions[filterItem.filterKey]
-                            .list"
-                          :key="option.value"
-                          :label="option.text"
-                          :value="option.value"
-                        />
-                      </el-select>
-                      <el-input
-                        v-model="profileData['locationAddress']"
-                        :disabled="disableStatus(filterItem)"
-                        placeholder="
-                          
-                        "
-                        style="width: 258px"
-                        @blur="
-                          autoSaveForm(
-                            profileFormRef,
-                            { filterKey: 'locationAddress' },
-                            profileData['locationAddress']
-                          )
-                        "
-                      />
-                    </div> -->
                     <el-select
                       v-else-if="
                         filterOptions[filterItem.filterKey] &&
@@ -525,7 +453,7 @@ onMounted(() => {
                         filterOptions[filterItem.filterKey] &&
                         filterItem.filterType === 'dropdown' &&
                         filterItem.filterSourceType === 'api' &&
-                        filterItem.filterKey === 'contact'
+                        filterItem.filterKey === 'taskContact'
                       "
                       v-model="profileData['contactArray']"
                       :disabled="disableStatus(filterItem)"
