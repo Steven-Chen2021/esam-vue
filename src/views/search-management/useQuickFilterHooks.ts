@@ -45,7 +45,6 @@ import {
   leadSourceDetailBySearchKey,
   industryBySearchKey,
   ownerSales,
-  station,
   // contactNames,
   contactFullName,
   // contactRole,
@@ -56,8 +55,9 @@ import {
   // taskStatus,
   // taskSubjectType,
   userformat2,
-  cityformat2BySearchKey
-  // contactBycustomerid,
+  cityformat2BySearchKey,
+  taskContact,
+  stationCustID
   // stationCustID
 } from "@/types/optionsResourceTypeEnum";
 
@@ -79,6 +79,7 @@ export interface QuickFilterDetail {
   width: number;
   controlTypeOnDetail: string;
   enableOnSearchView: boolean;
+  enableOnFilter: boolean;
 }
 export interface QuickFilter {
   filterName: string;
@@ -235,8 +236,11 @@ export function quickFilterCTL() {
       case "notifyParty":
         OptionsResourceType = userformat2;
         break;
+      case "taskContact":
+        OptionsResourceType = taskContact;
+        break;
       case "ownerBranch":
-        OptionsResourceType = station;
+        OptionsResourceType = stationCustID;
         break;
       case "locationCity":
         OptionsResourceType = cityformat2BySearchKey;

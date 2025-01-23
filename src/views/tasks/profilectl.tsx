@@ -576,7 +576,7 @@ export function taskProfileCTL() {
           case "ownerBranch":
             resourceType = 130;
             break;
-          case "contact":
+          case "taskContact":
             resourceType = 129;
             subParam["CustomerID"] = LeadID.value;
             break;

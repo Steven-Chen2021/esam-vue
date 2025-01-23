@@ -29,7 +29,6 @@ const emit = defineEmits(["handleCancelEvent", "handleUpdateActionItems"]);
 const { t } = useI18n();
 const hotTableRef = ref(null);
 const handleAfterChange = (changes, source) => {
-  console.log("handleAfterChange source", source);
   if (source === "edit" || source === "CopyPaste.paste") {
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
@@ -217,7 +216,6 @@ const updateActionItem = () => {
         .then(data => {
           if (data && data.isSuccess) {
             tableDataInit.value = deepClone(tableSetting.value.data);
-            console.log("updateActionItem tableDataInit", tableDataInit.value);
             // getActionItemResult();
             ElMessage({
               message: t("customer.profile.autoSaveSucAlert"),

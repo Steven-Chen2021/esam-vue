@@ -15,6 +15,7 @@ import {
 } from "@/router/enums";
 import dayjs from "dayjs";
 import { reactive, ref } from "vue";
+import { deepClone } from "@/utils/common";
 // import type { FormInstance } from "element-plus/es/components/form/index.mjs";
 export interface ColumnDetailVM {
   label: string;
@@ -103,12 +104,7 @@ export function listCTL() {
               }
             ];
           } else {
-            // searchParams.ConditionalSettings.push({
-            //   enableOnSearchView: false,
-            //   filterKey: "hqid",
-            //   value: FilterLeadID.value
-            // });
-            const a = searchParams.ConditionalSettings.filter(
+            const a = searchParams.ConditionalSettings.find(
               item => item.filterKey === "hqid"
             );
             if (!a || a.length === 0) {
@@ -117,6 +113,9 @@ export function listCTL() {
                 filterKey: "hqid",
                 value: FilterLeadID.value
               });
+              console.log("ConditionalSettings", searchParams);
+            } else {
+              a["value"] = FilterLeadID.value;
             }
           }
         }
@@ -168,12 +167,7 @@ export function listCTL() {
               }
             ];
           } else {
-            // searchParams.ConditionalSettings.push({
-            //   enableOnSearchView: false,
-            //   filterKey: "hqid",
-            //   value: FilterLeadID.value
-            // });
-            const a = searchParams.ConditionalSettings.filter(
+            const a = searchParams.ConditionalSettings.find(
               item => item.filterKey === "hqid"
             );
             if (!a || a.length === 0) {
@@ -182,6 +176,9 @@ export function listCTL() {
                 filterKey: "hqid",
                 value: FilterLeadID.value
               });
+              console.log("ConditionalSettings", searchParams);
+            } else {
+              a["value"] = FilterLeadID.value;
             }
           }
         }
@@ -189,6 +186,7 @@ export function listCTL() {
         TaskSearchService.getTaskList(searchParams)
           .then(data => {
             if (data.isSuccess) {
+              console.log("task search ", data.returnValue.results);
               data.returnValue.results.forEach(a => {
                 a["appointmentStartDateInit"] = a["appointmentStartDate"];
                 if (
@@ -205,14 +203,14 @@ export function listCTL() {
                     // 比较两个日期的 date 部分是否相同
                     const isSameDate = date1.isSame(date2, "date");
                     if (isSameDate) {
-                      a["appointmentStartDate"] =
+                      a["appointmentStartTime"] =
                         `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("HH:mm")}`;
                     } else {
-                      a["appointmentStartDate"] =
+                      a["appointmentStartTime"] =
                         `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("MMM DD, YYYY, HH:mm")}`;
                     }
                   } else {
-                    a["appointmentStartDate"] =
+                    a["appointmentStartTime"] =
                       `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")}`;
                   }
                 }
@@ -221,6 +219,7 @@ export function listCTL() {
                     `${dayjs(a["dueDate"]).format("MMM DD, YYYY")}`;
                 }
                 a["taskStatus"] = a["status"];
+                a["taskContact"] = a["contact"];
               });
               tableData.value = data.returnValue.results;
               if (
@@ -252,8 +251,34 @@ export function listCTL() {
       }
       case quotes:
         {
+          const searchP = deepClone(searchParams);
+          if (FilterLeadID && FilterLeadID.value !== "0") {
+            if (!searchP) {
+              searchP.ConditionalSettings = [
+                {
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                }
+              ];
+            } else {
+              const a = searchP.ConditionalSettings.find(
+                item => item.filterKey === "hqid"
+              );
+              if (!a || a.length === 0) {
+                searchP.ConditionalSettings.push({
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                });
+              } else {
+                a["value"] = FilterLeadID.value;
+              }
+            }
+          }
+          console.log("ConditionalSettings", searchP);
           loading.value = true;
-          QuoteSearchService.getQuoteList(searchParams)
+          QuoteSearchService.getQuoteList(searchP)
             .then(data => {
               if (data && data.isSuccess) {
                 tableData.value = data.returnValue.results;
@@ -286,6 +311,31 @@ export function listCTL() {
         break;
       case deal:
         {
+          if (FilterLeadID && FilterLeadID.value !== "0") {
+            if (!searchParams.ConditionalSettings) {
+              searchParams.ConditionalSettings = [
+                {
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                }
+              ];
+            } else {
+              const a = searchParams.ConditionalSettings.find(
+                item => item.filterKey === "hqid"
+              );
+              if (!a || a.length === 0) {
+                searchParams.ConditionalSettings.push({
+                  enableOnSearchView: false,
+                  filterKey: "hqid",
+                  value: FilterLeadID.value
+                });
+                console.log("ConditionalSettings", searchParams);
+              } else {
+                a["value"] = FilterLeadID.value;
+              }
+            }
+          }
           loading.value = true;
           DealSearchService.getDealList(searchParams)
             .then(data => {

@@ -13,6 +13,7 @@ import {
   ElMessageBox,
   ElMessage
 } from "element-plus";
+import DealProfileService from "@/services/deal/DealProfileService";
 import TaskProfileService from "@/services/tasks/TaskProfileService";
 import { useDetail } from "./hooks";
 import CommonService from "@/services/commonService";
@@ -59,7 +60,8 @@ const {
   dealStatusOptions,
   getDealStatusResult,
   dealRefSummary,
-  getDealRefSummaryResult
+  getDealRefSummaryResult,
+  dealClose
 } = dealProfilectl();
 defineOptions({
   name: "TaskDetail"
@@ -75,8 +77,29 @@ const props = defineProps({
   ID: {
     type: String,
     required: false
+  },
+  CustomerName: {
+    type: String,
+    required: false
   }
 });
+const toDoListRef = ref();
+const refreshToDoList = () => {
+  if (toDoListRef.value) {
+    toDoListRef.value.getListData();
+  }
+};
+const dealPLListRef = ref();
+const refreshDealPLList = () => {
+  if (dealPLListRef.value) {
+    dealPLListRef.value.fetchListData();
+  }
+};
+const dealQuoteListRef = ref();
+const handlePLUpdate = plList => {
+  console.log("handlePLUpdate", plList);
+  dealQuoteListRef.value.updateSelectable(plList);
+};
 const emit = defineEmits(["handleBackEvent"]);
 const backToIndex = () => {
   if (props.ParentID && props.ParentID !== "") {
@@ -119,7 +142,7 @@ const autoSaveForm = async (
   if (CID === "0" || !userAuth.value["isWrite"]) return;
   console.log("autoSaveForm", profileData.value);
   if (!formEl) return;
-  if (disableStatus(filterItem)) return;
+  // if (disableStatus(filterItem)) return;
   await formEl.validate((valid, fields) => {
     console.log("validate fields:", fields);
     let fieldValid = true;
@@ -133,7 +156,7 @@ const autoSaveForm = async (
       console.log("dataInit", dataInit);
       console.log("data", data);
       const param = {
-        tableName: "sasalestask",
+        tableName: "sadeals",
         fieldName: filterItem.filterKey,
         id: CID,
         custID: LID,
@@ -143,30 +166,6 @@ const autoSaveForm = async (
         newEntity: "string"
       };
       console.log("autosave param", param);
-      switch (filterItem.filterKey) {
-        case "contact":
-          param.value = data["contactArray"].join(", ");
-          break;
-        case "attendees":
-          param.oldValue = data["attendees"];
-          param.value = data["attendeesArray"].join(",");
-          break;
-        case "notifyParty":
-          param.oldValue = data["notifyParty"];
-          param.value = data["notifyPartyArray"].join(",");
-          break;
-        case "appointmentEndTime":
-          if (!v || v === "") {
-            ElMessage({
-              message: t("task.profile.appointmentEndTimeAlert"),
-              grouping: true,
-              type: "warning"
-            });
-            return;
-          }
-        default:
-          break;
-      }
       CommonService.autoSave(param)
         .then(d => {
           console.log("autosave data", d);
@@ -195,45 +194,11 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       const data = profileData.value;
-      if (!data["appointmentEndTime"] || data["appointmentEndTime"] === "") {
-        ElMessage({
-          message: t("task.profile.appointmentEndTimeAlert"),
-          grouping: true,
-          type: "warning"
-        });
-        return;
-      }
       profileData.value["id"] = CID;
       profileData.value["lid"] = LID;
-      if (
-        profileData.value["attendeesArray"] &&
-        isArray(profileData.value["attendeesArray"])
-      ) {
-        profileData.value["attendees"] =
-          profileData.value["attendeesArray"].join(",");
-      }
-      if (
-        profileData.value["notifyPartyArray"] &&
-        isArray(profileData.value["notifyPartyArray"])
-      ) {
-        profileData.value["notifyParty"] =
-          profileData.value["notifyPartyArray"].join(",");
-      }
-      if (
-        profileData.value["contactArray"] &&
-        isArray(profileData.value["contactArray"])
-      ) {
-        profileData.value["contact"] =
-          profileData.value["contactArray"].join(",");
-      }
-      profileData.value["taskOwnerId"] = profileData.value["taskOwner"];
-      profileData.value["taskOwnerBranch"] = profileData.value["ownerBranch"];
-      profileData.value["subjectTypeId"] = profileData.value["subjectCategory"];
-      profileData.value["appointmentDate"] =
-        profileData.value["appointmentStartTime"];
       console.log("submit! profileData:", profileData.value);
       formLoading.value = true;
-      TaskProfileService.updateTaskProfile(profileData.value)
+      DealProfileService.saveDealResult(profileData.value)
         .then(data => {
           console.log("updateTaskProfile data", data);
           ElMessage({
@@ -248,6 +213,14 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
             console.log("LeadID.value", LeadID.value);
             fetchProfileData();
             fetchDCUrl();
+            activeName.value = [
+              "general",
+              "documents",
+              "task",
+              "detailList",
+              "contact",
+              "quote"
+            ];
           }
           formLoading.value = false;
         })
@@ -275,6 +248,36 @@ let CID = props.ID
   : isArray(getParameter.id)
     ? getParameter.id[0]
     : getParameter.id;
+const cName = props.CustomerName
+  ? props.CustomerName
+  : isArray(getParameter.customerName)
+    ? getParameter.customerName[0]
+    : getParameter.customerName;
+const dialogVisible = ref(false);
+const closeDeal = async () => {
+  dialogVisible.value = false;
+  formLoading.value = true;
+  DealProfileService.closeDealResult(ProfileID.value)
+    .then(d => {
+      ElMessage({
+        message: t("deal.profile.closeAlert"),
+        grouping: true,
+        type: "success"
+      });
+      fetchProfileData();
+      getDealStatusResult();
+    })
+    .catch(err => {
+      ElMessage({
+        message: t("customer.profile.disQualifyFailAlert"),
+        grouping: true,
+        type: "warning"
+      });
+    })
+    .finally(() => {
+      formLoading.value = false;
+    });
+};
 onMounted(() => {
   if (!props.ID) {
     initToDetail("params");
@@ -289,52 +292,7 @@ onMounted(() => {
   fetchDCUrl();
 });
 // #region Deal
-const dealFormRef = ref<FormInstance>();
-const dealFormData = ref({});
-const dealFormRules = {
-  priority: [
-    {
-      required: true,
-      message: t("customer.profile.general.mandatory"),
-      trigger: "focusout"
-    }
-  ],
-  taskOwner: [
-    {
-      required: true,
-      message: t("customer.profile.general.mandatory"),
-      trigger: "focusout"
-    }
-  ],
-  taskStatus: [
-    {
-      required: true,
-      message: t("customer.profile.general.mandatory"),
-      trigger: "focusout"
-    }
-  ],
-  description: [
-    {
-      required: true,
-      message: t("customer.profile.general.mandatory"),
-      trigger: "focusout"
-    }
-  ],
-  appointmentStartTime: [
-    {
-      required: true,
-      message: t("customer.profile.general.mandatory"),
-      trigger: "change"
-    }
-  ],
-  subject: [
-    {
-      required: true,
-      message: t("customer.profile.general.mandatory"),
-      trigger: "blur"
-    }
-  ]
-};
+
 // #endregion
 </script>
 
@@ -351,7 +309,8 @@ const dealFormRules = {
             :size="dynamicSize"
             :loading="formLoading"
             :icon="useRenderIcon('mingcute:close-line')"
-            :disabled="!userAuth['isWrite'] && ProfileID !== '0'"
+            :disabled="!userAuth['isWrite'] || dealClose"
+            @click="dialogVisible = true"
           >
             {{ t("deal.clostBtn") }}
           </el-button>
@@ -361,12 +320,12 @@ const dealFormRules = {
             :size="dynamicSize"
             :loading="formLoading"
             :icon="useRenderIcon('ri:save-line')"
-            :disabled="!userAuth['isWrite'] && LID !== '0'"
+            :disabled="!userAuth['isWrite'] || dealClose"
             @click="submitForm(profileFormRef, false)"
           >
             {{ formLoading ? t("common.processing") : t("common.save") }}
           </el-button>
-          <el-button
+          <!-- <el-button
             type="primary"
             plain
             :size="dynamicSize"
@@ -376,7 +335,7 @@ const dealFormRules = {
             @click="backToIndex"
           >
             {{ t("common.history") }}
-          </el-button>
+          </el-button> -->
           <el-button
             type="primary"
             plain
@@ -388,6 +347,9 @@ const dealFormRules = {
             {{ t("common.back") }}
           </el-button>
         </div>
+      </div>
+      <div style="padding: 10px 10px 0">
+        <h1 v-if="!props.ID && LID">{{ cName }} ({{ LID }})</h1>
       </div>
       <div class="pb-2">
         <el-alert
@@ -452,7 +414,7 @@ const dealFormRules = {
                   </el-steps>
                   <div style="display: flex; margin-top: 20px">
                     <el-form
-                      ref="dealFormRef"
+                      ref="profileFormRef"
                       style="max-width: 600px"
                       :model="profileData"
                       :rules="rules"
@@ -460,6 +422,7 @@ const dealFormRules = {
                       status-icon
                     >
                       <el-form-item
+                        v-if="CID !== '0'"
                         :label="t('deal.profile.dealNo')"
                         prop="dealNo"
                       >
@@ -471,6 +434,18 @@ const dealFormRules = {
                           v-model="profileData['dealType']"
                           placeholder="please select your zone"
                           style="min-width: 200px"
+                          :disabled="disableStatus() || dealClose"
+                          @change="
+                            v =>
+                              handleDropDownChange(
+                                profileFormRef,
+                                v,
+                                {
+                                  filterKey: 'dealType'
+                                },
+                                null
+                              )
+                          "
                         >
                           <el-option
                             v-for="option in dealTypeOptions"
@@ -481,7 +456,19 @@ const dealFormRules = {
                         </el-select>
                       </el-form-item>
                       <el-form-item :label="t('deal.profile.flag')">
-                        <el-input v-model="profileData['flag']" />
+                        <el-input
+                          v-model="profileData['flag']"
+                          :disabled="disableStatus() || dealClose"
+                          @focusout="
+                            autoSaveForm(
+                              profileFormRef,
+                              {
+                                filterKey: 'flag'
+                              },
+                              profileData['flag']
+                            )
+                          "
+                        />
                       </el-form-item>
                       <el-form-item
                         :label="t('deal.profile.initialDate')"
@@ -498,33 +485,55 @@ const dealFormRules = {
                     </el-form>
                   </div>
                 </div>
-                <div>
-                  <toDoList :CusID="LID" :DealID="CID" />
+                <div v-if="CID !== '0'">
+                  <toDoList
+                    ref="toDoListRef"
+                    :CusID="LID"
+                    :DealID="CID"
+                    :DealStatus="dealClose"
+                  />
                 </div>
               </div>
             </div>
           </el-collapse-item>
           <el-collapse-item
+            v-if="CID !== '0'"
             :title="t('deal.detailList.title')"
             name="detailList"
             class="custom-collapse-title"
           >
-            <dealPLList :DealID="CID" :LeadID="LID" />
+            <dealPLList
+              ref="dealPLListRef"
+              :DealID="CID"
+              :LeadID="LID"
+              :DealStatus="dealClose"
+              @updateEvent="handlePLUpdate"
+            />
           </el-collapse-item>
-          <el-collapse-item name="quote" class="custom-collapse-title">
+          <el-collapse-item
+            v-if="CID !== '0'"
+            name="quote"
+            class="custom-collapse-title"
+          >
             <template #title>
               {{ t("deal.quotationList.title") }} ({{
                 dealRefSummary["quoteCount"]
               }})
             </template>
             <dealRelatedList
+              ref="dealQuoteListRef"
               :CusID="LID"
               :DealID="CID"
               Type="quoteSearch"
+              :DealStatus="dealClose"
               @update="getDealRefSummaryResult"
+              @updateDealStatus="getDealStatusResult"
             />
           </el-collapse-item>
-          <el-collapse-item name="task" class="custom-collapse-title"
+          <el-collapse-item
+            v-if="CID !== '0'"
+            name="task"
+            class="custom-collapse-title"
             ><template #title>
               {{ t("deal.taskList.title") }} ({{ dealRefSummary["taskCount"] }})
             </template>
@@ -532,10 +541,15 @@ const dealFormRules = {
               :CusID="LID"
               :DealID="CID"
               Type="TaskList"
+              :DealStatus="dealClose"
               @update="getDealRefSummaryResult"
+              @updateToDoList="refreshToDoList"
             />
           </el-collapse-item>
-          <el-collapse-item name="contact" class="custom-collapse-title"
+          <el-collapse-item
+            v-if="CID !== '0'"
+            name="contact"
+            class="custom-collapse-title"
             ><template #title>
               {{ t("deal.contactList.title") }} ({{
                 dealRefSummary["contactCount"]
@@ -545,6 +559,7 @@ const dealFormRules = {
               :CusID="LID"
               :DealID="CID"
               Type="ContactList"
+              :DealStatus="dealClose"
               @update="getDealRefSummaryResult"
             />
           </el-collapse-item>
@@ -589,6 +604,23 @@ const dealFormRules = {
         </el-collapse>
       </div>
     </el-card>
+    <el-dialog
+      v-model="dialogVisible"
+      :title="t('customer.list.quickFilter.warnTitle')"
+      width="500"
+    >
+      <span>{{ t("customer.list.quickFilter.delWarnText") }}</span>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">{{
+            t("common.cancel")
+          }}</el-button>
+          <el-button type="primary" @click="closeDeal">
+            {{ t("common.confirm") }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

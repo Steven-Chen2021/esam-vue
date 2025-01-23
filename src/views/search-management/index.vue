@@ -159,7 +159,12 @@ const handleViewClick = row => {
     case "dealSearch":
       router.push({
         name: "DealDetail",
-        params: { id: row.id, lid: row.lid, qname: row.dealNo }
+        params: {
+          id: row.id,
+          lid: row.lid,
+          qname: row.dealNo,
+          customerName: row.company
+        }
       });
       break;
     case "CustomerList":
@@ -262,8 +267,6 @@ const handleFilterClick = filter => {
       a.value &&
       (a.value !== "" || (Array.isArray(a.value) && a.value.length > 0))
   );
-  console.log(filters);
-  console.log(filter);
   handleConditionalSearch({ filters: filters });
   handleQuickFilterClick(filter);
   activePanelNames.value = [];
@@ -449,7 +452,8 @@ const initQuickFilter = () => {
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
     controlTypeOnDetail: "",
-    enableOnSearchView: filter.enableOnSearchView
+    enableOnSearchView: filter.enableOnSearchView,
+    enableOnFilter: filter.enableOnFilter
   }));
 };
 const handleQuickFilterOpen = () => {
@@ -481,7 +485,8 @@ const handleEditQuickFilter = (item: QuickFilter) => {
     allowGridHeaderFilter: filter.allowGridHeaderFilter,
     width: 140,
     controlTypeOnDetail: "",
-    enableOnSearchView: filter.enableOnSearchView
+    enableOnSearchView: filter.enableOnSearchView,
+    enableOnFilter: filter.enableOnFilter
   }));
 };
 const dialogVisible = ref(false);
@@ -541,8 +546,17 @@ const submitAdvancedFilterForm = () => {
       console.log("getAdvancedFilterSetting error", err);
     });
 };
-const handleSearch = filterForm => {
+const collapsePanel = () => {
   activePanelNames.value = [];
+};
+const searchBtnClick = filterForm => {
+  collapsePanel();
+  handleConditionalSearch(filterForm);
+  quickFilterList.value.forEach(a => {
+    a.clicked = false;
+  });
+};
+const handleSearch = filterForm => {
   handleConditionalSearch(filterForm);
   quickFilterList.value.forEach(a => {
     a.clicked = false;
@@ -632,7 +646,6 @@ onMounted(async () => {
       requestCategory.value = deal;
       sortField.value = "createDate";
       sortOrder.value = "desc";
-
       break;
   }
   dataResultAPIRequestType.value = customer;
@@ -768,8 +781,9 @@ watch(
                 <el-form-item
                   v-for="filterItem in advancedFilterForm.filters.filter(
                     c =>
-                      c.showOnFilter &&
                       c.enableOnSearchView &&
+                      c['enableOnFilter'] &&
+                      c.showOnFilter &&
                       c.filterType !== 'cascadingdropdown' &&
                       c.filterKey !== 'capitalAmount'
                   )"
@@ -912,7 +926,7 @@ watch(
                     ref="refBtnBasicFilterSearch"
                     type="primary"
                     :icon="useRenderIcon('ri:search-line')"
-                    @click="handleSearch(advancedFilterForm)"
+                    @click="searchBtnClick(advancedFilterForm)"
                     >{{
                       $t("customer.list.advancedSetting.searchBtn")
                     }}</el-button
@@ -962,9 +976,9 @@ watch(
       <el-table-column
         v-for="col in advancedFilterForm.filters.filter(
           c =>
+            c.enableOnSearchView &&
             c.filterType !== 'cascadingdropdown' &&
-            c.showOnGrid &&
-            c.enableOnSearchView
+            c.showOnGrid
         )"
         :key="col.filterKey"
         :prop="col.filterKey"
@@ -991,7 +1005,11 @@ watch(
           </el-popover>
         </template>
         <template #default="scope">
-          <span v-if="col.filterKey !== 'combatTeamPL'">{{
+          <el-progress
+            v-if="col.filterKey === 'dealPercentage'"
+            :percentage="scope.row.dealPercentage"
+          />
+          <span v-else-if="col.filterKey !== 'combatTeamPL'">{{
             formatDate(scope.row[col.filterKey], col.filterKey)
           }}</span>
           <div
@@ -1097,7 +1115,9 @@ watch(
             <el-form-item
               v-for="filterItem in quickFilterForm.filters.filter(
                 c =>
-                  c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
+                  c.enableOnSearchView &&
+                  c.enableOnFilter &&
+                  c.filterType !== 'cascadingdropdown'
               )"
               :key="filterItem.filterKey"
               :label="t(filterItem.langethKey)"
@@ -1248,7 +1268,10 @@ watch(
         <tbody>
           <tr
             v-for="settingItem in advancedFilterForm.filters.filter(
-              c => c.filterType !== 'cascadingdropdown' && c.enableOnSearchView
+              c =>
+                c.enableOnSearchView &&
+                c['enableOnFilter'] &&
+                c.filterType !== 'cascadingdropdown'
             )"
             v-bind:key="settingItem.filterKey"
           >

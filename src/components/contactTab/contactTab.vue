@@ -381,28 +381,7 @@ onMounted(async () => {
   fetchListData();
   fetchData();
   fetchAdvancedFilterData();
-  await nextTick(); // 等待 DOM 更新完成
-  setTimeout(() => {
-    // 在这里决定是否显示 el-tour
-    if (tourStore.contactListShow) {
-      // 这里可以添加你的逻辑决定是否显示
-      showTour.value = true; // 或者根据其他条件来决定
-    }
-  }, 2000);
 });
-watch(
-  () => tourStore.contactListShow,
-  () => {
-    setTimeout(() => {
-      // 在这里决定是否显示 el-tour
-      if (tourStore.contactListShow) {
-        // 这里可以添加你的逻辑决定是否显示
-        showTour.value = true; // 或者根据其他条件来决定
-      }
-    }, 100);
-  },
-  { deep: true } // 深度监听 filters 的变化
-);
 </script>
 
 <template>
