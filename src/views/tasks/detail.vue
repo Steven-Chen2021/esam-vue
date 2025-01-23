@@ -126,6 +126,19 @@ const autoSaveForm = async (
       switch (filterItem.filterKey) {
         case "taskContact":
           param.value = data["contactArray"].join(", ");
+          console.log("contact", data["contactArray"]);
+          if (
+            data["contactArray"] &&
+            isArray(data["contactArray"]) &&
+            data["contactArray"].length > 3
+          ) {
+            ElMessage({
+              message: t("task.profile.contactCountAlert"),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
           break;
         case "attendees":
           param.oldValue = data["attendees"];
@@ -190,6 +203,18 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       if (!data["appointmentEndTime"] || data["appointmentEndTime"] === "") {
         ElMessage({
           message: t("task.profile.appointmentEndTimeAlert"),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      }
+      if (
+        data["contactArray"] &&
+        isArray(data["contactArray"]) &&
+        data["contactArray"].length > 3
+      ) {
+        ElMessage({
+          message: t("task.profile.contactCountAlert"),
           grouping: true,
           type: "warning"
         });

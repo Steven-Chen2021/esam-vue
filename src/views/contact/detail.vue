@@ -259,6 +259,7 @@ const autoSaveForm = async (
         case "address":
         case "city":
         case "zip":
+        case "remark":
         case "relationship": {
           CommonService.autoSave(param)
             .then(d => {

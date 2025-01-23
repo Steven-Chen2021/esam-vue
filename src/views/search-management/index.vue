@@ -267,8 +267,6 @@ const handleFilterClick = filter => {
       a.value &&
       (a.value !== "" || (Array.isArray(a.value) && a.value.length > 0))
   );
-  console.log(filters);
-  console.log(filter);
   handleConditionalSearch({ filters: filters });
   handleQuickFilterClick(filter);
   activePanelNames.value = [];
@@ -548,8 +546,17 @@ const submitAdvancedFilterForm = () => {
       console.log("getAdvancedFilterSetting error", err);
     });
 };
-const handleSearch = filterForm => {
+const collapsePanel = () => {
   activePanelNames.value = [];
+};
+const searchBtnClick = filterForm => {
+  collapsePanel();
+  handleConditionalSearch(filterForm);
+  quickFilterList.value.forEach(a => {
+    a.clicked = false;
+  });
+};
+const handleSearch = filterForm => {
   handleConditionalSearch(filterForm);
   quickFilterList.value.forEach(a => {
     a.clicked = false;
@@ -919,7 +926,7 @@ watch(
                     ref="refBtnBasicFilterSearch"
                     type="primary"
                     :icon="useRenderIcon('ri:search-line')"
-                    @click="handleSearch(advancedFilterForm)"
+                    @click="searchBtnClick(advancedFilterForm)"
                     >{{
                       $t("customer.list.advancedSetting.searchBtn")
                     }}</el-button
