@@ -556,7 +556,7 @@ quote:
       issueBy: Issue By
       status: Status
       tradeTerm: Trade Term
-      shppingTerm: Shipping Term
+      shippingTerm: Shipping Term
       creditTerm: Credit Term
       reference: Reference
       laneSegment: Lane Segment

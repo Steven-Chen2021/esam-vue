@@ -3,11 +3,6 @@
 import "plus-pro-components/es/components/drawer-form/style/css";
 import "handsontable/dist/handsontable.full.css";
 import "@wangeditor/editor/dist/css/style.css";
-import {
-  deleteChildren,
-  getNodeByUniqueId,
-  appendFieldByUniqueId
-} from "@/utils/tree";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 import { clone, isNumber } from "@pureadmin/utils";
@@ -19,8 +14,7 @@ import {
   defineComponent,
   nextTick,
   watchEffect,
-  computed,
-  watch
+  computed
 } from "vue";
 
 import {
@@ -264,7 +258,6 @@ const rules = {
     }
   ]
 };
-
 const dataPermissionExtension = () => {
   console.log("dataPermissionExtension", quoteDetailColumns);
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
@@ -337,7 +330,7 @@ const dataPermissionExtension = () => {
                   quotationDetailResult.value.tradeTermCode;
               }
               break;
-            case "shppingTerm":
+            case "shippingTerm":
               ctl = quoteDetailColumns.find(f => f.prop === "shippingTerm");
               quotationDetailResult.value.shippingTerm = `${quotationDetailResult.value.shippingTerm} `;
               break;
@@ -367,13 +360,18 @@ const dataPermissionExtension = () => {
               break;
             case "dimensionFactor":
               ctl = quoteDetailColumns.find(f => f.prop === "dimensionFactor");
-              quotationDetailResult.value.dimensionFactor = `${quotationDetailResult.value.dimensionFactor} `;
+              if (customerProductLineAccessRight.value.isWrite === false) {
+                quotationDetailResult.value.dimensionFactor = `${quotationDetailResult.value.dimensionFactor} `;
+              }
               break;
             case "volumeShareForAgent":
               ctl = quoteDetailColumns.find(
                 f => f.prop === "volumeShareForAgent"
               );
-              quotationDetailResult.value.volumeShareForAgent = `${quotationDetailResult.value.volumeShareForAgent}:${quotationDetailResult.value.volumeShareForDimerco}`;
+              if (customerProductLineAccessRight.value.isWrite === false) {
+                quotationDetailResult.value.volumeShareForAgent = `${quotationDetailResult.value.volumeShareForAgent}:${quotationDetailResult.value.volumeShareForDimerco}`;
+              }
+
               break;
           }
 
@@ -423,40 +421,8 @@ let quoteDetailColumns: PlusColumn[] = [
         if (previousValue.value != undefined && item.value != undefined) {
           autoSaveTrigger(item.value, "customerName");
         }
-      }
-    }
-  },
-  {
-    label: "Effective - Expired",
-    prop: "period",
-    valueType: "date-picker",
-    colProps: {
-      span: 12
-    },
-    fieldProps: {
-      type: "daterange",
-      startPlaceholder: "Effective",
-      endPlaceholder: "Expired",
-      format: "YYYY-MMM-DD",
-      onFocus: () => {
-        const period = quotationDetailResult.value.period || [];
-        if (Array.isArray(period) && period.length === 2) {
-          const [effective, expired] = period;
-          previousValue.value = `effective: ${effective || ""}, expired: ${expired || ""}`;
-        } else {
-          previousValue.value = ""; // 預設為空字串
-        }
-      },
-      onChange: (value: [string, string]) => {
-        if (Array.isArray(value) && value.length === 2) {
-          const [effective, expired] = value;
-          const parseEffective = new Date(`${effective}`);
-          const parseExpired = new Date(`${expired}`);
-          autoSaveTrigger(parseEffective, "effectiveDate");
-          autoSaveTrigger(parseExpired, "expiredDate");
-        } else {
-          console.error("Invalid value format:", value);
-        }
+
+        getQuoteReferenceCodeResult(item.value);
       }
     }
   },
@@ -601,6 +567,43 @@ let quoteDetailColumns: PlusColumn[] = [
     }
   },
   {
+    label: "Effective - Expired",
+    prop: "period",
+    valueType: "date-picker",
+    colProps: {
+      span: 12
+    },
+    fieldProps: {
+      type: "daterange",
+      startPlaceholder: "Effective",
+      endPlaceholder: "Expired",
+      format: "YYYY-MMM-DD",
+      onFocus: () => {
+        const period = quotationDetailResult.value.period || [];
+        if (Array.isArray(period) && period.length === 2) {
+          const [effective, expired] = period;
+          previousValue.value = `effective: ${effective || ""}, expired: ${expired || ""}`;
+        } else {
+          previousValue.value = ""; // 預設為空字串
+        }
+      },
+      onChange: (value: [string, string]) => {
+        if (Array.isArray(value) && value.length === 2) {
+          console.log(value);
+          const [effective, expired] = value;
+          const parseEffective = new Date(`${effective}`);
+          const parseExpired = new Date(`${expired}`);
+          console.log(parseEffective);
+          console.log(parseExpired);
+          autoSaveTrigger(parseEffective, "effectiveDate");
+          autoSaveTrigger(parseExpired, "expiredDate");
+        } else {
+          console.error("Invalid value format:", value);
+        }
+      }
+    }
+  },
+  {
     label: "Trade Term",
     width: 120,
     prop: "tradeTermId",
@@ -678,7 +681,6 @@ let quoteDetailColumns: PlusColumn[] = [
       }
     }
   },
-
   {
     label: "Reference",
     width: 120,
@@ -770,7 +772,6 @@ let quoteDetailColumns: PlusColumn[] = [
     }
   }
 ];
-
 const handleLocalChargeResult = (
   localChargeResult,
   quotationDetailPid,
@@ -910,11 +911,9 @@ const handleLocalChargeResult = (
     });
   }
 };
-
 const handleGreetingsFocus = () => {
   previousGreetingsValue.value = quotationDetailResult.value.greeting;
 };
-
 const handleGreetingsFocusOut = () => {
   if (previousGreetingsValue.value != quotationDetailResult.value.greeting) {
     autoSaveTrigger(
@@ -924,7 +923,6 @@ const handleGreetingsFocusOut = () => {
     );
   }
 };
-
 const saveFreightCharge = () => {
   const filteredData = freightChargeSettings.value.data.filter(item =>
     checkProperties.some(
@@ -952,6 +950,7 @@ const saveFreightCharge = () => {
 };
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const handleAfterChange = (changes, source) => {
+  console.log(changes, source);
   if (source === "edit") {
     // hotTableRef.value.hotInstance.validateCells(valid => {
     if (
@@ -1144,7 +1143,6 @@ const handleAfterChange = (changes, source) => {
     });
   }
 };
-
 const transformData = (
   LocationResult: any[],
   quoteID: number,
@@ -1211,7 +1209,6 @@ const transformData = (
     })
   };
 };
-
 const handleExportLocalChargeChange = (changes, source) => {
   if (
     source === "edit" &&
@@ -1231,7 +1228,6 @@ const handleExportLocalChargeChange = (changes, source) => {
     saveLocalChargeResult(transformedData);
   }
 };
-
 const handleImportLocalChargeChange = (changes, source) => {
   if (
     source === "edit" &&
@@ -1251,14 +1247,12 @@ const handleImportLocalChargeChange = (changes, source) => {
     saveLocalChargeResult(transformedData);
   }
 };
-
 const handleAfterSelection = (row, column, row2, column2) => {
   console.log(
     "handleAfterSelection",
     `選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`
   );
 };
-
 const handleFrtBeforeRemoveRow = (index, amount, physicalRows, source) => {
   exportLocationResult.value = exportLocationResult.value
     .filter(item => item.city !== freightChargeResult.value[index].pReceipt)
@@ -1285,14 +1279,12 @@ const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
   saveLocalChargeResult(exportTransformedData);
   saveLocalChargeResult(importTransformedData);
 };
-
 const handleRemoveRow = (index, amount, physicalRows, source) => {
   console.log(
     "handleRemoveRow",
     `刪除了 ${amount} 行，從索引 ${index} 開始 ${{ physicalRows }}${{ source }}`
   );
 };
-
 const freightChargeSettings = ref({
   data: [],
   colHeaders: [],
@@ -1313,27 +1305,21 @@ const freightChargeSettings = ref({
   afterSelection: handleAfterSelection,
   afterRemoveRow: handleFrtRemoveRow,
   beforeRemoveRow: handleFrtBeforeRemoveRow,
-  readOnly: false
-  // validate: true
+  readOnly: false,
+  afterValidate: (isValid, value, row, prop) => {
+    if (/^sellingRate[1-9]$/.test(prop)) {
+      if (!isValid) {
+        ElNotification({
+          title: "Error",
+          message: `Negative quotes are not allowed. Value: ${value}`,
+          type: "error"
+        });
+      }
+    }
+  }
 });
-
 const saveData = () => {
   saveLoading.value = "default";
-
-  // const hotInstance = hotTableRef.value.hotInstance;
-
-  // if (hotInstance) {
-  //   hotInstance.validateCells(isValid => {
-  //     if (isValid) {
-  //       alert("驗證成功，送出資料");
-  //       // 執行送出邏輯
-  //     } else {
-  //       alert("驗證失敗，請檢查表格內容");
-  //     }
-  //   });
-  // }
-
-  // return;
   quotationForm.value.formInstance
     .validate()
     .then(() => {
@@ -1659,12 +1645,13 @@ const handleCheckboxGroupChange = (values: string[]) => {
     item => item.headerName
   );
 
-  const hotTableColumnSettingResult = selectedItems.map(
-    item => item.hotTableColumnSetting
-  );
-  hotTableColumnSettingResult.forEach(i => {
+  // 更新表格的 columns
+  const hotTableColumnSettingResult = selectedItems.map(item => {
+    const columnSetting = { ...item.hotTableColumnSetting }; // 確保不修改原始物件
     let apiRequestType = 0;
-    switch (i.data) {
+
+    // 動態設置 API requestType
+    switch (columnSetting.data) {
       case "pReceipt":
       case "pDelivery":
         apiRequestType =
@@ -1676,8 +1663,10 @@ const handleCheckboxGroupChange = (values: string[]) => {
           quotationDetailResult.value.pid === 6 ? SeaPort : AirPort;
         break;
     }
+
+    // 如果需要設置 `source` 函數
     if (apiRequestType > 0) {
-      i.source = function (_query, process) {
+      columnSetting.source = function (_query, process) {
         const params = {
           searchKey: _query,
           requestType: apiRequestType,
@@ -1691,10 +1680,58 @@ const handleCheckboxGroupChange = (values: string[]) => {
         });
       };
     }
+
+    // 添加 validator，驗證是否為正數（不允許負數）
+    if (columnSetting.type === "numeric") {
+      columnSetting.validator = (value, callback) => {
+        const isValid = !isNaN(value) && Number(value) > 0;
+        callback(isValid); // 返回驗證結果
+      };
+      columnSetting.allowInvalid = false; // 禁止無效值
+    }
+
+    return columnSetting;
   });
-  freightChargeSettings.value.columns = selectedItems.map(
-    item => item.hotTableColumnSetting
-  );
+
+  // 更新設定
+  freightChargeSettings.value.columns = hotTableColumnSettingResult;
+
+  // const hotTableColumnSettingResult = selectedItems.map(
+  //   item => item.hotTableColumnSetting
+  // );
+  // hotTableColumnSettingResult.forEach(i => {
+  //   let apiRequestType = 0;
+  //   switch (i.data) {
+  //     case "pReceipt":
+  //     case "pDelivery":
+  //       apiRequestType =
+  //         quotationDetailResult.value.pid === 6 ? SeaCity : AirCity;
+  //       break;
+  //     case "pLoading":
+  //     case "pDischarge":
+  //       apiRequestType =
+  //         quotationDetailResult.value.pid === 6 ? SeaPort : AirPort;
+  //       break;
+  //   }
+  //   if (apiRequestType > 0) {
+  //     i.source = function (_query, process) {
+  //       const params = {
+  //         searchKey: _query,
+  //         requestType: apiRequestType,
+  //         PageSize: 10,
+  //         PageIndex: 1,
+  //         Paginator: true
+  //       };
+  //       CommonService.getCityAndPortResult(params).then(a => {
+  //         const a1 = a.map(item => item.text);
+  //         process(a1);
+  //       });
+  //     };
+  //   }
+  // });
+  // freightChargeSettings.value.columns = selectedItems.map(
+  //   item => item.hotTableColumnSetting
+  // );
 
   freightChargeSettings.value.colWidths = selectedItems.map(
     item => item.columnWidth
@@ -1905,7 +1942,7 @@ watchEffect(() => {
       item => item.headerName
     );
     freightChargeSettings.value.columns = sourceData.map(
-      item => item.hotTableColumnSetting
+      item => item => item.hotTableColumnSetting
     );
     freightChargeSettings.value.colWidths = sourceData.map(
       item => item.columnWidth

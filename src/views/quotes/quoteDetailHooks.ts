@@ -33,6 +33,7 @@ export function QuoteDetailHooks() {
     height: number | null;
     sourceValues?: string[]; // 新增: 用於儲存來源值列表
     validator?: (value: any, callback: (valid: boolean) => void) => void; // 新增: 自訂驗證函數
+    allowInvalid: boolean | null;
   }
 
   interface iAccessRightSetting {
@@ -107,7 +108,7 @@ export function QuoteDetailHooks() {
   const cbmTransferUOMResult = ref([]);
   const ChargeCodeSettingResult = reactive<iChargeCodeSetting[]>([]);
   const chargeCodeSettingValues = ref([]);
-  const quoteDimensionFactorResult = ref([]);
+  const quoteDimensionFactorResult = ref<selectCtl[]>([]);
   const customerProductLineAccessRight = ref<iAccessRightSetting>({
     isWrite: false,
     isReadAdvanceColumn: false
@@ -380,9 +381,10 @@ export function QuoteDetailHooks() {
         quoteDimensionFactorResult.value = response.returnValue.map(
           (item: any) => ({
             label: item.text,
-            value: item.value
+            value: Number(item.value)
           })
         );
+        console.log(quoteDimensionFactorResult.value);
       }
     } catch (error) {
       console.log("getQuoteDimensionFactorResult", error);
