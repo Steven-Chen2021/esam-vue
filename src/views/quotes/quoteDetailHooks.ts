@@ -5,6 +5,18 @@ import { reactive, ref } from "vue";
 import type { FieldValues } from "plus-pro-components";
 // import { ContactGridColumnSetting } from "@/types/apiRequestTypeEnum";
 
+export interface iHotTableColumnSetting {
+  data: string;
+  type: string;
+  source: any;
+  visibleRows: number | null;
+  strict: boolean | null;
+  height: number | null;
+  sourceValues?: string[]; // 新增: 用於儲存來源值列表
+  validator?: (value: any, callback: (valid: boolean) => void) => void; // 新增: 自訂驗證函數
+  allowInvalid: boolean | null;
+}
+
 export function QuoteDetailHooks() {
   interface dropdownCtl {
     text: string;
@@ -22,18 +34,6 @@ export function QuoteDetailHooks() {
     ctlType: string;
     isReadOnly: boolean;
     hotTableColumnSetting: iHotTableColumnSetting;
-  }
-
-  interface iHotTableColumnSetting {
-    data: string;
-    type: string;
-    source: any;
-    visibleRows: number | null;
-    strict: boolean | null;
-    height: number | null;
-    sourceValues?: string[]; // 新增: 用於儲存來源值列表
-    validator?: (value: any, callback: (valid: boolean) => void) => void; // 新增: 自訂驗證函數
-    allowInvalid: boolean | null;
   }
 
   interface iAccessRightSetting {
@@ -334,6 +334,7 @@ export function QuoteDetailHooks() {
 
   async function saveFreightChargeResult(params) {
     try {
+      console.log(params);
       const response = await quoteDetailService.saveFreightCharge(params);
       return response;
     } catch (error) {
@@ -361,13 +362,17 @@ export function QuoteDetailHooks() {
 
   async function getQuoteReferenceCodeResult(customerHQID) {
     try {
+      console.log(customerHQID);
       const response =
         await quoteDetailService.getQuoteReferenceCodeResult(customerHQID);
       if (response != null) {
-        quoteReferenceCodeResult.value = response.map((item: any) => ({
-          label: item.text,
-          value: item.value
-        }));
+        console.log(response);
+        quoteReferenceCodeResult.value = response.returnValue.map(
+          (item: any) => ({
+            label: item.text,
+            value: item.value
+          })
+        );
       }
     } catch (error) {
       console.log("getQuoteReferenceCodeResult", error);

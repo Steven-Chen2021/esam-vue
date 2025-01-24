@@ -3,8 +3,6 @@
 import "plus-pro-components/es/components/drawer-form/style/css";
 import "handsontable/dist/handsontable.full.css";
 import "@wangeditor/editor/dist/css/style.css";
-import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
-import { usePermissionStoreHook } from "@/store/modules/permission";
 import { clone, isNumber } from "@pureadmin/utils";
 import {
   onBeforeUnmount,
@@ -13,8 +11,7 @@ import {
   onMounted,
   defineComponent,
   nextTick,
-  watchEffect,
-  computed
+  watchEffect
 } from "vue";
 
 import {
@@ -35,7 +32,7 @@ defineComponent({
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 
 // Hooks Import
-import { useDetail } from "./hooks";
+import { useDetail, iHotTableColumnSetting } from "./hooks";
 const { initToDetail, getParameter, router } = useDetail();
 import { QuoteDetailHooks } from "./quoteDetailHooks";
 import { LocalChargeHooks } from "./local-charge/localChargeHooks";
@@ -82,22 +79,6 @@ const props = defineProps({
     type: Object,
     required: false
   }
-  // ID: {
-  //   type: String,
-  //   required: false
-  // },
-  // qname: {
-  //   type: String,
-  //   required: false
-  // },
-  // pid: {
-  //   type: String,
-  //   required: false
-  // },
-  // pagemode: {
-  //   type: String,
-  //   required: false
-  // }
 });
 const pageParams = ref({ id: "", qname: "", pagemode: "", pid: "" });
 const emit = defineEmits(["handleBackEvent"]);
@@ -135,10 +116,8 @@ const {
   getCBMTransferUOMRsult,
   cbmTransferUOMResult,
   saveQuoteDetailResult,
-  getLocalCharge,
   saveFreightChargeResult,
   frightChargeParams,
-  getQuotePreviewResult,
   getQuoteHistoryResult,
   customerProductLineAccessRight,
   getQuoteReferenceCodeResult,
@@ -203,35 +182,7 @@ const previousValue = ref<any>();
 const previousGreetingsValue = ref<any>();
 const dcUrl = ref();
 const salesInfomation = ref<any>({});
-// 方法來動態設置 HotTable 的 ref
-const setHotTableRef = (city, Category) => el => {
-  if (el) {
-    hotTableRefs.value[`${city}${Category}`] = el.hotInstance;
-  }
-};
-
-// 示例：在需要的時候更新某個 HotTable 的數據
-const updateHotTableData = (city, data, isExport) => {
-  if (hotTableRefs.value[`${city}general`]) {
-    hotTableRefs.value[`${city}general`].loadData(data);
-    if (isExport) {
-      const targetCity = exportLocationResult.value.find(
-        item => item.cityID === city
-      );
-      if (targetCity) {
-        (targetCity.generalHotTableSetting.data as any[]) = [...data];
-      }
-    } else {
-      const targetCity = importLocationResult.value.find(
-        item => item.cityID === city
-      );
-      if (targetCity) {
-        (targetCity.generalHotTableSetting.data as any[]) = [...data];
-      }
-    }
-  }
-};
-
+const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const rules = {
   customerName: [
     {
@@ -294,6 +245,44 @@ const rules = {
     }
   ]
 };
+const localChargeNumberColumns = [
+  "flat",
+  "flatCost",
+  "min",
+  "minCost",
+  "unit",
+  "amount",
+  "cost"
+];
+// 方法來動態設置 HotTable 的 ref
+const setHotTableRef = (city, Category) => el => {
+  if (el) {
+    hotTableRefs.value[`${city}${Category}`] = el.hotInstance;
+  }
+};
+
+// 示例：在需要的時候更新某個 HotTable 的數據
+const updateHotTableData = (city, data, isExport) => {
+  if (hotTableRefs.value[`${city}general`]) {
+    hotTableRefs.value[`${city}general`].loadData(data);
+    if (isExport) {
+      const targetCity = exportLocationResult.value.find(
+        item => item.cityID === city
+      );
+      if (targetCity) {
+        (targetCity.generalHotTableSetting.data as any[]) = [...data];
+      }
+    } else {
+      const targetCity = importLocationResult.value.find(
+        item => item.cityID === city
+      );
+      if (targetCity) {
+        (targetCity.generalHotTableSetting.data as any[]) = [...data];
+      }
+    }
+  }
+};
+
 const dataPermissionExtension = () => {
   console.log("dataPermissionExtension", quoteDetailColumns);
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
@@ -429,6 +418,7 @@ const dataPermissionExtension = () => {
     });
   }
 };
+
 let quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
@@ -720,7 +710,7 @@ let quoteDetailColumns: PlusColumn[] = [
   {
     label: "Reference",
     width: 120,
-    prop: "refID",
+    prop: "reference",
     valueType: "select",
     options: quoteReferenceCodeResult,
     colProps: {
@@ -808,6 +798,7 @@ let quoteDetailColumns: PlusColumn[] = [
     }
   }
 ];
+
 const handleLocalChargeResult = (
   localChargeResult,
   quotationDetailPid,
@@ -947,9 +938,11 @@ const handleLocalChargeResult = (
     });
   }
 };
+
 const handleGreetingsFocus = () => {
   previousGreetingsValue.value = quotationDetailResult.value.greeting;
 };
+
 const handleGreetingsFocusOut = () => {
   if (previousGreetingsValue.value != quotationDetailResult.value.greeting) {
     autoSaveTrigger(
@@ -959,15 +952,18 @@ const handleGreetingsFocusOut = () => {
     );
   }
 };
+
 const saveFreightCharge = () => {
   const filteredData = freightChargeSettings.value.data.filter(item =>
     checkProperties.some(
       key => item[key] !== null && item[key] !== "" && item[key] !== undefined
     )
   );
+  console.log(filteredData);
   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
   frightChargeParams.value.pid = quotationDetailResult.value.pid;
   frightChargeParams.value.quoteFreights = filteredData;
+  console.log(frightChargeParams.value.quoteFreights);
   saveFreightChargeResult(frightChargeParams.value).then(res => {
     if (res && res.isSuccess) {
       ElNotification({
@@ -984,20 +980,13 @@ const saveFreightCharge = () => {
     }
   });
 };
-const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
+
 const handleAfterChange = (changes, source) => {
-  console.log(changes, source);
   if (source === "edit") {
-    // hotTableRef.value.hotInstance.validateCells(valid => {
-    if (
-      // valid &&
-      // frightChargeParams.value.quoteFreights.length > 0 &&
-      changes[0][2] != changes[0][3] &&
-      qid.value != 0
-    ) {
+    console.log("handleAfterChange changes", changes);
+    if (changes[0][2] != changes[0][3] && qid.value != 0) {
       saveFreightCharge();
     }
-    // });
 
     changes.forEach(([row, prop, oldValue, newValue]) => {
       if (prop === "pReceipt") {
@@ -1031,11 +1020,26 @@ const handleAfterChange = (changes, source) => {
                       height: "auto",
                       colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
                       columns: localCharge?.generalSettings?.columns?.map(
-                        column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })
+                        column => {
+                          const columnConfig = {
+                            data: column.data,
+                            type: column.type,
+                            source: column.source || []
+                          } as iHotTableColumnSetting;
+
+                          if (column.type === "numeric") {
+                            columnConfig.validator = (value, callback) => {
+                              // 驗證是否為正整數
+                              const isValid =
+                                Number.isInteger(Number(value)) &&
+                                Number(value) > 0;
+                              callback(isValid);
+                            };
+                            columnConfig.allowInvalid = false; // 禁止無效值
+                          }
+
+                          return columnConfig;
+                        }
                       ),
                       autoWrapRow: true,
                       autoWrapCol: true,
@@ -1047,7 +1051,19 @@ const handleAfterChange = (changes, source) => {
                       afterChange: handleExportLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite
+                      readOnly: !customerProductLineAccessRight.value.isWrite,
+                      afterValidate: (isValid, value, row, prop) => {
+                        if (
+                          localChargeNumberColumns.includes(prop) &&
+                          !isValid
+                        ) {
+                          ElNotification({
+                            title: "Error",
+                            message: `Negative quotes are not allowed. Value: ${value}`,
+                            type: "error"
+                          });
+                        }
+                      }
                     },
                     weightBreakHotTableSetting: {
                       data: localCharge?.weightBreakSettings?.detail || [],
@@ -1075,7 +1091,19 @@ const handleAfterChange = (changes, source) => {
                       afterChange: handleExportLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite
+                      readOnly: !customerProductLineAccessRight.value.isWrite,
+                      afterValidate: (isValid, value, row, prop) => {
+                        if (
+                          localChargeNumberColumns.includes(prop) &&
+                          !isValid
+                        ) {
+                          ElNotification({
+                            title: "Error",
+                            message: `Negative quotes are not allowed. Value: ${value}`,
+                            type: "error"
+                          });
+                        }
+                      }
                     },
                     localChargePackageList: res,
                     localChargePackageSelector: []
@@ -1137,7 +1165,19 @@ const handleAfterChange = (changes, source) => {
                       afterChange: handleImportLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite
+                      readOnly: !customerProductLineAccessRight.value.isWrite,
+                      afterValidate: (isValid, value, row, prop) => {
+                        if (
+                          localChargeNumberColumns.includes(prop) &&
+                          !isValid
+                        ) {
+                          ElNotification({
+                            title: "Error",
+                            message: `Negative quotes are not allowed. Value: ${value}`,
+                            type: "error"
+                          });
+                        }
+                      }
                     },
                     weightBreakHotTableSetting: {
                       data: localCharge?.weightBreakSettings?.detail || [],
@@ -1165,7 +1205,19 @@ const handleAfterChange = (changes, source) => {
                       afterChange: handleImportLocalChargeChange,
                       afterSelection: handleAfterSelection,
                       afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite
+                      readOnly: !customerProductLineAccessRight.value.isWrite,
+                      afterValidate: (isValid, value, row, prop) => {
+                        if (
+                          localChargeNumberColumns.includes(prop) &&
+                          !isValid
+                        ) {
+                          ElNotification({
+                            title: "Error",
+                            message: `Negative quotes are not allowed. Value: ${value}`,
+                            type: "error"
+                          });
+                        }
+                      }
                     },
                     localChargePackageList: res,
                     localChargePackageSelector: []
@@ -1179,6 +1231,7 @@ const handleAfterChange = (changes, source) => {
     });
   }
 };
+
 const transformData = (
   LocationResult: any[],
   quoteID: number,
@@ -1245,6 +1298,7 @@ const transformData = (
     })
   };
 };
+
 const handleExportLocalChargeChange = (changes, source) => {
   if (
     source === "edit" &&
@@ -1264,6 +1318,7 @@ const handleExportLocalChargeChange = (changes, source) => {
     saveLocalChargeResult(transformedData);
   }
 };
+
 const handleImportLocalChargeChange = (changes, source) => {
   if (
     source === "edit" &&
@@ -1283,12 +1338,37 @@ const handleImportLocalChargeChange = (changes, source) => {
     saveLocalChargeResult(transformedData);
   }
 };
+
 const handleAfterSelection = (row, column, row2, column2) => {
   console.log(
     "handleAfterSelection",
     `選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`
   );
+  // saveFreightCharge();
 };
+const handleAfterPaste = (data, coords) => {
+  setTimeout(() => {
+    const hotInstance = hotTableRef.value.hotInstance;
+
+    // 確保同步 Handsontable 的數據到 Vue 的 data
+    const updatedData = hotInstance.getSourceData();
+    freightChargeSettings.value.data = [...updatedData];
+    // 執行保存功能
+    saveFreightCharge();
+  }, 500);
+};
+const handleAfterAutofill = (start, end, data) => {
+  setTimeout(() => {
+    const hotInstance = hotTableRef.value.hotInstance;
+
+    // 確保同步 Handsontable 的數據到 Vue 的 data
+    const updatedData = hotInstance.getSourceData();
+    freightChargeSettings.value.data = [...updatedData];
+    // 執行保存功能
+    saveFreightCharge();
+  }, 500); // 延遲 0 毫秒，等待 Handsontable 完成數據更新
+};
+
 const handleFrtBeforeRemoveRow = (index, amount, physicalRows, source) => {
   exportLocationResult.value = exportLocationResult.value
     .filter(item => item.city !== freightChargeResult.value[index].pReceipt)
@@ -1298,6 +1378,7 @@ const handleFrtBeforeRemoveRow = (index, amount, physicalRows, source) => {
     .filter(item => item.city !== freightChargeResult.value[index].pDelivery)
     .filter(item => item.city !== freightChargeResult.value[index].pDischarge);
 };
+
 const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
   saveFreightCharge();
   const exportTransformedData = transformData(
@@ -1315,12 +1396,14 @@ const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
   saveLocalChargeResult(exportTransformedData);
   saveLocalChargeResult(importTransformedData);
 };
+
 const handleRemoveRow = (index, amount, physicalRows, source) => {
   console.log(
     "handleRemoveRow",
     `刪除了 ${amount} 行，從索引 ${index} 開始 ${{ physicalRows }}${{ source }}`
   );
 };
+
 const freightChargeSettings = ref({
   data: [],
   colHeaders: [],
@@ -1334,9 +1417,10 @@ const freightChargeSettings = ref({
   autoWrapCol: true,
   allowInsertColumn: true,
   allowInsertRow: true,
-  allowInvalid: true,
+  allowInvalid: false,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true,
+  validate: true,
   afterChange: handleAfterChange,
   afterSelection: handleAfterSelection,
   afterRemoveRow: handleFrtRemoveRow,
@@ -1352,8 +1436,11 @@ const freightChargeSettings = ref({
         });
       }
     }
-  }
+  },
+  afterPaste: handleAfterPaste,
+  afterAutofill: handleAfterAutofill
 });
+
 const saveData = () => {
   saveLoading.value = "default";
   quotationForm.value.formInstance
@@ -1618,11 +1705,6 @@ const sendApproval = () => {
       });
   }
 };
-
-const menusTree = clone(usePermissionStoreHook().wholeMenus, true);
-const multiTags = computed(() => {
-  return useMultiTagsStoreHook()?.multiTags;
-});
 
 const previewQuote = () => {
   toPreView({
@@ -1953,9 +2035,6 @@ watchEffect(() => {
             break;
         }
         if (apiRequestType > 0) {
-          // item.hotTableColumnSetting.type = "autocomplete";
-          // item.hotTableColumnSetting.visibleRows = 15;
-          // item.hotTableColumnSetting.strict = false;
           item.hotTableColumnSetting.source = function (_query, process) {
             const params = {
               searchKey: _query,
@@ -1969,7 +2048,16 @@ watchEffect(() => {
               process(a1);
             });
           };
-          console.log(freightChargeSettings);
+        }
+        // 為 sellingRate1 到 sellingRate9 添加驗證器
+        if (/^sellingRate[1-9]$/.test(item.columnName)) {
+          item.hotTableColumnSetting.type = "numeric"; // 確保是數字型欄位
+          item.hotTableColumnSetting.validator = (value, callback) => {
+            // 驗證值是否為正數
+            const isValid = !isNaN(value) && Number(value) >= 0;
+            callback(isValid); // Handsontable 內建處理
+          };
+          item.hotTableColumnSetting.allowInvalid = false; // 禁止無效值
         }
         sourceData.push(item);
       }
@@ -1978,7 +2066,7 @@ watchEffect(() => {
       item => item.headerName
     );
     freightChargeSettings.value.columns = sourceData.map(
-      item => item => item.hotTableColumnSetting
+      item => item.hotTableColumnSetting
     );
     freightChargeSettings.value.colWidths = sourceData.map(
       item => item.columnWidth
@@ -2007,6 +2095,7 @@ watchEffect(() => {
     customerProductLineAccessRight.value.isWrite = false;
   }
 });
+
 onMounted(() => {
   if (!props.PropsParam) {
     initToDetail("params");
