@@ -164,14 +164,14 @@ export function listCTL() {
                     // 比较两个日期的 date 部分是否相同
                     const isSameDate = date1.isSame(date2, "date");
                     if (isSameDate) {
-                      a["appointmentStartDate"] =
+                      a["appointmentStartTime"] =
                         `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("HH:mm")}`;
                     } else {
-                      a["appointmentStartDate"] =
+                      a["appointmentStartTime"] =
                         `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")} - ${dayjs(a["appointmentEndDate"]).format("MMM DD, YYYY, HH:mm")}`;
                     }
                   } else {
-                    a["appointmentStartDate"] =
+                    a["appointmentStartTime"] =
                       `${dayjs(a["appointmentStartDate"]).format("MMM DD, YYYY, HH:mm")}`;
                   }
                 }

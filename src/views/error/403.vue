@@ -45,7 +45,7 @@ const router = useRouter();
           }
         }"
       >
-        抱歉，你无权访问该页面
+        Sorry, you do not have permission to access this page.
       </p>
       <el-button
         v-motion
@@ -63,7 +63,7 @@ const router = useRouter();
         }"
         @click="router.push('/')"
       >
-        返回首页
+        Return
       </el-button>
     </div>
   </div>

@@ -34,7 +34,57 @@ const emit = defineEmits(["updateEvent", "handleUpdateActionItems"]);
 const { t } = useI18n();
 const hotTableRef = ref(null);
 const handleAfterChange = (changes, source) => {
+  const hotInstance = hotTableRef.value.hotInstance;
   if (source === "edit" || source === "CopyPaste.paste") {
+    const requiredFields = ["pl", "origin", "destination"];
+    let hasInvalid = false;
+    // hotInstance.getData().forEach((rowData, rowIndex) => {
+    //   requiredFields.forEach(field => {
+    //     const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+    //     const fieldValue = rowData[colIndex]; // 取得欄位值
+
+    //     if (!fieldValue || fieldValue.trim() === "") {
+    //       hasInvalid = true;
+
+    //       // 標記該單元格為無效
+    //       hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
+    //     } else {
+    //       // 清除無效標記（如果之前標記過無效）
+    //       hotInstance.setCellMeta(rowIndex, colIndex, "valid", true);
+    //     }
+    //   });
+    // });
+    changes.forEach(([row, col, oldValue, newValue]) => {
+      // Check if the first column is empty and any other column has a value
+      const rowData = hotInstance.getDataAtRow(row);
+      rowData.forEach((cellValue, colIndex) => {
+        const columnName = hotInstance.getSettings().columns[colIndex].data;
+
+        if (
+          requiredFields.includes(columnName) &&
+          (cellValue === null || cellValue === "")
+        ) {
+          hotInstance.setCellMeta(row, colIndex, "valid", false);
+          hasInvalid = true;
+        } else {
+          hotInstance.setCellMeta(row, colIndex, "valid", true);
+        }
+      });
+      // console.log("row", row);
+      // console.log("col", col);
+      // const colIndex = hotInstance.propToCol(col);
+      // if (requiredFields.includes(col) && (!newValue || newValue === "")) {
+      //   // Change the cell's style to red if condition is met
+      //   hotInstance.setCellMeta(row, colIndex, "valid", false);
+      //   hasInvalid = true;
+      // } else {
+      //   // Reset the style if the condition is not met
+      //   hotInstance.setCellMeta(row, colIndex, "valid", true);
+      // }
+    });
+    if (hasInvalid) {
+      return;
+    }
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
         item =>
@@ -61,6 +111,28 @@ const handleRemoveRow = (index, amount) => {
   console.debug("handleRemoveRow", `刪除了 ${amount} 行，從索引 ${index} 開始`);
   updateActionItem();
 };
+const handleBeforeRemoveRow = (index, amount, physicalRows, source) => {
+  return true;
+};
+const handleBeforeValidate = (value, row, prop, source) => {
+  if (source === "removeRow") {
+    return true;
+  }
+  console.log("prop", prop);
+  const colIndex = tableSetting.value.columns.findIndex(
+    item => item.data === prop
+  );
+  console.log("colIndex", colIndex);
+  // 否则进行字段的必填验证
+  const columnMeta = hotTableRef.value.hotInstance.getColumnMeta(colIndex);
+  console.log("handleBeforeValidate columnMeta", columnMeta);
+  if (!columnMeta.allowEmpty && value === "") {
+    console.log("false");
+    return false; // 如果字段是必填的且为空，返回验证失败
+  }
+
+  return true; // 否则通过验证
+};
 const userAuth = ref({});
 const tableDataInit = ref([]);
 const tableSetting = ref({
@@ -85,6 +157,7 @@ const tableSetting = ref({
   // afterSelection: handleAfterSelection,
   afterRemoveRow: handleRemoveRow,
   // beforeChange: handleBeforeChange,
+  beforeRemoveRow: handleBeforeRemoveRow,
   readOnly: false
 });
 const textValidor = (value, callback) => {
@@ -127,7 +200,10 @@ const getActionItemResult = async () => {
         } else if (item["type"] === "autocomplete") {
           item["source"] = function (_query, process) {
             const params = {
-              SearchKey: _query
+              SearchKey: _query,
+              PageSize: 15,
+              Paginator: true,
+              PageIndex: 1
             };
             CommonService.getAutoCompleteListNew(item.apisource, params).then(
               a => {
@@ -139,7 +215,9 @@ const getActionItemResult = async () => {
           item["strict"] = true;
           item["visibleRows"] = 15;
         }
-        // item["allowEmpty"] = false;
+        item["allowEmpty"] = true;
+        item["allowInvalid"] = true;
+        item["strict"] = false;
       });
       tableSetting.value["colWidths"] = setting
         .filter(item => item.selected)
@@ -317,6 +395,11 @@ watch(
   </div>
 </template>
 <style scoped>
+.error {
+  color: white;
+  background-color: red !important;
+}
+
 /* .handsontable .htAutocomplete {
   overflow: visible !important;
   z-index: 1000;

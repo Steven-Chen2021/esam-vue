@@ -1101,6 +1101,8 @@ const cancelForm = () => {
                               profileData['city'] === null
                             "
                             v-model="profileData['cityText']"
+                            maxlength="20"
+                            show-word-limit
                             :disabled="disableStatus(filterItem)"
                             :placeholder="
                               t('customer.list.quickFilter.holderKeyinText')
@@ -1374,6 +1376,8 @@ const cancelForm = () => {
                         >
                           <el-input
                             v-model="profileData[filterItem.filterKey]"
+                            :maxlength="filterItem.columnLength"
+                            show-word-limit
                             :disabled="disableStatus(filterItem)"
                             :placeholder="
                               t('customer.list.quickFilter.holderKeyinText')
@@ -1390,6 +1394,7 @@ const cancelForm = () => {
                           <el-input
                             v-if="filterItem.filterKey === 'phone'"
                             v-model="profileData['phoneExt']"
+                            maxlength="10"
                             :disabled="disableStatus(filterItem)"
                             style="
                               width: 104px;
@@ -1412,6 +1417,7 @@ const cancelForm = () => {
                           <el-input
                             v-else-if="filterItem.filterKey === 'fax'"
                             v-model="profileData['faxExt']"
+                            maxlength="10"
                             :disabled="disableStatus(filterItem)"
                             style="
                               width: 104px;
@@ -1443,6 +1449,8 @@ const cancelForm = () => {
                         >
                           <el-input
                             v-model="profileData[filterItem.filterKey]"
+                            :maxlength="filterItem.columnLength"
+                            show-word-limit
                             :disabled="disableStatus(filterItem)"
                             :placeholder="
                               t('customer.profile.general.localNameAlert')
@@ -1467,6 +1475,8 @@ const cancelForm = () => {
                           <el-input
                             v-if="filterOptions['currency']"
                             v-model="profileData[filterItem.filterKey]"
+                            :maxlength="filterItem.columnLength"
+                            show-word-limit
                             :disabled="disableStatus(filterItem)"
                             :placeholder="
                               t('customer.list.quickFilter.holderKeyinText')
@@ -1523,6 +1533,8 @@ const cancelForm = () => {
                             filterItem.filterKey !== 'localName'
                           "
                           v-model="profileData[filterItem.filterKey]"
+                          :maxlength="filterItem.columnLength"
+                          show-word-limit
                           :disabled="disableStatus(filterItem)"
                           :placeholder="
                             t('customer.list.quickFilter.holderKeyinText')
@@ -1539,6 +1551,8 @@ const cancelForm = () => {
                         <el-input
                           v-else-if="filterItem.filterType === 'inputarea'"
                           v-model="profileData[filterItem.filterKey]"
+                          :maxlength="filterItem.columnLength"
+                          show-word-limit
                           :disabled="disableStatus(filterItem)"
                           :placeholder="
                             t('customer.list.quickFilter.holderKeyinText')
@@ -1713,6 +1727,7 @@ const cancelForm = () => {
                       >
                         <el-checkbox
                           :v-model="formDataMap[tabItem.plName].needBookConfirm"
+                          :disabled="disableStatus({ filterKey: '' })"
                           :checked="
                             formDataMap[tabItem.plName].needBookConfirm
                               ? true
@@ -1735,6 +1750,7 @@ const cancelForm = () => {
                       >
                         <el-checkbox
                           :v-model="formDataMap[tabItem.plName].poa"
+                          :disabled="disableStatus({ filterKey: '' })"
                           :checked="
                             formDataMap[tabItem.plName].poa ? true : false
                           "
@@ -1757,6 +1773,7 @@ const cancelForm = () => {
                           :v-model="
                             formDataMap[tabItem.plName].amS_ISF_SendBroker
                           "
+                          :disabled="disableStatus({ filterKey: '' })"
                           :checked="
                             formDataMap[tabItem.plName].amS_ISF_SendBroker
                               ? true
@@ -1779,8 +1796,9 @@ const cancelForm = () => {
                           placeholder="Select"
                           style="width: 140px"
                           :disabled="
-                            formDataMap[tabItem.plName].ownerName === '' &&
-                            formDataMap[tabItem.plName].ownerStation !== ''
+                            disableStatus({ filterKey: '' }) ||
+                            (formDataMap[tabItem.plName].ownerName === '' &&
+                              formDataMap[tabItem.plName].ownerStation !== '')
                           "
                           @change="v => handleActionChange(v, tabItem.plName)"
                         >
