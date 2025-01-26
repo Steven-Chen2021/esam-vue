@@ -458,6 +458,8 @@ onMounted(() => {
                       <el-form-item :label="t('deal.profile.flag')">
                         <el-input
                           v-model="profileData['flag']"
+                          maxlength="50"
+                          show-word-limit
                           :disabled="disableStatus() || dealClose"
                           @focusout="
                             autoSaveForm(

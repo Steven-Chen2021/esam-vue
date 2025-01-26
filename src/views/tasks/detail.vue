@@ -126,14 +126,29 @@ const autoSaveForm = async (
       switch (filterItem.filterKey) {
         case "taskContact":
           param.value = data["contactArray"].join(", ");
-          console.log("contact", data["contactArray"]);
           if (
             data["contactArray"] &&
             isArray(data["contactArray"]) &&
-            data["contactArray"].length > 3
+            data["contactArray"].length > 5
           ) {
             ElMessage({
-              message: t("task.profile.contactCountAlert"),
+              message: t("task.profile.contactCountAlert", {
+                field: "Contact"
+              }),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          } else if (
+            data["contactArray"] &&
+            isArray(data["contactArray"]) &&
+            param.value.length > filterItem.columnLength
+          ) {
+            ElMessage({
+              message: t("task.profile.columnLengthAlert", {
+                field: "Contact",
+                count: filterItem.columnLength
+              }),
               grouping: true,
               type: "warning"
             });
@@ -143,10 +158,66 @@ const autoSaveForm = async (
         case "attendees":
           param.oldValue = data["attendees"];
           param.value = data["attendeesArray"].join(",");
+          if (
+            data["attendeesArray"] &&
+            isArray(data["attendeesArray"]) &&
+            data["attendeesArray"].length > 5
+          ) {
+            ElMessage({
+              message: t("task.profile.contactCountAlert", {
+                field: "Attendees"
+              }),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          } else if (
+            data["attendeesArray"] &&
+            isArray(data["attendeesArray"]) &&
+            param.value.length > filterItem.columnLength
+          ) {
+            ElMessage({
+              message: t("task.profile.columnLengthAlert", {
+                field: "Attendees",
+                count: filterItem.columnLength
+              }),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
           break;
         case "notifyParty":
           param.oldValue = data["notifyParty"];
           param.value = data["notifyPartyArray"].join(",");
+          if (
+            data["notifyPartyArray"] &&
+            isArray(data["notifyPartyArray"]) &&
+            data["notifyPartyArray"].length > 5
+          ) {
+            ElMessage({
+              message: t("task.profile.contactCountAlert", {
+                field: "Notify Party"
+              }),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          } else if (
+            data["notifyPartyArray"] &&
+            isArray(data["notifyPartyArray"]) &&
+            param.value.length > filterItem.columnLength
+          ) {
+            ElMessage({
+              message: t("task.profile.columnLengthAlert", {
+                field: "Notify Party",
+                count: filterItem.columnLength
+              }),
+              grouping: true,
+              type: "warning"
+            });
+            return;
+          }
           break;
         case "appointmentEndTime":
           if (!v || v === "") {
@@ -208,18 +279,7 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
         });
         return;
       }
-      if (
-        data["contactArray"] &&
-        isArray(data["contactArray"]) &&
-        data["contactArray"].length > 3
-      ) {
-        ElMessage({
-          message: t("task.profile.contactCountAlert"),
-          grouping: true,
-          type: "warning"
-        });
-        return;
-      }
+
       profileData.value["id"] = CID;
       profileData.value["lid"] = LID;
       if (
@@ -258,6 +318,104 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
         profileData.value["appointmentStartTime"];
       profileData.value["actionItems"] = actionItems.value;
       formLoading.value = true;
+      console.log("profileFormData.value", profileFormData.value);
+      console.log(
+        "profileFormData.value key",
+        profileFormData.value.find(i => i.filterKey === "taskContact")
+      );
+      if (
+        data["contactArray"] &&
+        isArray(data["contactArray"]) &&
+        data["contactArray"].length > 5
+      ) {
+        formLoading.value = false;
+        ElMessage({
+          message: t("task.profile.contactCountAlert", { field: "Contact" }),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      } else if (
+        profileFormData.value.find(i => i.filterKey === "taskContact") &&
+        profileData.value["contact"].length >
+          profileFormData.value.find(i => i.filterKey === "taskContact")
+            .columnLength
+      ) {
+        formLoading.value = false;
+        ElMessage({
+          message: t("task.profile.columnLengthAlert", {
+            field: "Contact",
+            count: profileFormData.value.find(
+              i => i.filterKey === "taskContact"
+            ).columnLength
+          }),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      }
+      if (
+        data["attendeesArray"] &&
+        isArray(data["attendeesArray"]) &&
+        data["attendeesArray"].length > 5
+      ) {
+        formLoading.value = false;
+        ElMessage({
+          message: t("task.profile.contactCountAlert", { field: "Attendees" }),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      } else if (
+        profileFormData.value.find(i => i.filterKey === "attendees") &&
+        profileData.value["attendees"].length >
+          profileFormData.value.find(i => i.filterKey === "attendees")
+            .columnLength
+      ) {
+        formLoading.value = false;
+        ElMessage({
+          message: t("task.profile.columnLengthAlert", {
+            field: "Attendees",
+            count: profileFormData.value.find(i => i.filterKey === "attendees")
+              .columnLength
+          }),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      }
+      if (
+        data["notifyPartyArray"] &&
+        isArray(data["notifyPartyArray"]) &&
+        data["notifyPartyArray"].length > 5
+      ) {
+        formLoading.value = false;
+        ElMessage({
+          message: t("task.profile.contactCountAlert", {
+            field: "Notify Party"
+          }),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      } else if (
+        profileFormData.value.find(i => i.filterKey === "notifyParty") &&
+        profileData.value["notifyParty"].length >
+          profileFormData.value.find(i => i.filterKey === "notifyParty")
+            .columnLength
+      ) {
+        formLoading.value = false;
+        ElMessage({
+          message: t("task.profile.columnLengthAlert", {
+            field: "Notify Party",
+            count: profileFormData.value.find(i => i.filterKey === "attendees")
+              .columnLength
+          }),
+          grouping: true,
+          type: "warning"
+        });
+        return;
+      }
       TaskProfileService.updateTaskProfile(profileData.value)
         .then(data => {
           console.log("updateTaskProfile data", data);
@@ -672,9 +830,30 @@ onMounted(() => {
                         :value="option.value"
                       />
                     </el-select>
+                    <!-- <el-input
+                      v-else-if="
+                        filterItem.filterType === 'input' &&
+                        !filterItem.columnLength
+                      "
+                      v-model="profileData[filterItem.filterKey]"
+                      :disabled="disableStatus(filterItem)"
+                      :placeholder="
+                        t('customer.list.quickFilter.holderKeyinText')
+                      "
+                      style="width: 318px"
+                      @blur="
+                        autoSaveForm(
+                          profileFormRef,
+                          filterItem,
+                          profileData[filterItem.filterKey]
+                        )
+                      "
+                    /> -->
                     <el-input
                       v-else-if="filterItem.filterType === 'input'"
                       v-model="profileData[filterItem.filterKey]"
+                      :maxlength="filterItem.columnLength"
+                      show-word-limit
                       :disabled="disableStatus(filterItem)"
                       :placeholder="
                         t('customer.list.quickFilter.holderKeyinText')
