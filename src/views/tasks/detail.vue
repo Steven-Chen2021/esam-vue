@@ -337,6 +337,8 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
         return;
       } else if (
         profileFormData.value.find(i => i.filterKey === "taskContact") &&
+        profileData.value["contact"] &&
+        isArray(profileData.value["contact"]) &&
         profileData.value["contact"].length >
           profileFormData.value.find(i => i.filterKey === "taskContact")
             .columnLength
@@ -368,6 +370,8 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
         return;
       } else if (
         profileFormData.value.find(i => i.filterKey === "attendees") &&
+        profileData.value["attendees"] &&
+        isArray(profileData.value["attendees"]) &&
         profileData.value["attendees"].length >
           profileFormData.value.find(i => i.filterKey === "attendees")
             .columnLength
@@ -400,6 +404,8 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
         return;
       } else if (
         profileFormData.value.find(i => i.filterKey === "notifyParty") &&
+        profileData.value["notifyParty"] &&
+        isArray(profileData.value["notifyParty"]) &&
         profileData.value["notifyParty"].length >
           profileFormData.value.find(i => i.filterKey === "notifyParty")
             .columnLength
