@@ -153,7 +153,6 @@ router.beforeEach(async (to: ToRouteType, _from, next) => {
     whiteList.includes(to.fullPath) ? next(_from.fullPath) : next();
   }
   if (Cookies.get(multipleTabsKey) && userInfo) {
-    console.log("username", userInfo);
     if (!checkIfExists(userInfo.username) && to.path !== "/error/403") {
       return next({ path: "/error/403" });
     }

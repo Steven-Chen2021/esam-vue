@@ -12,6 +12,9 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 ARG BUILD_ENV
+# 新增接收並導出代理 target 的變數
+ARG VITE_API_PROXY_TARGET
+ENV VITE_API_PROXY_TARGET=${VITE_API_PROXY_TARGET}
 
 RUN pnpm build --mode ${BUILD_ENV}
 
