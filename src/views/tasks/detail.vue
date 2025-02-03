@@ -124,6 +124,43 @@ const autoSaveForm = async (
       };
       console.log("autosave param", param);
       switch (filterItem.filterKey) {
+        case "subjectCategory":
+          const v1 = filterOptions.value["subjectCategory"].list.find(
+            i => i.value === v
+          ).text;
+
+          const param1 = {
+            tableName: "sasalestask",
+            fieldName: "subjectType",
+            id: CID,
+            custID: LID,
+            oldValue: dataInit["subjectType"],
+            value: v1,
+            oldEntity: "string",
+            newEntity: "string"
+          };
+          console.log("param1", param1);
+          CommonService.autoSave(param1)
+            .then(d => {
+              console.log("autosave data", d);
+              if (d && d.isSuccess) {
+              } else {
+                ElMessage({
+                  message: t("customer.profile.autoSaveFailAlert"),
+                  grouping: true,
+                  type: "warning"
+                });
+              }
+            })
+            .catch(err => {
+              console.log("autosave error", err);
+              ElMessage({
+                message: t("customer.profile.autoSaveFailAlert"),
+                grouping: true,
+                type: "warning"
+              });
+            });
+          break;
         case "taskContact":
           param.value = data["contactArray"].join(", ");
           if (
@@ -240,6 +277,7 @@ const autoSaveForm = async (
               grouping: true,
               type: "success"
             });
+            fetchProfileData();
           } else {
             ElMessage({
               message: t("customer.profile.autoSaveFailAlert"),
