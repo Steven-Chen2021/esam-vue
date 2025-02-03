@@ -11,13 +11,7 @@ import {
 
 export default ({ mode }: ConfigEnv): UserConfigExport => {
   const env = wrapperEnv(loadEnv(mode, root));
-  const {
-    VITE_CDN,
-    VITE_PORT,
-    VITE_COMPRESSION,
-    VITE_PUBLIC_PATH,
-    VITE_API_PROXY_TARGET
-  } = env;
+  const { VITE_CDN, VITE_PORT, VITE_COMPRESSION, VITE_PUBLIC_PATH } = env;
   return {
     base: VITE_PUBLIC_PATH,
     root,
@@ -32,8 +26,8 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
       // 本地跨域代理 https://cn.vitejs.dev/config/server-options.html#server-proxy
       proxy: {
         "/api": {
-          // target: "http://10.161.254.129:38080/api/",
-          target: VITE_API_PROXY_TARGET,
+          target: "http://10.161.252.171:38080/api/",
+          // target: VITE_API_PROXY_TARGET,
           // target: "https://localhost:44341/api/",
           changeOrigin: true,
           secure: false,
