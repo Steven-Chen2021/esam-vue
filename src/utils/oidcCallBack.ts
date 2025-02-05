@@ -1,31 +1,21 @@
-// import { ref, onMounted } from "vue";
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import userManager from "@/utils/oidcConfig";
-// import { initRouter, getTopMenu } from "@/router/utils";
-// import { message } from "@/utils/message";
-// import { useI18n } from "vue-i18n";
 import type { UserResult } from "@/api/user";
 import { setToken } from "@/utils/auth";
 
 export default {
   setup() {
     const router = useRouter();
-    // const disabled = ref(false);
-    // const { t } = useI18n();
-
-    // 解析 hash 中的查詢參數
     const parseHashParams = (): Record<string, string> => {
       const hash = window.location.hash;
-      console.log("Raw hash:", hash); // 調試輸出完整的 hash
-
-      // 確保 hash 中包含查詢參數
+      console.log("Raw hash:", hash);
       const queryIndex = hash.indexOf("?");
       if (queryIndex === -1) {
         console.error("No query found in hash:", hash);
         return {};
       }
-      const queryString = hash.substring(queryIndex + 1); // 提取查詢參數
+      const queryString = hash.substring(queryIndex + 1);
       const hashParams = new URLSearchParams(queryString);
       const result: Record<string, string> = {};
       hashParams.forEach((value, key) => {
@@ -33,8 +23,6 @@ export default {
       });
       return result;
     };
-
-    // 轉換 hash 為 query 並更新 URL
     const convertHashToQuery = (): boolean => {
       const hashParams = parseHashParams();
 
@@ -42,11 +30,9 @@ export default {
         console.error("No code or state in hash params:", hashParams);
         return false;
       }
-
-      // 重建 URL 並使用 `history.replaceState` 更新
       const newUrl = `${window.location.origin}/callback?code=${hashParams["code"]}&state=${hashParams["state"]}&session_state=${hashParams["session_state"]}`;
-      console.log("Reconstructed URL:", newUrl); // 調試輸出重建的 URL
-      window.history.replaceState({}, "", newUrl); // 更新 URL
+      // const newUrl = `${window.location.origin}/#/callback?code=${hashParams["code"]}&state=${hashParams["state"]}&session_state=${hashParams["session_state"]}`;
+      window.history.replaceState({}, "", newUrl);
       return true;
     };
     const handleCallback = async () => {
@@ -58,7 +44,7 @@ export default {
         }
 
         const user = await userManager.signinRedirectCallback();
-        // 取得原始的 redirectUrl
+        console.log("handleCallback User Information", user.state);
         let redirectUrl = `${window.location.origin}/#/welcome`;
 
         if (
@@ -68,8 +54,6 @@ export default {
         ) {
           redirectUrl = (user.state as { redirectUrl: string }).redirectUrl;
         }
-
-        //重建Vue-Pure-Admin需要的Token Entity
         const tokenData: UserResult = {
           success: true,
           data: {
@@ -83,17 +67,16 @@ export default {
           }
         };
         setToken(tokenData.data);
-        // 跳轉回原始頁面
+        console.log(redirectUrl);
         window.location.href = redirectUrl;
       } catch (error) {
         console.error("Callback handling failed:", error);
         router.push("/error");
       }
     };
-
-    // 當組件掛載時處理回調
     onMounted(() => {
       handleCallback();
+      console.log("Call Back Mount");
     });
 
     return {};
