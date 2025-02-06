@@ -316,13 +316,7 @@ const dataPermissionExtension = () => {
                 if (match) {
                   quotationDetailResult.value.typeCode = match.text;
                 }
-                // else {
-                //   quotationDetailResult.value.typeCode =
-                //     quotationDetailResult.value.type;
-                // }
-                // console.log(quotationDetailResult.value);
               }
-
               break;
             case "productLineName":
               ctl = quoteDetailColumns.find(f => f.prop === "productLineCode");
@@ -375,11 +369,13 @@ const dataPermissionExtension = () => {
               }
               break;
             case "reference":
-              console.log(quotationDetailResult.value);
               ctl = quoteDetailColumns.find(f => f.prop === "refID");
               quotationDetailResult.value.refID = `${quotationDetailResult?.value?.refID ?? ""} `;
               break;
             case "customerName":
+              console.debug(quotationDetailResult.value);
+              console.debug(quotationDetailResult.value.customerName);
+              console.debug(pageParams.value.pagemode);
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
               quotationDetailResult.value.customerName = `${quotationDetailResult.value.customerName} `;
               break;
@@ -433,7 +429,7 @@ let quoteDetailColumns: PlusColumn[] = [
         let results = queryString
           ? customerResult.customers.filter(createFilter(queryString))
           : customerResult.customers;
-        console.log("props.PropsParam", props.PropsParam);
+        console.debug("props.PropsParam", props.PropsParam);
         if (props.PropsParam) {
           results = results.filter(
             item => item.value === parseInt(props.PropsParam["hqid"], 10)
@@ -631,12 +627,12 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
-          console.log(value);
+          console.debug(value);
           const [effective, expired] = value;
           const parseEffective = new Date(`${effective}`);
           const parseExpired = new Date(`${expired}`);
-          console.log(parseEffective);
-          console.log(parseExpired);
+          console.debug(parseEffective);
+          console.debug(parseExpired);
           autoSaveTrigger(parseEffective, "effectiveDate");
           autoSaveTrigger(parseExpired, "expiredDate");
         } else {
@@ -2091,12 +2087,16 @@ watchEffect(() => {
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
+  console.debug("isLegalCustomer", pageParams.value.id);
+  console.debug("isLegalCustomer", quotationDetailResult.value);
+  const _qid = quotationDetailResult.value.quoteid ?? pageParams.value.id;
   if (
     quotationDetailResult.value.customerHQID != null &&
-    pageParams.value.pagemode === "copy"
+    pageParams.value.pagemode === "copy" &&
+    customerResult.customers.length > 0
   ) {
     const isLegalCustomer = customerResult.customers.some(
-      c => c.text === quotationDetailResult.value.customerName
+      c => c.value === _qid
     );
     if (!isLegalCustomer) {
       quotationDetailResult.value.customerName = null;
@@ -2205,7 +2205,9 @@ onMounted(() => {
   if (pageParams.value.pagemode === "copy") {
     PID = pageParams.value.pid;
   }
-  getCustomerByOwnerUserResult(PID);
+  getCustomerByOwnerUserResult(PID).then(() => {
+    console.log("getCustomerByOwnerUserResult", customerResult);
+  });
   getTradeTermResult().then(itme => {
     console.debug("getTradeTermResult", tradeTermResult);
   });

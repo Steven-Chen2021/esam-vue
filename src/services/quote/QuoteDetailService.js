@@ -18,11 +18,15 @@ class QuoteDetailService {
     }
   }
 
-  async getCustomerByOwnerUserData() {
+  async getCustomerByOwnerUserData(PID) {
     try {
       const url = "/api/Quote/CustomerByOwnerUserResult";
-      const fullUrl = `${url}`;
-      const response = await API.get(fullUrl);
+      const fullUrl = PID > 0 ? `${url}?PLID=${PID}` : url;
+      const response = await API.get(fullUrl, {
+        headers: {
+          "Cache-Control": "no-cache"
+        }
+      });
       return response;
     } catch (error) {
       console.error(error);
