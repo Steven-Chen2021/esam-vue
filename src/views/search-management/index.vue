@@ -945,10 +945,7 @@ watch(
                     }}</el-button
                   >
                   <el-button
-                    v-if="
-                      router.currentRoute.value.name === 'quoteSearch' ||
-                      router.currentRoute.value.name === 'CustomerList'
-                    "
+                    v-if="router.currentRoute.value.name === 'CustomerList'"
                     :icon="Plus"
                     @click="handleAddCustomer"
                     >{{ $t("customer.add") }}</el-button
