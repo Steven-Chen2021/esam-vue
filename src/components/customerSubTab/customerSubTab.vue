@@ -248,7 +248,17 @@ const handleAddCustomer = () => {
       //   name: "QuoteDetail",
       //   params: { id: 0, qname: "Create Quotation" }
       // });
-      emit("handleTabEditEvent", "0", props.SearchLeadID, props.SearchType);
+      // emit("handleTabEditEvent", "0", props.SearchLeadID, props.SearchType);
+      openQuoteDetail(
+        {
+          id: "0",
+          qname: "Create Quotation",
+          pid: "",
+          pagemode: "add",
+          hqid: props.SearchLeadID
+        },
+        "params"
+      );
       break;
     case "ContactList":
       // router.push({
@@ -284,7 +294,8 @@ const handleCopyQuote = (quoteID, PID) => {
           id: res.returnValue.quoteid,
           qname: res.returnValue.quoteNo,
           pid: PID,
-          pagemode: "copy"
+          pagemode: "copy",
+          hqid: props.SearchLeadID
         },
         "params"
       );
@@ -726,7 +737,8 @@ onMounted(async () => {
                   id: scope.row.qid,
                   qname: scope.row.quoteNo,
                   pid: scope.row.productLineName === 'Ocean' ? '6' : '2',
-                  pagemode: 'edit'
+                  pagemode: 'edit',
+                  hqid: props.SearchLeadID
                 },
                 'params'
               )
