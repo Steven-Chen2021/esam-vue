@@ -125,7 +125,8 @@ const {
   quoteDimensionFactorResult,
   getQuoteDimensionFactorResult,
   SendQuotationToApprove,
-  getSalesInfomation
+  getSalesInfomation,
+  getQuotePreviewResult
 } = QuoteDetailHooks();
 
 const {
@@ -1678,6 +1679,14 @@ const sendApproval = () => {
     saveLoading.value = "disabled";
     return;
   } else {
+    //before send, check pdf status
+    // console.debug(quotationDetailResult.value);
+    if (quotationDetailResult.value.existedPDF === false) {
+      getQuotePreviewResult(
+        quotationDetailResult.value.quoteid,
+        quotationDetailResult.value.pid
+      );
+    }
     const params = { quoteid: pageParams.value.id };
     SendQuotationToApprove(params)
       .then(res => {
