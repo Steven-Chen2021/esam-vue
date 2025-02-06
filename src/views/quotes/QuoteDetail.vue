@@ -430,9 +430,15 @@ let quoteDetailColumns: PlusColumn[] = [
     fieldProps: {
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
-        const results = queryString
+        let results = queryString
           ? customerResult.customers.filter(createFilter(queryString))
           : customerResult.customers;
+        console.log("props.PropsParam", props.PropsParam);
+        if (props.PropsParam) {
+          results = results.filter(
+            item => item.value === parseInt(props.PropsParam["hqid"], 10)
+          );
+        }
         cb(results);
       },
       onFocus: () => {
@@ -552,6 +558,16 @@ let quoteDetailColumns: PlusColumn[] = [
         }
 
         if (pageParams.value.id === "0") {
+          UserAccessRightByCustomerProductLine(
+            quotationDetailResult.value.customerHQID,
+            _pid
+          ).then(res => {
+            customerProductLineAccessRight.value = res.returnValue;
+            customerProductLineAccessRight.value.isWrite =
+              pageParams.value.pagemode === "view"
+                ? false
+                : customerProductLineAccessRight.value.isWrite;
+          });
         }
         if (pageParams.value.pagemode != "copy") {
           UserAccessRightByCustomerProductLine(
@@ -1680,8 +1696,8 @@ const sendApproval = () => {
             router.replace({
               name: "QuoteDetail",
               params: {
-                id: saveReturnQuotationInfo.value.quoteid,
-                qname: saveReturnQuotationInfo.value.quoteNo,
+                id: pageParams.value.id,
+                qname: res.returnValue,
                 pid: quotationDetailResult.value.pid as number
               }
             });
@@ -2095,6 +2111,7 @@ watchEffect(() => {
     customerProductLineAccessRight.value.isWrite = false;
   }
 });
+const userAuth = ref({});
 
 onMounted(() => {
   if (!props.PropsParam) {
@@ -2142,7 +2159,10 @@ onMounted(() => {
         const companyNameColumn = quoteDetailColumns.find(
           col => col.prop === "customerName"
         ) as any;
+        console.log("quotationDetailResult", quotationDetailResult.value);
+        console.log("companyNameColumn", companyNameColumn);
         if (companyNameColumn?.fieldProps?.onSelect) {
+          console.log("selectedItem", selectedItem);
           companyNameColumn.fieldProps.onSelect(selectedItem);
         } else {
           console.warn("onSelect is not defined for Company Name.");
@@ -2169,6 +2189,7 @@ onMounted(() => {
         quotationDetailResult.value.customerHQID,
         _pid
       ).then(res => {
+        userAuth.value = { ...res.returnValue };
         customerProductLineAccessRight.value = res.returnValue;
         customerProductLineAccessRight.value.isWrite =
           pageParams.value.pagemode === "view"
@@ -2194,7 +2215,6 @@ onMounted(() => {
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
   console.log(quoteDetailColumns);
 });
-
 onBeforeUnmount(() => {
   const editor = editorRef.value;
   if (editor == null) return;
@@ -2350,7 +2370,7 @@ const handleNumberInput = value => {
             {{ deleteLoading === "disabled" ? "Delete" : "Processing" }}
           </el-button>
           <el-button
-            v-if="customerProductLineAccessRight.isWrite && historyBtnVisible"
+            v-if="userAuth['isWrite'] && historyBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
