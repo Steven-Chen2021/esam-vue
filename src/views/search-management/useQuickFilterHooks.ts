@@ -380,9 +380,9 @@ export function quickFilterCTL() {
 
       quickFilterFormInitData.filters = deepClone(result1);
       quickFilterFormInitData.filters.forEach(a => {
-        a.showOnGrid = true;
-        a.showOnFilter = true;
-        a.allowSorting = true;
+        // a.showOnGrid = true;
+        // a.showOnFilter = true;
+        // a.allowSorting = true;
         a.allowGridHeaderFilter = true;
         a.value = "";
         a.selectValue = "";
@@ -440,9 +440,9 @@ export function quickFilterCTL() {
 
       quickFilterFormInitData.filters = deepClone(result1);
       quickFilterFormInitData.filters.forEach(a => {
-        a.showOnGrid = true;
-        a.showOnFilter = true;
-        a.allowSorting = true;
+        // a.showOnGrid = true;
+        // a.showOnFilter = true;
+        // a.allowSorting = true;
         a.allowGridHeaderFilter = true;
         a.value = "";
         a.selectValue = "";
