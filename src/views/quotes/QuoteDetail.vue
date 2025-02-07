@@ -80,7 +80,7 @@ const props = defineProps({
     required: false
   }
 });
-const pageParams = ref({ id: "", qname: "", pagemode: "", pid: "" });
+const pageParams = ref({ id: "", qname: "", pagemode: "", pid: "", hqid: "" });
 const emit = defineEmits(["handleBackEvent"]);
 const backToIndex = () => {
   if (props.ParentID && props.ParentID !== "") {
@@ -427,9 +427,6 @@ let quoteDetailColumns: PlusColumn[] = [
     fieldProps: {
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
-        console.log(customerResult);
-        console.log(customerResult.customers);
-
         let results = queryString
           ? customerResult.customers.filter(createFilter(queryString))
           : customerResult.customers;
@@ -2137,11 +2134,15 @@ onMounted(() => {
     pageParams.value["qname"] = Array.isArray(getParameter.qname)
       ? getParameter.qname[0]
       : getParameter.qname;
+    pageParams.value["hqid"] = Array.isArray(getParameter.hqid)
+      ? getParameter.hqid[0]
+      : getParameter.hqid;
   } else {
     pageParams.value.id = props.PropsParam["id"];
     pageParams.value.pid = props.PropsParam["pid"];
     pageParams.value.pagemode = props.PropsParam["pagemode"];
     pageParams.value.qname = props.PropsParam["qname"];
+    pageParams.value.hqid = props.PropsParam["hqid"];
   }
   console.log("pageParams", pageParams.value);
   if (pageParams.value.id != "0") {
@@ -2215,7 +2216,20 @@ onMounted(() => {
     PID = pageParams.value.pid;
   }
   getCustomerByOwnerUserResult(PID).then(() => {
-    console.log("getCustomerByOwnerUserResult", customerResult);
+    if (
+      pageParams.value.hqid != "0" &&
+      pageParams.value.hqid != null &&
+      pageParams.value.hqid != "" &&
+      customerResult.customers.length > 0
+    ) {
+      const foundCustomer = customerResult.customers.find(
+        c => c.value === Number(pageParams.value.hqid)
+      );
+      if (foundCustomer) {
+        quotationDetailResult.value.customerHQID = foundCustomer.value;
+        quotationDetailResult.value.customerName = foundCustomer.text;
+      }
+    }
   });
   getTradeTermResult().then(itme => {
     console.log("getTradeTermResult", tradeTermResult);
