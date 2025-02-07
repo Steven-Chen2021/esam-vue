@@ -30,6 +30,11 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
           // target: VITE_API_PROXY_TARGET,
           // target: "https://localhost:44341/api/",
           changeOrigin: true,
+          configure: proxy => {
+            proxy.on("proxyReq", proxyReq => {
+              proxyReq.setHeader("Connection", "keep-alive"); // 確保請求不被過早中斷
+            });
+          },
           secure: false,
           rewrite: path => path.replace(/^\/api/, "")
         }

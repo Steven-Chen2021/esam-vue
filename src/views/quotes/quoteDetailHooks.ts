@@ -141,11 +141,13 @@ export function QuoteDetailHooks() {
     try {
       const response = await quoteDetailService.getCustomerByOwnerUserData(PID);
       if (response != null) {
-        customerResult.customers = response.returnValue.map((item: any) => ({
+        var cResult = response.returnValue.map((item: any) => ({
           text: item.customerName,
           value: item.hqid
         }));
+        customerResult.customers = cResult;
       }
+      return cResult;
     } catch (error) {
       customerResult.error = `Data Load Failed - ${error}`;
     } finally {

@@ -427,15 +427,17 @@ let quoteDetailColumns: PlusColumn[] = [
     fieldProps: {
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
+        console.log(customerResult);
+        console.log(customerResult.customers);
+
         let results = queryString
           ? customerResult.customers.filter(createFilter(queryString))
           : customerResult.customers;
-        console.debug("props.PropsParam", props.PropsParam);
-        if (props.PropsParam) {
-          results = results.filter(
-            item => item.value === parseInt(props.PropsParam["hqid"], 10)
-          );
-        }
+        // if (props.PropsParam) {
+        //   results = results.filter(
+        //     item => item.value === parseInt(props.PropsParam["hqid"], 10)
+        //   );
+        // }
         cb(results);
       },
       onFocus: () => {
@@ -2096,8 +2098,6 @@ watchEffect(() => {
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
-  console.debug("isLegalCustomer", pageParams.value.id);
-  console.debug("isLegalCustomer", quotationDetailResult.value);
   const _qid = quotationDetailResult.value.quoteid ?? pageParams.value.id;
   if (
     quotationDetailResult.value.customerHQID != null &&
@@ -2108,7 +2108,7 @@ watchEffect(() => {
       c => c.value === _qid
     );
     if (!isLegalCustomer) {
-      quotationDetailResult.value.customerName = null;
+      // quotationDetailResult.value.customerName = null;
     }
   }
 
@@ -2218,7 +2218,7 @@ onMounted(() => {
     console.log("getCustomerByOwnerUserResult", customerResult);
   });
   getTradeTermResult().then(itme => {
-    console.debug("getTradeTermResult", tradeTermResult);
+    console.log("getTradeTermResult", tradeTermResult);
   });
   getShippingTermResult();
   getCBMTransferUOMRsult();
