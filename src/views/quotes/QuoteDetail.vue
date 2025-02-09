@@ -428,8 +428,8 @@ let quoteDetailColumns: PlusColumn[] = [
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
         let results = queryString
-          ? customerResult.customers.filter(createFilter(queryString))
-          : customerResult.customers;
+          ? customerResult.value.customers.filter(createFilter(queryString))
+          : customerResult.value.customers;
         // if (props.PropsParam) {
         //   results = results.filter(
         //     item => item.value === parseInt(props.PropsParam["hqid"], 10)
@@ -2099,9 +2099,9 @@ watchEffect(() => {
   if (
     quotationDetailResult.value.customerHQID != null &&
     pageParams.value.pagemode === "copy" &&
-    customerResult.customers.length > 0
+    customerResult.value.customers.length > 0
   ) {
-    const isLegalCustomer = customerResult.customers.some(
+    const isLegalCustomer = customerResult.value.customers.some(
       c => c.value === _qid
     );
     if (!isLegalCustomer) {
@@ -2144,18 +2144,14 @@ onMounted(() => {
     pageParams.value.qname = props.PropsParam["qname"];
     pageParams.value.hqid = props.PropsParam["hqid"];
   }
-  console.log("pageParams", pageParams.value);
+  const companyNameColumn = quoteDetailColumns.find(
+    col => col.prop === "customerName"
+  ) as any;
   if (pageParams.value.id != "0") {
-    // const id = Array.isArray(getParameter.id)
-    //   ? parseInt(getParameter.id[0], 10)
-    //   : parseInt(getParameter.id, 10);
     const id = parseInt(pageParams.value.id, 10);
     if (!isNaN(id)) {
       qid.value = id;
     }
-    // const _pid = Array.isArray(getParameter.pid)
-    //   ? parseInt(getParameter.pid[0], 10)
-    //   : parseInt(getParameter.pid, 10);
     const _pid = parseInt(pageParams.value.pid, 10);
     getQuotationDetailResult(qid.value, _pid).then(() => {
       historyBtnVisible.value = true;
@@ -2166,13 +2162,7 @@ onMounted(() => {
           text: quotationDetailResult.value.customerName,
           value: quotationDetailResult.value.customerHQID
         };
-        const companyNameColumn = quoteDetailColumns.find(
-          col => col.prop === "customerName"
-        ) as any;
-        console.log("quotationDetailResult", quotationDetailResult.value);
-        console.log("companyNameColumn", companyNameColumn);
         if (companyNameColumn?.fieldProps?.onSelect) {
-          console.log("selectedItem", selectedItem);
           companyNameColumn.fieldProps.onSelect(selectedItem);
         } else {
           console.warn("onSelect is not defined for Company Name.");
@@ -2220,14 +2210,19 @@ onMounted(() => {
       pageParams.value.hqid != "0" &&
       pageParams.value.hqid != null &&
       pageParams.value.hqid != "" &&
-      customerResult.customers.length > 0
+      customerResult.value.customers.length > 0
     ) {
-      const foundCustomer = customerResult.customers.find(
+      const foundCustomer = customerResult.value.customers.find(
         c => c.value === Number(pageParams.value.hqid)
       );
       if (foundCustomer) {
         quotationDetailResult.value.customerHQID = foundCustomer.value;
         quotationDetailResult.value.customerName = foundCustomer.text;
+        if (companyNameColumn?.fieldProps?.onSelect) {
+          companyNameColumn.fieldProps.onSelect(foundCustomer);
+        } else {
+          console.warn("onSelect is not defined for Company Name.");
+        }
       }
     }
   });

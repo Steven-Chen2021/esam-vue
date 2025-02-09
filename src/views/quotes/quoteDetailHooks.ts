@@ -41,6 +41,12 @@ export function QuoteDetailHooks() {
     isReadAdvanceColumn: boolean;
   }
 
+  interface iCustomerResult {
+    customers: dropdownCtl[]; // 修正 customers 的類型
+    loading: boolean; // 修正 loading 為 boolean
+    error: string | null; // 修正 error 為 string 或 null
+  }
+
   const quotationDetailResult = ref<FieldValues>({
     quoteid: null,
     quoteNo: null,
@@ -92,11 +98,12 @@ export function QuoteDetailHooks() {
     pid: null,
     quoteFreights: [] as any[]
   });
-  const customerResult = reactive({
-    customers: [] as Array<dropdownCtl>,
+  const customerResult = ref<iCustomerResult>({
+    customers: [],
     loading: false,
-    error: null as string | null
+    error: null
   });
+
   const freightChargeResult = ref([]);
   const productLineResult = ref<selectCtl[]>([]);
   const shippingTermResult = ref([]);
@@ -136,8 +143,8 @@ export function QuoteDetailHooks() {
   }
 
   async function getCustomerByOwnerUserResult(PID?: number) {
-    customerResult.loading = true; // 開始撈取資料，設置 loading 為 true
-    customerResult.error = null; // 清空之前的錯誤信息
+    customerResult.value.loading = true; // 開始撈取資料，設置 loading 為 true
+    customerResult.value.error = null; // 清空之前的錯誤信息
     try {
       const response = await quoteDetailService.getCustomerByOwnerUserData(PID);
       if (response != null) {
@@ -145,13 +152,13 @@ export function QuoteDetailHooks() {
           text: item.customerName,
           value: item.hqid
         }));
-        customerResult.customers = cResult;
+        customerResult.value.customers = cResult;
       }
       return cResult;
     } catch (error) {
-      customerResult.error = `Data Load Failed - ${error}`;
+      customerResult.value.error = `Data Load Failed - ${error}`;
     } finally {
-      customerResult.loading = false;
+      customerResult.value.loading = false;
     }
   }
 
