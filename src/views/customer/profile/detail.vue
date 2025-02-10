@@ -901,30 +901,11 @@ const cancelForm = () => {
       <div style="padding: 0 10px">
         <h1>{{ profileDataInit.customerName }}</h1>
       </div>
-      <!-- <div class="flex ...">
-        <div class="grow h-8 ..." />
-        <div class="grow-0 h-8 ...">
-          <el-button
-            type="primary"
-            plain
-            :size="dynamicSize"
-            @click="backToIndex"
-          >
-            {{ t("common.back") }}
-          </el-button>
-        </div>
-      </div> -->
       <el-tabs type="border-card" style="margin-top: 16px">
         <el-tab-pane :label="t('customer.profile.title')">
-          <div>
+          <div id="detail-header">
             <div class="flex ...">
-              <div class="grow h-8 ...">
-                <!-- <el-button :icon="useRenderIcon(buttonList[0].icon)" @click="goBack">
-            <template v-if="baseRadio !== 'circle'" #default>
-              <p>{{ buttonList[0].text }}</p>
-            </template>
-          </el-button> -->
-              </div>
+              <div class="grow h-8 ..." />
               <div class="grow-0 h-8 ..." style="margin-bottom: 8px">
                 <el-button
                   v-if="profileData['showDisqualify'] === 1"
