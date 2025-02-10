@@ -80,7 +80,7 @@ const props = defineProps({
     required: false
   }
 });
-const pageParams = ref({ id: "", qname: "", pagemode: "", pid: "" });
+const pageParams = ref({ id: "", qname: "", pagemode: "", pid: "", hqid: "" });
 const emit = defineEmits(["handleBackEvent"]);
 const backToIndex = () => {
   if (props.ParentID && props.ParentID !== "") {
@@ -125,7 +125,8 @@ const {
   quoteDimensionFactorResult,
   getQuoteDimensionFactorResult,
   SendQuotationToApprove,
-  getSalesInfomation
+  getSalesInfomation,
+  getQuotePreviewResult
 } = QuoteDetailHooks();
 
 const {
@@ -316,13 +317,7 @@ const dataPermissionExtension = () => {
                 if (match) {
                   quotationDetailResult.value.typeCode = match.text;
                 }
-                // else {
-                //   quotationDetailResult.value.typeCode =
-                //     quotationDetailResult.value.type;
-                // }
-                // console.log(quotationDetailResult.value);
               }
-
               break;
             case "productLineName":
               ctl = quoteDetailColumns.find(f => f.prop === "productLineCode");
@@ -375,11 +370,13 @@ const dataPermissionExtension = () => {
               }
               break;
             case "reference":
-              console.log(quotationDetailResult.value);
               ctl = quoteDetailColumns.find(f => f.prop === "refID");
               quotationDetailResult.value.refID = `${quotationDetailResult?.value?.refID ?? ""} `;
               break;
             case "customerName":
+              console.debug(quotationDetailResult.value);
+              console.debug(quotationDetailResult.value.customerName);
+              console.debug(pageParams.value.pagemode);
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
               quotationDetailResult.value.customerName = `${quotationDetailResult.value.customerName} `;
               break;
@@ -431,14 +428,13 @@ let quoteDetailColumns: PlusColumn[] = [
       valueKey: "text",
       fetchSuggestions: (queryString: string, cb: any) => {
         let results = queryString
-          ? customerResult.customers.filter(createFilter(queryString))
-          : customerResult.customers;
-        console.log("props.PropsParam", props.PropsParam);
-        if (props.PropsParam) {
-          results = results.filter(
-            item => item.value === parseInt(props.PropsParam["hqid"], 10)
-          );
-        }
+          ? customerResult.value.customers.filter(createFilter(queryString))
+          : customerResult.value.customers;
+        // if (props.PropsParam) {
+        //   results = results.filter(
+        //     item => item.value === parseInt(props.PropsParam["hqid"], 10)
+        //   );
+        // }
         cb(results);
       },
       onFocus: () => {
@@ -631,12 +627,12 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
-          console.log(value);
+          console.debug(value);
           const [effective, expired] = value;
           const parseEffective = new Date(`${effective}`);
           const parseExpired = new Date(`${expired}`);
-          console.log(parseEffective);
-          console.log(parseExpired);
+          console.debug(parseEffective);
+          console.debug(parseExpired);
           autoSaveTrigger(parseEffective, "effectiveDate");
           autoSaveTrigger(parseExpired, "expiredDate");
         } else {
@@ -1682,6 +1678,14 @@ const sendApproval = () => {
     saveLoading.value = "disabled";
     return;
   } else {
+    //before send, check pdf status
+    // console.debug(quotationDetailResult.value);
+    if (quotationDetailResult.value.existedPDF === false) {
+      getQuotePreviewResult(
+        quotationDetailResult.value.quoteid,
+        quotationDetailResult.value.pid
+      );
+    }
     const params = { quoteid: pageParams.value.id };
     SendQuotationToApprove(params)
       .then(res => {
@@ -2091,15 +2095,17 @@ watchEffect(() => {
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
+  const _qid = quotationDetailResult.value.quoteid ?? pageParams.value.id;
   if (
     quotationDetailResult.value.customerHQID != null &&
-    pageParams.value.pagemode === "copy"
+    pageParams.value.pagemode === "copy" &&
+    customerResult.value.customers.length > 0
   ) {
-    const isLegalCustomer = customerResult.customers.some(
-      c => c.text === quotationDetailResult.value.customerName
+    const isLegalCustomer = customerResult.value.customers.some(
+      c => c.value === _qid
     );
     if (!isLegalCustomer) {
-      quotationDetailResult.value.customerName = null;
+      // quotationDetailResult.value.customerName = null;
     }
   }
 
@@ -2128,24 +2134,24 @@ onMounted(() => {
     pageParams.value["qname"] = Array.isArray(getParameter.qname)
       ? getParameter.qname[0]
       : getParameter.qname;
+    pageParams.value["hqid"] = Array.isArray(getParameter.hqid)
+      ? getParameter.hqid[0]
+      : getParameter.hqid;
   } else {
     pageParams.value.id = props.PropsParam["id"];
     pageParams.value.pid = props.PropsParam["pid"];
     pageParams.value.pagemode = props.PropsParam["pagemode"];
     pageParams.value.qname = props.PropsParam["qname"];
+    pageParams.value.hqid = props.PropsParam["hqid"];
   }
-  console.log("pageParams", pageParams.value);
+  const companyNameColumn = quoteDetailColumns.find(
+    col => col.prop === "customerName"
+  ) as any;
   if (pageParams.value.id != "0") {
-    // const id = Array.isArray(getParameter.id)
-    //   ? parseInt(getParameter.id[0], 10)
-    //   : parseInt(getParameter.id, 10);
     const id = parseInt(pageParams.value.id, 10);
     if (!isNaN(id)) {
       qid.value = id;
     }
-    // const _pid = Array.isArray(getParameter.pid)
-    //   ? parseInt(getParameter.pid[0], 10)
-    //   : parseInt(getParameter.pid, 10);
     const _pid = parseInt(pageParams.value.pid, 10);
     getQuotationDetailResult(qid.value, _pid).then(() => {
       historyBtnVisible.value = true;
@@ -2156,13 +2162,7 @@ onMounted(() => {
           text: quotationDetailResult.value.customerName,
           value: quotationDetailResult.value.customerHQID
         };
-        const companyNameColumn = quoteDetailColumns.find(
-          col => col.prop === "customerName"
-        ) as any;
-        console.log("quotationDetailResult", quotationDetailResult.value);
-        console.log("companyNameColumn", companyNameColumn);
         if (companyNameColumn?.fieldProps?.onSelect) {
-          console.log("selectedItem", selectedItem);
           companyNameColumn.fieldProps.onSelect(selectedItem);
         } else {
           console.warn("onSelect is not defined for Company Name.");
@@ -2205,9 +2205,29 @@ onMounted(() => {
   if (pageParams.value.pagemode === "copy") {
     PID = pageParams.value.pid;
   }
-  getCustomerByOwnerUserResult(PID);
+  getCustomerByOwnerUserResult(PID).then(() => {
+    if (
+      pageParams.value.hqid != "0" &&
+      pageParams.value.hqid != null &&
+      pageParams.value.hqid != "" &&
+      customerResult.value.customers.length > 0
+    ) {
+      const foundCustomer = customerResult.value.customers.find(
+        c => c.value === Number(pageParams.value.hqid)
+      );
+      if (foundCustomer) {
+        quotationDetailResult.value.customerHQID = foundCustomer.value;
+        quotationDetailResult.value.customerName = foundCustomer.text;
+        if (companyNameColumn?.fieldProps?.onSelect) {
+          companyNameColumn.fieldProps.onSelect(foundCustomer);
+        } else {
+          console.warn("onSelect is not defined for Company Name.");
+        }
+      }
+    }
+  });
   getTradeTermResult().then(itme => {
-    console.debug("getTradeTermResult", tradeTermResult);
+    console.log("getTradeTermResult", tradeTermResult);
   });
   getShippingTermResult();
   getCBMTransferUOMRsult();
@@ -2271,7 +2291,9 @@ const handleNumberInput = value => {
 <template>
   <div>
     <el-card shadow="never" class="relative h-96 overflow-hidden">
-      <div class="flex justify-between items-center">
+      <div
+        class="flex justify-between items-center sticky top-0 bg-white z-10 p-2"
+      >
         <div class="flex items-center space-x-2 pt-1 pl-3 font-bold">
           <span class="text-gray-700"> Quote No:</span>
           <span class="text-orange-500 font-normal">
