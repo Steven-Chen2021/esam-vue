@@ -715,49 +715,67 @@ onMounted(async () => {
           </div>
         </template>
       </el-table-column>
-      <el-table-column fixed="right" label="Operations" min-width="120">
+      <el-table-column fixed="right" label="" max-width="60">
         <template #default="scope">
-          <el-button
-            v-if="props.SearchType != 'quoteSearch'"
-            link
-            type="primary"
-            size="small"
-            @click="handleViewClick(scope.row)"
-          >
-            View
-          </el-button>
-          <el-button
-            v-if="props.SearchType === 'quoteSearch'"
-            link
-            type="primary"
-            size="small"
-            @click="
-              openQuoteDetail(
-                {
-                  id: scope.row.qid,
-                  qname: scope.row.quoteNo,
-                  pid: scope.row.productLineName === 'Ocean' ? '6' : '2',
-                  pagemode: 'edit',
-                  hqid: props.SearchLeadID
-                },
-                'params'
-              )
-            "
-            >View</el-button
-          >
-          <el-button
-            v-if="props.SearchType === 'quoteSearch'"
-            link
-            type="primary"
-            size="small"
-            @click="
-              handleCopyQuote(
-                scope.row.qid,
-                scope.row.productLineName === 'Ocean' ? '6' : '2'
-              )
-            "
-            >{{ `Copy` }}</el-button
-          >
+          <div style="display: flex">
+            <el-tooltip
+              class="box-item"
+              effect="dark"
+              :content="t('common.view')"
+              placement="top-start"
+            >
+              <IconifyIconOnline
+                v-if="props.SearchType !== 'quoteSearch'"
+                icon="hugeicons:view"
+                width="20px"
+                height="20px"
+                style="color: var(--el-color-primary)"
+                class="icon-link"
+                @click="handleViewClick(scope.row)"
+              />
+              <IconifyIconOnline
+                v-if="props.SearchType === 'quoteSearch'"
+                icon="hugeicons:view"
+                width="20px"
+                height="20px"
+                style="color: var(--el-color-primary)"
+                class="icon-link"
+                @click="
+                  openQuoteDetail(
+                    {
+                      id: scope.row.qid,
+                      qname: scope.row.quoteNo,
+                      pid: scope.row.productLineName === 'Ocean' ? '6' : '2',
+                      pagemode: 'edit',
+                      hqid: props.SearchLeadID
+                    },
+                    'params'
+                  )
+                "
+              />
+            </el-tooltip>
+            <el-tooltip
+              class="box-item"
+              effect="dark"
+              :content="t('common.copy')"
+              placement="top-start"
+            >
+              <IconifyIconOnline
+                v-if="props.SearchType === 'quoteSearch'"
+                icon="solar:copy-line-duotone"
+                width="18px"
+                height="18px"
+                style=" margin-left: 12px;color: var(--el-color-primary)"
+                class="icon-link"
+                @click="
+                  handleCopyQuote(
+                    scope.row.qid,
+                    scope.row.productLineName === 'Ocean' ? '6' : '2'
+                  )
+                "
+              />
+            </el-tooltip>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -773,6 +791,20 @@ onMounted(async () => {
   </div>
 </template>
 <style scoped>
+.icon-link {
+  display: inline-block;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease;
+}
+
+.icon-link:hover {
+  color: #007bff; /* 改变文字颜色，模拟链接效果 */
+  transform: scale(1.1); /* 增加放大效果 */
+}
+
 :deep(#quick-filter-drawer .el-form-item--default) {
   margin-bottom: 18px !important;
 }

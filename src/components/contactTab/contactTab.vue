@@ -724,16 +724,28 @@ onMounted(async () => {
           </div>
         </template>
       </el-table-column>
-      <el-table-column fixed="right" label="Operations" min-width="120">
+      <el-table-column
+        fixed="right"
+        label=""
+        max-width="60"
+        class-name="flex-table-column"
+      >
         <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            size="small"
-            @click="handleViewClick(scope.row)"
+          <el-tooltip
+            class="box-item"
+            effect="dark"
+            :content="t('common.view')"
+            placement="top-start"
           >
-            View
-          </el-button>
+            <IconifyIconOnline
+              icon="hugeicons:view"
+              width="20px"
+              height="20px"
+              style="color: var(--el-color-primary)"
+              class="icon-link"
+              @click="handleViewClick(scope.row)"
+            />
+          </el-tooltip>
         </template>
       </el-table-column>
     </el-table>
@@ -1016,6 +1028,24 @@ onMounted(async () => {
   </div>
 </template>
 <style scoped>
+.icon-link {
+  display: inline-block;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease;
+}
+
+.icon-link:hover {
+  color: #007bff; /* 改变文字颜色，模拟链接效果 */
+  transform: scale(1.1); /* 增加放大效果 */
+}
+
+:deep(.flex-table-column .cell) {
+  display: flex;
+}
+
 :deep(#quick-filter-drawer .el-form-item--default) {
   margin-bottom: 18px !important;
 }

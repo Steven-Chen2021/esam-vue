@@ -38,22 +38,6 @@ const handleAfterChange = (changes, source) => {
   if (source === "edit" || source === "CopyPaste.paste") {
     const requiredFields = ["pl", "origin", "destination"];
     let hasInvalid = false;
-    // hotInstance.getData().forEach((rowData, rowIndex) => {
-    //   requiredFields.forEach(field => {
-    //     const colIndex = hotInstance.propToCol(field); // 取得欄位索引
-    //     const fieldValue = rowData[colIndex]; // 取得欄位值
-
-    //     if (!fieldValue || fieldValue.trim() === "") {
-    //       hasInvalid = true;
-
-    //       // 標記該單元格為無效
-    //       hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
-    //     } else {
-    //       // 清除無效標記（如果之前標記過無效）
-    //       hotInstance.setCellMeta(rowIndex, colIndex, "valid", true);
-    //     }
-    //   });
-    // });
     changes.forEach(([row, col, oldValue, newValue]) => {
       // Check if the first column is empty and any other column has a value
       const rowData = hotInstance.getDataAtRow(row);
@@ -70,20 +54,20 @@ const handleAfterChange = (changes, source) => {
           hotInstance.setCellMeta(row, colIndex, "valid", true);
         }
       });
-      // console.log("row", row);
-      // console.log("col", col);
-      // const colIndex = hotInstance.propToCol(col);
-      // if (requiredFields.includes(col) && (!newValue || newValue === "")) {
-      //   // Change the cell's style to red if condition is met
-      //   hotInstance.setCellMeta(row, colIndex, "valid", false);
-      //   hasInvalid = true;
-      // } else {
-      //   // Reset the style if the condition is not met
-      //   hotInstance.setCellMeta(row, colIndex, "valid", true);
-      // }
     });
     if (hasInvalid) {
       return;
+    }
+    var lastRowIndex = hotInstance.countRows() - 1; // 获取最后一行的索引
+    var lastRow = hotInstance.getDataAtRow(lastRowIndex); // 获取最后一行的数据
+    // 检查最后一行是否有任何非空数据
+    var hasDataInLastRow = lastRow.some(function (cell) {
+      return cell !== null && cell !== ""; // 判断是否存在非空数据
+    });
+
+    if (hasDataInLastRow) {
+      // 如果最后一行有数据，则插入一行空白行
+      hotInstance.alter("insert_row", lastRowIndex + 1);
     }
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
@@ -212,7 +196,7 @@ const getActionItemResult = async () => {
               }
             );
           };
-          item["strict"] = true;
+          // item["strict"] = true;
           item["visibleRows"] = 15;
         }
         item["allowEmpty"] = true;

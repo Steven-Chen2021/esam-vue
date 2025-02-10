@@ -30,6 +30,47 @@ const { t } = useI18n();
 const hotTableRef = ref(null);
 const handleAfterChange = (changes, source) => {
   if (source === "edit" || source === "CopyPaste.paste") {
+    const hotInstance = hotTableRef.value.hotInstance;
+    const requiredFields = ["actionItem", "owner", "dueDate"];
+    let hasInvalid = false;
+    changes.forEach(([row, col, oldValue, newValue]) => {
+      // 检查当前行中是否至少有一个单元格不为空
+      const rowData = hotInstance.getDataAtRow(row);
+      const hasDataInRow = rowData.some(
+        cellValue => cellValue && cellValue !== null && cellValue !== ""
+      );
+      console.log("hasDataInRow", hasDataInRow);
+      if (hasDataInRow) {
+        rowData.forEach((cellValue, colIndex) => {
+          const columnName = hotInstance.getSettings().columns[colIndex].data;
+
+          if (
+            requiredFields.includes(columnName) &&
+            (cellValue === null || cellValue === "")
+          ) {
+            hotInstance.setCellMeta(row, colIndex, "valid", false);
+            console.log("hasInvalid", hasInvalid);
+            hasInvalid = true;
+          } else {
+            hotInstance.setCellMeta(row, colIndex, "valid", true);
+          }
+        });
+      }
+    });
+    if (hasInvalid) {
+      return;
+    }
+    var lastRowIndex = hotInstance.countRows() - 1; // 获取最后一行的索引
+    var lastRow = hotInstance.getDataAtRow(lastRowIndex); // 获取最后一行的数据
+    // 检查最后一行是否有任何非空数据
+    var hasDataInLastRow = lastRow.some(function (cell) {
+      return cell !== null && cell !== ""; // 判断是否存在非空数据
+    });
+
+    if (hasDataInLastRow) {
+      // 如果最后一行有数据，则插入一行空白行
+      hotInstance.alter("insert_row", lastRowIndex + 1);
+    }
     setTimeout(() => {
       const newData = tableSetting.value.data.filter(
         item =>
@@ -65,7 +106,7 @@ const tableSetting = ref({
   autoWrapCol: true,
   allowInsertColumn: true,
   allowInsertRow: true,
-  // allowInvalid: true,
+  allowInvalid: true,
   licenseKey: "524eb-e5423-11952-44a09-e7a22",
   contextMenu: true,
   minSpareRows: 1,
@@ -110,7 +151,7 @@ const getActionItemResult = async () => {
           item["dateFormat"] = "MMM DD, YYYY";
           item["correctFormat"] = true;
         } else if (item["type"] === "text") {
-          item["validator"] = textValidor;
+          // item["validator"] = textValidor;
         } else if (
           item["type"] === "autocomplete" &&
           item["data"] === "owner"
@@ -126,10 +167,12 @@ const getActionItemResult = async () => {
               }
             );
           };
-          item["strict"] = true;
+          item["strict"] = false;
           item["visibleRows"] = 15;
         }
-        item["allowEmpty"] = false;
+        item["allowEmpty"] = true;
+        item["allowInvalid"] = true;
+        item["strict"] = false;
       });
       tableSetting.value["colWidths"] = setting
         .filter(item => item.selected)
@@ -156,6 +199,7 @@ const getActionItemResult = async () => {
         });
         tableSetting.value["data"] = deepClone(tableData.returnValue);
         tableDataInit.value = deepClone(tableData.returnValue);
+        console.log("tableSetting.value", tableSetting.value);
       }
       if (hotTableRef.value) {
         hotTableRef.value.hotInstance.loadData(tableSetting.value["data"]);

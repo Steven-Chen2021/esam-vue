@@ -554,327 +554,333 @@ onMounted(() => {
           </el-button>
         </div>
       </div>
-      <div v-loading="formLoading" class="pb-2">
-        <el-alert
-          v-if="showAutoSaveAlert && ProfileID !== '0'"
-          :title="t('customer.profile.autoSaveAlert')"
-          type="success"
-          show-icon
-          style="margin-bottom: 10px"
-        />
-        <el-collapse v-model="activeName" class="mb-2">
-          <el-collapse-item name="general">
-            <template #title>
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  width: 100%;
-                "
-              >
-                <span class="dim-collapse-title">{{
-                  t("task.profile.maintain")
-                }}</span>
-                <div v-if="profileData['updatedUserName']">
-                  <span>{{ t("contact.profile.updatedBy") }}</span>
-                  <span
-                    style="margin-left: 6px; color: var(--el-color-primary)"
-                    >{{ profileData["updatedUserName"] }}</span
-                  >
-                  <span style="margin-left: 6px; color: var(--el-color-primary)"
-                    >@</span
-                  >
-                  <span
-                    style="margin-left: 6px; color: var(--el-color-primary)"
-                    >{{
-                      dayjs(profileData["updatedDate"]).format("MMM DD, YYYY")
-                    }}</span
-                  >
-                  <span style="margin-left: 6px">{{
-                    t("contact.profile.status")
+      <el-scrollbar max-height="1000" class="pt-1 h-full overflow-y-auto">
+        <div v-loading="formLoading" class="pb-2">
+          <el-alert
+            v-if="showAutoSaveAlert && ProfileID !== '0'"
+            :title="t('customer.profile.autoSaveAlert')"
+            type="success"
+            show-icon
+            style="margin-bottom: 10px"
+          />
+          <el-collapse v-model="activeName" class="mb-2">
+            <el-collapse-item name="general">
+              <template #title>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    width: 100%;
+                  "
+                >
+                  <span class="dim-collapse-title">{{
+                    t("task.profile.maintain")
                   }}</span>
-                  <span
-                    style="margin: 0 16px 0 6px; color: var(--el-color-primary)"
-                    >{{ profileData["status"] }}</span
-                  >
+                  <div v-if="profileData['updatedUserName']">
+                    <span>{{ t("contact.profile.updatedBy") }}</span>
+                    <span
+                      style="margin-left: 6px; color: var(--el-color-primary)"
+                      >{{ profileData["updatedUserName"] }}</span
+                    >
+                    <span
+                      style="margin-left: 6px; color: var(--el-color-primary)"
+                      >@</span
+                    >
+                    <span
+                      style="margin-left: 6px; color: var(--el-color-primary)"
+                      >{{
+                        dayjs(profileData["updatedDate"]).format("MMM DD, YYYY")
+                      }}</span
+                    >
+                    <span style="margin-left: 6px">{{
+                      t("contact.profile.status")
+                    }}</span>
+                    <span
+                      style="
+                        margin: 0 16px 0 6px;
+                        color: var(--el-color-primary);
+                      "
+                      >{{ profileData["status"] }}</span
+                    >
+                  </div>
                 </div>
-              </div>
-            </template>
-            <div style="padding: 8px">
-              <el-form
-                ref="profileFormRef"
-                :inline="true"
-                :model="profileData"
-                :rules="rules"
-                label-width="auto"
-                class="demo-form-inline top-align-form-item"
-                status-icon
-                label-position="left"
-              >
-                <div>
-                  <el-form-item
-                    v-for="filterItem in profileFormData"
-                    :key="filterItem.filterKey"
-                    :style="{ width: '390px' }"
-                    :label="getFormItemLabel(filterItem)"
-                    :prop="filterItem.filterKey"
-                  >
-                    <template v-if="filterItem.iconName" #label>
-                      <div style="display: flex; align-items: center">
-                        <IconifyIconOnline
-                          :icon="filterItem.iconName"
-                          style="margin-right: 2px"
-                          class="primary-color-span"
+              </template>
+              <div style="padding: 8px">
+                <el-form
+                  ref="profileFormRef"
+                  :inline="true"
+                  :model="profileData"
+                  :rules="rules"
+                  label-width="auto"
+                  class="demo-form-inline top-align-form-item"
+                  status-icon
+                  label-position="left"
+                >
+                  <div>
+                    <el-form-item
+                      v-for="filterItem in profileFormData"
+                      :key="filterItem.filterKey"
+                      :style="{ width: '390px' }"
+                      :label="getFormItemLabel(filterItem)"
+                      :prop="filterItem.filterKey"
+                    >
+                      <template v-if="filterItem.iconName" #label>
+                        <div style="display: flex; align-items: center">
+                          <IconifyIconOnline
+                            :icon="filterItem.iconName"
+                            style="margin-right: 2px"
+                            class="primary-color-span"
+                          />
+                          {{ getFormItemLabel(filterItem) }}
+                        </div>
+                      </template>
+                      <el-text
+                        v-if="
+                          filterItem.readOnlyOnDetail ||
+                          filterItem.filterType === 'lable' ||
+                          (filterItem.filterKey === 'customerName' &&
+                            LID !== '0')
+                        "
+                        >{{ profileData[filterItem.filterKey] }}</el-text
+                      >
+                      <el-select
+                        v-else-if="
+                          filterOptions[filterItem.filterKey] &&
+                          filterItem.filterType === 'dropdown' &&
+                          filterItem.filterSourceType === 'api' &&
+                          remoteSelectList.includes(filterItem.filterKey)
+                        "
+                        v-model="profileData[filterItem.filterKey]"
+                        :disabled="disableStatus(filterItem)"
+                        :placeholder="
+                          t('customer.list.quickFilter.holderSelectText')
+                        "
+                        style="width: 318px"
+                        filterable
+                        remote
+                        :loading="remoteFilterAttendeesloading"
+                        :remote-method="
+                          queryString =>
+                            querySearchSeleteAsync(queryString, filterItem)
+                        "
+                        @change="
+                          v =>
+                            handleDropDownChange(
+                              profileFormRef,
+                              v,
+                              filterItem,
+                              null
+                            )
+                        "
+                      >
+                        <el-option
+                          v-for="option in filterOptions[filterItem.filterKey]
+                            .list"
+                          :key="option.value"
+                          :label="option.text"
+                          :value="option.value"
                         />
-                        {{ getFormItemLabel(filterItem) }}
+                      </el-select>
+                      <el-select
+                        v-else-if="
+                          filterOptions[filterItem.filterKey] &&
+                          filterItem.filterType === 'dropdown' &&
+                          filterItem.filterSourceType === 'api' &&
+                          filterItem.filterKey === 'taskContact'
+                        "
+                        v-model="profileData['contactArray']"
+                        :disabled="disableStatus(filterItem)"
+                        :placeholder="
+                          t('customer.list.quickFilter.holderSelectText')
+                        "
+                        style="width: 318px"
+                        multiple
+                        filterable
+                        allow-create
+                        @change="
+                          v =>
+                            handleDropDownChange(
+                              profileFormRef,
+                              v,
+                              filterItem,
+                              null
+                            )
+                        "
+                      >
+                        <el-option
+                          v-for="option in filterOptions[filterItem.filterKey]
+                            .list"
+                          :key="option.value"
+                          :label="option.text"
+                          :value="option.text"
+                        />
+                      </el-select>
+                      <el-select
+                        v-else-if="
+                          filterOptions[filterItem.filterKey] &&
+                          filterItem.filterType === 'dropdown' &&
+                          filterItem.filterSourceType === 'api' &&
+                          filterItem.filterKey === 'attendees'
+                        "
+                        v-model="profileData['attendeesArray']"
+                        :disabled="disableStatus(filterItem)"
+                        :placeholder="
+                          t('customer.list.quickFilter.holderSelectText')
+                        "
+                        style="width: 318px"
+                        multiple
+                        filterable
+                        remote
+                        :loading="remoteFilterAttendeesloading"
+                        :remote-method="
+                          queryString =>
+                            querySearchSeleteAsync(queryString, filterItem)
+                        "
+                        @change="
+                          v =>
+                            handleDropDownChange(
+                              profileFormRef,
+                              v,
+                              filterItem,
+                              null
+                            )
+                        "
+                      >
+                        <el-option
+                          v-for="option in filterOptions[filterItem.filterKey]
+                            .list"
+                          :key="option.value"
+                          :label="option.text"
+                          :value="option.value"
+                        />
+                      </el-select>
+                      <el-select
+                        v-else-if="
+                          filterOptions[filterItem.filterKey] &&
+                          filterItem.filterType === 'dropdown' &&
+                          filterItem.filterSourceType === 'api' &&
+                          filterItem.filterKey === 'notifyParty'
+                        "
+                        v-model="profileData['notifyPartyArray']"
+                        :disabled="disableStatus(filterItem)"
+                        :placeholder="
+                          t('customer.list.quickFilter.holderSelectText')
+                        "
+                        style="width: 318px"
+                        multiple
+                        filterable
+                        remote
+                        :remote-method="
+                          queryString =>
+                            querySearchSeleteAsync(queryString, filterItem)
+                        "
+                        @change="
+                          v =>
+                            handleDropDownChange(
+                              profileFormRef,
+                              v,
+                              filterItem,
+                              null
+                            )
+                        "
+                      >
+                        <el-option
+                          v-for="option in filterOptions[filterItem.filterKey]
+                            .list"
+                          :key="option.value"
+                          :label="option.text"
+                          :value="option.value"
+                        />
+                      </el-select>
+                      <div
+                        v-else-if="
+                          filterItem.filterType === 'daterange' &&
+                          filterItem.filterKey === 'appointmentStartTime'
+                        "
+                      >
+                        <el-date-picker
+                          v-model="profileData['appointmentStartTime']"
+                          :disabled="disableStatus(filterItem)"
+                          type="datetime"
+                          :range-separator="
+                            $t('customer.list.quickFilter.dateSeparator')
+                          "
+                          :start-placeholder="
+                            $t('customer.list.quickFilter.startDateHolderText')
+                          "
+                          :end-placeholder="
+                            $t('customer.list.quickFilter.endDateHolderText')
+                          "
+                          format="MMM DD, YYYY HH:mm"
+                          value-format="YYYY-MM-DD HH:mm"
+                          style="width: 248px"
+                          :placeholder="$t('common.dateTimeStartPlaceholder')"
+                          @change="
+                            autoSaveForm(
+                              profileFormRef,
+                              filterItem,
+                              profileData['appointmentStartTime']
+                            )
+                          "
+                        />
+                        <el-date-picker
+                          v-model="profileData['appointmentEndTime']"
+                          :disabled="disableStatus(filterItem)"
+                          type="datetime"
+                          :range-separator="
+                            $t('customer.list.quickFilter.dateSeparator')
+                          "
+                          :start-placeholder="
+                            $t('customer.list.quickFilter.startDateHolderText')
+                          "
+                          :end-placeholder="
+                            $t('customer.list.quickFilter.endDateHolderText')
+                          "
+                          format="MMM DD, YYYY HH:mm"
+                          value-format="YYYY-MM-DD HH:mm"
+                          style="width: 248px"
+                          :placeholder="$t('common.dateTimeEndPlaceholder')"
+                          @change="
+                            autoSaveForm(
+                              profileFormRef,
+                              { filterKey: 'appointmentEndTime' },
+                              profileData['appointmentEndTime']
+                            )
+                          "
+                        />
                       </div>
-                    </template>
-                    <el-text
-                      v-if="
-                        filterItem.readOnlyOnDetail ||
-                        filterItem.filterType === 'lable' ||
-                        (filterItem.filterKey === 'customerName' && LID !== '0')
-                      "
-                      >{{ profileData[filterItem.filterKey] }}</el-text
-                    >
-                    <el-select
-                      v-else-if="
-                        filterOptions[filterItem.filterKey] &&
-                        filterItem.filterType === 'dropdown' &&
-                        filterItem.filterSourceType === 'api' &&
-                        remoteSelectList.includes(filterItem.filterKey)
-                      "
-                      v-model="profileData[filterItem.filterKey]"
-                      :disabled="disableStatus(filterItem)"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderSelectText')
-                      "
-                      style="width: 318px"
-                      filterable
-                      remote
-                      :loading="remoteFilterAttendeesloading"
-                      :remote-method="
-                        queryString =>
-                          querySearchSeleteAsync(queryString, filterItem)
-                      "
-                      @change="
-                        v =>
-                          handleDropDownChange(
-                            profileFormRef,
-                            v,
-                            filterItem,
-                            null
-                          )
-                      "
-                    >
-                      <el-option
-                        v-for="option in filterOptions[filterItem.filterKey]
-                          .list"
-                        :key="option.value"
-                        :label="option.text"
-                        :value="option.value"
-                      />
-                    </el-select>
-                    <el-select
-                      v-else-if="
-                        filterOptions[filterItem.filterKey] &&
-                        filterItem.filterType === 'dropdown' &&
-                        filterItem.filterSourceType === 'api' &&
-                        filterItem.filterKey === 'taskContact'
-                      "
-                      v-model="profileData['contactArray']"
-                      :disabled="disableStatus(filterItem)"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderSelectText')
-                      "
-                      style="width: 318px"
-                      multiple
-                      filterable
-                      allow-create
-                      @change="
-                        v =>
-                          handleDropDownChange(
-                            profileFormRef,
-                            v,
-                            filterItem,
-                            null
-                          )
-                      "
-                    >
-                      <el-option
-                        v-for="option in filterOptions[filterItem.filterKey]
-                          .list"
-                        :key="option.value"
-                        :label="option.text"
-                        :value="option.text"
-                      />
-                    </el-select>
-                    <el-select
-                      v-else-if="
-                        filterOptions[filterItem.filterKey] &&
-                        filterItem.filterType === 'dropdown' &&
-                        filterItem.filterSourceType === 'api' &&
-                        filterItem.filterKey === 'attendees'
-                      "
-                      v-model="profileData['attendeesArray']"
-                      :disabled="disableStatus(filterItem)"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderSelectText')
-                      "
-                      style="width: 318px"
-                      multiple
-                      filterable
-                      remote
-                      :loading="remoteFilterAttendeesloading"
-                      :remote-method="
-                        queryString =>
-                          querySearchSeleteAsync(queryString, filterItem)
-                      "
-                      @change="
-                        v =>
-                          handleDropDownChange(
-                            profileFormRef,
-                            v,
-                            filterItem,
-                            null
-                          )
-                      "
-                    >
-                      <el-option
-                        v-for="option in filterOptions[filterItem.filterKey]
-                          .list"
-                        :key="option.value"
-                        :label="option.text"
-                        :value="option.value"
-                      />
-                    </el-select>
-                    <el-select
-                      v-else-if="
-                        filterOptions[filterItem.filterKey] &&
-                        filterItem.filterType === 'dropdown' &&
-                        filterItem.filterSourceType === 'api' &&
-                        filterItem.filterKey === 'notifyParty'
-                      "
-                      v-model="profileData['notifyPartyArray']"
-                      :disabled="disableStatus(filterItem)"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderSelectText')
-                      "
-                      style="width: 318px"
-                      multiple
-                      filterable
-                      remote
-                      :remote-method="
-                        queryString =>
-                          querySearchSeleteAsync(queryString, filterItem)
-                      "
-                      @change="
-                        v =>
-                          handleDropDownChange(
-                            profileFormRef,
-                            v,
-                            filterItem,
-                            null
-                          )
-                      "
-                    >
-                      <el-option
-                        v-for="option in filterOptions[filterItem.filterKey]
-                          .list"
-                        :key="option.value"
-                        :label="option.text"
-                        :value="option.value"
-                      />
-                    </el-select>
-                    <div
-                      v-else-if="
-                        filterItem.filterType === 'daterange' &&
-                        filterItem.filterKey === 'appointmentStartTime'
-                      "
-                    >
-                      <el-date-picker
-                        v-model="profileData['appointmentStartTime']"
+                      <el-select
+                        v-else-if="
+                          filterOptions[filterItem.filterKey] &&
+                          filterItem.filterType === 'dropdown' &&
+                          filterItem.filterSourceType === 'api'
+                        "
+                        v-model="profileData[filterItem.filterKey]"
                         :disabled="disableStatus(filterItem)"
-                        type="datetime"
-                        :range-separator="
-                          $t('customer.list.quickFilter.dateSeparator')
+                        :placeholder="
+                          t('customer.list.quickFilter.holderSelectText')
                         "
-                        :start-placeholder="
-                          $t('customer.list.quickFilter.startDateHolderText')
-                        "
-                        :end-placeholder="
-                          $t('customer.list.quickFilter.endDateHolderText')
-                        "
-                        format="MMM DD, YYYY HH:mm"
-                        value-format="YYYY-MM-DD HH:mm"
-                        style="width: 248px"
-                        :placeholder="$t('common.dateTimeStartPlaceholder')"
+                        style="width: 318px"
+                        filterable
                         @change="
-                          autoSaveForm(
-                            profileFormRef,
-                            filterItem,
-                            profileData['appointmentStartTime']
-                          )
+                          v =>
+                            handleDropDownChange(
+                              profileFormRef,
+                              v,
+                              filterItem,
+                              null
+                            )
                         "
-                      />
-                      <el-date-picker
-                        v-model="profileData['appointmentEndTime']"
-                        :disabled="disableStatus(filterItem)"
-                        type="datetime"
-                        :range-separator="
-                          $t('customer.list.quickFilter.dateSeparator')
-                        "
-                        :start-placeholder="
-                          $t('customer.list.quickFilter.startDateHolderText')
-                        "
-                        :end-placeholder="
-                          $t('customer.list.quickFilter.endDateHolderText')
-                        "
-                        format="MMM DD, YYYY HH:mm"
-                        value-format="YYYY-MM-DD HH:mm"
-                        style="width: 248px"
-                        :placeholder="$t('common.dateTimeEndPlaceholder')"
-                        @change="
-                          autoSaveForm(
-                            profileFormRef,
-                            { filterKey: 'appointmentEndTime' },
-                            profileData['appointmentEndTime']
-                          )
-                        "
-                      />
-                    </div>
-                    <el-select
-                      v-else-if="
-                        filterOptions[filterItem.filterKey] &&
-                        filterItem.filterType === 'dropdown' &&
-                        filterItem.filterSourceType === 'api'
-                      "
-                      v-model="profileData[filterItem.filterKey]"
-                      :disabled="disableStatus(filterItem)"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderSelectText')
-                      "
-                      style="width: 318px"
-                      filterable
-                      @change="
-                        v =>
-                          handleDropDownChange(
-                            profileFormRef,
-                            v,
-                            filterItem,
-                            null
-                          )
-                      "
-                    >
-                      <el-option
-                        v-for="option in filterOptions[filterItem.filterKey]
-                          .list"
-                        :key="option.value"
-                        :label="option.text"
-                        :value="option.value"
-                      />
-                    </el-select>
-                    <!-- <el-input
+                      >
+                        <el-option
+                          v-for="option in filterOptions[filterItem.filterKey]
+                            .list"
+                          :key="option.value"
+                          :label="option.text"
+                          :value="option.value"
+                        />
+                      </el-select>
+                      <!-- <el-input
                       v-else-if="
                         filterItem.filterType === 'input' &&
                         !filterItem.columnLength
@@ -893,165 +899,167 @@ onMounted(() => {
                         )
                       "
                     /> -->
-                    <el-input
-                      v-else-if="filterItem.filterType === 'input'"
-                      v-model="profileData[filterItem.filterKey]"
-                      :maxlength="filterItem.columnLength"
-                      show-word-limit
-                      :disabled="disableStatus(filterItem)"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderKeyinText')
-                      "
-                      style="width: 318px"
-                      @blur="
-                        autoSaveForm(
-                          profileFormRef,
-                          filterItem,
-                          profileData[filterItem.filterKey]
-                        )
-                      "
-                    />
-                    <el-input
-                      v-else-if="filterItem.filterType === 'inputarea'"
-                      v-model="profileData[filterItem.filterKey]"
-                      :disabled="disableStatus(filterItem)"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderKeyinText')
-                      "
-                      style="width: 338px"
-                      type="textarea"
-                      @focusout="
-                        autoSaveForm(
-                          profileFormRef,
-                          filterItem,
-                          profileData[filterItem.filterKey]
-                        )
-                      "
-                    />
-                    <el-date-picker
-                      v-else-if="filterItem.filterType === 'daterange'"
-                      v-model="profileData[filterItem.filterKey]"
-                      :disabled="disableStatus(filterItem)"
-                      :type="
-                        monthDatePickerList.includes(filterItem.filterKey)
-                          ? 'month'
-                          : 'date'
-                      "
-                      :range-separator="
-                        $t('customer.list.quickFilter.dateSeparator')
-                      "
-                      :start-placeholder="
-                        $t('customer.list.quickFilter.startDateHolderText')
-                      "
-                      :end-placeholder="
-                        $t('customer.list.quickFilter.endDateHolderText')
-                      "
-                      :format="
-                        monthDatePickerList.includes(filterItem.filterKey)
-                          ? 'MMM, YYYY'
-                          : 'MMM DD, YYYY'
-                      "
-                      value-format="YYYY-MM-DD"
-                      style="width: 338px"
-                      @change="
-                        autoSaveForm(
-                          profileFormRef,
-                          filterItem,
-                          profileData[filterItem.filterKey]
-                        )
-                      "
-                    />
-                  </el-form-item>
-                  <el-form-item
-                    v-if="LID === '0'"
-                    :style="{ width: '390px' }"
-                    :label="t('customer.profile.general.createdFor')"
-                    prop="createdFor"
-                  >
-                    <el-select
-                      v-if="filterOptions['createdFor']"
-                      v-model="profileData['createdFor']"
-                      :placeholder="
-                        t('customer.list.quickFilter.holderSelectText')
-                      "
-                      style="width: 240px"
-                      filterable
-                      @change="
-                        v =>
-                          handleDropDownChange(
+                      <el-input
+                        v-else-if="filterItem.filterType === 'input'"
+                        v-model="profileData[filterItem.filterKey]"
+                        :maxlength="filterItem.columnLength"
+                        show-word-limit
+                        :disabled="disableStatus(filterItem)"
+                        :placeholder="
+                          t('customer.list.quickFilter.holderKeyinText')
+                        "
+                        style="width: 318px"
+                        @blur="
+                          autoSaveForm(
                             profileFormRef,
-                            v,
-                            {
-                              filterKey: 'agentRO'
-                            },
-                            null
+                            filterItem,
+                            profileData[filterItem.filterKey]
                           )
-                      "
-                    >
-                      <el-option
-                        v-for="option in filterOptions['createdFor'].list"
-                        :key="option.value"
-                        :label="option.text"
-                        :value="option.value"
+                        "
                       />
-                    </el-select>
-                  </el-form-item>
-                </div>
-              </el-form>
-            </div>
-          </el-collapse-item>
-          <el-collapse-item
-            :title="t('task.action.title')"
-            name="actionItem"
-            class="custom-collapse-title"
-          >
-            <actionItem
-              :TaskID="CID"
-              :LeadID="LID"
-              @handleCancelEvent="cancelSaveNotify"
-              @handleUpdateActionItems="updateActionItemTempData"
-            />
-          </el-collapse-item>
-          <el-collapse-item
-            v-if="CID !== '0'"
-            :title="t('common.dc')"
-            name="documents"
-            class="custom-collapse-title"
-          >
-            <el-main>
-              <div v-if="DCShow" class="iframe-container">
-                <iframe
-                  :src="DCUrl"
-                  frameborder="0"
-                  width="100%"
-                  height="600px"
-                />
+                      <el-input
+                        v-else-if="filterItem.filterType === 'inputarea'"
+                        v-model="profileData[filterItem.filterKey]"
+                        :disabled="disableStatus(filterItem)"
+                        :placeholder="
+                          t('customer.list.quickFilter.holderKeyinText')
+                        "
+                        :rows="4"
+                        style="width: 338px"
+                        type="textarea"
+                        @focusout="
+                          autoSaveForm(
+                            profileFormRef,
+                            filterItem,
+                            profileData[filterItem.filterKey]
+                          )
+                        "
+                      />
+                      <el-date-picker
+                        v-else-if="filterItem.filterType === 'daterange'"
+                        v-model="profileData[filterItem.filterKey]"
+                        :disabled="disableStatus(filterItem)"
+                        :type="
+                          monthDatePickerList.includes(filterItem.filterKey)
+                            ? 'month'
+                            : 'date'
+                        "
+                        :range-separator="
+                          $t('customer.list.quickFilter.dateSeparator')
+                        "
+                        :start-placeholder="
+                          $t('customer.list.quickFilter.startDateHolderText')
+                        "
+                        :end-placeholder="
+                          $t('customer.list.quickFilter.endDateHolderText')
+                        "
+                        :format="
+                          monthDatePickerList.includes(filterItem.filterKey)
+                            ? 'MMM, YYYY'
+                            : 'MMM DD, YYYY'
+                        "
+                        value-format="YYYY-MM-DD"
+                        style="width: 338px"
+                        @change="
+                          autoSaveForm(
+                            profileFormRef,
+                            filterItem,
+                            profileData[filterItem.filterKey]
+                          )
+                        "
+                      />
+                    </el-form-item>
+                    <el-form-item
+                      v-if="LID === '0'"
+                      :style="{ width: '390px' }"
+                      :label="t('customer.profile.general.createdFor')"
+                      prop="createdFor"
+                    >
+                      <el-select
+                        v-if="filterOptions['createdFor']"
+                        v-model="profileData['createdFor']"
+                        :placeholder="
+                          t('customer.list.quickFilter.holderSelectText')
+                        "
+                        style="width: 240px"
+                        filterable
+                        @change="
+                          v =>
+                            handleDropDownChange(
+                              profileFormRef,
+                              v,
+                              {
+                                filterKey: 'agentRO'
+                              },
+                              null
+                            )
+                        "
+                      >
+                        <el-option
+                          v-for="option in filterOptions['createdFor'].list"
+                          :key="option.value"
+                          :label="option.text"
+                          :value="option.value"
+                        />
+                      </el-select>
+                    </el-form-item>
+                  </div>
+                </el-form>
               </div>
-              <div v-else class="flex justify-center items-center h-[640px]">
-                <div class="ml-12">
-                  <p
-                    v-motion
-                    class="font-medium text-4xl mb-4 dark:text-white"
-                    :initial="{
-                      opacity: 0,
-                      y: 100
-                    }"
-                    :enter="{
-                      opacity: 1,
-                      y: 0,
-                      transition: {
-                        delay: 80
-                      }
-                    }"
-                  >
-                    {{ t("common.unauthorized") }}
-                  </p>
+            </el-collapse-item>
+            <el-collapse-item
+              :title="t('task.action.title')"
+              name="actionItem"
+              class="custom-collapse-title"
+            >
+              <actionItem
+                :TaskID="CID"
+                :LeadID="LID"
+                @handleCancelEvent="cancelSaveNotify"
+                @handleUpdateActionItems="updateActionItemTempData"
+              />
+            </el-collapse-item>
+            <el-collapse-item
+              v-if="CID !== '0'"
+              :title="t('common.dc')"
+              name="documents"
+              class="custom-collapse-title"
+            >
+              <el-main>
+                <div v-if="DCShow" class="iframe-container">
+                  <iframe
+                    :src="DCUrl"
+                    frameborder="0"
+                    width="100%"
+                    height="600px"
+                  />
                 </div>
-              </div>
-            </el-main>
-          </el-collapse-item>
-        </el-collapse>
-      </div>
+                <div v-else class="flex justify-center items-center h-[640px]">
+                  <div class="ml-12">
+                    <p
+                      v-motion
+                      class="font-medium text-4xl mb-4 dark:text-white"
+                      :initial="{
+                        opacity: 0,
+                        y: 100
+                      }"
+                      :enter="{
+                        opacity: 1,
+                        y: 0,
+                        transition: {
+                          delay: 80
+                        }
+                      }"
+                    >
+                      {{ t("common.unauthorized") }}
+                    </p>
+                  </div>
+                </div>
+              </el-main>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+      </el-scrollbar>
     </el-card>
     <taskeMailNotify
       v-if="CID !== '0'"
@@ -1063,6 +1071,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.el-card {
+  position: relative;
+  height: 100%;
+}
+
 .primary-color-span {
   color: var(--el-color-primary);
 }

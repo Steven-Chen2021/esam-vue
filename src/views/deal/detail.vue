@@ -299,9 +299,11 @@ onMounted(() => {
 <template>
   <div>
     <el-card shadow="never" class="relative">
-      <div class="flex ...">
-        <div class="grow h-8 ..." />
-        <div class="grow-0 h-8 ..." style="margin-bottom: 8px">
+      <div class="flex justify-between items-center sticky top-0 mb-2">
+        <div>
+          <h1 v-if="!props.ID && LID">{{ cName }} ({{ LID }})</h1>
+        </div>
+        <div class="grow-0 h-8 ...">
           <el-button
             v-if="ProfileID !== '0'"
             type="primary"
@@ -348,263 +350,268 @@ onMounted(() => {
           </el-button>
         </div>
       </div>
-      <div style="padding: 10px 10px 0">
-        <h1 v-if="!props.ID && LID">{{ cName }} ({{ LID }})</h1>
-      </div>
-      <div class="pb-2">
-        <el-alert
-          v-if="showAutoSaveAlert && ProfileID !== '0'"
-          :title="t('customer.profile.autoSaveAlert')"
-          type="success"
-          show-icon
-          style="margin-bottom: 10px"
-        />
-        <el-collapse v-model="activeName" class="mb-2">
-          <el-collapse-item name="general">
-            <template #title>
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  width: 100%;
-                "
-              >
-                <span class="dim-collapse-title">{{
-                  t("deal.profile.title")
-                }}</span>
-                <div v-if="profileData['updatedUserName']">
-                  <span>{{ t("contact.profile.updatedBy") }}</span>
-                  <span
-                    style="margin-left: 6px; color: var(--el-color-primary)"
-                    >{{ profileData["updatedUserName"] }}</span
-                  >
-                  <span style="margin-left: 6px; color: var(--el-color-primary)"
-                    >@</span
-                  >
-                  <span
-                    style="margin-left: 6px; color: var(--el-color-primary)"
-                    >{{
-                      dayjs(profileData["updatedDate"]).format("MMM DD, YYYY")
-                    }}</span
-                  >
-                  <span style="margin-left: 6px">{{
-                    t("contact.profile.status")
+      <el-scrollbar max-height="1000" class="pt-1 h-full overflow-y-auto">
+        <div class="pb-2">
+          <el-alert
+            v-if="showAutoSaveAlert && ProfileID !== '0'"
+            :title="t('customer.profile.autoSaveAlert')"
+            type="success"
+            show-icon
+            style="margin-bottom: 10px"
+          />
+          <el-collapse v-model="activeName" class="mb-2">
+            <el-collapse-item name="general">
+              <template #title>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    width: 100%;
+                  "
+                >
+                  <span class="dim-collapse-title">{{
+                    t("deal.profile.title")
                   }}</span>
-                  <span
-                    style="margin: 0 16px 0 6px; color: var(--el-color-primary)"
-                    >{{ profileData["status"] }}</span
-                  >
-                </div>
-              </div>
-            </template>
-            <div v-loading="formLoading" style="padding: 8px">
-              <div style="display: flex; flex-wrap: wrap">
-                <div style="min-width: 600px; margin-bottom: 10px">
-                  <el-steps
-                    style="max-width: 600px"
-                    :space="200"
-                    :active="dealCurrentStep"
-                    finish-status="success"
-                  >
-                    <el-step
-                      v-for="item in dealStatusOptions"
-                      :key="item.remark"
-                      :title="item.remark"
-                    />
-                  </el-steps>
-                  <div style="display: flex; margin-top: 20px">
-                    <el-form
-                      ref="profileFormRef"
-                      style="max-width: 600px"
-                      :model="profileData"
-                      :rules="rules"
-                      label-width="auto"
-                      status-icon
+                  <div v-if="profileData['updatedUserName']">
+                    <span>{{ t("contact.profile.updatedBy") }}</span>
+                    <span
+                      style="margin-left: 6px; color: var(--el-color-primary)"
+                      >{{ profileData["updatedUserName"] }}</span
                     >
-                      <el-form-item
-                        v-if="CID !== '0'"
-                        :label="t('deal.profile.dealNo')"
-                        prop="dealNo"
-                      >
-                        {{ profileData["dealNo"] }}
-                      </el-form-item>
-                      <el-form-item :label="t('deal.profile.dealType')">
-                        <el-select
-                          v-if="dealTypeOptions"
-                          v-model="profileData['dealType']"
-                          placeholder="please select your zone"
-                          style="min-width: 200px"
-                          :disabled="disableStatus() || dealClose"
-                          @change="
-                            v =>
-                              handleDropDownChange(
-                                profileFormRef,
-                                v,
-                                {
-                                  filterKey: 'dealType'
-                                },
-                                null
-                              )
-                          "
-                        >
-                          <el-option
-                            v-for="option in dealTypeOptions"
-                            :key="option.value"
-                            :label="option.text"
-                            :value="option.value"
-                          />
-                        </el-select>
-                      </el-form-item>
-                      <el-form-item :label="t('deal.profile.flag')">
-                        <el-input
-                          v-model="profileData['flag']"
-                          maxlength="50"
-                          show-word-limit
-                          :disabled="disableStatus() || dealClose"
-                          @focusout="
-                            autoSaveForm(
-                              profileFormRef,
-                              {
-                                filterKey: 'flag'
-                              },
-                              profileData['flag']
-                            )
-                          "
-                        />
-                      </el-form-item>
-                      <el-form-item
-                        :label="t('deal.profile.initialDate')"
-                        prop="initialDate"
-                      >
-                        {{ profileData["initialDate"] }}
-                      </el-form-item>
-                      <el-form-item
-                        :label="t('deal.profile.closeDate')"
-                        prop="closeDate"
-                      >
-                        {{ profileData["closeDate"] }}
-                      </el-form-item>
-                    </el-form>
+                    <span
+                      style="margin-left: 6px; color: var(--el-color-primary)"
+                      >@</span
+                    >
+                    <span
+                      style="margin-left: 6px; color: var(--el-color-primary)"
+                      >{{
+                        dayjs(profileData["updatedDate"]).format("MMM DD, YYYY")
+                      }}</span
+                    >
+                    <span style="margin-left: 6px">{{
+                      t("contact.profile.status")
+                    }}</span>
+                    <span
+                      style="
+                        margin: 0 16px 0 6px;
+                        color: var(--el-color-primary);
+                      "
+                      >{{ profileData["status"] }}</span
+                    >
                   </div>
                 </div>
-                <div v-if="CID !== '0'">
-                  <toDoList
-                    ref="toDoListRef"
-                    :CusID="LID"
-                    :DealID="CID"
-                    :DealStatus="dealClose"
+              </template>
+              <div v-loading="formLoading" style="padding: 8px">
+                <div style="display: flex; flex-wrap: wrap">
+                  <div style="min-width: 600px; margin-bottom: 10px">
+                    <el-steps
+                      style="max-width: 600px"
+                      :space="200"
+                      :active="dealCurrentStep"
+                      finish-status="success"
+                    >
+                      <el-step
+                        v-for="item in dealStatusOptions"
+                        :key="item.remark"
+                        :title="item.remark"
+                      />
+                    </el-steps>
+                    <div style="display: flex; margin-top: 20px">
+                      <el-form
+                        ref="profileFormRef"
+                        style="max-width: 600px"
+                        :model="profileData"
+                        :rules="rules"
+                        label-width="auto"
+                        status-icon
+                      >
+                        <el-form-item
+                          v-if="CID !== '0'"
+                          :label="t('deal.profile.dealNo')"
+                          prop="dealNo"
+                        >
+                          {{ profileData["dealNo"] }}
+                        </el-form-item>
+                        <el-form-item :label="t('deal.profile.dealType')">
+                          <el-select
+                            v-if="dealTypeOptions"
+                            v-model="profileData['dealType']"
+                            placeholder="please select your zone"
+                            style="min-width: 200px"
+                            :disabled="disableStatus() || dealClose"
+                            @change="
+                              v =>
+                                handleDropDownChange(
+                                  profileFormRef,
+                                  v,
+                                  {
+                                    filterKey: 'dealType'
+                                  },
+                                  null
+                                )
+                            "
+                          >
+                            <el-option
+                              v-for="option in dealTypeOptions"
+                              :key="option.value"
+                              :label="option.text"
+                              :value="option.value"
+                            />
+                          </el-select>
+                        </el-form-item>
+                        <el-form-item :label="t('deal.profile.flag')">
+                          <el-input
+                            v-model="profileData['flag']"
+                            maxlength="50"
+                            show-word-limit
+                            :disabled="disableStatus() || dealClose"
+                            @focusout="
+                              autoSaveForm(
+                                profileFormRef,
+                                {
+                                  filterKey: 'flag'
+                                },
+                                profileData['flag']
+                              )
+                            "
+                          />
+                        </el-form-item>
+                        <el-form-item
+                          :label="t('deal.profile.initialDate')"
+                          prop="initialDate"
+                        >
+                          {{ profileData["initialDate"] }}
+                        </el-form-item>
+                        <el-form-item
+                          :label="t('deal.profile.closeDate')"
+                          prop="closeDate"
+                        >
+                          {{ profileData["closeDate"] }}
+                        </el-form-item>
+                      </el-form>
+                    </div>
+                  </div>
+                  <div v-if="CID !== '0'">
+                    <toDoList
+                      ref="toDoListRef"
+                      :CusID="LID"
+                      :DealID="CID"
+                      :DealStatus="dealClose"
+                    />
+                  </div>
+                </div>
+              </div>
+            </el-collapse-item>
+            <el-collapse-item
+              v-if="CID !== '0'"
+              :title="t('deal.detailList.title')"
+              name="detailList"
+              class="custom-collapse-title"
+            >
+              <dealPLList
+                ref="dealPLListRef"
+                :DealID="CID"
+                :LeadID="LID"
+                :DealStatus="dealClose"
+                @updateEvent="handlePLUpdate"
+              />
+            </el-collapse-item>
+            <el-collapse-item
+              v-if="CID !== '0'"
+              name="quote"
+              class="custom-collapse-title"
+            >
+              <template #title>
+                {{ t("deal.quotationList.title") }} ({{
+                  dealRefSummary["quoteCount"]
+                }})
+              </template>
+              <dealRelatedList
+                ref="dealQuoteListRef"
+                :CusID="LID"
+                :DealID="CID"
+                Type="quoteSearch"
+                :DealStatus="dealClose"
+                @update="getDealRefSummaryResult"
+                @updateDealStatus="getDealStatusResult"
+              />
+            </el-collapse-item>
+            <el-collapse-item
+              v-if="CID !== '0'"
+              name="task"
+              class="custom-collapse-title"
+              ><template #title>
+                {{ t("deal.taskList.title") }} ({{
+                  dealRefSummary["taskCount"]
+                }})
+              </template>
+              <dealRelatedList
+                :CusID="LID"
+                :DealID="CID"
+                Type="TaskList"
+                :DealStatus="dealClose"
+                @update="getDealRefSummaryResult"
+                @updateToDoList="refreshToDoList"
+              />
+            </el-collapse-item>
+            <el-collapse-item
+              v-if="CID !== '0'"
+              name="contact"
+              class="custom-collapse-title"
+              ><template #title>
+                {{ t("deal.contactList.title") }} ({{
+                  dealRefSummary["contactCount"]
+                }})
+              </template>
+              <dealRelatedList
+                :CusID="LID"
+                :DealID="CID"
+                Type="ContactList"
+                :DealStatus="dealClose"
+                @update="getDealRefSummaryResult"
+              />
+            </el-collapse-item>
+            <el-collapse-item
+              v-if="CID !== '0'"
+              :title="t('common.dc')"
+              name="documents"
+              class="custom-collapse-title"
+            >
+              <el-main>
+                <div v-if="DCShow" class="iframe-container">
+                  <iframe
+                    :src="DCUrl"
+                    frameborder="0"
+                    width="100%"
+                    height="600px"
                   />
                 </div>
-              </div>
-            </div>
-          </el-collapse-item>
-          <el-collapse-item
-            v-if="CID !== '0'"
-            :title="t('deal.detailList.title')"
-            name="detailList"
-            class="custom-collapse-title"
-          >
-            <dealPLList
-              ref="dealPLListRef"
-              :DealID="CID"
-              :LeadID="LID"
-              :DealStatus="dealClose"
-              @updateEvent="handlePLUpdate"
-            />
-          </el-collapse-item>
-          <el-collapse-item
-            v-if="CID !== '0'"
-            name="quote"
-            class="custom-collapse-title"
-          >
-            <template #title>
-              {{ t("deal.quotationList.title") }} ({{
-                dealRefSummary["quoteCount"]
-              }})
-            </template>
-            <dealRelatedList
-              ref="dealQuoteListRef"
-              :CusID="LID"
-              :DealID="CID"
-              Type="quoteSearch"
-              :DealStatus="dealClose"
-              @update="getDealRefSummaryResult"
-              @updateDealStatus="getDealStatusResult"
-            />
-          </el-collapse-item>
-          <el-collapse-item
-            v-if="CID !== '0'"
-            name="task"
-            class="custom-collapse-title"
-            ><template #title>
-              {{ t("deal.taskList.title") }} ({{ dealRefSummary["taskCount"] }})
-            </template>
-            <dealRelatedList
-              :CusID="LID"
-              :DealID="CID"
-              Type="TaskList"
-              :DealStatus="dealClose"
-              @update="getDealRefSummaryResult"
-              @updateToDoList="refreshToDoList"
-            />
-          </el-collapse-item>
-          <el-collapse-item
-            v-if="CID !== '0'"
-            name="contact"
-            class="custom-collapse-title"
-            ><template #title>
-              {{ t("deal.contactList.title") }} ({{
-                dealRefSummary["contactCount"]
-              }})
-            </template>
-            <dealRelatedList
-              :CusID="LID"
-              :DealID="CID"
-              Type="ContactList"
-              :DealStatus="dealClose"
-              @update="getDealRefSummaryResult"
-            />
-          </el-collapse-item>
-          <el-collapse-item
-            v-if="CID !== '0'"
-            :title="t('common.dc')"
-            name="documents"
-            class="custom-collapse-title"
-          >
-            <el-main>
-              <div v-if="DCShow" class="iframe-container">
-                <iframe
-                  :src="DCUrl"
-                  frameborder="0"
-                  width="100%"
-                  height="600px"
-                />
-              </div>
-              <div v-else class="flex justify-center items-center h-[640px]">
-                <div class="ml-12">
-                  <p
-                    v-motion
-                    class="font-medium text-4xl mb-4 dark:text-white"
-                    :initial="{
-                      opacity: 0,
-                      y: 100
-                    }"
-                    :enter="{
-                      opacity: 1,
-                      y: 0,
-                      transition: {
-                        delay: 80
-                      }
-                    }"
-                  >
-                    {{ t("common.unauthorized") }}
-                  </p>
+                <div v-else class="flex justify-center items-center h-[640px]">
+                  <div class="ml-12">
+                    <p
+                      v-motion
+                      class="font-medium text-4xl mb-4 dark:text-white"
+                      :initial="{
+                        opacity: 0,
+                        y: 100
+                      }"
+                      :enter="{
+                        opacity: 1,
+                        y: 0,
+                        transition: {
+                          delay: 80
+                        }
+                      }"
+                    >
+                      {{ t("common.unauthorized") }}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </el-main>
-          </el-collapse-item>
-        </el-collapse>
-      </div>
+              </el-main>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+      </el-scrollbar>
     </el-card>
     <el-dialog
       v-model="dialogVisible"
@@ -627,6 +634,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.el-card {
+  position: relative;
+  height: 100%;
+}
+
 .primary-color-span {
   color: var(--el-color-primary);
 }
