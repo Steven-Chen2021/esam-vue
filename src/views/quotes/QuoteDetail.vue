@@ -2291,7 +2291,9 @@ const handleNumberInput = value => {
 <template>
   <div>
     <el-card shadow="never" class="relative h-96 overflow-hidden">
-      <div class="flex justify-between items-center">
+      <div
+        class="flex justify-between items-center sticky top-0 bg-white z-10 p-2"
+      >
         <div class="flex items-center space-x-2 pt-1 pl-3 font-bold">
           <span class="text-gray-700"> Quote No:</span>
           <span class="text-orange-500 font-normal">
