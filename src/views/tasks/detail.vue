@@ -918,6 +918,7 @@ onMounted(() => {
                       :placeholder="
                         t('customer.list.quickFilter.holderKeyinText')
                       "
+                      :rows="4"
                       style="width: 338px"
                       type="textarea"
                       @focusout="

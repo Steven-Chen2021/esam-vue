@@ -254,6 +254,8 @@ common:
   history: History
   cancel: Cancel
   confirm: Confirm
+  view: View
+  copy: Copy
 deal:
   tabTitle: Deal Search
   quickfilter:
@@ -560,7 +562,7 @@ customer:
 quote:
   tabTitle: Quote Search  
   quickfilter:
-      productLineName: PL
+      productLineName: Product Line
       quoteNo: Quote#
       attentionTo: Attention To
       effectiveDate: Effective Date

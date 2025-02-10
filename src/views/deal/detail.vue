@@ -299,8 +299,10 @@ onMounted(() => {
 <template>
   <div>
     <el-card shadow="never" class="relative">
-      <div class="flex ...">
-        <div class="grow h-8 ..." />
+      <div class="flex justify-between items-center sticky top-0">
+        <div>
+          <h1 v-if="!props.ID && LID">{{ cName }} ({{ LID }})</h1>
+        </div>
         <div class="grow-0 h-8 ..." style="margin-bottom: 8px">
           <el-button
             v-if="ProfileID !== '0'"
@@ -348,9 +350,7 @@ onMounted(() => {
           </el-button>
         </div>
       </div>
-      <div style="padding: 10px 10px 0">
-        <h1 v-if="!props.ID && LID">{{ cName }} ({{ LID }})</h1>
-      </div>
+
       <div class="pb-2">
         <el-alert
           v-if="showAutoSaveAlert && ProfileID !== '0'"
