@@ -550,6 +550,7 @@ const collapsePanel = () => {
   activePanelNames.value = [];
 };
 const searchBtnClick = filterForm => {
+  console.log(filterForm);
   collapsePanel();
   handleConditionalSearch(filterForm);
   quickFilterList.value.forEach(a => {
@@ -1079,7 +1080,7 @@ watch(
                 icon="solar:copy-line-duotone"
                 width="18px"
                 height="18px"
-                style=" margin-left: 12px;color: var(--el-color-primary)"
+                style="margin-left: 12px; color: var(--el-color-primary)"
                 class="icon-link"
                 @click="
                   handleCopyQuote(
