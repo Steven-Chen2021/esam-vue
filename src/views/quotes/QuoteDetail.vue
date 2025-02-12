@@ -1464,7 +1464,7 @@ const saveData = () => {
 
       quotationDetailResult.value.attentionToId =
         quotationDetailResult.value.attentionTo;
-
+      quotationDetailResult.value.refID = quotationDetailResult.value.reference;
       const detailStatus = saveQuoteDetailResult(
         quotationDetailResult.value
       ).then(res => {
@@ -2233,7 +2233,6 @@ onMounted(() => {
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
-  console.log(quoteDetailColumns);
 });
 onBeforeUnmount(() => {
   const editor = editorRef.value;
