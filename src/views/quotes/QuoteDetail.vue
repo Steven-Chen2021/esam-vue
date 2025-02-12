@@ -1525,6 +1525,7 @@ const saveData = () => {
 
       quotationDetailResult.value.attentionToId =
         quotationDetailResult.value.attentionTo;
+      quotationDetailResult.value.refID = quotationDetailResult.value.reference;
       const detailStatus = saveQuoteDetailResult(
         quotationDetailResult.value
       ).then(res => {
@@ -2581,7 +2582,7 @@ const handleNumberInput = value => {
                 class="el-form-item asterisk-left el-form-item--label-left plus-form-item"
               >
                 <div class="el-form-item__label-wrap" style="width: 138px">
-                  <label style=" margin-right: 4px;color: #f56c6c">*</label>
+                  <label style="margin-right: 4px; color: #f56c6c">*</label>
                   <label class="el-form-item__label"
                     >{{ $t("quote.quotedetail.cbm") }} :</label
                   >
