@@ -251,8 +251,12 @@ export function listCTL() {
       }
       case quotes:
         {
-          const searchP = deepClone(searchParams);
-          if (FilterLeadID && FilterLeadID.value !== "0") {
+          let searchP = deepClone(searchParams);
+          if (
+            FilterLeadID &&
+            FilterLeadID.value !== "0" &&
+            FilterLeadID.value != null
+          ) {
             if (!searchP) {
               searchP.ConditionalSettings = [
                 {
@@ -276,7 +280,7 @@ export function listCTL() {
               }
             }
           }
-          console.log("ConditionalSettings", searchP);
+
           loading.value = true;
           QuoteSearchService.getQuoteList(searchP)
             .then(data => {
@@ -373,6 +377,7 @@ export function listCTL() {
   };
 
   const handleConditionalSearch = filterForm => {
+    console.log("handleConditionalSearch", filterForm);
     searchParams.ConditionalSettings = filterForm.filters;
     currentPage.value = 1;
     fetchListData(); // 重新获取排序后的数据

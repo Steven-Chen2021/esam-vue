@@ -58,6 +58,13 @@ import { Quotation } from "@/types/historyTypeEnum";
 import { useHistoryColumns } from "@/components/HistoryLog/Columns";
 import { useApprovalDetail } from "@/views/approval/hooks";
 import CommonService from "@/services/commonService";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import { transpileModule } from "typescript";
+import { pid } from "process";
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const { toApprovalDetail, getApprovalParameter } = useApprovalDetail();
 
@@ -126,7 +133,8 @@ const {
   getQuoteDimensionFactorResult,
   SendQuotationToApprove,
   getSalesInfomation,
-  getQuotePreviewResult
+  getQuotePreviewResult,
+  getTermConditionalResult
 } = QuoteDetailHooks();
 
 const {
@@ -233,12 +241,12 @@ const rules = {
       message: t("message.required.dimensionFactor")
     }
   ],
-  volumeShareForAgent: [
-    {
-      required: true,
-      message: t("message.required.volumeShareForAgent")
-    }
-  ],
+  // volumeShareForAgent: [
+  //   {
+  //     required: true,
+  //     message: t("message.required.volumeShareForAgent")
+  //   }
+  // ],
   typeCode: [
     {
       required: true,
@@ -285,12 +293,10 @@ const updateHotTableData = (city, data, isExport) => {
 };
 
 const dataPermissionExtension = () => {
-  console.log("dataPermissionExtension", quoteDetailColumns);
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
     GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
       if (res && res.isSuccess) {
         const columnSettings = res.returnValue;
-        console.log(columnSettings);
         columnSettings.forEach(element => {
           let ctl: PlusColumn | undefined; // 明確定義類型
           switch (element.filterKey) {
@@ -374,9 +380,6 @@ const dataPermissionExtension = () => {
               quotationDetailResult.value.refID = `${quotationDetailResult?.value?.refID ?? ""} `;
               break;
             case "customerName":
-              console.debug(quotationDetailResult.value);
-              console.debug(quotationDetailResult.value.customerName);
-              console.debug(pageParams.value.pagemode);
               ctl = quoteDetailColumns.find(f => f.prop === "customerName");
               quotationDetailResult.value.customerName = `${quotationDetailResult.value.customerName} `;
               break;
@@ -430,11 +433,6 @@ let quoteDetailColumns: PlusColumn[] = [
         let results = queryString
           ? customerResult.value.customers.filter(createFilter(queryString))
           : customerResult.value.customers;
-        // if (props.PropsParam) {
-        //   results = results.filter(
-        //     item => item.value === parseInt(props.PropsParam["hqid"], 10)
-        //   );
-        // }
         cb(results);
       },
       onFocus: () => {
@@ -451,6 +449,26 @@ let quoteDetailColumns: PlusColumn[] = [
         }
 
         getQuoteReferenceCodeResult(item.value);
+        // 這邊要重新抓 SalesInfo 跟Term&Conditional
+
+        getTermConditionalResult(
+          item.value,
+          quotationDetailResult.value.pid
+        ).then(res => {
+          quotationDetailResult.value.terms = res.returnValue;
+        });
+
+        getSalesInfomation(item.value, quotationDetailResult.value.pid).then(
+          res => {
+            salesInfomation.value = res.returnValue;
+          }
+        );
+        //如果是Copy的話 而且Value有變動
+        if (previousValue.value != null && previousValue.value != item.value) {
+          //清空AttentionTo
+          quotationDetailResult.value.attentionTo = "";
+          quotationDetailResult.value.attentionToId = 0;
+        }
       }
     }
   },
@@ -575,7 +593,6 @@ let quoteDetailColumns: PlusColumn[] = [
               pageParams.value.pagemode === "view"
                 ? false
                 : customerProductLineAccessRight.value.isWrite;
-
             const dcParams = { KeyValue: qid.value, DCType: "NRA" };
             DocumentCloudResult(dcParams).then(res => {
               if (res && res.isSuccess) {
@@ -590,6 +607,7 @@ let quoteDetailColumns: PlusColumn[] = [
             });
           });
         }
+
         if (
           quotationDetailResult.value.signature === null ||
           quotationDetailResult.value.signature === ""
@@ -627,7 +645,6 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
-          console.debug(value);
           const [effective, expired] = value;
           const parseEffective = new Date(`${effective}`);
           const parseExpired = new Date(`${expired}`);
@@ -811,6 +828,12 @@ let quoteDetailColumns: PlusColumn[] = [
   }
 ];
 
+const handleFreightChargeGetData = (quoteID, ProductLineID) => {
+  getQuoteFreightChargeResult(quoteID, ProductLineID).then(() => {
+    freightChargeSettings.value.data = freightChargeResult.value;
+  });
+};
+
 const handleLocalChargeResult = (
   localChargeResult,
   quotationDetailPid,
@@ -853,7 +876,9 @@ const handleLocalChargeResult = (
                 afterChange: handleExportLocalChargeChange,
                 afterSelection: handleAfterSelection,
                 afterRemoveRow: handleRemoveRow,
-                readOnly: !customerProductLineAccessRight.value.isWrite
+                readOnly: !customerProductLineAccessRight.value.isWrite,
+                afterPaste: handleExportLocalChargePasteSave,
+                afterAutofill: handleExportLocalChargeAutofillSave
               },
               weightBreakHotTableSetting: {
                 data: localCharge?.weightBreakSettings?.detail || [],
@@ -880,7 +905,9 @@ const handleLocalChargeResult = (
                 afterChange: handleExportLocalChargeChange,
                 afterSelection: handleAfterSelection,
                 afterRemoveRow: handleRemoveRow,
-                readOnly: !customerProductLineAccessRight.value.isWrite
+                readOnly: !customerProductLineAccessRight.value.isWrite,
+                afterPaste: handleExportLocalChargePasteSave,
+                afterAutofill: handleExportLocalChargeAutofillSave
               },
               localChargePackageList: res,
               localChargePackageSelector: []
@@ -912,7 +939,9 @@ const handleLocalChargeResult = (
                 afterChange: handleImportLocalChargeChange,
                 afterSelection: handleAfterSelection,
                 afterRemoveRow: handleRemoveRow,
-                readOnly: !customerProductLineAccessRight.value.isWrite
+                readOnly: !customerProductLineAccessRight.value.isWrite,
+                afterPaste: handleImportLocalChargePasteSave,
+                afterAutofill: handleImportLocalChargeAutofillSave
               },
               weightBreakHotTableSetting: {
                 data: localCharge?.weightBreakSettings?.detail || [],
@@ -939,7 +968,9 @@ const handleLocalChargeResult = (
                 afterChange: handleImportLocalChargeChange,
                 afterSelection: handleAfterSelection,
                 afterRemoveRow: handleRemoveRow,
-                readOnly: !customerProductLineAccessRight.value.isWrite
+                readOnly: !customerProductLineAccessRight.value.isWrite,
+                afterPaste: handleImportLocalChargePasteSave,
+                afterAutofill: handleImportLocalChargeAutofillSave
               },
               localChargePackageList: res,
               localChargePackageSelector: []
@@ -965,37 +996,71 @@ const handleGreetingsFocusOut = () => {
   }
 };
 
-const saveFreightCharge = () => {
+const saveFreightCharge = async () => {
   const filteredData = freightChargeSettings.value.data.filter(item =>
     checkProperties.some(
       key => item[key] !== null && item[key] !== "" && item[key] !== undefined
     )
   );
-  console.log(filteredData);
+
   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
   frightChargeParams.value.pid = quotationDetailResult.value.pid;
   frightChargeParams.value.quoteFreights = filteredData;
-  console.log(frightChargeParams.value.quoteFreights);
-  saveFreightChargeResult(frightChargeParams.value).then(res => {
+
+  try {
+    const res = await saveFreightChargeResult(frightChargeParams.value);
     if (res && res.isSuccess) {
       ElNotification({
-        title: "successfully",
+        title: "Successfully",
         message: "Freight Charge Save Successfully!",
         type: "success"
       });
     } else {
       ElNotification({
-        title: "Failed.",
+        title: "Failed",
         message: res.errorMessage,
         type: "error"
       });
     }
-  });
+    return res; // 回傳結果，讓 .then() 可以接續執行
+  } catch (error) {
+    ElNotification({
+      title: "Error",
+      message: "An unexpected error occurred.",
+      type: "error"
+    });
+    throw error; // 拋出錯誤，讓 `.catch()` 能夠捕捉
+  }
 };
+
+// const saveFreightCharge = () => {
+//   const filteredData = freightChargeSettings.value.data.filter(item =>
+//     checkProperties.some(
+//       key => item[key] !== null && item[key] !== "" && item[key] !== undefined
+//     )
+//   );
+//   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
+//   frightChargeParams.value.pid = quotationDetailResult.value.pid;
+//   frightChargeParams.value.quoteFreights = filteredData;
+//   saveFreightChargeResult(frightChargeParams.value).then(res => {
+//     if (res && res.isSuccess) {
+//       ElNotification({
+//         title: "successfully",
+//         message: "Freight Charge Save Successfully!",
+//         type: "success"
+//       });
+//     } else {
+//       ElNotification({
+//         title: "Failed.",
+//         message: res.errorMessage,
+//         type: "error"
+//       });
+//     }
+//   });
+// };
 
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
-    console.log("handleAfterChange changes", changes);
     if (changes[0][2] != changes[0][3] && qid.value != 0) {
       saveFreightCharge();
     }
@@ -1075,7 +1140,9 @@ const handleAfterChange = (changes, source) => {
                             type: "error"
                           });
                         }
-                      }
+                      },
+                      afterPaste: handleExportLocalChargePasteSave,
+                      afterAutofill: handleExportLocalChargeAutofillSave
                     },
                     weightBreakHotTableSetting: {
                       data: localCharge?.weightBreakSettings?.detail || [],
@@ -1115,7 +1182,9 @@ const handleAfterChange = (changes, source) => {
                             type: "error"
                           });
                         }
-                      }
+                      },
+                      afterPaste: handleExportLocalChargePasteSave,
+                      afterAutofill: handleExportLocalChargeAutofillSave
                     },
                     localChargePackageList: res,
                     localChargePackageSelector: []
@@ -1189,7 +1258,9 @@ const handleAfterChange = (changes, source) => {
                             type: "error"
                           });
                         }
-                      }
+                      },
+                      afterPaste: handleImportLocalChargePasteSave,
+                      afterAutofill: handleImportLocalChargeAutofillSave
                     },
                     weightBreakHotTableSetting: {
                       data: localCharge?.weightBreakSettings?.detail || [],
@@ -1229,7 +1300,9 @@ const handleAfterChange = (changes, source) => {
                             type: "error"
                           });
                         }
-                      }
+                      },
+                      afterPaste: handleImportLocalChargePasteSave,
+                      afterAutofill: handleImportLocalChargeAutofillSave
                     },
                     localChargePackageList: res,
                     localChargePackageSelector: []
@@ -1361,24 +1434,80 @@ const handleAfterSelection = (row, column, row2, column2) => {
 const handleAfterPaste = (data, coords) => {
   setTimeout(() => {
     const hotInstance = hotTableRef.value.hotInstance;
-
-    // 確保同步 Handsontable 的數據到 Vue 的 data
     const updatedData = hotInstance.getSourceData();
     freightChargeSettings.value.data = [...updatedData];
-    // 執行保存功能
-    saveFreightCharge();
+    saveFreightCharge().then(() => {
+      if ((quotationDetailResult?.value?.quoteid as number) > 0) {
+        handleFreightChargeGetData(
+          quotationDetailResult.value.quoteid,
+          quotationDetailResult.value.pid
+        );
+      }
+    });
   }, 500);
 };
 const handleAfterAutofill = (start, end, data) => {
   setTimeout(() => {
     const hotInstance = hotTableRef.value.hotInstance;
-
-    // 確保同步 Handsontable 的數據到 Vue 的 data
     const updatedData = hotInstance.getSourceData();
     freightChargeSettings.value.data = [...updatedData];
-    // 執行保存功能
-    saveFreightCharge();
+    saveFreightCharge().then(() => {
+      if ((quotationDetailResult?.value?.quoteid as number) > 0) {
+        handleFreightChargeGetData(
+          quotationDetailResult.value.quoteid,
+          quotationDetailResult.value.pid
+        );
+      }
+    });
   }, 500); // 延遲 0 毫秒，等待 Handsontable 完成數據更新
+};
+
+const handleExportLocalChargePasteSave = (data, coords) => {
+  setTimeout(() => {
+    const transformedData = transformData(
+      exportLocationResult.value,
+      frightChargeParams?.value?.quoteID ?? quotationDetailResult.value.quoteid,
+      quotationDetailResult.value.pid as number,
+      true
+    );
+    saveLocalChargeResult(transformedData);
+  }, 500);
+};
+
+const handleExportLocalChargeAutofillSave = (start, end, data) => {
+  setTimeout(() => {
+    const transformedData = transformData(
+      exportLocationResult.value,
+      frightChargeParams?.value?.quoteID ?? quotationDetailResult.value.quoteid,
+      quotationDetailResult.value.pid as number,
+      true
+    );
+    saveLocalChargeResult(transformedData);
+  }, 500);
+};
+
+const handleImportLocalChargePasteSave = (data, coords) => {
+  setTimeout(() => {
+    const transformedData = transformData(
+      importLocationResult.value,
+      frightChargeParams?.value?.quoteID ?? quotationDetailResult.value.quoteid,
+      quotationDetailResult.value.pid as number,
+      false
+    );
+    saveLocalChargeResult(transformedData);
+  }, 500);
+};
+
+const handleImportLocalChargeAutofillSave = (start, end, data) => {
+  setTimeout(() => {
+    const transformedData = transformData(
+      importLocationResult.value,
+      frightChargeParams?.value?.quoteID ?? quotationDetailResult.value.quoteid,
+      quotationDetailResult.value.pid as number,
+      false
+    );
+    saveLocalChargeResult(transformedData);
+  }, 500);
 };
 
 const handleFrtBeforeRemoveRow = (index, amount, physicalRows, source) => {
@@ -1530,7 +1659,8 @@ const validateLocalCharge = (instance, type) => {
   // 定義檢查邏輯
   const validationRules = {
     general: {
-      requiredWhenChargeHasValue: ["uom", "currency", "flat"] // charge 有值時檢查的欄位
+      requiredWhenChargeHasValue: ["uom", "currency", "flat"], // charge 有值時檢查的欄位
+      mustBePositive: ["flat", "flatCost", "min", "minCost"] // 這些欄位必須是正數
     },
     weightbreak: {
       requiredWhenChargeHasValue: [
@@ -1539,7 +1669,8 @@ const validateLocalCharge = (instance, type) => {
         "uom",
         "currency",
         "amount"
-      ] // charge 有值時檢查的欄位
+      ], // charge 有值時檢查的欄位
+      mustBePositive: ["unit", "amount", "cost"] // 這些欄位必須是正數
     }
   };
 
@@ -1572,6 +1703,21 @@ const validateLocalCharge = (instance, type) => {
           instance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記為有效
         }
       });
+
+      // 額外檢查數值型欄位是否為正數
+      if (rules.mustBePositive) {
+        rules.mustBePositive.forEach(field => {
+          const colIndex = instance.propToCol(field);
+          const fieldValue = rowData[colIndex];
+
+          if (isNaN(fieldValue) || Number(fieldValue) < 0) {
+            hasInvalid = true;
+            instance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記為無效
+          } else {
+            instance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記為有效
+          }
+        });
+      }
     }
   });
 
@@ -1606,7 +1752,6 @@ const sendApproval = () => {
 
       if (!fieldValue || fieldValue.trim() === "") {
         hasInvalid = true;
-
         // 標記該單元格為無效
         hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
       } else {
@@ -1654,7 +1799,7 @@ const sendApproval = () => {
       if (invalid) {
         invalidMsg =
           invalidMsg +
-          `<strong>The required fields in the local charge(export) must be filled in completely</strong><br />`;
+          `<strong>The required fields in the local charge must be filled in completely</strong><br />`;
       }
       hasInvalid = hasInvalid || invalid;
     } else if (key.endsWith("weightbreak")) {
@@ -1663,11 +1808,23 @@ const sendApproval = () => {
       if (invalid) {
         invalidMsg =
           invalidMsg +
-          `<strong>The required fields in the local charge(import) must be filled in completely</strong><br />`;
+          `<strong>The required fields in the local charge(weightbreak) must be filled in completely</strong><br />`;
       }
       hasInvalid = hasInvalid || invalid;
     }
   });
+
+  if (
+    quotationDetailResult.value.pid === 6 &&
+    ((quotationDetailResult.value.cbmToWT as number) <= 0 ||
+      quotationDetailResult.value.cbmToWTUOMID === null)
+  ) {
+    hasInvalid = true;
+    invalidMsg =
+      invalidMsg +
+      `<strong>The required fields in the Quote Detail must be filled in completely. Please Check CMB Rate</strong><br />`;
+  }
+
   if (hasInvalid) {
     ElNotification({
       title: "Failed",
@@ -1915,6 +2072,19 @@ const AddLCPItems = (source, isExport) => {
         }
       });
     }
+    if (
+      (frightChargeParams?.value?.quoteID ??
+        quotationDetailResult.value.quoteid) > 0
+    ) {
+      const transformedData = transformData(
+        isExport ? exportLocationResult.value : importLocationResult.value,
+        frightChargeParams?.value?.quoteID ??
+          quotationDetailResult.value.quoteid,
+        quotationDetailResult.value.pid as number,
+        isExport
+      );
+      saveLocalChargeResult(transformedData);
+    }
   });
 };
 
@@ -2158,6 +2328,13 @@ onMounted(() => {
       deleteBtnVisible.value = true;
       previewBtnVisible.value = true;
       nextTick(() => {
+        quotationDetailResult.value.period[0] = formatToLocalTime(
+          quotationDetailResult.value.period[0]
+        );
+        quotationDetailResult.value.period[1] = formatToLocalTime(
+          quotationDetailResult.value.period[1]
+        );
+
         const selectedItem = {
           text: quotationDetailResult.value.customerName,
           value: quotationDetailResult.value.customerHQID
@@ -2184,6 +2361,21 @@ onMounted(() => {
             quotationDetailResult.value.shippingTerm
           );
         }
+
+        const typeCode = [
+          "QAT3",
+          "QST3",
+          "QWT3",
+          "QDT3",
+          "QMT2",
+          "QTM3",
+          "QTM3"
+        ];
+        hideOTPCode.value = typeCode.includes(
+          quotationDetailResult.value.typeCode as string
+        )
+          ? false
+          : true;
       });
       UserAccessRightByCustomerProductLine(
         quotationDetailResult.value.customerHQID,
@@ -2198,6 +2390,20 @@ onMounted(() => {
               ? true
               : customerProductLineAccessRight.value.isWrite;
         dataPermissionExtension();
+        if (pageParams.value.pagemode === "copy") {
+          const dcParams = { KeyValue: qid.value, DCType: "NRA" };
+          DocumentCloudResult(dcParams).then(res => {
+            if (res && res.isSuccess) {
+              const result = ReconstructDCURL(
+                res.returnValue,
+                customerProductLineAccessRight.value.isWrite,
+                customerProductLineAccessRight.value.isReadAdvanceColumn,
+                "NRA"
+              );
+              dcUrl.value = result;
+            }
+          });
+        }
       });
     });
   }
@@ -2233,12 +2439,22 @@ onMounted(() => {
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+
+  console.log(quotationDetailResult.value);
 });
 onBeforeUnmount(() => {
   const editor = editorRef.value;
   if (editor == null) return;
   editor.destroy();
 });
+
+const formatToLocalTime = utcDateString => {
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return dayjs
+    .utc(utcDateString)
+    .tz(userTimeZone)
+    .format("YYYY-MM-DD HH:mm:ss");
+};
 
 const formatDate = dateInput => {
   const months = [
@@ -2435,6 +2651,7 @@ const handleNumberInput = value => {
                 class="el-form-item asterisk-left el-form-item--label-left plus-form-item"
               >
                 <div class="el-form-item__label-wrap" style="width: 138px">
+                  <label style="margin-right: 4px; color: #f56c6c">*</label>
                   <label class="el-form-item__label"
                     >{{ $t("quote.quotedetail.cbm") }} :</label
                   >
@@ -2455,13 +2672,6 @@ const handleNumberInput = value => {
                     @change="handleCBMChange"
                     @focus="setPreviousValue(quotationDetailResult.cbmToWT)"
                   />
-                  <!-- <el-input-number
-                    v-model="quotationDetailResult.cbmToWT"
-                    :min="0"
-                    controls-position="right"
-                    style="width: 120px; padding-left: 5px"
-                    
-                  /> -->
                   <el-select
                     v-model="quotationDetailResult.cbmToWTUOMID"
                     placeholder="Select"
@@ -2780,6 +2990,7 @@ const handleNumberInput = value => {
           v-model="item.selected"
           :value="item.columnName"
           :label="item.headerName"
+          :disabled="item.isReadOnly"
         >
           <template #default>
             <el-input

@@ -113,6 +113,11 @@ const filteredApproveHeader = (ApproveHeader, Category) => {
       "lang",
       "errors"
     ];
+
+    if (ApproveHeader.pid === 6) {
+      noNeedDisplayColumns.push("volumeShareForAgent");
+    }
+
     if (Category === "Customer") {
       // 只顯示 customerName 和 customerHQID
       return Object.keys(ApproveHeader)
