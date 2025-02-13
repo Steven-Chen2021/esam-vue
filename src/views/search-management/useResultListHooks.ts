@@ -252,10 +252,11 @@ export function listCTL() {
       case quotes:
         {
           let searchP = deepClone(searchParams);
-          const hqidValue = searchParams.ConditionalSettings.find(
-            item => item.filterKey === "hqid"
-          )?.value;
-          if (FilterLeadID && FilterLeadID.value !== "0") {
+          if (
+            FilterLeadID &&
+            FilterLeadID.value !== "0" &&
+            FilterLeadID.value != null
+          ) {
             if (!searchP) {
               searchP.ConditionalSettings = [
                 {
@@ -272,7 +273,7 @@ export function listCTL() {
                 searchP.ConditionalSettings.push({
                   enableOnSearchView: false,
                   filterKey: "hqid",
-                  value: FilterLeadID.value ?? hqidValue
+                  value: FilterLeadID.value
                 });
               } else {
                 a["value"] = FilterLeadID.value;

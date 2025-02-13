@@ -62,6 +62,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { transpileModule } from "typescript";
+import { pid } from "process";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -132,7 +133,8 @@ const {
   getQuoteDimensionFactorResult,
   SendQuotationToApprove,
   getSalesInfomation,
-  getQuotePreviewResult
+  getQuotePreviewResult,
+  getTermConditionalResult
 } = QuoteDetailHooks();
 
 const {
@@ -447,6 +449,26 @@ let quoteDetailColumns: PlusColumn[] = [
         }
 
         getQuoteReferenceCodeResult(item.value);
+        // 這邊要重新抓 SalesInfo 跟Term&Conditional
+
+        getTermConditionalResult(
+          item.value,
+          quotationDetailResult.value.pid
+        ).then(res => {
+          quotationDetailResult.value.terms = res.returnValue;
+        });
+
+        getSalesInfomation(item.value, quotationDetailResult.value.pid).then(
+          res => {
+            salesInfomation.value = res.returnValue;
+          }
+        );
+        //如果是Copy的話 而且Value有變動
+        if (previousValue.value != null && previousValue.value != item.value) {
+          //清空AttentionTo
+          quotationDetailResult.value.attentionTo = "";
+          quotationDetailResult.value.attentionToId = 0;
+        }
       }
     }
   },
@@ -623,7 +645,6 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
-          console.log(value);
           const [effective, expired] = value;
           const parseEffective = new Date(`${effective}`);
           const parseExpired = new Date(`${expired}`);
@@ -807,6 +828,12 @@ let quoteDetailColumns: PlusColumn[] = [
   }
 ];
 
+const handleFreightChargeGetData = (quoteID, ProductLineID) => {
+  getQuoteFreightChargeResult(quoteID, ProductLineID).then(() => {
+    freightChargeSettings.value.data = freightChargeResult.value;
+  });
+};
+
 const handleLocalChargeResult = (
   localChargeResult,
   quotationDetailPid,
@@ -969,35 +996,71 @@ const handleGreetingsFocusOut = () => {
   }
 };
 
-const saveFreightCharge = () => {
+const saveFreightCharge = async () => {
   const filteredData = freightChargeSettings.value.data.filter(item =>
     checkProperties.some(
       key => item[key] !== null && item[key] !== "" && item[key] !== undefined
     )
   );
+
   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
   frightChargeParams.value.pid = quotationDetailResult.value.pid;
   frightChargeParams.value.quoteFreights = filteredData;
-  saveFreightChargeResult(frightChargeParams.value).then(res => {
+
+  try {
+    const res = await saveFreightChargeResult(frightChargeParams.value);
     if (res && res.isSuccess) {
       ElNotification({
-        title: "successfully",
+        title: "Successfully",
         message: "Freight Charge Save Successfully!",
         type: "success"
       });
     } else {
       ElNotification({
-        title: "Failed.",
+        title: "Failed",
         message: res.errorMessage,
         type: "error"
       });
     }
-  });
+    return res; // 回傳結果，讓 .then() 可以接續執行
+  } catch (error) {
+    ElNotification({
+      title: "Error",
+      message: "An unexpected error occurred.",
+      type: "error"
+    });
+    throw error; // 拋出錯誤，讓 `.catch()` 能夠捕捉
+  }
 };
+
+// const saveFreightCharge = () => {
+//   const filteredData = freightChargeSettings.value.data.filter(item =>
+//     checkProperties.some(
+//       key => item[key] !== null && item[key] !== "" && item[key] !== undefined
+//     )
+//   );
+//   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
+//   frightChargeParams.value.pid = quotationDetailResult.value.pid;
+//   frightChargeParams.value.quoteFreights = filteredData;
+//   saveFreightChargeResult(frightChargeParams.value).then(res => {
+//     if (res && res.isSuccess) {
+//       ElNotification({
+//         title: "successfully",
+//         message: "Freight Charge Save Successfully!",
+//         type: "success"
+//       });
+//     } else {
+//       ElNotification({
+//         title: "Failed.",
+//         message: res.errorMessage,
+//         type: "error"
+//       });
+//     }
+//   });
+// };
 
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
-    console.log("handleAfterChange changes", changes);
     if (changes[0][2] != changes[0][3] && qid.value != 0) {
       saveFreightCharge();
     }
@@ -1371,23 +1434,31 @@ const handleAfterSelection = (row, column, row2, column2) => {
 const handleAfterPaste = (data, coords) => {
   setTimeout(() => {
     const hotInstance = hotTableRef.value.hotInstance;
-
-    // 確保同步 Handsontable 的數據到 Vue 的 data
     const updatedData = hotInstance.getSourceData();
     freightChargeSettings.value.data = [...updatedData];
-    // 執行保存功能
-    saveFreightCharge();
+    saveFreightCharge().then(() => {
+      if ((quotationDetailResult?.value?.quoteid as number) > 0) {
+        handleFreightChargeGetData(
+          quotationDetailResult.value.quoteid,
+          quotationDetailResult.value.pid
+        );
+      }
+    });
   }, 500);
 };
 const handleAfterAutofill = (start, end, data) => {
   setTimeout(() => {
     const hotInstance = hotTableRef.value.hotInstance;
-
-    // 確保同步 Handsontable 的數據到 Vue 的 data
     const updatedData = hotInstance.getSourceData();
     freightChargeSettings.value.data = [...updatedData];
-    // 執行保存功能
-    saveFreightCharge();
+    saveFreightCharge().then(() => {
+      if ((quotationDetailResult?.value?.quoteid as number) > 0) {
+        handleFreightChargeGetData(
+          quotationDetailResult.value.quoteid,
+          quotationDetailResult.value.pid
+        );
+      }
+    });
   }, 500); // 延遲 0 毫秒，等待 Handsontable 完成數據更新
 };
 
@@ -1404,7 +1475,6 @@ const handleExportLocalChargePasteSave = (data, coords) => {
 };
 
 const handleExportLocalChargeAutofillSave = (start, end, data) => {
-  console.log(importLocationResult.value);
   setTimeout(() => {
     const transformedData = transformData(
       exportLocationResult.value,
@@ -1417,7 +1487,6 @@ const handleExportLocalChargeAutofillSave = (start, end, data) => {
 };
 
 const handleImportLocalChargePasteSave = (data, coords) => {
-  console.log(importLocationResult.value);
   setTimeout(() => {
     const transformedData = transformData(
       importLocationResult.value,
@@ -1430,7 +1499,6 @@ const handleImportLocalChargePasteSave = (data, coords) => {
 };
 
 const handleImportLocalChargeAutofillSave = (start, end, data) => {
-  console.log(importLocationResult.value);
   setTimeout(() => {
     const transformedData = transformData(
       importLocationResult.value,
@@ -1986,7 +2054,6 @@ const createFilter = (queryString: string) => {
 };
 
 const AddLCPItems = (source, isExport) => {
-  console.log(isExport);
   getLocalChargePackageDetailResult(
     quotationDetailResult.value.pid,
     isExport,
@@ -2372,6 +2439,8 @@ onMounted(() => {
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+
+  console.log(quotationDetailResult.value);
 });
 onBeforeUnmount(() => {
   const editor = editorRef.value;

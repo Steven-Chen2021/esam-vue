@@ -196,7 +196,7 @@ export function QuoteDetailHooks() {
         }));
       }
     } catch (error) {
-      console.log("getProductLineByCustomerResult", error);
+      console.error("getProductLineByCustomerResult", error);
     }
   }
 
@@ -210,7 +210,7 @@ export function QuoteDetailHooks() {
         }));
       }
     } catch (error) {
-      console.log("getShippingTermResult", error);
+      console.error("getShippingTermResult", error);
     }
   }
 
@@ -426,6 +426,15 @@ export function QuoteDetailHooks() {
     }
   }
 
+  async function getTermConditionalResult(HQID, PID) {
+    try {
+      const response = await quoteDetailService.getTermConditional(HQID, PID);
+      return response;
+    } catch (error) {
+      console.log("saveFreightChargeResult", error);
+    }
+  }
+
   return {
     getCustomerByOwnerUserResult,
     customerResult,
@@ -463,6 +472,7 @@ export function QuoteDetailHooks() {
     quoteDimensionFactorResult,
     getQuoteDimensionFactorResult,
     SendQuotationToApprove,
-    getSalesInfomation
+    getSalesInfomation,
+    getTermConditionalResult
   };
 }
