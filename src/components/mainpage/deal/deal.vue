@@ -23,7 +23,7 @@ const userAuth = ref({});
 const listData = ref([
   {
     dealNo: "DL00000001",
-    percentage: 50,
+    percentage: 60,
     status: "Quoting",
     dealType: "New Business",
     initialDate: "Dec 30,2024",
@@ -35,7 +35,7 @@ const listData = ref([
   },
   {
     dealNo: "DL00000002",
-    percentage: 25,
+    percentage: 20,
     status: "Approaching",
     dealType: "New Business",
     initialDate: "Dec 30,2024",
@@ -89,6 +89,7 @@ onMounted(() => {
       style="
         min-width: 600px;
         height: 260px;
+        padding: 20px;
         border-radius: 10px;
         box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
       "
