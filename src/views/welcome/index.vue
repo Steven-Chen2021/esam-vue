@@ -53,6 +53,34 @@ const viewTable = detailType => {
   // });
   toDetail({ type: detailType }, "params");
 };
+const dealSumList = [
+  {
+    status: "Prospecting",
+    count: 5
+  },
+  {
+    status: "Approaching",
+    count: 3
+  },
+  {
+    status: "Quoting",
+    count: 4
+  },
+  {
+    status: "Negotiation",
+    count: 7
+  }
+];
+const toDoSumList = [
+  {
+    status: "On going",
+    count: 10
+  },
+  {
+    status: "Over due",
+    count: 3
+  }
+];
 </script>
 
 <template>
@@ -114,19 +142,60 @@ const viewTable = detailType => {
         </div>
       </div>
     </div>
-    <div class="middle-content">
+    <div class="middle">
+      <div style="display: flex; flex-wrap: wrap">
+        <span class="top-mtd">Deal</span>
+        <div class="middle-bar-deal">
+          <div
+            v-for="item in dealSumList"
+            :key="item.status"
+            class="middle-bar-item"
+          >
+            <div class="middle-bar-item-content">
+              <div class="middle-bar-item-header">
+                <div class="middle-bar-item-header-left">
+                  <div class="top-bar-item-title">{{ item.status }}</div>
+                  <div class="top-bar-item-count">{{ item.count }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap">
+        <span class="top-mtd">To Do</span>
+        <div class="middle-bar-todo">
+          <div
+            v-for="item in toDoSumList"
+            :key="item.status"
+            class="middle-bar-item-todo"
+          >
+            <div class="middle-bar-item-content">
+              <div class="middle-bar-item-header">
+                <div class="middle-bar-item-header-left">
+                  <div class="top-bar-item-title">{{ item.status }}</div>
+                  <div
+                    :class="`top-bar-item-count ${item.status === 'Over due' ? 'danger' : ''}`"
+                  >
+                    {{ item.count }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="middle-content">
       <div style="flex-grow: 1; min-width: 500px">
         <deal :CusID="'48013'" DealID="12" />
       </div>
       <div style="flex-grow: 1; min-width: 500px">
         <toDoList :CusID="'48013'" DealID="12" />
       </div>
-
-      <!-- <div style="flex-grow: 1; min-width: 500px">
-        <myPending :CusID="'48013'" DealID="12" />
-      </div> -->
-    </div>
-    <div style="display: flex; flex-grow: 2; margin: 20px 10px 10px 0">
+    </div> -->
+    <span class="top-mtd" style="margin-top: 20px">My Calendar</span>
+    <div style="display: flex; flex-grow: 2; margin: 0 10px 10px 0">
       <el-calendar
         ref="calendar"
         style="
@@ -231,14 +300,49 @@ const viewTable = detailType => {
   }
 }
 
+@media (width <= 1800px) {
+  .middle {
+    grid-template-columns: 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 1340px) {
+  .middle-bar-deal {
+    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
+  }
+}
+
 .top-mtd {
   margin-bottom: 10px;
   margin-left: 12px;
+  font-size: 22px;
 }
 
 .top-bar {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px 60px;
+  width: 100%;
+}
+
+.middle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 60px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.middle-bar-deal {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 20px 60px;
+  width: 100%;
+}
+
+.middle-bar-todo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px 60px;
   width: 100%;
 }
@@ -253,6 +357,50 @@ const viewTable = detailType => {
   background-color: #fff;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+
+.middle-bar-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 200px;
+  padding: 20px;
+  cursor: pointer;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+
+.middle-bar-item-todo {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 200px;
+  padding: 20px;
+  cursor: pointer;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+
+.danger {
+  color: var(--el-color-danger) !important;
+}
+
+.top-bar-item:hover,
+.middle-bar-item:hover,
+.middle-bar-item-todo:hover {
+  box-shadow: 0 6px 8px rgb(0 0 0 / 15%);
+  transform: translateY(-5px);
 }
 
 .top-bar-item-header {
@@ -269,15 +417,6 @@ top-bar-item-header-left {
   font-size: 18px;
   font-weight: bold;
   color: var(--el-text-color-secondary);
-}
-
-.top-bar-item-progress {
-  // position: relative;
-  // width: 100%;
-  // height: 8px;
-  // background-color: #f0f0f0;
-  // border-radius: 4px;
-  // margin: 10px 0;
 }
 
 .progress-bar {
