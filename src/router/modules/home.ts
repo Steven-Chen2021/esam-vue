@@ -22,6 +22,16 @@ export default {
         title: $t("menus.pureHome"),
         showLink: VITE_HIDE_HOME === "true" ? false : true
       }
+    },
+    {
+      path: "/welcome/detail/:type",
+      name: "DashboardDetail",
+      component: () =>
+        import("@/views/welcome/components/webdatarocks/webdatarocks.vue"),
+      meta: {
+        title: $t("menus.dimercoDashboard"),
+        showLink: false
+      }
     }
   ]
 } satisfies RouteConfigsTable;

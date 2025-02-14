@@ -1,10 +1,9 @@
 FROM node:20-alpine AS build-stage
 
 WORKDIR /app
-# RUN corepack enable
-# RUN corepack prepare pnpm@latest --activate
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
 
-RUN npm install -g pnpm
 RUN npm config set registry https://registry.npmmirror.com
 
 COPY .npmrc package.json pnpm-lock.yaml .env.staging ./

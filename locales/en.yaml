@@ -190,6 +190,7 @@ menus:
   dimercoCustomer: Customer
   dimercoDeal: Deal
   dimercoMembers: Members
+  dimercoDashboard: Dashboard
   
 status:
   pureLoad: Loading...

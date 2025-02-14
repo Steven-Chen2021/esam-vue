@@ -67,6 +67,7 @@ onMounted(() => {
       style="
         min-width: 600px;
         height: 260px;
+        padding: 20px;
         border-radius: 10px;
         box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
       "
