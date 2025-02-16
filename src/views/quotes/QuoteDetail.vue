@@ -2433,10 +2433,7 @@ onMounted(() => {
   if (pageParams.value.pagemode === "copy") {
     PID = pageParams.value.pid;
   }
-  if (
-    props.PropsParam.pagemode === "add" &&
-    props.PropsParam.pagemode.hqid != "0"
-  ) {
+  if (props?.PropsParam?.pagemode === "add" && props?.PropsParam?.hqid != "0") {
     companyNameColumn.valueType = "text";
   }
   getCustomerByOwnerUserResult(PID).then(() => {
