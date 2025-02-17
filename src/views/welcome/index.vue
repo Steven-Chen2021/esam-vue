@@ -17,7 +17,7 @@ import dayjs from "dayjs";
 defineOptions({
   name: "Welcome"
 });
-const dateArray = ["2025-02-05", "2025-02-10", "2025-02-20"];
+const dateArray = ["2025-02-05", "2025-02-10", "2025-02-17"];
 const { isDark } = useDark();
 
 let curWeek = ref(1); // 0上周、1本周
