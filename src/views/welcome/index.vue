@@ -81,6 +81,7 @@ const toDoSumList = [
     count: 3
   }
 ];
+const selectedDate = ref(new Date(2025, 1, 17));
 </script>
 
 <template>
@@ -198,6 +199,7 @@ const toDoSumList = [
     <div style="display: flex; flex-grow: 2; margin: 0 10px 10px 0">
       <el-calendar
         ref="calendar"
+        v-model="selectedDate"
         style="
           flex-grow: 2;
           min-width: 400px;
@@ -245,7 +247,7 @@ const toDoSumList = [
       </el-calendar>
       <div class="calendar-container">
         <div class="date-header">
-          <div>2 月 20 日 周四</div>
+          <div>2 月 17 日 周一</div>
           <div class="weather">
             <span>12°C</span>
           </div>
