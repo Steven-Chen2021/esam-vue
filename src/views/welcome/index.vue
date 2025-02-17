@@ -312,15 +312,16 @@ const toDoSumList = [
   }
 }
 
-.top-mtd {
-  margin-bottom: 10px;
-  margin-left: 12px;
-  font-size: 22px;
-}
-
 .top-bar {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px 60px;
+  width: 100%;
+}
+
+.middle-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px 60px;
   width: 100%;
 }
@@ -338,6 +339,12 @@ const toDoSumList = [
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 20px 60px;
   width: 100%;
+}
+
+.top-mtd {
+  margin-bottom: 10px;
+  margin-left: 12px;
+  font-size: 22px;
 }
 
 .middle-bar-todo {
@@ -456,13 +463,6 @@ top-bar-item-header-left {
   font-size: 30px;
   font-weight: bold;
   color: var(--el-color-primary);
-}
-
-.middle-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px 60px;
-  width: 100%;
 }
 
 :deep(.el-card) {
@@ -595,5 +595,4 @@ top-bar-item-header-left {
   color: #888;
   cursor: pointer;
 }
-
 </style>
