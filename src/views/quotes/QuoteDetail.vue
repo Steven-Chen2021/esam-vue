@@ -646,10 +646,14 @@ let quoteDetailColumns: PlusColumn[] = [
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
           const [effective, expired] = value;
-          const parseEffective = new Date(`${effective}`);
-          const parseExpired = new Date(`${expired}`);
-          console.debug(parseEffective);
-          console.debug(parseExpired);
+          const timezoneOffset = new Date().getTimezoneOffset() * 60000;
+          const parseEffective = new Date(
+            new Date(effective).getTime() - timezoneOffset
+          );
+          const parseExpired = new Date(
+            new Date(expired).getTime() - timezoneOffset
+          );
+
           autoSaveTrigger(parseEffective, "effectiveDate");
           autoSaveTrigger(parseExpired, "expiredDate");
         } else {
@@ -1314,6 +1318,14 @@ const handleAfterChange = (changes, source) => {
         }
       }
     });
+    nextTick(() => {
+      const hotInstance = hotTableRef.value.hotInstance;
+      const rowHeight = 20; // 每列的高度
+      const minHeight = 180; // 最小高度，防止過小
+      const rowCount = hotInstance.getData().length; // 取得目前行數
+      const newHeight = `${minHeight + rowCount * rowHeight}`; // 計算新高度
+      hotInstance.updateSettings({ height: newHeight });
+    });
   }
 };
 
@@ -1429,7 +1441,6 @@ const handleAfterSelection = (row, column, row2, column2) => {
     "handleAfterSelection",
     `選擇範圍 - 從 (${row}, ${column}) 到 (${row2}, ${column2})`
   );
-  // saveFreightCharge();
 };
 const handleAfterPaste = (data, coords) => {
   setTimeout(() => {
@@ -1551,7 +1562,7 @@ const freightChargeSettings = ref({
   rowHeaders: false,
   dropdownMenu: true,
   width: "100%",
-  height: "180",
+  height: "auto",
   columns: [],
   colWidths: [],
   autoWrapRow: true,
@@ -1579,7 +1590,18 @@ const freightChargeSettings = ref({
     }
   },
   afterPaste: handleAfterPaste,
-  afterAutofill: handleAfterAutofill
+  afterAutofill: handleAfterAutofill,
+  // 監聽 row 插入事件，根據目前行數重新計算高度
+  afterCreateRow: function (index, amount) {
+    nextTick(() => {
+      const rowHeight = 20; // 每列的高度
+      const minHeight = 180; // 最小高度，防止過小
+      const rowCount = this.getData().length; // 取得目前行數
+      const newHeight = `${minHeight + rowCount * rowHeight}`; // 計算新高度
+      // 更新設定
+      this.updateSettings({ height: newHeight });
+    });
+  }
 });
 
 const saveData = () => {
@@ -2411,6 +2433,9 @@ onMounted(() => {
   if (pageParams.value.pagemode === "copy") {
     PID = pageParams.value.pid;
   }
+  if (props?.PropsParam?.pagemode === "add" && props?.PropsParam?.hqid != "0") {
+    companyNameColumn.valueType = "text";
+  }
   getCustomerByOwnerUserResult(PID).then(() => {
     if (
       pageParams.value.hqid != "0" &&
@@ -2440,7 +2465,11 @@ onMounted(() => {
   getQuoteDimensionFactorResult();
   hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
 
-  console.log(quotationDetailResult.value);
+  console.log(
+    "onMounted quotationDetailResult.value",
+    quotationDetailResult.value
+  );
+  console.log("onMounted props.PropsParam", props.PropsParam);
 });
 onBeforeUnmount(() => {
   const editor = editorRef.value;
@@ -3098,5 +3127,12 @@ const handleNumberInput = value => {
 
 ::v-deep(.el-col.is-guttered) {
   margin-bottom: 10px;
+}
+
+.handsontable .autocompleteEditor.handsontable {
+  top: 100% !important; /* 強制讓選單永遠往下展開 */
+  bottom: auto !important;
+  z-index: 1000; /* 確保選單不被遮擋 */
+  transform: translateY(0) !important; /* 避免向上移動 */
 }
 </style>

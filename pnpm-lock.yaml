@@ -53,6 +53,9 @@ importers:
       '@wangeditor/editor-for-vue':
         specifier: ^5.1.12
         version: 5.1.12(@wangeditor/editor@5.1.23)(vue@3.4.27(typescript@5.4.5))
+      '@webdatarocks/webdatarocks':
+        specifier: ^1.4.15
+        version: 1.4.15
       '@zxcvbn-ts/core':
         specifier: ^3.0.4
         version: 3.0.4
@@ -1775,6 +1778,9 @@ packages:
       nanoid: ^3.2.0
       slate: ^0.72.0
       snabbdom: ^3.1.0
+
+  '@webdatarocks/webdatarocks@1.4.15':
+    resolution: {integrity: sha512-MpyZYgksVjiyJ0Vydg+7oeHfVZuoaaWou00WHB+58Vu2Nbw8pj3aeYTkwSFk2NYFdzGQRTE/JW+G8FAz+docaw==}
 
   '@zougt/some-loader-utils@1.4.3':
     resolution: {integrity: sha512-0FsoqSTQ+qOyp6x5Q6LZQ7xVwquEgLYiIStG3L8p0Q2GsGGYKDkOZ0mIpMt67aNdr8XLsbxXjzTl/iHtTz5zcA==}
@@ -7150,6 +7156,8 @@ snapshots:
       nanoid: 3.3.7
       slate: 0.72.8
       snabbdom: 3.6.2
+
+  '@webdatarocks/webdatarocks@1.4.15': {}
 
   '@zougt/some-loader-utils@1.4.3':
     dependencies:
