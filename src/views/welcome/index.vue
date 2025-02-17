@@ -274,54 +274,16 @@ const toDoSumList = [
 </template>
 
 <style lang="scss" scoped>
-
-
-/* 当屏幕宽度小于 768px 时, 使 top-bar-item 自动换行 */
-@media (width <= 1230px) {
-  .top-bar {
-    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
-  }
-}
-
-@media (width <= 700px) {
-  .top-bar {
-    grid-template-columns: 1fr; /* 设置为 1 列 */
-  }
-}
-
-@media (width <= 2200px) {
-  .middle-content {
-    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
-  }
-}
-
-@media (width <= 1920px) {
-  .middle-content {
-    grid-template-columns: 1fr; /* 设置为 2 列 */
-  }
-}
-
-@media (width <= 1800px) {
-  .middle {
-    grid-template-columns: 1fr; /* 设置为 2 列 */
-  }
-}
-
-@media (width <= 1340px) {
-  .middle-bar-deal {
-    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
-  }
-}
-
-.top-mtd {
-  margin-bottom: 10px;
-  margin-left: 12px;
-  font-size: 22px;
-}
-
 .top-bar {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px 60px;
+  width: 100%;
+}
+
+.middle-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px 60px;
   width: 100%;
 }
@@ -339,6 +301,12 @@ const toDoSumList = [
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 20px 60px;
   width: 100%;
+}
+
+.top-mtd {
+  margin-bottom: 10px;
+  margin-left: 12px;
+  font-size: 22px;
 }
 
 .middle-bar-todo {
@@ -457,13 +425,6 @@ top-bar-item-header-left {
   font-size: 30px;
   font-weight: bold;
   color: var(--el-color-primary);
-}
-
-.middle-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px 60px;
-  width: 100%;
 }
 
 :deep(.el-card) {
@@ -595,5 +556,42 @@ top-bar-item-header-left {
   margin-left: 10px;
   color: #888;
   cursor: pointer;
+}
+/* stylelint-disable */
+/* 当屏幕宽度小于 768px 时, 使 top-bar-item 自动换行 */
+@media (width <= 1230px) {
+  .top-bar {
+    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 700px) {
+  .top-bar {
+    grid-template-columns: 1fr; /* 设置为 1 列 */
+  }
+}
+
+@media (width <= 2200px) {
+  .middle-content {
+    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 1920px) {
+  .middle-content {
+    grid-template-columns: 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 1800px) {
+  .middle {
+    grid-template-columns: 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 1340px) {
+  .middle-bar-deal {
+    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
+  }
 }
 </style>
