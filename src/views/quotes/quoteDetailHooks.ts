@@ -334,6 +334,13 @@ export function QuoteDetailHooks() {
 
   async function saveQuoteDetailResult(params) {
     try {
+      if (Array.isArray(params.period) && params.period.length === 2) {
+        const timezoneOffset = new Date().getTimezoneOffset() * 60000; // 取得時區偏移量（毫秒）
+
+        params.period = params.period.map(dateStr => {
+          return new Date(new Date(dateStr).getTime() - timezoneOffset); // 調整成使用者當地時間
+        });
+      }
       const response = await quoteDetailService.saveQuoteDetail(params);
       return response;
     } catch (error) {
