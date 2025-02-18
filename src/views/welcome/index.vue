@@ -17,7 +17,7 @@ import dayjs from "dayjs";
 defineOptions({
   name: "Welcome"
 });
-const dateArray = ["2025-02-05", "2025-02-10", "2025-02-20"];
+const dateArray = ["2025-02-05", "2025-02-10", "2025-02-17"];
 const { isDark } = useDark();
 
 let curWeek = ref(1); // 0上周、1本周
@@ -81,6 +81,7 @@ const toDoSumList = [
     count: 3
   }
 ];
+const selectedDate = ref(new Date(2025, 1, 17));
 </script>
 
 <template>
@@ -198,6 +199,7 @@ const toDoSumList = [
     <div style="display: flex; flex-grow: 2; margin: 0 10px 10px 0">
       <el-calendar
         ref="calendar"
+        v-model="selectedDate"
         style="
           flex-grow: 2;
           min-width: 400px;
@@ -245,7 +247,7 @@ const toDoSumList = [
       </el-calendar>
       <div class="calendar-container">
         <div class="date-header">
-          <div>2 月 20 日 周四</div>
+          <div>2 月 17 日 周一</div>
           <div class="weather">
             <span>12°C</span>
           </div>
@@ -274,53 +276,16 @@ const toDoSumList = [
 </template>
 
 <style lang="scss" scoped>
-
-/* 当屏幕宽度小于 768px 时, 使 top-bar-item 自动换行 */
-@media (width <= 1230px) {
-  .top-bar {
-    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
-  }
-}
-
-@media (width <= 700px) {
-  .top-bar {
-    grid-template-columns: 1fr; /* 设置为 1 列 */
-  }
-}
-
-@media (width <= 2200px) {
-  .middle-content {
-    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
-  }
-}
-
-@media (width <= 1920px) {
-  .middle-content {
-    grid-template-columns: 1fr; /* 设置为 2 列 */
-  }
-}
-
-@media (width <= 1800px) {
-  .middle {
-    grid-template-columns: 1fr; /* 设置为 2 列 */
-  }
-}
-
-@media (width <= 1340px) {
-  .middle-bar-deal {
-    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
-  }
-}
-
-.top-mtd {
-  margin-bottom: 10px;
-  margin-left: 12px;
-  font-size: 22px;
-}
-
 .top-bar {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px 60px;
+  width: 100%;
+}
+
+.middle-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px 60px;
   width: 100%;
 }
@@ -338,6 +303,12 @@ const toDoSumList = [
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 20px 60px;
   width: 100%;
+}
+
+.top-mtd {
+  margin-bottom: 10px;
+  margin-left: 12px;
+  font-size: 22px;
 }
 
 .middle-bar-todo {
@@ -456,13 +427,6 @@ top-bar-item-header-left {
   font-size: 30px;
   font-weight: bold;
   color: var(--el-color-primary);
-}
-
-.middle-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px 60px;
-  width: 100%;
 }
 
 :deep(.el-card) {
@@ -594,5 +558,42 @@ top-bar-item-header-left {
   margin-left: 10px;
   color: #888;
   cursor: pointer;
+}
+/* stylelint-disable */
+/* 当屏幕宽度小于 768px 时, 使 top-bar-item 自动换行 */
+@media (width <= 1230px) {
+  .top-bar {
+    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 700px) {
+  .top-bar {
+    grid-template-columns: 1fr; /* 设置为 1 列 */
+  }
+}
+
+@media (width <= 2200px) {
+  .middle-content {
+    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 1920px) {
+  .middle-content {
+    grid-template-columns: 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 1800px) {
+  .middle {
+    grid-template-columns: 1fr; /* 设置为 2 列 */
+  }
+}
+
+@media (width <= 1340px) {
+  .middle-bar-deal {
+    grid-template-columns: 1fr 1fr; /* 设置为 2 列 */
+  }
 }
 </style>
