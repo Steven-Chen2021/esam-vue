@@ -265,6 +265,23 @@ class QuoteDetailService {
       console.error(error);
     }
   }
+  async getMailNotifyResult(QuoteID) {
+    try {
+      const url = `/api/Quote/GetMailNotify?QuoteID=${QuoteID}`;
+      const response = await API.get(url);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async sendQuoteNotifyMailResult(params) {
+    try {
+      const response = await API.post("/api/Quote/SendMailNotify", params);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default new QuoteDetailService();
