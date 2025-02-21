@@ -1911,7 +1911,9 @@ const previewQuote = () => {
     id: quotationDetailResult.value.quoteid as string,
     displaytitle: (quotationDetailResult.value.quoteNo ??
       pageParams.value.qname) as string,
-    pid: quotationDetailResult.value.pid as string
+    pid: quotationDetailResult.value.pid as string,
+    quoteno: quotationDetailResult.value.quoteNo as string,
+    lid: quotationDetailResult.value.customerHQID as string
   });
 };
 

@@ -594,6 +594,10 @@ quote:
     cbm: CBM Rate
     WeightBreak: Weight Break
     lcp: Local Charge Package
+  share:
+    copyToolTip: Click to copy pdf link
+    copySuc: Link copied
+    attachAlert: "The quotation attachment will be automatically added when sending email."
 message:
   required:
     companyName: Company Name Is Required.
@@ -667,6 +671,7 @@ approval:
     creditcurrency: Credit Currency
     creditlimit: Credit Limit
     custmerAppliedCreditTerm: Custmer Applied Credit Term
+
 
 
 
