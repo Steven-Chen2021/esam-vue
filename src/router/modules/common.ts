@@ -15,15 +15,6 @@ export default {
         title: "Preview",
         showLink: false
       }
-    },
-    {
-      path: "/commons/mailtest",
-      name: "mailtest",
-      component: () => import("@/views/commons/mail/test.vue"),
-      meta: {
-        title: "Preview",
-        showLink: false
-      }
     }
   ]
 } satisfies RouteConfigsTable;
