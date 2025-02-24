@@ -2,6 +2,10 @@ FROM node:20-alpine AS build-stage
 
 WORKDIR /app
 
+# RUN corepack enable
+# RUN corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm
+
 # 設定 npm 的 registry
 RUN npm config set registry https://registry.npmmirror.com
 
