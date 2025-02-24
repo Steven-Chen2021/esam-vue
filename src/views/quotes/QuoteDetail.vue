@@ -2014,7 +2014,11 @@ const handleCheckboxGroupChange = (values: string[]) => {
 
   // 更新設定
   freightChargeSettings.value.columns = hotTableColumnSettingResult;
-
+  freightChargeSettings.value.columns.forEach(item => {
+    if (item["type"] === "autocomplete") {
+      item["strict"] = true;
+    }
+  });
   // const hotTableColumnSettingResult = selectedItems.map(
   //   item => item.hotTableColumnSetting
   // );
@@ -2282,6 +2286,12 @@ watchEffect(() => {
     freightChargeSettings.value.columns = sourceData.map(
       item => item.hotTableColumnSetting
     );
+    freightChargeSettings.value.columns.forEach(item => {
+      if (item["type"] === "autocomplete") {
+        item["strict"] = true;
+      }
+    });
+    console.log("freightChargeSettings.value", freightChargeSettings.value);
     freightChargeSettings.value.colWidths = sourceData.map(
       item => item.columnWidth
     );

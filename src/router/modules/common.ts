@@ -8,7 +8,7 @@ export default {
   },
   children: [
     {
-      path: "/commons/index/:category/:id/:pid/:quoteno/:lid",
+      path: "/commons/index/:displaytitle/:category/:id/:pid/:quoteno/:lid",
       name: "DimercoPDF",
       component: () => import("@/views/commons/pdf.vue"),
       meta: {

@@ -167,12 +167,12 @@ const getActionItemResult = async () => {
               }
             );
           };
-          item["strict"] = false;
+          item["strict"] = true;
           item["visibleRows"] = 15;
         }
         item["allowEmpty"] = true;
         item["allowInvalid"] = true;
-        item["strict"] = false;
+        item["strict"] = true;
       });
       tableSetting.value["colWidths"] = setting
         .filter(item => item.selected)

@@ -14,7 +14,7 @@ export function usePreView() {
       }
     });
     useMultiTagsStoreHook().handleTags("push", {
-      path: "/commons/index/:category/:id/:pid/:quoteno/:lid",
+      path: `/commons/index/:displaytitle/:category/:id/:pid/:quoteno/:lid`,
       name: "DimercoPDF",
       params: parameter,
       meta: {
