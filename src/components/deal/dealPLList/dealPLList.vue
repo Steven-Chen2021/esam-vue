@@ -201,7 +201,7 @@ const getActionItemResult = async () => {
         }
         item["allowEmpty"] = true;
         item["allowInvalid"] = true;
-        item["strict"] = false;
+        item["strict"] = true;
       });
       tableSetting.value["colWidths"] = setting
         .filter(item => item.selected)
