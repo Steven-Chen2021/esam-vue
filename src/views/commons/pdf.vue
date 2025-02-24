@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import VuePdfEmbed from "vue-pdf-embed";
 import { usePreView } from "./hooks";
 import { QuoteDetailHooks } from "@/views/quotes/quoteDetailHooks";
-
+import share from "./components/share.vue";
+import quoteeMailNotify from "./components/mailNotify.vue";
 defineOptions({
   name: "Pdf"
 });
@@ -51,21 +52,39 @@ const downloadPdf = () => {
     console.error("PDF 資料尚未加載，無法下載！");
   }
 };
+const quoteNo = ref("");
+const quoteID = ref("");
+const LID = ref("");
+const quoteeMailNotifyRef = ref();
 onMounted(() => {
+  quoteNo.value = Array.isArray(getParameter.quoteno)
+    ? getParameter.quoteno[0]
+    : getParameter.quoteno;
+  quoteID.value = Array.isArray(getParameter.id)
+    ? getParameter.id[0]
+    : getParameter.id;
+  LID.value = Array.isArray(getParameter.lid)
+    ? getParameter.lid[0]
+    : getParameter.lid;
   if (getParameter.id != "0") {
     if (getParameter.category === "quotation") {
       getQuotePreviewResult(getParameter.id, getParameter.pid).then(res => {
         source.value = res.returnValue;
+        quoteeMailNotifyRef.value.loadNotifyData();
       });
     }
   }
 });
+const notifyWindowShow = ref(false);
+const cancelSaveNotify = () => {
+  console.log("cancelSaveNotify");
+  notifyWindowShow.value = false;
+};
 </script>
 
 <template>
   <el-card shadow="never">
     <div
-      v-loading="loading"
       class="h-[calc(100vh-295px)]"
       :element-loading-text="t('status.pureLoad')"
     >
@@ -120,7 +139,11 @@ onMounted(() => {
             class="cursor-pointer outline-transparent"
             @click="downloadPdf"
           />
-
+          <share
+            :QuoteNo="quoteNo"
+            :PDFUrl="source"
+            @handleMailEvent="notifyWindowShow = true"
+          />
           <!-- <el-button type="primary" size="small" @click="downloadPdf">
             下载 PDF
           </el-button> -->
@@ -138,4 +161,27 @@ onMounted(() => {
       </el-scrollbar>
     </div>
   </el-card>
+  <quoteeMailNotify
+    ref="quoteeMailNotifyRef"
+    :showeMailNotifyWindow="notifyWindowShow"
+    :QuoteID="quoteID"
+    :LID="LID"
+    :AttachFiles="source"
+    @handleCancelEvent="cancelSaveNotify"
+  />
 </template>
+<style scoped>
+.icon-link {
+  display: inline-block;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease;
+}
+
+.icon-link:hover {
+  color: #007bff; /* 改变文字颜色，模拟链接效果 */
+  transform: scale(1.1); /* 增加放大效果 */
+}
+</style>

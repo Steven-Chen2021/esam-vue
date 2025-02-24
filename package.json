@@ -88,6 +88,7 @@
     "plus-pro-components": "^0.1.6",
     "qrcode": "^1.5.3",
     "qs": "^6.12.1",
+    "quill": "^2.0.3",
     "responsive-storage": "^2.2.0",
     "sortablejs": "^1.15.2",
     "swiper": "^11.1.3",
