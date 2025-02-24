@@ -1037,32 +1037,6 @@ const saveFreightCharge = async () => {
   }
 };
 
-// const saveFreightCharge = () => {
-//   const filteredData = freightChargeSettings.value.data.filter(item =>
-//     checkProperties.some(
-//       key => item[key] !== null && item[key] !== "" && item[key] !== undefined
-//     )
-//   );
-//   frightChargeParams.value.quoteID = quotationDetailResult.value.quoteid;
-//   frightChargeParams.value.pid = quotationDetailResult.value.pid;
-//   frightChargeParams.value.quoteFreights = filteredData;
-//   saveFreightChargeResult(frightChargeParams.value).then(res => {
-//     if (res && res.isSuccess) {
-//       ElNotification({
-//         title: "successfully",
-//         message: "Freight Charge Save Successfully!",
-//         type: "success"
-//       });
-//     } else {
-//       ElNotification({
-//         title: "Failed.",
-//         message: res.errorMessage,
-//         type: "error"
-//       });
-//     }
-//   });
-// };
-
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     if (changes[0][2] != changes[0][3] && qid.value != 0) {
@@ -1598,7 +1572,15 @@ const freightChargeSettings = ref({
       const minHeight = 180; // 最小高度，防止過小
       const rowCount = this.getData().length; // 取得目前行數
       const newHeight = `${minHeight + rowCount * rowHeight}`; // 計算新高度
-      // 更新設定
+      // 確保新增的行有空白數據
+      const emptyRow = this.getSourceData()[index];
+      console.log(emptyRow);
+      if (
+        !emptyRow ||
+        Object.values(emptyRow).every(value => value === null || value === "")
+      ) {
+        this.setDataAtRowProp(index, 0, "");
+      }
       this.updateSettings({ height: newHeight });
     });
   }
@@ -2471,6 +2453,7 @@ onMounted(() => {
   );
   console.log("onMounted props.PropsParam", props.PropsParam);
 });
+
 onBeforeUnmount(() => {
   const editor = editorRef.value;
   if (editor == null) return;
