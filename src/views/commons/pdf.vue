@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import VuePdfEmbed from "vue-pdf-embed";
 import { usePreView } from "./hooks";
@@ -56,6 +56,11 @@ const quoteNo = ref("");
 const quoteID = ref("");
 const LID = ref("");
 const quoteeMailNotifyRef = ref();
+const notifyWindowShow = ref(false);
+const cancelSaveNotify = () => {
+  console.log("cancelSaveNotify");
+  notifyWindowShow.value = false;
+};
 onMounted(() => {
   quoteNo.value = Array.isArray(getParameter.quoteno)
     ? getParameter.quoteno[0]
@@ -75,11 +80,6 @@ onMounted(() => {
     }
   }
 });
-const notifyWindowShow = ref(false);
-const cancelSaveNotify = () => {
-  console.log("cancelSaveNotify");
-  notifyWindowShow.value = false;
-};
 </script>
 
 <template>
@@ -160,15 +160,15 @@ const cancelSaveNotify = () => {
         />
       </el-scrollbar>
     </div>
+    <quoteeMailNotify
+      ref="quoteeMailNotifyRef"
+      :showeMailNotifyWindow="notifyWindowShow"
+      :QuoteID="quoteID"
+      :LID="LID"
+      :AttachFiles="source"
+      @handleCancelEvent="cancelSaveNotify"
+    />
   </el-card>
-  <quoteeMailNotify
-    ref="quoteeMailNotifyRef"
-    :showeMailNotifyWindow="notifyWindowShow"
-    :QuoteID="quoteID"
-    :LID="LID"
-    :AttachFiles="source"
-    @handleCancelEvent="cancelSaveNotify"
-  />
 </template>
 <style scoped>
 .icon-link {
