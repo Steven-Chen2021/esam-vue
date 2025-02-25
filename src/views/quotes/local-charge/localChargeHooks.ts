@@ -1,5 +1,6 @@
 import quoteDetailService from "@/services/quote/QuoteDetailService";
 import { ref } from "vue";
+import { ElNotification } from "element-plus";
 
 export function LocalChargeHooks() {
   interface iLocalChargeResult {
@@ -154,9 +155,20 @@ export function LocalChargeHooks() {
   async function saveLocalChargeResult(params) {
     try {
       const response = await quoteDetailService.saveLocalCharge(params);
+      if (response.isSuccess) {
+        ElNotification({
+          title: "Successfully",
+          message: "Local Charge Save Successfully!",
+          type: "success"
+        });
+      }
       return response;
     } catch (error) {
-      console.log("saveLocalChargeResult", error);
+      ElNotification({
+        title: "Error",
+        message: `System Error:${error}`,
+        type: "error"
+      });
     }
   }
 

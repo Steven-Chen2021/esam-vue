@@ -62,6 +62,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   canSign.value = false;
   await formEl.validate((valid, fields) => {
+    console.log(valid);
     if (valid) {
       const params = {
         approvalID: getApprovalParameter.id,
@@ -91,6 +92,8 @@ const submitForm = async (formEl: FormInstance | undefined) => {
           });
         }
       });
+    } else {
+      canSign.value = true;
     }
   });
 };
@@ -142,13 +145,24 @@ const filteredApproveHeader = (ApproveHeader, Category) => {
 };
 
 const previewQuote = () => {
+  console.log(ApproveHeader);
   toPreView({
     category: "quotation",
     id: ApproveHeader.value.quoteid as string,
     displaytitle: ApproveHeader.value.quoteNo as string,
-    pid: ApproveHeader.value.pid as string
+    pid: ApproveHeader.value.pid as string,
+    quoteno: ApproveHeader.value.quoteNo as string,
+    lid: ApproveHeader.value.customerHQID as string
   });
 };
+
+// category: "quotation",
+//     id: quotationDetailResult.value.quoteid as string,
+//     displaytitle: (quotationDetailResult.value.quoteNo ??
+//       pageParams.value.qname) as string,
+//     pid: quotationDetailResult.value.pid as string,
+//     quoteno: quotationDetailResult.value.quoteNo as string,
+//     lid: quotationDetailResult.value.customerHQID as string
 
 const SubmitSign = catetory => {
   if (catetory === "reject") {
@@ -221,7 +235,7 @@ onMounted(() => {
           <el-popover placement="right" :width="450" trigger="click">
             <template #reference>
               <el-button @click="showQuotationStatusHistory">{{
-                `History`
+                `Status`
               }}</el-button>
             </template>
             <el-table :data="quoteStatusHistory">
@@ -232,7 +246,7 @@ onMounted(() => {
               </el-table-column>
               <el-table-column
                 width="120"
-                property="createdByName"
+                property="createdBy"
                 label="Updated By"
               />
               <el-table-column label="Updated Date" width="300">

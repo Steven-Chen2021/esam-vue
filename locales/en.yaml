@@ -19,7 +19,7 @@ buttons:
   pureBackTop: BackTop
   pureOpenText: Open
   pureCloseText: Close  
-  pureHistoryLog: History Log    
+  pureHistoryLog: Data Reversion
   pureAdd: Add
 search:
   pureTotal: Total

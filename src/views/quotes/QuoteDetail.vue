@@ -269,9 +269,13 @@ const setHotTableRef = (city, Category) => el => {
     hotTableRefs.value[`${city}${Category}`] = el.hotInstance;
   }
 };
-
 // 示例：在需要的時候更新某個 HotTable 的數據
 const updateHotTableData = (city, data, isExport) => {
+  if (!data || data.length === 0) return;
+  const emptyItem = Object.fromEntries(
+    Object.keys(data[0]).map(key => [key, null])
+  );
+  const newData = [...data, emptyItem];
   if (hotTableRefs.value[`${city}general`]) {
     hotTableRefs.value[`${city}general`].loadData(data);
     if (isExport) {
@@ -279,19 +283,18 @@ const updateHotTableData = (city, data, isExport) => {
         item => item.cityID === city
       );
       if (targetCity) {
-        (targetCity.generalHotTableSetting.data as any[]) = [...data];
+        (targetCity.generalHotTableSetting.data as any[]) = [...newData];
       }
     } else {
       const targetCity = importLocationResult.value.find(
         item => item.cityID === city
       );
       if (targetCity) {
-        (targetCity.generalHotTableSetting.data as any[]) = [...data];
+        (targetCity.generalHotTableSetting.data as any[]) = [...newData];
       }
     }
   }
 };
-
 const dataPermissionExtension = () => {
   if (!columnSettingResult || columnSettingResult.value.length < 1) {
     GetColumnSettingResult(QuoteDetailColumnAccessRight).then(res => {
@@ -418,7 +421,6 @@ const dataPermissionExtension = () => {
     });
   }
 };
-
 let quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
@@ -831,13 +833,11 @@ let quoteDetailColumns: PlusColumn[] = [
     }
   }
 ];
-
 const handleFreightChargeGetData = (quoteID, ProductLineID) => {
   getQuoteFreightChargeResult(quoteID, ProductLineID).then(() => {
     freightChargeSettings.value.data = freightChargeResult.value;
   });
 };
-
 const handleLocalChargeResult = (
   localChargeResult,
   quotationDetailPid,
@@ -985,11 +985,9 @@ const handleLocalChargeResult = (
     });
   }
 };
-
 const handleGreetingsFocus = () => {
   previousGreetingsValue.value = quotationDetailResult.value.greeting;
 };
-
 const handleGreetingsFocusOut = () => {
   if (previousGreetingsValue.value != quotationDetailResult.value.greeting) {
     autoSaveTrigger(
@@ -999,7 +997,6 @@ const handleGreetingsFocusOut = () => {
     );
   }
 };
-
 const saveFreightCharge = async () => {
   const filteredData = freightChargeSettings.value.data.filter(item =>
     checkProperties.some(
@@ -1036,11 +1033,15 @@ const saveFreightCharge = async () => {
     throw error; // 拋出錯誤，讓 `.catch()` 能夠捕捉
   }
 };
-
 const handleAfterChange = (changes, source) => {
   if (source === "edit") {
     if (changes[0][2] != changes[0][3] && qid.value != 0) {
-      saveFreightCharge();
+      saveFreightCharge().then(_ => {
+        handleFreightChargeGetData(
+          quotationDetailResult.value.quoteid,
+          quotationDetailResult.value.pid
+        );
+      });
     }
 
     changes.forEach(([row, prop, oldValue, newValue]) => {
@@ -1302,7 +1303,6 @@ const handleAfterChange = (changes, source) => {
     });
   }
 };
-
 const transformData = (
   LocationResult: any[],
   quoteID: number,
@@ -1369,7 +1369,6 @@ const transformData = (
     })
   };
 };
-
 const handleExportLocalChargeChange = (changes, source) => {
   if (
     source === "edit" &&
@@ -1386,10 +1385,38 @@ const handleExportLocalChargeChange = (changes, source) => {
       quotationDetailResult.value.pid as number,
       true
     );
-    saveLocalChargeResult(transformedData);
+    saveLocalChargeResult(transformedData).then(_ => {
+      getLocalChargeResult(
+        quotationDetailResult.value.quoteid as number,
+        quotationDetailResult.value.pid,
+        true,
+        ""
+      ).then(() => {
+        localChargeResult.value.forEach(f => {
+          const targetCity = exportLocationResult.value.find(
+            item => item.cityID === f.cityID
+          );
+
+          if (targetCity) {
+            targetCity.generalHotTableSetting.data = [
+              ...f.generalSettings.detail
+            ];
+            hotTableRefs.value[`${f.cityID}general`].loadData(
+              f.generalSettings.detail
+            );
+
+            targetCity.weightBreakHotTableSetting.data = [
+              ...f.weightBreakSettings.detail
+            ];
+            hotTableRefs.value[`${f.cityID}weightbreak`].loadData(
+              f.weightBreakSettings.detail
+            );
+          }
+        });
+      });
+    });
   }
 };
-
 const handleImportLocalChargeChange = (changes, source) => {
   if (
     source === "edit" &&
@@ -1409,7 +1436,6 @@ const handleImportLocalChargeChange = (changes, source) => {
     saveLocalChargeResult(transformedData);
   }
 };
-
 const handleAfterSelection = (row, column, row2, column2) => {
   console.log(
     "handleAfterSelection",
@@ -1446,7 +1472,6 @@ const handleAfterAutofill = (start, end, data) => {
     });
   }, 500); // 延遲 0 毫秒，等待 Handsontable 完成數據更新
 };
-
 const handleExportLocalChargePasteSave = (data, coords) => {
   setTimeout(() => {
     const transformedData = transformData(
@@ -1455,10 +1480,38 @@ const handleExportLocalChargePasteSave = (data, coords) => {
       quotationDetailResult.value.pid as number,
       true
     );
-    saveLocalChargeResult(transformedData);
+    saveLocalChargeResult(transformedData).then(_ => {
+      getLocalChargeResult(
+        quotationDetailResult.value.quoteid as number,
+        quotationDetailResult.value.pid,
+        true,
+        ""
+      ).then(() => {
+        localChargeResult.value.forEach(f => {
+          const targetCity = exportLocationResult.value.find(
+            item => item.cityID === f.cityID
+          );
+
+          if (targetCity) {
+            targetCity.generalHotTableSetting.data = [
+              ...f.generalSettings.detail
+            ];
+            hotTableRefs.value[`${f.cityID}general`].loadData(
+              f.generalSettings.detail
+            );
+
+            targetCity.weightBreakHotTableSetting.data = [
+              ...f.weightBreakSettings.detail
+            ];
+            hotTableRefs.value[`${f.cityID}weightbreak`].loadData(
+              f.weightBreakSettings.detail
+            );
+          }
+        });
+      });
+    });
   }, 500);
 };
-
 const handleExportLocalChargeAutofillSave = (start, end, data) => {
   setTimeout(() => {
     const transformedData = transformData(
@@ -1467,10 +1520,38 @@ const handleExportLocalChargeAutofillSave = (start, end, data) => {
       quotationDetailResult.value.pid as number,
       true
     );
-    saveLocalChargeResult(transformedData);
+    saveLocalChargeResult(transformedData).then(_ => {
+      getLocalChargeResult(
+        quotationDetailResult.value.quoteid as number,
+        quotationDetailResult.value.pid,
+        true,
+        ""
+      ).then(() => {
+        localChargeResult.value.forEach(f => {
+          const targetCity = exportLocationResult.value.find(
+            item => item.cityID === f.cityID
+          );
+
+          if (targetCity) {
+            targetCity.generalHotTableSetting.data = [
+              ...f.generalSettings.detail
+            ];
+            hotTableRefs.value[`${f.cityID}general`].loadData(
+              f.generalSettings.detail
+            );
+
+            targetCity.weightBreakHotTableSetting.data = [
+              ...f.weightBreakSettings.detail
+            ];
+            hotTableRefs.value[`${f.cityID}weightbreak`].loadData(
+              f.weightBreakSettings.detail
+            );
+          }
+        });
+      });
+    });
   }, 500);
 };
-
 const handleImportLocalChargePasteSave = (data, coords) => {
   setTimeout(() => {
     const transformedData = transformData(
@@ -1482,7 +1563,6 @@ const handleImportLocalChargePasteSave = (data, coords) => {
     saveLocalChargeResult(transformedData);
   }, 500);
 };
-
 const handleImportLocalChargeAutofillSave = (start, end, data) => {
   setTimeout(() => {
     const transformedData = transformData(
@@ -1494,7 +1574,6 @@ const handleImportLocalChargeAutofillSave = (start, end, data) => {
     saveLocalChargeResult(transformedData);
   }, 500);
 };
-
 const handleFrtBeforeRemoveRow = (index, amount, physicalRows, source) => {
   exportLocationResult.value = exportLocationResult.value
     .filter(item => item.city !== freightChargeResult.value[index].pReceipt)
@@ -1504,7 +1583,6 @@ const handleFrtBeforeRemoveRow = (index, amount, physicalRows, source) => {
     .filter(item => item.city !== freightChargeResult.value[index].pDelivery)
     .filter(item => item.city !== freightChargeResult.value[index].pDischarge);
 };
-
 const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
   saveFreightCharge();
   const exportTransformedData = transformData(
@@ -1522,14 +1600,12 @@ const handleFrtRemoveRow = (index, amount, physicalRows, source) => {
   saveLocalChargeResult(exportTransformedData);
   saveLocalChargeResult(importTransformedData);
 };
-
 const handleRemoveRow = (index, amount, physicalRows, source) => {
   console.log(
     "handleRemoveRow",
     `刪除了 ${amount} 行，從索引 ${index} 開始 ${{ physicalRows }}${{ source }}`
   );
 };
-
 const freightChargeSettings = ref({
   data: [],
   colHeaders: [],
@@ -1585,7 +1661,6 @@ const freightChargeSettings = ref({
     });
   }
 });
-
 const saveData = () => {
   saveLoading.value = "default";
   quotationForm.value.formInstance
@@ -1656,7 +1731,6 @@ const saveData = () => {
     saveLoading.value = "disabled";
   }, 3000);
 };
-
 const validateLocalCharge = (instance, type) => {
   let hasInvalid = false;
 
@@ -1730,7 +1804,6 @@ const validateLocalCharge = (instance, type) => {
 
   return hasInvalid;
 };
-
 const sendApproval = () => {
   saveLoading.value = "default";
   let invalidMsg = "";
@@ -1886,7 +1959,6 @@ const sendApproval = () => {
       });
   }
 };
-
 const previewQuote = () => {
   toPreView({
     category: "quotation",
@@ -1898,14 +1970,12 @@ const previewQuote = () => {
     lid: quotationDetailResult.value.customerHQID as string
   });
 };
-
 const handleFocusOut = (event: FocusEvent) => {
   const hotContainer = document.querySelector(".handsontable-container");
   if (hotContainer && hotContainer.contains(event.relatedTarget as Node)) {
     return;
   }
 };
-
 const deleteData = () => {
   deleteLoading.value = "default";
   if (qid.value > 0) {
@@ -1929,126 +1999,17 @@ const deleteData = () => {
     deleteLoading.value = "disabled";
   }, 3000);
 };
-
 const viewHistory = () => {
   historyVisible.value = true;
   getHistoryResult(Quotation, quotationDetailResult.value.quoteid).then(res => {
     historyLoading.value = false;
   });
 };
-
-const handleCheckboxGroupChange = (values: string[]) => {
-  const selectedItems = ChargeCodeSettingResult.filter(item =>
-    values.includes(item.columnName)
-  );
-
-  freightChargeSettings.value.colHeaders = selectedItems.map(
-    item => item.headerName
-  );
-
-  // 更新表格的 columns
-  const hotTableColumnSettingResult = selectedItems.map(item => {
-    const columnSetting = { ...item.hotTableColumnSetting }; // 確保不修改原始物件
-    let apiRequestType = 0;
-
-    // 動態設置 API requestType
-    switch (columnSetting.data) {
-      case "pReceipt":
-      case "pDelivery":
-        apiRequestType =
-          quotationDetailResult.value.pid === 6 ? SeaCity : AirCity;
-        break;
-      case "pLoading":
-      case "pDischarge":
-        apiRequestType =
-          quotationDetailResult.value.pid === 6 ? SeaPort : AirPort;
-        break;
-    }
-
-    // 如果需要設置 `source` 函數
-    if (apiRequestType > 0) {
-      columnSetting.source = function (_query, process) {
-        const params = {
-          searchKey: _query,
-          requestType: apiRequestType,
-          PageSize: 10,
-          PageIndex: 1,
-          Paginator: true
-        };
-        CommonService.getCityAndPortResult(params).then(a => {
-          const a1 = a.map(item => item.text);
-          process(a1);
-        });
-      };
-    }
-
-    // 添加 validator，驗證是否為正數（不允許負數）
-    if (columnSetting.type === "numeric") {
-      columnSetting.validator = (value, callback) => {
-        const isValid = !isNaN(value) && Number(value) > 0;
-        callback(isValid); // 返回驗證結果
-      };
-      columnSetting.allowInvalid = false; // 禁止無效值
-    }
-
-    return columnSetting;
-  });
-
-  // 更新設定
-  freightChargeSettings.value.columns = hotTableColumnSettingResult;
-  freightChargeSettings.value.columns.forEach(item => {
-    if (item["type"] === "autocomplete") {
-      item["strict"] = true;
-    }
-  });
-  // const hotTableColumnSettingResult = selectedItems.map(
-  //   item => item.hotTableColumnSetting
-  // );
-  // hotTableColumnSettingResult.forEach(i => {
-  //   let apiRequestType = 0;
-  //   switch (i.data) {
-  //     case "pReceipt":
-  //     case "pDelivery":
-  //       apiRequestType =
-  //         quotationDetailResult.value.pid === 6 ? SeaCity : AirCity;
-  //       break;
-  //     case "pLoading":
-  //     case "pDischarge":
-  //       apiRequestType =
-  //         quotationDetailResult.value.pid === 6 ? SeaPort : AirPort;
-  //       break;
-  //   }
-  //   if (apiRequestType > 0) {
-  //     i.source = function (_query, process) {
-  //       const params = {
-  //         searchKey: _query,
-  //         requestType: apiRequestType,
-  //         PageSize: 10,
-  //         PageIndex: 1,
-  //         Paginator: true
-  //       };
-  //       CommonService.getCityAndPortResult(params).then(a => {
-  //         const a1 = a.map(item => item.text);
-  //         process(a1);
-  //       });
-  //     };
-  //   }
-  // });
-  // freightChargeSettings.value.columns = selectedItems.map(
-  //   item => item.hotTableColumnSetting
-  // );
-
-  freightChargeSettings.value.colWidths = selectedItems.map(
-    item => item.columnWidth
-  );
-};
-
 const handleProductLineChange = () => {
   freightChargeSettings.value.colHeaders = ChargeCodeSettingResult.map(
     item => item.headerName
   );
 };
-
 const handleOpen = (ChargeType: string) => {
   if (ChargeType === "FREIGHT") {
     freightVisible.value = true;
@@ -2056,13 +2017,11 @@ const handleOpen = (ChargeType: string) => {
     localVisible.value = true;
   }
 };
-
 const createFilter = (queryString: string) => {
   return (customer: { text: string; value: number }) => {
     return customer.text.toLowerCase().includes(queryString.toLowerCase());
   };
 };
-
 const AddLCPItems = (source, isExport) => {
   getLocalChargePackageDetailResult(
     quotationDetailResult.value.pid,
@@ -2093,28 +2052,25 @@ const AddLCPItems = (source, isExport) => {
         quotationDetailResult.value.pid as number,
         isExport
       );
-      saveLocalChargeResult(transformedData);
+      saveLocalChargeResult(transformedData).then(_ => {
+        console.log(1);
+      });
     }
   });
 };
-
 const setPreviousValue = CurrnetValue => {
   previousValue.value = CurrnetValue;
 };
-
 const handleCBMChange = value => {
   autoSaveTrigger(value, "cbmToWT");
 };
-
 const handleCBMUOMChange = value => {
   autoSaveTrigger(value, "cbmToWTUOMID");
 };
-
 const handleTermAndCondition = value => {
   const jsonString = JSON.stringify(quotationDetailResult.value.terms);
   autoSaveTrigger(jsonString, "Contents", "SAQuoteTerms");
 };
-
 const autoSaveTrigger = (newValue, columnName, tableName2?) => {
   if (
     customerProductLineAccessRight.value.isWrite === true &&
@@ -2141,13 +2097,11 @@ const autoSaveTrigger = (newValue, columnName, tableName2?) => {
     AutoSave(AutoSaveItem.value);
   }
 };
-
 const showQuotationStatusHistory = () => {
   getQuoteHistoryResult(quotationDetailResult.value.quoteid).then(res => {
     quoteStatusHistory.value = res.returnValue;
   });
 };
-
 const amsCostAdjust = item => {
   if (item.columnName.startsWith("sellingRate")) {
     const currentIndex = parseInt(
@@ -2211,14 +2165,13 @@ const amsCostAdjust = item => {
     }
   }
 };
-
 const handleHandsonTableAutoSave = category => {
   return false;
 };
-
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
+    console.log(ChargeCodeSettingResult);
     ChargeCodeSettingResult.forEach(item => {
       if (item.selected) {
         let apiRequestType = 0;
@@ -2304,7 +2257,6 @@ watchEffect(() => {
   }
 });
 const userAuth = ref({});
-
 onMounted(() => {
   if (!props.PropsParam) {
     initToDetail("params");
@@ -2465,13 +2417,11 @@ onMounted(() => {
   );
   console.log("onMounted props.PropsParam", props.PropsParam);
 });
-
 onBeforeUnmount(() => {
   const editor = editorRef.value;
   if (editor == null) return;
   editor.destroy();
 });
-
 const formatToLocalTime = utcDateString => {
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return dayjs
@@ -2479,7 +2429,6 @@ const formatToLocalTime = utcDateString => {
     .tz(userTimeZone)
     .format("YYYY-MM-DD HH:mm:ss");
 };
-
 const formatDate = dateInput => {
   const months = [
     "Jan",
@@ -2514,7 +2463,6 @@ const formatDate = dateInput => {
   // 處理單一日期
   return formatSingleDate(dateInput);
 };
-
 const handleNumberInput = value => {
   // 過濾掉非數字和小數點的輸入，只允許數字和小數點
   const numericValue = value.replace(/[^\d.]/g, "");
@@ -2541,9 +2489,12 @@ const handleNumberInput = value => {
           <span class="text-gray-700"> Quote Status: </span>
           <el-popover placement="right" :width="450" trigger="click">
             <template #reference>
-              <el-link @click="showQuotationStatusHistory">{{
-                quotationDetailResult.status
-              }}</el-link>
+              <el-link
+                type="primary"
+                target="_blank"
+                @click="showQuotationStatusHistory"
+                >{{ quotationDetailResult.status }}</el-link
+              >
             </template>
             <el-table :data="quoteStatusHistory">
               <el-table-column label="Status" width="170">
@@ -2553,7 +2504,7 @@ const handleNumberInput = value => {
               </el-table-column>
               <el-table-column
                 width="120"
-                property="createdByName"
+                property="createdBy"
                 label="Updated By"
               />
               <el-table-column label="Updated Date" width="300">
@@ -2788,6 +2739,7 @@ const handleNumberInput = value => {
                   <el-select
                     v-model="item.localChargePackageSelector"
                     filterable
+                    default-first-option
                     clearable
                     placeholder="Select"
                     style="width: 280px; padding-bottom: 5px"
@@ -2830,6 +2782,7 @@ const handleNumberInput = value => {
                   <el-select
                     v-model="item.localChargePackageSelector"
                     filterable
+                    default-first-option
                     clearable
                     placeholder="Select"
                     style="width: 280px; padding-bottom: 5px"
@@ -2985,28 +2938,26 @@ const handleNumberInput = value => {
       </el-scrollbar>
     </el-card>
     <el-drawer v-model="freightVisible" size="45%" title="Add new columns">
-      <el-checkbox-group
+      <div
         v-if="quotationDetailResult.pid === 6"
-        v-model="chargeCodeSettingValues"
-        @change="handleCheckboxGroupChange"
+        class="grid grid-cols-2 gap-4"
       >
-        <div class="grid grid-cols-2 gap-4">
-          <el-checkbox
-            v-for="item in ChargeCodeSettingResult"
-            :key="item.columnName"
-            :label="item.headerName"
-            :value="item.columnName"
-            class="flex items-center"
-            :disabled="item.isReadOnly"
-          >
-            <template #default>
-              <div>
-                {{ item.headerName }}
-              </div>
-            </template>
-          </el-checkbox>
-        </div>
-      </el-checkbox-group>
+        <el-checkbox
+          v-for="item in ChargeCodeSettingResult"
+          :key="item.columnName"
+          v-model="item.selected"
+          :label="item.headerName"
+          :value="item.columnName"
+          class="flex items-center"
+          :disabled="item.isReadOnly"
+        >
+          <template #default>
+            <div>
+              {{ item.headerName }}
+            </div>
+          </template>
+        </el-checkbox>
+      </div>
       <div v-else class="grid grid-cols-2 gap-4">
         <el-checkbox
           v-for="item in ChargeCodeSettingResult"
