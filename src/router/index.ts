@@ -162,7 +162,7 @@ router.beforeEach(async (to: ToRouteType, _from, next) => {
     }
     // 开启隐藏首页后在浏览器地址栏手动输入首页welcome路由则跳转到404页面
     if (VITE_HIDE_HOME === "true" && to.fullPath === "/welcome") {
-      next({ path: "/error/404" });
+      next({ path: "/error/403" });
     }
     if (_from?.name) {
       // name为超链接
