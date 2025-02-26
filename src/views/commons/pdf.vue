@@ -85,6 +85,7 @@ onMounted(() => {
 <template>
   <el-card shadow="never">
     <div
+      v-loading="loading"
       class="h-[calc(100vh-295px)]"
       :element-loading-text="t('status.pureLoad')"
     >
