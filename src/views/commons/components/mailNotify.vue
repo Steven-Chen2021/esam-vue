@@ -250,6 +250,7 @@ const sendNotifyMail = async () => {
     param["cc"] = "";
   }
   param["attachFiles"] = props.AttachFiles;
+  param["quoteID"] = props.QuoteID;
   console.log("sendNotifyMail param", param);
   quoteDetailService
     .sendQuoteNotifyMailResult(param)
@@ -298,12 +299,13 @@ defineExpose({ loadNotifyData });
       <el-form
         ref="notifyFormRef"
         v-loading="sendLoading"
-        style="max-width: 600px"
+        style="max-width: 650px"
         :model="notifyFormData"
         :rules="notifyRules"
         label-width="auto"
         class="demo-ruleForm"
         status-icon
+        label-position="left"
       >
         <el-form-item :label="t('task.mailNotify.to')" prop="to">
           <el-select
