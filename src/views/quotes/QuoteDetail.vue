@@ -66,8 +66,6 @@ import { pid } from "process";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const { toApprovalDetail, getApprovalParameter } = useApprovalDetail();
-
 const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
 const { t } = useI18n();
@@ -188,6 +186,8 @@ const quoteStatusHistory = ref([]);
 // 用於存放所有 HotTable 的 refs
 const hotTableRefs = ref({});
 const previousValue = ref<any>();
+const allowNext = ref<boolean>(false);
+const ShowNextContent = ref<boolean>(false);
 const previousGreetingsValue = ref<any>();
 const dcUrl = ref();
 const salesInfomation = ref<any>({});
@@ -263,13 +263,11 @@ const localChargeNumberColumns = [
   "amount",
   "cost"
 ];
-// 方法來動態設置 HotTable 的 ref
 const setHotTableRef = (city, Category) => el => {
   if (el) {
     hotTableRefs.value[`${city}${Category}`] = el.hotInstance;
   }
 };
-// 示例：在需要的時候更新某個 HotTable 的數據
 const updateHotTableData = (city, data, isExport) => {
   if (!data || data.length === 0) return;
   const emptyItem = Object.fromEntries(
@@ -453,18 +451,20 @@ let quoteDetailColumns: PlusColumn[] = [
         getQuoteReferenceCodeResult(item.value);
         // 這邊要重新抓 SalesInfo 跟Term&Conditional
 
-        getTermConditionalResult(
-          item.value,
-          quotationDetailResult.value.pid
-        ).then(res => {
-          quotationDetailResult.value.terms = res.returnValue;
-        });
+        if ((quotationDetailResult.value.pid as number) > 0) {
+          getTermConditionalResult(
+            item.value,
+            quotationDetailResult.value.pid
+          ).then(res => {
+            quotationDetailResult.value.terms = res.returnValue;
+          });
 
-        getSalesInfomation(item.value, quotationDetailResult.value.pid).then(
-          res => {
-            salesInfomation.value = res.returnValue;
-          }
-        );
+          getSalesInfomation(item.value, quotationDetailResult.value.pid).then(
+            res => {
+              salesInfomation.value = res.returnValue;
+            }
+          );
+        }
         //如果是Copy的話 而且Value有變動
         if (previousValue.value != null && previousValue.value != item.value) {
           //清空AttentionTo
@@ -499,6 +499,7 @@ let quoteDetailColumns: PlusColumn[] = [
             quotationDetailResult.value.customerHQID = _customerHQID;
             quotationDetailResult.value.customerName = _customerName;
             quotationDetailResult.value.productLineCode = _productLineCode;
+            checkAllowNext();
           });
         }
         hideQuotationType.value = !(value > 0);
@@ -661,6 +662,7 @@ let quoteDetailColumns: PlusColumn[] = [
         } else {
           console.error("Invalid value format:", value);
         }
+        checkAllowNext();
       }
     }
   },
@@ -683,6 +685,7 @@ let quoteDetailColumns: PlusColumn[] = [
         ) as any;
         quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
         autoSaveTrigger(value, "tradeTerm");
+        checkAllowNext();
       }
     }
   },
@@ -703,6 +706,7 @@ let quoteDetailColumns: PlusColumn[] = [
         if (previousValue.value != undefined && value != undefined) {
           autoSaveTrigger(value, "shppingTerm");
         }
+        checkAllowNext();
       }
     }
   },
@@ -721,6 +725,7 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: value => {
         autoSaveTrigger(value, "creditTerm");
+        checkAllowNext();
       }
     }
   },
@@ -739,6 +744,7 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: value => {
         autoSaveTrigger(value, "attentionTo");
+        checkAllowNext();
       }
     }
   },
@@ -775,6 +781,7 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: value => {
         autoSaveTrigger(value, "dimensionFactor");
+        checkAllowNext();
       }
     }
   },
@@ -820,6 +827,7 @@ let quoteDetailColumns: PlusColumn[] = [
         const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
         hideOTPCode.value = showHideCodes.includes(value) ? false : true;
         autoSaveTrigger(value, "sType");
+        checkAllowNext();
       }
     }
   },
@@ -2171,7 +2179,6 @@ const handleHandsonTableAutoSave = category => {
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
-    console.log(ChargeCodeSettingResult);
     ChargeCodeSettingResult.forEach(item => {
       if (item.selected) {
         let apiRequestType = 0;
@@ -2226,28 +2233,22 @@ watchEffect(() => {
         item["strict"] = true;
       }
     });
-    console.log("freightChargeSettings.value", freightChargeSettings.value);
     freightChargeSettings.value.colWidths = sourceData.map(
       item => item.columnWidth
     );
+    if (allowNext.value) {
+      setTimeout(() => {
+        hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+      }, 500);
+    }
   }
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
   const _qid = quotationDetailResult.value.quoteid ?? pageParams.value.id;
-  if (
-    quotationDetailResult.value.customerHQID != null &&
-    pageParams.value.pagemode === "copy" &&
-    customerResult.value.customers.length > 0
-  ) {
-    const isLegalCustomer = customerResult.value.customers.some(
-      c => c.value === _qid
-    );
-    if (!isLegalCustomer) {
-      // quotationDetailResult.value.customerName = null;
-    }
+  if ((_qid as number) > 0) {
+    ShowNextContent.value = true;
   }
-
   if (
     pageParams.value.id != "0" &&
     quotationDetailResult.value.status != "Draft" &&
@@ -2302,7 +2303,6 @@ onMounted(() => {
         quotationDetailResult.value.period[1] = formatToLocalTime(
           quotationDetailResult.value.period[1]
         );
-
         const selectedItem = {
           text: quotationDetailResult.value.customerName,
           value: quotationDetailResult.value.customerHQID
@@ -2312,7 +2312,6 @@ onMounted(() => {
         } else {
           console.warn("onSelect is not defined for Company Name.");
         }
-
         const productLineCodeColumn = quoteDetailColumns.find(
           col => col.prop === "productLineCode"
         ) as any;
@@ -2329,7 +2328,6 @@ onMounted(() => {
             quotationDetailResult.value.shippingTerm
           );
         }
-
         const typeCode = [
           "QAT3",
           "QST3",
@@ -2344,6 +2342,8 @@ onMounted(() => {
         )
           ? false
           : true;
+        allowNext.value = true;
+        // hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
       });
       UserAccessRightByCustomerProductLine(
         quotationDetailResult.value.customerHQID,
@@ -2409,13 +2409,6 @@ onMounted(() => {
   getShippingTermResult();
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
-  hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
-
-  console.log(
-    "onMounted quotationDetailResult.value",
-    quotationDetailResult.value
-  );
-  console.log("onMounted props.PropsParam", props.PropsParam);
 });
 onBeforeUnmount(() => {
   const editor = editorRef.value;
@@ -2473,6 +2466,51 @@ const handleNumberInput = value => {
       : numericValue;
   quotationDetailResult.value.cbmToWT = validValue;
 };
+
+const checkAllowNext = () => {
+  console.clear();
+  const hasProductLine =
+    quotationDetailResult.value.productLineCode != null ||
+    (quotationDetailResult.value.plid as number) > 0;
+
+  const hasPeriod = quotationDetailResult.value.period?.length === 2;
+  const hasTradeTerm =
+    quotationDetailResult.value.tradeTermCode != null ||
+    (quotationDetailResult.value.tradeTermId as number) > 0;
+  const hasShippingTerm = quotationDetailResult.value.shippingTerm != null;
+  const hasCreditTerm =
+    quotationDetailResult.value.creditTermCode != null ||
+    (quotationDetailResult.value.creditTermId as number) > 0;
+  const hasAttentionTo =
+    quotationDetailResult.value.attentionTo != null ||
+    (quotationDetailResult.value.attentionToId as number) > 0;
+  const hasDimensionFactor =
+    quotationDetailResult.value.pid === 6
+      ? true
+      : quotationDetailResult.value.dimensionFactor != null;
+  const hasQuoteType =
+    quotationDetailResult.value.typeCode != null ||
+    quotationDetailResult.value.type != null;
+  const hasCBMRate =
+    quotationDetailResult.value.pid === 2
+      ? true
+      : (quotationDetailResult.value.cbmToWT as number) > 0 ||
+        (quotationDetailResult.value.cbmToWTUOMID as number) > 0 ||
+        quotationDetailResult.value.cbmToWTUOM != null;
+  if (
+    hasProductLine &&
+    hasPeriod &&
+    hasTradeTerm &&
+    hasShippingTerm &&
+    hasCreditTerm &&
+    hasAttentionTo &&
+    hasDimensionFactor &&
+    hasQuoteType &&
+    hasCBMRate
+  ) {
+    allowNext.value = true;
+  }
+};
 </script>
 
 <template>
@@ -2522,23 +2560,6 @@ const handleNumberInput = value => {
 
         <!-- 右側按鈕群組 -->
         <div class="flex space-x-1">
-          <el-button
-            v-if="
-              customerProductLineAccessRight.isWrite &&
-              (quotationDetailResult.status === 'Draft' ||
-                quotationDetailResult.status === 'Rejected') &&
-              qid === 0
-            "
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="saveLoading !== 'disabled'"
-            :icon="useRenderIcon('fa-solid:sync-alt')"
-            @click="saveData"
-          >
-            {{ saveLoading === "disabled" ? "Save" : "Processing" }}
-          </el-button>
           <el-button
             v-if="
               customerProductLineAccessRight.isWrite &&
@@ -2620,7 +2641,6 @@ const handleNumberInput = value => {
                 :hasFooter="false"
                 style="margin-bottom: 10px"
               />
-
               <div
                 v-if="showCBMTransfer"
                 class="el-form-item asterisk-left el-form-item--label-left plus-form-item"
@@ -2668,8 +2688,24 @@ const handleNumberInput = value => {
                   }}
                 </div>
               </div>
+              <el-button
+                v-if="
+                  customerProductLineAccessRight.isWrite &&
+                  allowNext &&
+                  !ShowNextContent
+                "
+                type="primary"
+                plain
+                :size="dynamicSize"
+                :loading-icon="useRenderIcon('ep:eleme')"
+                :loading="saveLoading !== 'disabled'"
+                :icon="useRenderIcon('fa-solid:arrow-circle-down')"
+                @click="saveData"
+              >
+                {{ saveLoading === "disabled" ? "Next" : "Processing" }}
+              </el-button>
             </el-collapse-item>
-            <el-collapse-item title="GREETINGS" name="2">
+            <el-collapse-item v-if="ShowNextContent" title="GREETINGS" name="2">
               <template #title>
                 <span class="text-orange-500">GREETINGS</span>
               </template>
@@ -2693,7 +2729,11 @@ const handleNumberInput = value => {
               </div>
               <div v-else v-html="quotationDetailResult.greeting" />
             </el-collapse-item>
-            <el-collapse-item title="FREIGHT CHARGE" name="3">
+            <el-collapse-item
+              v-if="ShowNextContent"
+              title="FREIGHT CHARGE"
+              name="3"
+            >
               <template #title>
                 <span class="text-orange-500">FREIGHT CHARGE</span>
               </template>
@@ -2725,7 +2765,11 @@ const handleNumberInput = value => {
                 </div>
               </div>
             </el-collapse-item>
-            <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
+            <el-collapse-item
+              v-if="ShowNextContent"
+              title="LOCAL CHARGE(Export)"
+              name="4"
+            >
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Export)</span>
               </template>
@@ -2768,7 +2812,11 @@ const handleNumberInput = value => {
                 </el-tab-pane>
               </el-tabs>
             </el-collapse-item>
-            <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
+            <el-collapse-item
+              v-if="ShowNextContent"
+              title="LOCAL CHARGE(Import)"
+              name="5"
+            >
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Import)</span>
               </template>
@@ -2812,6 +2860,7 @@ const handleNumberInput = value => {
               </el-tabs>
             </el-collapse-item>
             <el-collapse-item
+              v-if="ShowNextContent"
               title="TERMS & CONDITIONS"
               name="6"
               class="collapse-item"
@@ -2837,7 +2886,7 @@ const handleNumberInput = value => {
                 </li>
               </ol>
             </el-collapse-item>
-            <el-collapse-item title="REMARK " name="7">
+            <el-collapse-item v-if="ShowNextContent" title="REMARK " name="7">
               <template #title>
                 <span class="text-orange-500">REMARK</span>
               </template>
@@ -2859,7 +2908,11 @@ const handleNumberInput = value => {
                 "
               />
             </el-collapse-item>
-            <el-collapse-item title="SALES INFO" name="8">
+            <el-collapse-item
+              v-if="(quotationDetailResult.qid as number) > 0"
+              title="SALES INFO"
+              name="8"
+            >
               <template #title>
                 <span class="text-orange-500">SALES INFO</span>
               </template>
@@ -2912,7 +2965,11 @@ const handleNumberInput = value => {
                 </div>
               </div>
             </el-collapse-item>
-            <el-collapse-item title="DOCUMENT CLOUD" name="9">
+            <el-collapse-item
+              v-if="ShowNextContent"
+              title="DOCUMENT CLOUD"
+              name="9"
+            >
               <template #title>
                 <span class="text-orange-500">DOCUMENT CLOUD</span>
               </template>
