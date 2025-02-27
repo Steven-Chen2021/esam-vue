@@ -489,7 +489,7 @@ let quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.productLineCode;
       },
       onChange: (value: number) => {
-        showHeaderColumn();
+        console.log(value);
         if (qid.value < 1) {
           const _customerHQID = quotationDetailResult.value.customerHQID;
           const _customerName = quotationDetailResult.value.customerName;
@@ -503,6 +503,7 @@ let quoteDetailColumns: PlusColumn[] = [
             quotationDetailResult.value.customerName = _customerName;
             quotationDetailResult.value.productLineCode = _productLineCode;
             checkAllowNext();
+            // showHeaderColumn();
           });
         }
         hideQuotationType.value = !(value > 0);
@@ -511,7 +512,7 @@ let quoteDetailColumns: PlusColumn[] = [
         showCBMTransfer.value = false;
         getChargeCodeSettingResult(qid.value, _pid);
         if (_pid === 6) {
-          handleProductLineChange();
+          // handleProductLineChange();
           PLCode.value = quotationDetailResult.value.productLineCode = "OMS";
           showCBMTransfer.value = true;
           hideQuoteDimensionFactor.value = true;
@@ -857,6 +858,7 @@ const showHeaderColumn = () => {
   ];
   const CommonItems = quoteDetailColumns.filter(f => _props.includes(f.prop));
   if (quotationDetailResult.value.productLineCode != null) {
+    console.log(CommonItems);
     CommonItems.forEach(f => {
       f.hideInForm = false;
     });
@@ -870,7 +872,6 @@ const showHeaderColumn = () => {
       f.hideInForm = true;
     });
   }
-  quoteDetailColumns.forEach(f => {});
 };
 const handleFreightChargeGetData = (quoteID, ProductLineID) => {
   getQuoteFreightChargeResult(quoteID, ProductLineID).then(() => {
