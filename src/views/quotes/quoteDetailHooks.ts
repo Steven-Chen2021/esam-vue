@@ -50,7 +50,7 @@ export function QuoteDetailHooks() {
   const quotationDetailResult = ref<FieldValues>({
     quoteid: null,
     quoteNo: null,
-    plid: null,
+    pid: null,
     productLineCode: null,
     attentionToId: null,
     attentionTo: null,
@@ -169,7 +169,6 @@ export function QuoteDetailHooks() {
         PID
       );
       if (response != null) {
-        // console.log(response);
         ChargeCodeSettingResult.splice(0);
         ChargeCodeSettingResult.push(...response.returnValue);
 
@@ -378,11 +377,9 @@ export function QuoteDetailHooks() {
 
   async function getQuoteReferenceCodeResult(customerHQID) {
     try {
-      console.log(customerHQID);
       const response =
         await quoteDetailService.getQuoteReferenceCodeResult(customerHQID);
       if (response != null) {
-        console.log(response);
         quoteReferenceCodeResult.value = response.returnValue.map(
           (item: any) => ({
             label: item.text,
@@ -405,7 +402,6 @@ export function QuoteDetailHooks() {
             value: Number(item.value)
           })
         );
-        console.log(quoteDimensionFactorResult.value);
       }
     } catch (error) {
       console.log("getQuoteDimensionFactorResult", error);

@@ -63,6 +63,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { transpileModule } from "typescript";
 import { pid } from "process";
+import { reactify } from "@vueuse/core";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -183,10 +184,10 @@ const handleCreated = editor => {
   editorRef.value = editor;
 };
 const quoteStatusHistory = ref([]);
-// 用於存放所有 HotTable 的 refs
 const hotTableRefs = ref({});
 const previousValue = ref<any>();
 const allowNext = ref<boolean>(false);
+const selectdProductLine = ref(false);
 const ShowNextContent = ref<boolean>(false);
 const previousGreetingsValue = ref<any>();
 const dcUrl = ref();
@@ -419,6 +420,7 @@ const dataPermissionExtension = () => {
     });
   }
 };
+
 let quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
@@ -487,6 +489,7 @@ let quoteDetailColumns: PlusColumn[] = [
         previousValue.value = quotationDetailResult.value.productLineCode;
       },
       onChange: (value: number) => {
+        showHeaderColumn();
         if (qid.value < 1) {
           const _customerHQID = quotationDetailResult.value.customerHQID;
           const _customerName = quotationDetailResult.value.customerName;
@@ -841,6 +844,34 @@ let quoteDetailColumns: PlusColumn[] = [
     }
   }
 ];
+
+const showHeaderColumn = () => {
+  const _props = [
+    "period",
+    "tradeTermId",
+    "shippingTerm",
+    "creditTermId",
+    "attentionTo",
+    "reference",
+    "typeCode"
+  ];
+  const CommonItems = quoteDetailColumns.filter(f => _props.includes(f.prop));
+  if (quotationDetailResult.value.productLineCode != null) {
+    CommonItems.forEach(f => {
+      f.hideInForm = false;
+    });
+    if (quotationDetailResult.value.pid === 6) {
+      selectdProductLine.value = true;
+    } else {
+      selectdProductLine.value = false;
+    }
+  } else {
+    CommonItems.forEach(f => {
+      f.hideInForm = true;
+    });
+  }
+  quoteDetailColumns.forEach(f => {});
+};
 const handleFreightChargeGetData = (quoteID, ProductLineID) => {
   getQuoteFreightChargeResult(quoteID, ProductLineID).then(() => {
     freightChargeSettings.value.data = freightChargeResult.value;
@@ -873,11 +904,31 @@ const handleLocalChargeResult = (
                 width: "100%",
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                columns: localCharge?.generalSettings?.columns?.map(column => ({
-                  data: column.data,
-                  type: column.type,
-                  source: column.source || []
-                })),
+                columns: localCharge?.generalSettings?.columns?.map(column => {
+                  const columnConfig = {
+                    data: column.data,
+                    type: column.type,
+                    source: column.source || []
+                  } as iHotTableColumnSetting;
+                  if (column.column === "charge") {
+                    columnConfig.validator = (value, callback) => {
+                      const isValid =
+                        value !== null && value !== undefined && value !== "";
+                      callback(isValid);
+                    };
+                    columnConfig.allowInvalid = false;
+                  }
+
+                  if (column.type === "numeric") {
+                    columnConfig.validator = (value, callback) => {
+                      // 驗證是否為正整數
+                      const isValid = !isNaN(value) && Number(value) >= 0;
+                      callback(isValid);
+                    };
+                    columnConfig.allowInvalid = false;
+                  }
+                  return columnConfig;
+                }),
                 autoWrapRow: true,
                 autoWrapCol: true,
                 allowInsertColumn: true,
@@ -890,7 +941,16 @@ const handleLocalChargeResult = (
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite,
                 afterPaste: handleExportLocalChargePasteSave,
-                afterAutofill: handleExportLocalChargeAutofillSave
+                afterAutofill: handleExportLocalChargeAutofillSave,
+                afterValidate: (isValid, value, row, prop) => {
+                  if (!isValid) {
+                    ElNotification({
+                      title: "Error",
+                      message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                      type: "error"
+                    });
+                  }
+                }
               },
               weightBreakHotTableSetting: {
                 data: localCharge?.weightBreakSettings?.detail || [],
@@ -901,11 +961,30 @@ const handleLocalChargeResult = (
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
                 columns: localCharge?.weightBreakSettings?.columns?.map(
-                  column => ({
-                    data: column.data,
-                    type: column.type,
-                    source: column.source || []
-                  })
+                  column => {
+                    const columnConfig = {
+                      data: column.data,
+                      type: column.type,
+                      source: column.source || []
+                    } as iHotTableColumnSetting;
+                    if (column.column === "charge") {
+                      columnConfig.validator = (value, callback) => {
+                        const isValid =
+                          value !== null && value !== undefined && value !== "";
+                        callback(isValid);
+                      };
+                      columnConfig.allowInvalid = false;
+                    }
+
+                    if (column.type === "numeric") {
+                      columnConfig.validator = (value, callback) => {
+                        const isValid = !isNaN(value) && Number(value) >= 0;
+                        callback(isValid);
+                      };
+                      columnConfig.allowInvalid = false; // 禁止無效值
+                    }
+                    return columnConfig;
+                  }
                 ),
                 autoWrapRow: true,
                 autoWrapCol: true,
@@ -919,7 +998,16 @@ const handleLocalChargeResult = (
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite,
                 afterPaste: handleExportLocalChargePasteSave,
-                afterAutofill: handleExportLocalChargeAutofillSave
+                afterAutofill: handleExportLocalChargeAutofillSave,
+                afterValidate: (isValid, value, row, prop) => {
+                  if (!isValid) {
+                    ElNotification({
+                      title: "Error",
+                      message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                      type: "error"
+                    });
+                  }
+                }
               },
               localChargePackageList: res,
               localChargePackageSelector: []
@@ -936,11 +1024,30 @@ const handleLocalChargeResult = (
                 width: "100%",
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                columns: localCharge?.generalSettings?.columns?.map(column => ({
-                  data: column.data,
-                  type: column.type,
-                  source: column.source || []
-                })),
+                columns: localCharge?.generalSettings?.columns?.map(column => {
+                  const columnConfig = {
+                    data: column.data,
+                    type: column.type,
+                    source: column.source || []
+                  } as iHotTableColumnSetting;
+                  if (column.column === "charge") {
+                    columnConfig.validator = (value, callback) => {
+                      const isValid =
+                        value !== null && value !== undefined && value !== "";
+                      callback(isValid);
+                    };
+                    columnConfig.allowInvalid = false;
+                  }
+
+                  if (column.type === "numeric") {
+                    columnConfig.validator = (value, callback) => {
+                      const isValid = !isNaN(value) && Number(value) >= 0;
+                      callback(isValid);
+                    };
+                    columnConfig.allowInvalid = false; // 禁止無效值
+                  }
+                  return columnConfig;
+                }),
                 autoWrapRow: true,
                 autoWrapCol: true,
                 allowInsertColumn: true,
@@ -953,7 +1060,16 @@ const handleLocalChargeResult = (
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite,
                 afterPaste: handleImportLocalChargePasteSave,
-                afterAutofill: handleImportLocalChargeAutofillSave
+                afterAutofill: handleImportLocalChargeAutofillSave,
+                afterValidate: (isValid, value, row, prop) => {
+                  if (!isValid) {
+                    ElNotification({
+                      title: "Error",
+                      message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                      type: "error"
+                    });
+                  }
+                }
               },
               weightBreakHotTableSetting: {
                 data: localCharge?.weightBreakSettings?.detail || [],
@@ -964,11 +1080,30 @@ const handleLocalChargeResult = (
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
                 columns: localCharge?.weightBreakSettings?.columns?.map(
-                  column => ({
-                    data: column.data,
-                    type: column.type,
-                    source: column.source || []
-                  })
+                  column => {
+                    const columnConfig = {
+                      data: column.data,
+                      type: column.type,
+                      source: column.source || []
+                    } as iHotTableColumnSetting;
+                    if (column.column === "charge") {
+                      columnConfig.validator = (value, callback) => {
+                        const isValid =
+                          value !== null && value !== undefined && value !== "";
+                        callback(isValid);
+                      };
+                      columnConfig.allowInvalid = false;
+                    }
+
+                    if (column.type === "numeric") {
+                      columnConfig.validator = (value, callback) => {
+                        const isValid = !isNaN(value) && Number(value) >= 0;
+                        callback(isValid);
+                      };
+                      columnConfig.allowInvalid = false; // 禁止無效值
+                    }
+                    return columnConfig;
+                  }
                 ),
                 autoWrapRow: true,
                 autoWrapCol: true,
@@ -982,7 +1117,16 @@ const handleLocalChargeResult = (
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite,
                 afterPaste: handleImportLocalChargePasteSave,
-                afterAutofill: handleImportLocalChargeAutofillSave
+                afterAutofill: handleImportLocalChargeAutofillSave,
+                afterValidate: (isValid, value, row, prop) => {
+                  if (!isValid) {
+                    ElNotification({
+                      title: "Error",
+                      message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                      type: "error"
+                    });
+                  }
+                }
               },
               localChargePackageList: res,
               localChargePackageSelector: []
@@ -1071,111 +1215,145 @@ const handleAfterChange = (changes, source) => {
                   true,
                   localCharge.cityID
                 ).then(res => {
-                  exportLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    generalHotTableSetting: {
-                      data: localCharge?.generalSettings?.detail || [],
-                      colHeaders: localCharge?.generalSettings?.colHeader || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.generalSettings?.columns?.map(
-                        column => {
-                          const columnConfig = {
-                            data: column.data,
-                            type: column.type,
-                            source: column.source || []
-                          } as iHotTableColumnSetting;
+                  if (localCharge.cityID > 0) {
+                    exportLocationResult.value.push({
+                      cityID: localCharge.cityID,
+                      city: localCharge.city,
+                      detail: [],
+                      generalHotTableSetting: {
+                        data: localCharge?.generalSettings?.detail || [],
+                        colHeaders:
+                          localCharge?.generalSettings?.colHeader || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                        columns: localCharge?.generalSettings?.columns?.map(
+                          column => {
+                            const columnConfig = {
+                              data: column.data,
+                              type: column.type,
+                              source: column.source || []
+                            } as iHotTableColumnSetting;
+                            if (column.column === "charge") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  value !== null &&
+                                  value !== undefined &&
+                                  value !== "";
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false;
+                            }
 
-                          if (column.type === "numeric") {
-                            columnConfig.validator = (value, callback) => {
-                              // 驗證是否為正整數
-                              const isValid =
-                                Number.isInteger(Number(value)) &&
-                                Number(value) > 0;
-                              callback(isValid);
-                            };
-                            columnConfig.allowInvalid = false; // 禁止無效值
+                            if (column.type === "numeric") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  !isNaN(value) && Number(value) >= 0;
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false; // 禁止無效值
+                            }
+
+                            return columnConfig;
                           }
+                        ),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true,
+                        afterChange: handleExportLocalChargeChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow,
+                        readOnly: !customerProductLineAccessRight.value.isWrite,
+                        afterValidate: (isValid, value, row, prop) => {
+                          if (
+                            localChargeNumberColumns.includes(prop) &&
+                            !isValid
+                          ) {
+                            ElNotification({
+                              title: "Error",
+                              message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                              type: "error"
+                            });
+                          }
+                        },
+                        afterPaste: handleExportLocalChargePasteSave,
+                        afterAutofill: handleExportLocalChargeAutofillSave
+                      },
+                      weightBreakHotTableSetting: {
+                        data: localCharge?.weightBreakSettings?.detail || [],
+                        colHeaders:
+                          localCharge?.weightBreakSettings?.colHeader || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                        columns: localCharge?.weightBreakSettings?.columns?.map(
+                          column => {
+                            const columnConfig = {
+                              data: column.data,
+                              type: column.type,
+                              source: column.source || []
+                            } as iHotTableColumnSetting;
+                            if (column.column === "charge") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  value !== null &&
+                                  value !== undefined &&
+                                  value !== "";
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false;
+                            }
 
-                          return columnConfig;
-                        }
-                      ),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleExportLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite,
-                      afterValidate: (isValid, value, row, prop) => {
-                        if (
-                          localChargeNumberColumns.includes(prop) &&
-                          !isValid
-                        ) {
-                          ElNotification({
-                            title: "Error",
-                            message: `Negative quotes are not allowed. Value: ${value}`,
-                            type: "error"
-                          });
-                        }
+                            if (column.type === "numeric") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  !isNaN(value) && Number(value) >= 0;
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false; // 禁止無效值
+                            }
+
+                            return columnConfig;
+                          }
+                        ),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true,
+                        afterChange: handleExportLocalChargeChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow,
+                        readOnly: !customerProductLineAccessRight.value.isWrite,
+                        afterValidate: (isValid, value, row, prop) => {
+                          if (
+                            localChargeNumberColumns.includes(prop) &&
+                            !isValid
+                          ) {
+                            ElNotification({
+                              title: "Error",
+                              message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                              type: "error"
+                            });
+                          }
+                        },
+                        afterPaste: handleExportLocalChargePasteSave,
+                        afterAutofill: handleExportLocalChargeAutofillSave
                       },
-                      afterPaste: handleExportLocalChargePasteSave,
-                      afterAutofill: handleExportLocalChargeAutofillSave
-                    },
-                    weightBreakHotTableSetting: {
-                      data: localCharge?.weightBreakSettings?.detail || [],
-                      colHeaders:
-                        localCharge?.weightBreakSettings?.colHeader || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.weightBreakSettings?.columns?.map(
-                        column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })
-                      ),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleExportLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite,
-                      afterValidate: (isValid, value, row, prop) => {
-                        if (
-                          localChargeNumberColumns.includes(prop) &&
-                          !isValid
-                        ) {
-                          ElNotification({
-                            title: "Error",
-                            message: `Negative quotes are not allowed. Value: ${value}`,
-                            type: "error"
-                          });
-                        }
-                      },
-                      afterPaste: handleExportLocalChargePasteSave,
-                      afterAutofill: handleExportLocalChargeAutofillSave
-                    },
-                    localChargePackageList: res,
-                    localChargePackageSelector: []
-                  });
+                      localChargePackageList: res,
+                      localChargePackageSelector: []
+                    });
+                  }
                 });
               });
             }
@@ -1204,96 +1382,145 @@ const handleAfterChange = (changes, source) => {
                   true,
                   localCharge.cityID
                 ).then(res => {
-                  importLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    generalHotTableSetting: {
-                      data: localCharge?.generalSettings?.detail || [],
-                      colHeaders: localCharge?.generalSettings?.colHeader || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.generalSettings?.columns?.map(
-                        column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })
-                      ),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleImportLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite,
-                      afterValidate: (isValid, value, row, prop) => {
-                        if (
-                          localChargeNumberColumns.includes(prop) &&
-                          !isValid
-                        ) {
-                          ElNotification({
-                            title: "Error",
-                            message: `Negative quotes are not allowed. Value: ${value}`,
-                            type: "error"
-                          });
-                        }
+                  if (localCharge.cityID > 0) {
+                    importLocationResult.value.push({
+                      cityID: localCharge.cityID,
+                      city: localCharge.city,
+                      detail: [],
+                      generalHotTableSetting: {
+                        data: localCharge?.generalSettings?.detail || [],
+                        colHeaders:
+                          localCharge?.generalSettings?.colHeader || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                        columns: localCharge?.generalSettings?.columns?.map(
+                          column => {
+                            const columnConfig = {
+                              data: column.data,
+                              type: column.type,
+                              source: column.source || []
+                            } as iHotTableColumnSetting;
+                            if (column.column === "charge") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  value !== null &&
+                                  value !== undefined &&
+                                  value !== "";
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false;
+                            }
+
+                            if (column.type === "numeric") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  !isNaN(value) && Number(value) >= 0;
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false; // 禁止無效值
+                            }
+
+                            return columnConfig;
+                          }
+                        ),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true,
+                        afterChange: handleImportLocalChargeChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow,
+                        readOnly: !customerProductLineAccessRight.value.isWrite,
+                        afterValidate: (isValid, value, row, prop) => {
+                          if (
+                            localChargeNumberColumns.includes(prop) &&
+                            !isValid
+                          ) {
+                            ElNotification({
+                              title: "Error",
+                              message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                              type: "error"
+                            });
+                          }
+                        },
+                        afterPaste: handleImportLocalChargePasteSave,
+                        afterAutofill: handleImportLocalChargeAutofillSave
                       },
-                      afterPaste: handleImportLocalChargePasteSave,
-                      afterAutofill: handleImportLocalChargeAutofillSave
-                    },
-                    weightBreakHotTableSetting: {
-                      data: localCharge?.weightBreakSettings?.detail || [],
-                      colHeaders:
-                        localCharge?.weightBreakSettings?.colHeader || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.weightBreakSettings?.columns?.map(
-                        column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })
-                      ),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleImportLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite,
-                      afterValidate: (isValid, value, row, prop) => {
-                        if (
-                          localChargeNumberColumns.includes(prop) &&
-                          !isValid
-                        ) {
-                          ElNotification({
-                            title: "Error",
-                            message: `Negative quotes are not allowed. Value: ${value}`,
-                            type: "error"
-                          });
-                        }
+                      weightBreakHotTableSetting: {
+                        data: localCharge?.weightBreakSettings?.detail || [],
+                        colHeaders:
+                          localCharge?.weightBreakSettings?.colHeader || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                        columns: localCharge?.weightBreakSettings?.columns?.map(
+                          column => {
+                            const columnConfig = {
+                              data: column.data,
+                              type: column.type,
+                              source: column.source || []
+                            } as iHotTableColumnSetting;
+                            if (column.column === "charge") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  value !== null &&
+                                  value !== undefined &&
+                                  value !== "";
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false;
+                            }
+
+                            if (column.type === "numeric") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  !isNaN(value) && Number(value) >= 0;
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false; // 禁止無效值
+                            }
+
+                            return columnConfig;
+                          }
+                        ),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true,
+                        afterChange: handleImportLocalChargeChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow,
+                        readOnly: !customerProductLineAccessRight.value.isWrite,
+                        afterValidate: (isValid, value, row, prop) => {
+                          if (
+                            localChargeNumberColumns.includes(prop) &&
+                            !isValid
+                          ) {
+                            ElNotification({
+                              title: "Error",
+                              message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                              type: "error"
+                            });
+                          }
+                        },
+                        afterPaste: handleImportLocalChargePasteSave,
+                        afterAutofill: handleImportLocalChargeAutofillSave
                       },
-                      afterPaste: handleImportLocalChargePasteSave,
-                      afterAutofill: handleImportLocalChargeAutofillSave
-                    },
-                    localChargePackageList: res,
-                    localChargePackageSelector: []
-                  });
+                      localChargePackageList: res,
+                      localChargePackageSelector: []
+                    });
+                  }
                 });
               });
             }
@@ -1641,7 +1868,7 @@ const freightChargeSettings = ref({
       if (!isValid) {
         ElNotification({
           title: "Error",
-          message: `Negative quotes are not allowed. Value: ${value}`,
+          message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
           type: "error"
         });
       }
@@ -2256,6 +2483,7 @@ watchEffect(() => {
   ) {
     customerProductLineAccessRight.value.isWrite = false;
   }
+  showHeaderColumn();
 });
 const userAuth = ref({});
 onMounted(() => {
@@ -2343,7 +2571,6 @@ onMounted(() => {
           ? false
           : true;
         allowNext.value = true;
-        // hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
       });
       UserAccessRightByCustomerProductLine(
         quotationDetailResult.value.customerHQID,
@@ -2403,9 +2630,10 @@ onMounted(() => {
       }
     }
   });
-  getTradeTermResult().then(itme => {
-    console.log("getTradeTermResult", tradeTermResult);
-  });
+  // getTradeTermResult().then(itme => {
+  //   console.log("getTradeTermResult", tradeTermResult);
+  // });
+  getTradeTermResult();
   getShippingTermResult();
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
@@ -2468,10 +2696,9 @@ const handleNumberInput = value => {
 };
 
 const checkAllowNext = () => {
-  console.clear();
   const hasProductLine =
     quotationDetailResult.value.productLineCode != null ||
-    (quotationDetailResult.value.plid as number) > 0;
+    (quotationDetailResult.value.pid as number) > 0;
 
   const hasPeriod = quotationDetailResult.value.period?.length === 2;
   const hasTradeTerm =
@@ -2564,7 +2791,8 @@ const checkAllowNext = () => {
             v-if="
               customerProductLineAccessRight.isWrite &&
               (quotationDetailResult.status === 'Draft' ||
-                quotationDetailResult.status === 'Rejected')
+                quotationDetailResult.status === 'Rejected') &&
+              qid != 0
             "
             type="primary"
             plain
@@ -2642,7 +2870,7 @@ const checkAllowNext = () => {
                 style="margin-bottom: 10px"
               />
               <div
-                v-if="showCBMTransfer"
+                v-if="showCBMTransfer && selectdProductLine"
                 class="el-form-item asterisk-left el-form-item--label-left plus-form-item"
               >
                 <div class="el-form-item__label-wrap" style="width: 138px">
@@ -2689,11 +2917,8 @@ const checkAllowNext = () => {
                 </div>
               </div>
               <el-button
-                v-if="
-                  customerProductLineAccessRight.isWrite &&
-                  allowNext &&
-                  !ShowNextContent
-                "
+                v-if="customerProductLineAccessRight.isWrite && qid < 1"
+                :disabled="!allowNext"
                 type="primary"
                 plain
                 :size="dynamicSize"
