@@ -122,7 +122,8 @@ export const myList = [
   "B1095",
   "B1215",
   "B1218",
-  "B2138"
+  "B2138",
+  "A0377"
 ];
 export function checkIfExists(searchString) {
   return myList.includes(searchString);

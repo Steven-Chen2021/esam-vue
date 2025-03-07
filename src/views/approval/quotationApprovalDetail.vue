@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, reactive } from "vue";
+import { onMounted, ref, reactive, watch } from "vue";
 import { useApprovalDetail } from "./hooks";
 import { useI18n } from "vue-i18n";
 import { ApprovalDetailHooks } from "@/views/approval/detailHooks";
@@ -17,12 +17,18 @@ const {
   getApproveHeaderResult,
   getApproveUserResult,
   getApproveChargeDataResult,
-  sendApproveResult
+  sendApproveResult,
+  sendAcceptResult
 } = ApprovalDetailHooks();
 const { formatDate, formatNumber } = CommonHelper();
 const { toPreView } = usePreView();
 
-const { getQuoteHistoryResult, getQuotePreviewResult } = QuoteDetailHooks();
+const {
+  getQuoteHistoryResult,
+  getQuotePreviewResult,
+  getAttentionToResult,
+  attentionToResult
+} = QuoteDetailHooks();
 
 const ApproveHeader = ref<any>({});
 const reasonRows = ref<number>(5);
@@ -38,15 +44,33 @@ const reasonLabel = ref<string>("");
 const canSign = ref<boolean>(false);
 const authorizedSigner = ref<boolean>(false);
 const unauthorizedSignerMSG = ref<string>("");
+const canSendAccept = ref<boolean>(false);
+const acceptDataReadOnly = ref<boolean>(false);
+const acceptRejectReason = ref();
+const saveLoading = ref("disabled");
 interface RuleForm {
   reason: string;
+  acceptRejectReason: string;
 }
+
+const acceptModel = ref({
+  acceptedBy: null,
+  acceptedDate: "",
+  quoteID: 0
+});
+
 const ruleForm = reactive<RuleForm>({
-  reason: ""
+  reason: "",
+  acceptRejectReason: null
 });
 const ruleFormRef = ref<FormInstance>();
+const ruleFormRefAccept = ref<FormInstance>();
 const rules = reactive<FormRules<RuleForm>>({
   reason: [
+    { required: true, message: "Please input reject reason", trigger: "blur" },
+    { min: 5, max: 500, message: "Length should be 5 to 500", trigger: "blur" }
+  ],
+  acceptRejectReason: [
     { required: true, message: "Please input reject reason", trigger: "blur" },
     { min: 5, max: 500, message: "Length should be 5 to 500", trigger: "blur" }
   ]
@@ -54,6 +78,7 @@ const rules = reactive<FormRules<RuleForm>>({
 
 const showQuotationStatusHistory = () => {
   getQuoteHistoryResult(ApproveHeader.value.quoteid).then(res => {
+    console.log(res.returnValue);
     quoteStatusHistory.value = res.returnValue;
   });
 };
@@ -62,7 +87,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   canSign.value = false;
   await formEl.validate((valid, fields) => {
-    console.log(valid);
     if (valid) {
       const params = {
         approvalID: getApprovalParameter.id,
@@ -156,14 +180,6 @@ const previewQuote = () => {
   });
 };
 
-// category: "quotation",
-//     id: quotationDetailResult.value.quoteid as string,
-//     displaytitle: (quotationDetailResult.value.quoteNo ??
-//       pageParams.value.qname) as string,
-//     pid: quotationDetailResult.value.pid as string,
-//     quoteno: quotationDetailResult.value.quoteNo as string,
-//     lid: quotationDetailResult.value.customerHQID as string
-
 const SubmitSign = catetory => {
   if (catetory === "reject") {
     reasonLabel.value = "Reason";
@@ -185,6 +201,55 @@ const SubmitSign = catetory => {
   showReason.value = true;
 };
 
+const SubmitAccept = isReject => {
+  if (isReject) {
+    ruleFormRefAccept.value.validate(valid => {
+      if (valid) {
+        console.error("reason missing");
+      } else {
+        sendCustomerAccept();
+      }
+    });
+  } else {
+    sendCustomerAccept();
+  }
+};
+
+const sendCustomerAccept = () => {
+  sendAcceptResult(acceptModel.value).then(res => {
+    if (res && res.isSuccess) {
+      ElNotification({
+        title: "successfully",
+        message: "Submit Successfully!",
+        type: "success"
+      });
+      acceptDataReadOnly.value = true;
+    } else {
+      ElNotification({
+        title: "Submit Failed",
+        message: res.errorMessage,
+        type: "error"
+      });
+    }
+  });
+};
+
+watch(
+  acceptModel,
+  newVal => {
+    console.log(acceptModel);
+    console.log(newVal.acceptedBy);
+    console.log(newVal.acceptedDate);
+    console.log(newVal.quoteID);
+    if (newVal.acceptedBy > 0 && newVal.acceptedDate && newVal.quoteID > 0) {
+      canSendAccept.value = true;
+    } else {
+      canSendAccept.value = false;
+    }
+  },
+  { deep: true }
+);
+
 onMounted(() => {
   getApproveHeaderResult(getApprovalParameter.id).then(res => {
     authorizedSigner.value = res.isSuccess;
@@ -193,6 +258,13 @@ onMounted(() => {
       if (ApproveHeader?.value?.statusCode === "Q2") {
         canSign.value = true;
       }
+      if (ApproveHeader?.value?.statusCode === "Q5") {
+        acceptDataReadOnly.value = true;
+      }
+      acceptModel.value.quoteID = ApproveHeader.value.quoteid;
+      acceptModel.value.acceptedBy = ApproveHeader.value.acceptBy;
+      acceptModel.value.acceptedDate = ApproveHeader.value.acceptDate;
+      getAttentionToResult(ApproveHeader.value.customerHQID);
     } else {
       canSign.value = false;
       unauthorizedSignerMSG.value = res.errorMessage;
@@ -232,24 +304,24 @@ onMounted(() => {
         </div>
         <!-- Action Buttons -->
         <div class="flex space-x-2">
-          <el-popover placement="right" :width="450" trigger="click">
+          <el-popover placement="right" :width="750" trigger="click">
             <template #reference>
               <el-button @click="showQuotationStatusHistory">{{
                 `Status`
               }}</el-button>
             </template>
             <el-table :data="quoteStatusHistory">
-              <el-table-column label="Status" width="170">
+              <el-table-column label="Status" width="160">
                 <template #default="scope">
                   <el-tag type="primary">{{ scope.row.status }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column
                 width="120"
-                property="createdBy"
+                property="createdByName"
                 label="Updated By"
               />
-              <el-table-column label="Updated Date" width="300">
+              <el-table-column label="Updated Date" width="150">
                 <template #default="scope">
                   <div style="display: flex; align-items: center">
                     <span style="margin-left: 10px">{{
@@ -258,6 +330,7 @@ onMounted(() => {
                   </div>
                 </template>
               </el-table-column>
+              <el-table-column property="remark" label="Reason" />
             </el-table>
           </el-popover>
 
@@ -328,6 +401,66 @@ onMounted(() => {
             <strong>{{ $t(`approval.detail.${key}`) || key }}:</strong>
             <span class="truncate">{{ formatDate(value, key) }}</span>
           </div>
+          <div
+            v-if="
+              ApproveHeader.statusCode === 'Q3' ||
+              ApproveHeader.statusCode === 'Q5'
+            "
+            class="flex flex-1 justify-end items-center gap-4"
+          >
+            <strong>Accept By:</strong
+            ><el-select
+              v-model="acceptModel.acceptedBy"
+              placeholder="Select"
+              style="width: 180px"
+              :disabled="acceptDataReadOnly"
+            >
+              <el-option
+                v-for="item in attentionToResult"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+            <el-date-picker
+              v-model="acceptModel.acceptedDate"
+              type="date"
+              placeholder="Pick a day"
+              style="width: 120px"
+              :disabled="acceptDataReadOnly"
+            />
+            <el-button
+              v-if="canSendAccept && !acceptDataReadOnly"
+              @click="SubmitAccept(true)"
+              >Reject</el-button
+            >
+            <el-button
+              v-if="canSendAccept && !acceptDataReadOnly"
+              :loading-icon="useRenderIcon('ep:eleme')"
+              :loading="saveLoading !== 'disabled'"
+              style="margin-left: 0"
+              @click="SubmitAccept(false)"
+            >
+              {{ saveLoading === "disabled" ? "Accept" : "Processing" }}
+            </el-button>
+          </div>
+        </div>
+        <div
+          v-if="canSendAccept && !acceptDataReadOnly"
+          class="flex flex-1 justify-end items-center gap-4 text-gray-700 text-sm"
+        >
+          <!-- 表單區域 -->
+          <el-form ref="ruleFormRefAccept" :model="ruleForm" :rules="rules">
+            <el-form-item label="Reason" prop="acceptRejectReason">
+              <el-input
+                v-model="ruleForm.reason"
+                style="width: 298px"
+                :rows="2"
+                type="textarea"
+                placeholder="Reason for rejection (required)"
+              />
+            </el-form-item>
+          </el-form>
         </div>
         <ElDivider />
         <div class="flex flex-wrap gap-4 text-gray-700 text-sm">
@@ -358,6 +491,9 @@ onMounted(() => {
               <h4 class="font-bold">{{ source.lanesegment }}</h4>
               <span class="font-bold">Currency: {{ source.currency }}</span>
             </div>
+            <div class="flex justify-between items-center mb-2">
+              <span>commodity: {{ source.commodity }}</span>
+            </div>
             <el-table
               :data="getTableData(source.fDetail)"
               border
@@ -372,6 +508,9 @@ onMounted(() => {
                 :formatter="(row, column, cellValue) => formatNumber(cellValue)"
               />
             </el-table>
+            <div class="flex justify-between items-center mb-2">
+              <span>Remark: {{ source.remark }}</span>
+            </div>
           </div>
         </el-collapse-item>
         <el-collapse-item
