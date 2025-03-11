@@ -56,7 +56,8 @@ interface RuleForm {
 const acceptModel = ref({
   acceptedBy: null,
   acceptedDate: "",
-  quoteID: 0
+  quoteID: 0,
+  IsAccept: null
 });
 
 const ruleForm = reactive<RuleForm>({
@@ -78,7 +79,6 @@ const rules = reactive<FormRules<RuleForm>>({
 
 const showQuotationStatusHistory = () => {
   getQuoteHistoryResult(ApproveHeader.value.quoteid).then(res => {
-    console.log(res.returnValue);
     quoteStatusHistory.value = res.returnValue;
   });
 };
@@ -94,8 +94,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
         approveComment: ruleForm.reason
       };
       sendApproveResult(params).then(res => {
-        console.log(params);
-        console.log(res);
         if (res && res.isSuccess) {
           ElNotification({
             title: "successfully",
@@ -138,7 +136,14 @@ const filteredApproveHeader = (ApproveHeader, Category) => {
       "currentUserID",
       "currentStationID",
       "lang",
-      "errors"
+      "errors",
+      "approvalstatus",
+      "approvalby",
+      "approvalreason",
+      "approvaldate",
+      "acceptBy",
+      "acceptByID",
+      "acceptDate"
     ];
 
     if (ApproveHeader.pid === 6) {
@@ -169,7 +174,6 @@ const filteredApproveHeader = (ApproveHeader, Category) => {
 };
 
 const previewQuote = () => {
-  console.log(ApproveHeader);
   toPreView({
     category: "quotation",
     id: ApproveHeader.value.quoteid as string,
@@ -202,20 +206,8 @@ const SubmitSign = catetory => {
 };
 
 const SubmitAccept = isReject => {
-  if (isReject) {
-    ruleFormRefAccept.value.validate(valid => {
-      if (valid) {
-        console.error("reason missing");
-      } else {
-        sendCustomerAccept();
-      }
-    });
-  } else {
-    sendCustomerAccept();
-  }
-};
-
-const sendCustomerAccept = () => {
+  saveLoading.value = "loading";
+  acceptModel.value.IsAccept = !isReject;
   sendAcceptResult(acceptModel.value).then(res => {
     if (res && res.isSuccess) {
       ElNotification({
@@ -231,16 +223,13 @@ const sendCustomerAccept = () => {
         type: "error"
       });
     }
+    saveLoading.value = "disabled";
   });
 };
 
 watch(
   acceptModel,
   newVal => {
-    console.log(acceptModel);
-    console.log(newVal.acceptedBy);
-    console.log(newVal.acceptedDate);
-    console.log(newVal.quoteID);
     if (newVal.acceptedBy > 0 && newVal.acceptedDate && newVal.quoteID > 0) {
       canSendAccept.value = true;
     } else {
@@ -258,13 +247,12 @@ onMounted(() => {
       if (ApproveHeader?.value?.statusCode === "Q2") {
         canSign.value = true;
       }
-      if (ApproveHeader?.value?.statusCode === "Q5") {
-        acceptDataReadOnly.value = true;
-      }
+
       acceptModel.value.quoteID = ApproveHeader.value.quoteid;
       acceptModel.value.acceptedBy = ApproveHeader.value.acceptBy;
       acceptModel.value.acceptedDate = ApproveHeader.value.acceptDate;
       getAttentionToResult(ApproveHeader.value.customerHQID);
+      console.log(ApproveHeader.value);
     } else {
       canSign.value = false;
       unauthorizedSignerMSG.value = res.errorMessage;
@@ -272,7 +260,6 @@ onMounted(() => {
   });
   getApproveUserResult(getApprovalParameter.id).then(res => {
     ApproveAvatar.value = res.returnValue;
-    console.log(ApproveAvatar.value);
   });
   getApproveChargeDataResult(getApprovalParameter.id).then(res => {
     if (res && res.isSuccess) {
@@ -281,6 +268,7 @@ onMounted(() => {
       localChargeResult.value = res.returnValue.localChargeList;
     }
   });
+  acceptDataReadOnly.value = true;
 });
 </script>
 
@@ -429,10 +417,14 @@ onMounted(() => {
               style="width: 120px"
               :disabled="acceptDataReadOnly"
             />
-            <el-button
+            <!-- <el-button
               v-if="canSendAccept && !acceptDataReadOnly"
+              :loading-icon="useRenderIcon('ep:eleme')"
+              :loading="saveLoading !== 'disabled'"
               @click="SubmitAccept(true)"
-              >Reject</el-button
+              >{{
+                saveLoading === "disabled" ? "Reject" : "Processing"
+              }}</el-button
             >
             <el-button
               v-if="canSendAccept && !acceptDataReadOnly"
@@ -442,25 +434,8 @@ onMounted(() => {
               @click="SubmitAccept(false)"
             >
               {{ saveLoading === "disabled" ? "Accept" : "Processing" }}
-            </el-button>
+            </el-button> -->
           </div>
-        </div>
-        <div
-          v-if="canSendAccept && !acceptDataReadOnly"
-          class="flex flex-1 justify-end items-center gap-4 text-gray-700 text-sm"
-        >
-          <!-- 表單區域 -->
-          <el-form ref="ruleFormRefAccept" :model="ruleForm" :rules="rules">
-            <el-form-item label="Reason" prop="acceptRejectReason">
-              <el-input
-                v-model="ruleForm.reason"
-                style="width: 298px"
-                :rows="2"
-                type="textarea"
-                placeholder="Reason for rejection (required)"
-              />
-            </el-form-item>
-          </el-form>
         </div>
         <ElDivider />
         <div class="flex flex-wrap gap-4 text-gray-700 text-sm">

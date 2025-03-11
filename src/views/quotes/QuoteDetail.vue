@@ -11,7 +11,8 @@ import {
   onMounted,
   defineComponent,
   nextTick,
-  watchEffect
+  watchEffect,
+  watch
 } from "vue";
 
 import {
@@ -56,14 +57,11 @@ import {
 import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
 import { useHistoryColumns } from "@/components/HistoryLog/Columns";
-import { useApprovalDetail } from "@/views/approval/hooks";
 import CommonService from "@/services/commonService";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { transpileModule } from "typescript";
-import { pid } from "process";
-import { reactify } from "@vueuse/core";
+import { ApprovalDetailHooks } from "@/views/approval/detailHooks";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -92,7 +90,8 @@ const backToIndex = () => {
   if (props.ParentID && props.ParentID !== "") {
     emit("handleBackEvent");
   } else {
-    router.go(-1);
+    // router.go(-1);
+    router.push({ name: "quoteSearch" });
   }
 };
 // #endregion
@@ -146,6 +145,8 @@ const {
   saveLocalChargeResult
 } = LocalChargeHooks();
 
+const { sendAcceptResult } = ApprovalDetailHooks();
+
 const { AutoSaveItem, AutoSave } = AutoSaveHelper();
 
 defineOptions({
@@ -192,7 +193,9 @@ const ShowNextContent = ref<boolean>(false);
 const noProductLinePermission = ref(false);
 const previousGreetingsValue = ref<any>();
 const dcUrl = ref();
+const acceptDataReadOnly = ref<boolean>(false);
 const salesInfomation = ref<any>({});
+const canSendAccept = ref<boolean>(false);
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const rules = {
   customerName: [
@@ -265,6 +268,20 @@ const localChargeNumberColumns = [
   "amount",
   "cost"
 ];
+const acceptModel = ref({
+  acceptedBy: null,
+  acceptedDate: "",
+  quoteID: 0,
+  IsAccept: null
+});
+
+interface iTerms {
+  contents: string;
+  isOption: boolean;
+  isSelected: boolean;
+  termOrder: number;
+}
+
 const setHotTableRef = (city, Category) => el => {
   if (el) {
     hotTableRefs.value[`${city}${Category}`] = el.hotInstance;
@@ -459,12 +476,12 @@ let quoteDetailColumns: PlusColumn[] = [
         // 這邊要重新抓 SalesInfo 跟Term&Conditional
 
         if ((quotationDetailResult.value.pid as number) > 0) {
-          getTermConditionalResult(
-            item.value,
-            quotationDetailResult.value.pid
-          ).then(res => {
-            quotationDetailResult.value.terms = res.returnValue;
-          });
+          // getTermConditionalResult(
+          //   item.value,
+          //   quotationDetailResult.value.pid
+          // ).then(res => {
+          //   quotationDetailResult.value.terms = res.returnValue;
+          // });
 
           getSalesInfomation(item.value, quotationDetailResult.value.pid).then(
             res => {
@@ -2459,6 +2476,29 @@ const amsCostAdjust = item => {
 const handleHandsonTableAutoSave = category => {
   return false;
 };
+
+const SubmitAccept = isReject => {
+  saveLoading.value = "loading";
+  acceptModel.value.IsAccept = !isReject;
+  sendAcceptResult(acceptModel.value).then(res => {
+    if (res && res.isSuccess) {
+      ElNotification({
+        title: "successfully",
+        message: "Submit Successfully!",
+        type: "success"
+      });
+      acceptDataReadOnly.value = true;
+    } else {
+      ElNotification({
+        title: "Submit Failed",
+        message: res.errorMessage,
+        type: "error"
+      });
+    }
+    saveLoading.value = "disabled";
+  });
+};
+
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
@@ -2542,10 +2582,19 @@ watchEffect(() => {
   ) {
     customerProductLineAccessRight.value.isWrite = false;
   }
-
-  // if ((quotationDetailResult?.value?.pid as number) > 0)
   showHeaderColumn();
 });
+watch(
+  acceptModel,
+  newVal => {
+    if (newVal.acceptedBy > 0 && newVal.acceptedDate && newVal.quoteID > 0) {
+      canSendAccept.value = true;
+    } else {
+      canSendAccept.value = false;
+    }
+  },
+  { deep: true }
+);
 const userAuth = ref({});
 onMounted(() => {
   if (!props.PropsParam) {
@@ -2632,6 +2681,15 @@ onMounted(() => {
           ? false
           : true;
         allowNext.value = true;
+        acceptModel.value.quoteID = quotationDetailResult.value
+          .quoteid as number;
+        acceptModel.value.acceptedBy = quotationDetailResult.value.acceptBy;
+        acceptModel.value.acceptedDate = quotationDetailResult.value
+          .acceptDate as string;
+        if ((quotationDetailResult.value.acceptByID as number) > 0) {
+          canSendAccept.value = false;
+          acceptDataReadOnly.value = true;
+        }
       });
       UserAccessRightByCustomerProductLine(
         quotationDetailResult.value.customerHQID,
@@ -2695,7 +2753,6 @@ onMounted(() => {
   getShippingTermResult();
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
-  console.log(quotationDetailResult.value);
 });
 onBeforeUnmount(() => {
   const editor = editorRef.value;
@@ -2753,7 +2810,6 @@ const handleNumberInput = value => {
       : numericValue;
   quotationDetailResult.value.cbmToWT = validValue;
 };
-
 const checkAllowNext = () => {
   const hasProductLine =
     quotationDetailResult.value.productLineCode != null ||
@@ -2927,6 +2983,60 @@ const checkAllowNext = () => {
               <template #title>
                 <span class="text-orange-500">QUOTE DETAIL</span>
               </template>
+              <div
+                v-if="
+                  quotationDetailResult.statusCode === 'Q3' ||
+                  quotationDetailResult.statusCode === 'Q5'
+                "
+                class="flex flex-1 justify-begin items-center gap-4"
+              >
+                <strong>Accept By:</strong
+                ><el-select
+                  v-model="acceptModel.acceptedBy"
+                  placeholder="Select"
+                  style="width: 180px"
+                  :disabled="acceptDataReadOnly"
+                >
+                  <el-option
+                    v-for="item in attentionToResult"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+                <el-date-picker
+                  v-model="acceptModel.acceptedDate"
+                  type="date"
+                  placeholder="Pick a day"
+                  style="width: 120px"
+                  :disabled="acceptDataReadOnly"
+                />
+                <el-button
+                  v-if="canSendAccept && !acceptDataReadOnly"
+                  :loading-icon="useRenderIcon('ep:eleme')"
+                  :loading="saveLoading !== 'disabled'"
+                  @click="SubmitAccept(true)"
+                  >{{
+                    saveLoading === "disabled" ? "Reject" : "Processing"
+                  }}</el-button
+                >
+                <el-button
+                  v-if="canSendAccept && !acceptDataReadOnly"
+                  :loading-icon="useRenderIcon('ep:eleme')"
+                  :loading="saveLoading !== 'disabled'"
+                  style="margin-left: 0"
+                  @click="SubmitAccept(false)"
+                >
+                  {{ saveLoading === "disabled" ? "Accept" : "Processing" }}
+                </el-button>
+              </div>
+              <ElDivider
+                v-if="
+                  quotationDetailResult.statusCode === 'Q3' ||
+                  quotationDetailResult.statusCode === 'Q5'
+                "
+                style="margin: 2px"
+              />
               <PlusForm
                 ref="quotationForm"
                 v-model="quotationDetailResult"
@@ -3161,26 +3271,30 @@ const checkAllowNext = () => {
               <template #title>
                 <span class="text-orange-500">TERMS & CONDITIONS</span>
               </template>
-              <ol class="term-list">
+              <!-- <ol class="term-list">
                 <li
                   v-for="term in quotationDetailResult.terms"
                   :key="term.termOrder"
                   class="term-item"
                 >
-                  <div class="checkbox-wrapper">
-                    <el-checkbox
-                      v-model="term.isSelected"
-                      :disabled="
-                        !customerProductLineAccessRight.isWrite ||
-                        term.isOption === false
-                      "
-                      class="checkbox-content"
-                      @change="handleTermAndCondition"
-                    />
-                    <span class="checkbox-label">{{ term.contents }}</span>
-                  </div>
+                 
                 </li>
-              </ol>
+              </ol> -->
+              <div class="checkbox-wrapper">
+                <el-checkbox
+                  v-for="item in quotationDetailResult.terms"
+                  :key="item.termOrder"
+                  v-model="item.isSelected"
+                  :disabled="
+                    !customerProductLineAccessRight.isWrite ||
+                    item.isOption === false
+                  "
+                  class="checkbox-content"
+                  :label="item.contents"
+                  @change="handleTermAndCondition"
+                />
+                <!-- <span class="checkbox-label">{{ term.contents }}</span> -->
+              </div>
             </el-collapse-item>
             <el-collapse-item v-if="ShowNextContent" title="REMARK " name="7">
               <template #title>
@@ -3403,7 +3517,8 @@ const checkAllowNext = () => {
 /* 包裝 checkbox 和文字的容器 */
 .checkbox-wrapper {
   display: flex;
-  align-items: flex-start; /* 頂部對齊 */
+  flex-direction: column; /* 讓子元素垂直排列 */
+  gap: 8px; /* 設定間距，可依需求調整 */
 }
 
 /* 調整 checkbox 的位置靠左上 */

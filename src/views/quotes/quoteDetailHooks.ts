@@ -41,6 +41,13 @@ export function QuoteDetailHooks() {
     isReadAdvanceColumn: boolean;
   }
 
+  interface iTerms {
+    termOrder: number;
+    isSelected: boolean;
+    isOption: boolean;
+    contents: string;
+  }
+
   interface iCustomerResult {
     customers: dropdownCtl[]; // 修正 customers 的類型
     loading: boolean; // 修正 loading 為 boolean
@@ -89,7 +96,7 @@ export function QuoteDetailHooks() {
     fclDetails: null,
     exportCharge: null,
     importCharge: null,
-    terms: [] as any[],
+    terms: [] as iTerms[],
     salesInOffice: null,
     salesOverseaOffice: null
   });
