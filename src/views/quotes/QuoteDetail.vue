@@ -270,7 +270,7 @@ const localChargeNumberColumns = [
 ];
 const acceptModel = ref({
   acceptedBy: null,
-  acceptedDate: "",
+  acceptedDate: null,
   quoteID: 0,
   IsAccept: null
 });
@@ -670,16 +670,10 @@ let quoteDetailColumns: PlusColumn[] = [
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
           const [effective, expired] = value;
-          const timezoneOffset = new Date().getTimezoneOffset() * 60000;
-          const parseEffective = new Date(
-            new Date(effective).getTime() - timezoneOffset
-          );
-          const parseExpired = new Date(
-            new Date(expired).getTime() - timezoneOffset
-          );
-
-          autoSaveTrigger(parseEffective, "effectiveDate");
-          autoSaveTrigger(parseExpired, "expiredDate");
+          const _effective = effective.split(" ")[0] + " 00:00:00"; // 設定當天 00:00:00
+          const _expired = expired.split(" ")[0] + " 23:59:59"; // 設定當天 23:59:59
+          autoSaveTrigger(_effective, "effectiveDate");
+          autoSaveTrigger(_expired, "expiredDate");
         } else {
           console.error("Invalid value format:", value);
         }
@@ -1157,6 +1151,11 @@ const handleLocalChargeResult = (
               localChargePackageSelector: []
             });
           }
+
+          LocationResult.value = LocationResult.value
+            .slice()
+            .sort((a, b) => a.city.localeCompare(b.city));
+          console.log(LocationResult);
         }
       });
     });
@@ -1387,12 +1386,12 @@ const handleAfterChange = (changes, source) => {
                       localChargePackageList: res,
                       localChargePackageSelector: []
                     });
-                    exportLocationResult.value =
-                      exportLocationResult.value.sort(
-                        (a, b) =>
-                          pReceiptData.indexOf(a.city) -
-                          pReceiptData.indexOf(b.city)
-                      ); // 依照 pReceiptData 順序排序
+                    // exportLocationResult.value =
+                    //   exportLocationResult.value.sort(
+                    //     (a, b) =>
+                    //       pReceiptData.indexOf(a.city) -
+                    //       pReceiptData.indexOf(b.city)
+                    //   ); // 依照 pReceiptData 順序排序
                   }
                 });
               });
@@ -1556,12 +1555,12 @@ const handleAfterChange = (changes, source) => {
                       localChargePackageList: res,
                       localChargePackageSelector: []
                     });
-                    importLocationResult.value =
-                      importLocationResult.value.sort(
-                        (a, b) =>
-                          pDeliveryData.indexOf(a.city) -
-                          pDeliveryData.indexOf(b.city)
-                      );
+                    // importLocationResult.value =
+                    //   importLocationResult.value.sort(
+                    //     (a, b) =>
+                    //       pDeliveryData.indexOf(a.city) -
+                    //       pDeliveryData.indexOf(b.city)
+                    //   );
                   }
                 });
               });
@@ -1969,6 +1968,29 @@ const freightChargeSettings = ref({
     });
   }
 });
+
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+function adjustPeriodWithoutTimezone(period) {
+  if (!Array.isArray(period) || period.length < 2) return period;
+
+  // 解析日期，不帶時區
+  const start = new Date(period[0]);
+  start.setHours(0, 0, 0, 0); // 設為當天 00:00:00
+
+  const end = new Date(period[1]);
+  end.setHours(23, 59, 59, 999); // 設為當天 23:59:59
+
+  return [formatLocalDate(start), formatLocalDate(end)];
+}
+
 const saveData = () => {
   saveLoading.value = "default";
   quotationForm.value.formInstance
@@ -1981,6 +2003,10 @@ const saveData = () => {
       quotationDetailResult.value.attentionToId =
         quotationDetailResult.value.attentionTo;
       quotationDetailResult.value.refID = quotationDetailResult.value.reference;
+      quotationDetailResult.value.period = adjustPeriodWithoutTimezone(
+        quotationDetailResult.value.period
+      );
+      console.log(quotationDetailResult.value);
       const detailStatus = saveQuoteDetailResult(
         quotationDetailResult.value
       ).then(res => {
@@ -2480,6 +2506,11 @@ const handleHandsonTableAutoSave = category => {
 const SubmitAccept = isReject => {
   saveLoading.value = "loading";
   acceptModel.value.IsAccept = !isReject;
+  if (acceptModel.value.acceptedDate instanceof Date) {
+    const localDate = acceptModel.value.acceptedDate;
+    const formattedDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, "0")}-${String(localDate.getDate()).padStart(2, "0")}`;
+    acceptModel.value.acceptedDate = formattedDate;
+  }
   sendAcceptResult(acceptModel.value).then(res => {
     if (res && res.isSuccess) {
       ElNotification({
@@ -2522,7 +2553,7 @@ watchEffect(() => {
             const params = {
               searchKey: _query,
               requestType: apiRequestType,
-              PageSize: 5,
+              PageSize: 10,
               PageIndex: 1,
               Paginator: true
             };
@@ -2635,12 +2666,12 @@ onMounted(() => {
       deleteBtnVisible.value = true;
       previewBtnVisible.value = true;
       nextTick(() => {
-        quotationDetailResult.value.period[0] = formatToLocalTime(
-          quotationDetailResult.value.period[0]
-        );
-        quotationDetailResult.value.period[1] = formatToLocalTime(
-          quotationDetailResult.value.period[1]
-        );
+        // quotationDetailResult.value.period[0] = formatToLocalTime(
+        //   quotationDetailResult.value.period[0]
+        // );
+        // quotationDetailResult.value.period[1] = formatToLocalTime(
+        //   quotationDetailResult.value.period[1]
+        // );
         const selectedItem = {
           text: quotationDetailResult.value.customerName,
           value: quotationDetailResult.value.customerHQID
@@ -2685,7 +2716,7 @@ onMounted(() => {
           .quoteid as number;
         acceptModel.value.acceptedBy = quotationDetailResult.value.acceptBy;
         acceptModel.value.acceptedDate = quotationDetailResult.value
-          .acceptDate as string;
+          .acceptDate as Date;
         if ((quotationDetailResult.value.acceptByID as number) > 0) {
           canSendAccept.value = false;
           acceptDataReadOnly.value = true;

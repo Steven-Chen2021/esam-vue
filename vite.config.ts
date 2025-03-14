@@ -23,7 +23,8 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
       host: "0.0.0.0",
       proxy: {
         "/api": {
-          target: "http://10.161.252.171:38080/api/",
+          target: "http://10.161.254.129:38080/api/",
+          // target: "http://10.161.252.171:38080/api/",
           // target: VITE_API_PROXY_TARGET,
           // target: "https://localhost:44341/api/",
           changeOrigin: true,
