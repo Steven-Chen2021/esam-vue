@@ -41,6 +41,13 @@ export function QuoteDetailHooks() {
     isReadAdvanceColumn: boolean;
   }
 
+  interface iTerms {
+    termOrder: number;
+    isSelected: boolean;
+    isOption: boolean;
+    contents: string;
+  }
+
   interface iCustomerResult {
     customers: dropdownCtl[]; // 修正 customers 的類型
     loading: boolean; // 修正 loading 為 boolean
@@ -50,7 +57,7 @@ export function QuoteDetailHooks() {
   const quotationDetailResult = ref<FieldValues>({
     quoteid: null,
     quoteNo: null,
-    plid: null,
+    pid: null,
     productLineCode: null,
     attentionToId: null,
     attentionTo: null,
@@ -89,7 +96,7 @@ export function QuoteDetailHooks() {
     fclDetails: null,
     exportCharge: null,
     importCharge: null,
-    terms: [] as any[],
+    terms: [] as iTerms[],
     salesInOffice: null,
     salesOverseaOffice: null
   });
@@ -169,7 +176,6 @@ export function QuoteDetailHooks() {
         PID
       );
       if (response != null) {
-        // console.log(response);
         ChargeCodeSettingResult.splice(0);
         ChargeCodeSettingResult.push(...response.returnValue);
 
@@ -224,7 +230,7 @@ export function QuoteDetailHooks() {
         }));
       }
     } catch (error) {
-      console.log("getAttentionToResult", error);
+      console.error("getAttentionToResult", error);
     }
   }
 
@@ -246,7 +252,7 @@ export function QuoteDetailHooks() {
         }));
       }
     } catch (error) {
-      console.log("getQuoteTypeResult", error);
+      console.error("getQuoteTypeResult", error);
     }
   }
 
@@ -261,7 +267,7 @@ export function QuoteDetailHooks() {
         }));
       }
     } catch (error) {
-      console.log("getTradeTermResult", error);
+      console.error("getTradeTermResult", error);
     }
   }
 
@@ -275,7 +281,7 @@ export function QuoteDetailHooks() {
         }));
       }
     } catch (error) {
-      console.log("getCreditTermResult", error);
+      console.error("getCreditTermResult", error);
     }
   }
 
@@ -290,7 +296,7 @@ export function QuoteDetailHooks() {
         freightChargeResult.value.push(...response.returnValue);
       }
     } catch (error) {
-      console.log("getCreditTermResult", error);
+      console.error("getCreditTermResult", error);
     }
   }
 
@@ -299,7 +305,7 @@ export function QuoteDetailHooks() {
       const response = await quoteDetailService.deleteQuotation(QuoteID);
       return response.returnValue;
     } catch (error) {
-      console.log("getCreditTermResult", error);
+      console.error("getCreditTermResult", error);
     }
   }
 
@@ -314,7 +320,7 @@ export function QuoteDetailHooks() {
       }
       return response;
     } catch (error) {
-      console.log("getCreditTermResult", error);
+      console.error("getCreditTermResult", error);
     }
   }
 
@@ -328,7 +334,7 @@ export function QuoteDetailHooks() {
       );
       return response;
     } catch (error) {
-      console.log("getCreditTermResult", error);
+      console.error("getCreditTermResult", error);
     }
   }
 
@@ -344,17 +350,16 @@ export function QuoteDetailHooks() {
       const response = await quoteDetailService.saveQuoteDetail(params);
       return response;
     } catch (error) {
-      console.log("getCreditTermResult", error);
+      console.error("getCreditTermResult", error);
     }
   }
 
   async function saveFreightChargeResult(params) {
     try {
-      console.log(params);
       const response = await quoteDetailService.saveFreightCharge(params);
       return response;
     } catch (error) {
-      console.log("saveFreightChargeResult", error);
+      console.error("saveFreightChargeResult", error);
     }
   }
 
@@ -363,7 +368,7 @@ export function QuoteDetailHooks() {
       const response = await quoteDetailService.getQuotePreviewResult(qid, pid);
       return response;
     } catch (error) {
-      console.log("getQuotePreviewResult", error);
+      console.error("getQuotePreviewResult", error);
     }
   }
 
@@ -372,17 +377,15 @@ export function QuoteDetailHooks() {
       const response = await quoteDetailService.getQuoteHistoryResult(qid);
       return response;
     } catch (error) {
-      console.log("getQuoteHistoryResult", error);
+      console.error("getQuoteHistoryResult", error);
     }
   }
 
   async function getQuoteReferenceCodeResult(customerHQID) {
     try {
-      console.log(customerHQID);
       const response =
         await quoteDetailService.getQuoteReferenceCodeResult(customerHQID);
       if (response != null) {
-        console.log(response);
         quoteReferenceCodeResult.value = response.returnValue.map(
           (item: any) => ({
             label: item.text,
@@ -391,7 +394,7 @@ export function QuoteDetailHooks() {
         );
       }
     } catch (error) {
-      console.log("getQuoteReferenceCodeResult", error);
+      console.error("getQuoteReferenceCodeResult", error);
     }
   }
 
@@ -405,10 +408,9 @@ export function QuoteDetailHooks() {
             value: Number(item.value)
           })
         );
-        console.log(quoteDimensionFactorResult.value);
       }
     } catch (error) {
-      console.log("getQuoteDimensionFactorResult", error);
+      console.error("getQuoteDimensionFactorResult", error);
     }
   }
 
@@ -417,7 +419,7 @@ export function QuoteDetailHooks() {
       const response = await quoteDetailService.SendQuotationToApprove(params);
       return response;
     } catch (error) {
-      console.log("saveFreightChargeResult", error);
+      console.error("saveFreightChargeResult", error);
     }
   }
 
@@ -429,7 +431,7 @@ export function QuoteDetailHooks() {
       );
       return response;
     } catch (error) {
-      console.log("saveFreightChargeResult", error);
+      console.error("saveFreightChargeResult", error);
     }
   }
 
@@ -438,7 +440,7 @@ export function QuoteDetailHooks() {
       const response = await quoteDetailService.getTermConditional(HQID, PID);
       return response;
     } catch (error) {
-      console.log("saveFreightChargeResult", error);
+      console.error("saveFreightChargeResult", error);
     }
   }
 

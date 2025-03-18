@@ -4,43 +4,43 @@ import { CommonHelper } from "@/utils/commonHelper";
 
 export function useHistoryColumns() {
   const { formatDate } = CommonHelper();
-  interface iHistoryResult {
-    id: number;
-    columnName: string;
-    originalValue: string;
-    updatedValue: string;
-    updatedDate: string;
-    updatedBy: string;
-    hasChildren?: boolean;
-    data?: [] | any;
-    column?: [] | any;
-    logType?: string;
-  }
+  // interface iHistoryResult {
+  //   id: number;
+  //   columnName: string;
+  //   originalValue: string;
+  //   updatedValue: string;
+  //   updatedDate: string;
+  //   updatedBy: string;
+  //   hasChildren?: boolean;
+  //   data?: [] | any;
+  //   column?: [] | any;
+  //   logType?: string;
+  // }
 
-  const demo: iHistoryResult[] = [
-    {
-      id: 0,
-      columnName: "Column One",
-      originalValue: "1",
-      updatedValue: "2",
-      updatedDate: "34yasdhg35u3",
-      updatedBy: "4wtdrhjw45u4",
-      hasChildren: true,
-      data: [
-        { sid: 0, userName: "childrenjweriujgwe" },
-        { sid: 2, userName: "childrenjweriujgwe" }
-      ],
-      logType: "label"
-    },
-    {
-      id: 1,
-      columnName: "Column Two",
-      originalValue: "rj4jsrj",
-      updatedValue: "w45jserj",
-      updatedDate: "4w56j4retj4qj",
-      updatedBy: "j4jsgs4rc"
-    }
-  ];
+  // const demo: iHistoryResult[] = [
+  //   {
+  //     id: 0,
+  //     columnName: "Column One",
+  //     originalValue: "1",
+  //     updatedValue: "2",
+  //     updatedDate: "34yasdhg35u3",
+  //     updatedBy: "4wtdrhjw45u4",
+  //     hasChildren: true,
+  //     data: [
+  //       { sid: 0, userName: "childrenjweriujgwe" },
+  //       { sid: 2, userName: "childrenjweriujgwe" }
+  //     ],
+  //     logType: "label"
+  //   },
+  //   {
+  //     id: 1,
+  //     columnName: "Column Two",
+  //     originalValue: "rj4jsrj",
+  //     updatedValue: "w45jserj",
+  //     updatedDate: "4w56j4retj4qj",
+  //     updatedBy: "j4jsgs4rc"
+  //   }
+  // ];
 
   const historyResult = ref([]);
   const apiStatusResult = reactive({
@@ -132,9 +132,10 @@ export function useHistoryColumns() {
       );
       if (response != null && response.isSuccess > 0) {
         historyResult.value = response.returnValue;
-      } else {
-        historyResult.value = demo;
       }
+      // else {
+      //   historyResult.value = demo;
+      // }
       return response;
     } catch (error) {
       apiStatusResult.error = `Data Load Failed - ${error}`;
