@@ -326,7 +326,7 @@ watch(tableSetting.value, newVal => {
 });
 </script>
 <template>
-  <div>
+  <div style="min-height: 240px; overflow: auto">
     <el-alert
       v-if="TaskID !== '0' && showAutoSaveAlert"
       :title="t('task.action.alert')"
