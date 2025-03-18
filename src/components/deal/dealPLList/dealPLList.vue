@@ -363,7 +363,7 @@ watch(
 );
 </script>
 <template>
-  <div>
+  <div style="min-height: 240px; overflow: auto">
     <el-alert
       v-if="DealID !== '0' && showAutoSaveAlert && !dealCloseStatus"
       :title="t('task.action.alert')"
