@@ -18,28 +18,25 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
     resolve: {
       alias
     },
-    // 服务端渲染
     server: {
-      // 端口号
       port: VITE_PORT,
       host: "0.0.0.0",
-      // 本地跨域代理 https://cn.vitejs.dev/config/server-options.html#server-proxy
       proxy: {
         "/api": {
-          target: "http://10.161.252.171:38080/api/",
+          target: "http://10.161.254.129:38080/api/",
+          // target: "http://10.161.252.171:38080/api/",
           // target: VITE_API_PROXY_TARGET,
           // target: "https://localhost:44341/api/",
           changeOrigin: true,
           configure: proxy => {
             proxy.on("proxyReq", proxyReq => {
-              proxyReq.setHeader("Connection", "keep-alive"); // 確保請求不被過早中斷
+              proxyReq.setHeader("Connection", "keep-alive");
             });
           },
           secure: false,
           rewrite: path => path.replace(/^\/api/, "")
         }
       },
-      // 预热文件以提前转换和缓存结果，降低启动期间的初始页面加载时长并防止转换瀑布
       warmup: {
         clientFiles: ["./index.html", "./src/{views,components}/*"]
       }
@@ -70,7 +67,9 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
     },
     define: {
       __INTLIFY_PROD_DEVTOOLS__: false,
-      __APP_INFO__: JSON.stringify(__APP_INFO__)
+      __APP_INFO__: JSON.stringify(__APP_INFO__),
+      __VUE_OPTIONS_API__: true,
+      __VUE_PROD_DEVTOOLS__: true
     }
   };
 };

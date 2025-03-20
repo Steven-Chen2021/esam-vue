@@ -11,7 +11,8 @@ import {
   onMounted,
   defineComponent,
   nextTick,
-  watchEffect
+  watchEffect,
+  watch
 } from "vue";
 
 import {
@@ -56,17 +57,13 @@ import {
 import { useI18n } from "vue-i18n";
 import { Quotation } from "@/types/historyTypeEnum";
 import { useHistoryColumns } from "@/components/HistoryLog/Columns";
-import { useApprovalDetail } from "@/views/approval/hooks";
 import CommonService from "@/services/commonService";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { transpileModule } from "typescript";
-import { pid } from "process";
+import { ApprovalDetailHooks } from "@/views/approval/detailHooks";
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-const { toApprovalDetail, getApprovalParameter } = useApprovalDetail();
 
 const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
@@ -93,7 +90,8 @@ const backToIndex = () => {
   if (props.ParentID && props.ParentID !== "") {
     emit("handleBackEvent");
   } else {
-    router.go(-1);
+    // router.go(-1);
+    router.push({ name: "quoteSearch" });
   }
 };
 // #endregion
@@ -147,6 +145,8 @@ const {
   saveLocalChargeResult
 } = LocalChargeHooks();
 
+const { sendAcceptResult } = ApprovalDetailHooks();
+
 const { AutoSaveItem, AutoSave } = AutoSaveHelper();
 
 defineOptions({
@@ -185,12 +185,17 @@ const handleCreated = editor => {
   editorRef.value = editor;
 };
 const quoteStatusHistory = ref([]);
-// 用於存放所有 HotTable 的 refs
 const hotTableRefs = ref({});
 const previousValue = ref<any>();
+const allowNext = ref<boolean>(false);
+const selectdProductLine = ref(false);
+const ShowNextContent = ref<boolean>(false);
+const noProductLinePermission = ref(false);
 const previousGreetingsValue = ref<any>();
 const dcUrl = ref();
+const acceptDataReadOnly = ref<boolean>(false);
 const salesInfomation = ref<any>({});
+const canSendAccept = ref<boolean>(false);
 const checkProperties = ["pDelivery", "pDischarge", "pReceipt", "pLoading"];
 const rules = {
   customerName: [
@@ -263,13 +268,25 @@ const localChargeNumberColumns = [
   "amount",
   "cost"
 ];
-// 方法來動態設置 HotTable 的 ref
+const acceptModel = ref({
+  acceptedBy: null,
+  acceptedDate: null,
+  quoteID: 0,
+  IsAccept: null
+});
+
+interface iTerms {
+  contents: string;
+  isOption: boolean;
+  isSelected: boolean;
+  termOrder: number;
+}
+
 const setHotTableRef = (city, Category) => el => {
   if (el) {
     hotTableRefs.value[`${city}${Category}`] = el.hotInstance;
   }
 };
-// 示例：在需要的時候更新某個 HotTable 的數據
 const updateHotTableData = (city, data, isExport) => {
   if (!data || data.length === 0) return;
   const emptyItem = Object.fromEntries(
@@ -421,6 +438,7 @@ const dataPermissionExtension = () => {
     });
   }
 };
+
 let quoteDetailColumns: PlusColumn[] = [
   {
     label: "Company Name",
@@ -443,7 +461,11 @@ let quoteDetailColumns: PlusColumn[] = [
       onSelect: (item: { text: string; value: number }) => {
         quotationDetailResult.value.customerHQID = item.value;
         if (pageParams.value.pagemode != "copy") {
-          getProductLineByCustomerResult(item.value);
+          getProductLineByCustomerResult(item.value).then(_ => {
+            if (productLineResult && productLineResult.value.length === 0) {
+              noProductLinePermission.value = true;
+            }
+          });
         }
         getAttentionToResult(item.value);
         if (previousValue.value != undefined && item.value != undefined) {
@@ -453,18 +475,20 @@ let quoteDetailColumns: PlusColumn[] = [
         getQuoteReferenceCodeResult(item.value);
         // 這邊要重新抓 SalesInfo 跟Term&Conditional
 
-        getTermConditionalResult(
-          item.value,
-          quotationDetailResult.value.pid
-        ).then(res => {
-          quotationDetailResult.value.terms = res.returnValue;
-        });
+        if ((quotationDetailResult.value.pid as number) > 0) {
+          // getTermConditionalResult(
+          //   item.value,
+          //   quotationDetailResult.value.pid
+          // ).then(res => {
+          //   quotationDetailResult.value.terms = res.returnValue;
+          // });
 
-        getSalesInfomation(item.value, quotationDetailResult.value.pid).then(
-          res => {
-            salesInfomation.value = res.returnValue;
-          }
-        );
+          getSalesInfomation(item.value, quotationDetailResult.value.pid).then(
+            res => {
+              salesInfomation.value = res.returnValue;
+            }
+          );
+        }
         //如果是Copy的話 而且Value有變動
         if (previousValue.value != null && previousValue.value != item.value) {
           //清空AttentionTo
@@ -499,6 +523,7 @@ let quoteDetailColumns: PlusColumn[] = [
             quotationDetailResult.value.customerHQID = _customerHQID;
             quotationDetailResult.value.customerName = _customerName;
             quotationDetailResult.value.productLineCode = _productLineCode;
+            checkAllowNext();
           });
         }
         hideQuotationType.value = !(value > 0);
@@ -507,28 +532,28 @@ let quoteDetailColumns: PlusColumn[] = [
         showCBMTransfer.value = false;
         getChargeCodeSettingResult(qid.value, _pid);
         if (_pid === 6) {
-          handleProductLineChange();
           PLCode.value = quotationDetailResult.value.productLineCode = "OMS";
           showCBMTransfer.value = true;
-          hideQuoteDimensionFactor.value = true;
-          hideVolumeShareForAgent.value = true;
+          hideQuoteDimensionFactor.value = false;
+          hideVolumeShareForAgent.value = false;
+          nextTick(() => {
+            hideQuoteDimensionFactor.value = true;
+            hideVolumeShareForAgent.value = true;
+          });
         } else if (_pid === 2) {
           PLCode.value = quotationDetailResult.value.productLineCode = "AMS";
           hideQuoteDimensionFactor.value = false;
           hideVolumeShareForAgent.value = false;
         }
         getQuoteTypeResult("Lead", "Type", PLCode.value);
-
         getCreditTermResult(
           quotationDetailResult.value.customerHQID as number,
           _pid
         );
-
         getQuoteFreightChargeResult(qid.value, _pid).then(() => {
           freightChargeSettings.value.data = freightChargeResult.value;
           let exportPromise = Promise.resolve();
           let importPromise = Promise.resolve();
-
           if ((quotationDetailResult.value.quoteid as number) > 0) {
             //don't forEach, just use quoteID to find out all data
             exportPromise = getLocalChargeResult(
@@ -544,7 +569,6 @@ let quoteDetailColumns: PlusColumn[] = [
                 "Export"
               );
             });
-
             importPromise = getLocalChargeResult(
               quotationDetailResult.value.quoteid as number,
               quotationDetailResult.value.pid,
@@ -564,7 +588,6 @@ let quoteDetailColumns: PlusColumn[] = [
             disabledImportLocalChargeBtn.value = false;
           });
         });
-
         if (
           previousValue.value != undefined &&
           value != undefined &&
@@ -572,7 +595,6 @@ let quoteDetailColumns: PlusColumn[] = [
         ) {
           autoSaveTrigger(value, "productLineName");
         }
-
         if (pageParams.value.id === "0") {
           UserAccessRightByCustomerProductLine(
             quotationDetailResult.value.customerHQID,
@@ -609,7 +631,6 @@ let quoteDetailColumns: PlusColumn[] = [
             });
           });
         }
-
         if (
           quotationDetailResult.value.signature === null ||
           quotationDetailResult.value.signature === ""
@@ -621,6 +642,7 @@ let quoteDetailColumns: PlusColumn[] = [
             salesInfomation.value = res.returnValue;
           });
         }
+        showHeaderColumn();
       }
     }
   },
@@ -648,19 +670,14 @@ let quoteDetailColumns: PlusColumn[] = [
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
           const [effective, expired] = value;
-          const timezoneOffset = new Date().getTimezoneOffset() * 60000;
-          const parseEffective = new Date(
-            new Date(effective).getTime() - timezoneOffset
-          );
-          const parseExpired = new Date(
-            new Date(expired).getTime() - timezoneOffset
-          );
-
-          autoSaveTrigger(parseEffective, "effectiveDate");
-          autoSaveTrigger(parseExpired, "expiredDate");
+          const _effective = effective.split(" ")[0] + " 00:00:00"; // 設定當天 00:00:00
+          const _expired = expired.split(" ")[0] + " 23:59:59"; // 設定當天 23:59:59
+          autoSaveTrigger(_effective, "effectiveDate");
+          autoSaveTrigger(_expired, "expiredDate");
         } else {
           console.error("Invalid value format:", value);
         }
+        checkAllowNext();
       }
     }
   },
@@ -683,6 +700,7 @@ let quoteDetailColumns: PlusColumn[] = [
         ) as any;
         quotationDetailResult.value.shippingTerm = selectTT.shippingTerm;
         autoSaveTrigger(value, "tradeTerm");
+        checkAllowNext();
       }
     }
   },
@@ -703,6 +721,7 @@ let quoteDetailColumns: PlusColumn[] = [
         if (previousValue.value != undefined && value != undefined) {
           autoSaveTrigger(value, "shppingTerm");
         }
+        checkAllowNext();
       }
     }
   },
@@ -721,6 +740,7 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: value => {
         autoSaveTrigger(value, "creditTerm");
+        checkAllowNext();
       }
     }
   },
@@ -739,6 +759,7 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: value => {
         autoSaveTrigger(value, "attentionTo");
+        checkAllowNext();
       }
     }
   },
@@ -775,6 +796,7 @@ let quoteDetailColumns: PlusColumn[] = [
       },
       onChange: value => {
         autoSaveTrigger(value, "dimensionFactor");
+        checkAllowNext();
       }
     }
   },
@@ -820,6 +842,7 @@ let quoteDetailColumns: PlusColumn[] = [
         const showHideCodes = ["QAT3", "QST3", "QWT3", "QDT3", "QMT2", "QTM3"];
         hideOTPCode.value = showHideCodes.includes(value) ? false : true;
         autoSaveTrigger(value, "sType");
+        checkAllowNext();
       }
     }
   },
@@ -833,9 +856,44 @@ let quoteDetailColumns: PlusColumn[] = [
     }
   }
 ];
+
+const showHeaderColumn = () => {
+  const _props = [
+    "period",
+    "tradeTermId",
+    "shippingTerm",
+    "creditTermId",
+    "attentionTo",
+    "reference",
+    "typeCode"
+  ];
+  const CommonItems = quoteDetailColumns.filter(f => _props.includes(f.prop));
+  if (quotationDetailResult.value.productLineCode != null) {
+    CommonItems.forEach(f => {
+      f.hideInForm = false;
+    });
+    if (quotationDetailResult.value.pid === 6) {
+      selectdProductLine.value = true;
+    } else {
+      selectdProductLine.value = false;
+    }
+  } else {
+    CommonItems.forEach(f => {
+      f.hideInForm = true;
+    });
+  }
+};
 const handleFreightChargeGetData = (quoteID, ProductLineID) => {
   getQuoteFreightChargeResult(quoteID, ProductLineID).then(() => {
     freightChargeSettings.value.data = freightChargeResult.value;
+    if (hotTableRef.value) {
+      const hotInstance = hotTableRef.value.hotInstance;
+      const rowHeight = 20; // 每列的高度
+      const minHeight = 180; // 最小高度，防止過小
+      const rowCount = hotInstance.getData().length; // 取得目前行數
+      const newHeight = `${minHeight + rowCount * rowHeight}`; // 計算新高度
+      hotInstance.updateSettings({ height: newHeight });
+    }
   });
 };
 const handleLocalChargeResult = (
@@ -863,13 +921,33 @@ const handleLocalChargeResult = (
                 rowHeaders: false,
                 dropdownMenu: true,
                 width: "100%",
-                height: "auto",
+                height: "250",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                columns: localCharge?.generalSettings?.columns?.map(column => ({
-                  data: column.data,
-                  type: column.type,
-                  source: column.source || []
-                })),
+                columns: localCharge?.generalSettings?.columns?.map(column => {
+                  const columnConfig = {
+                    data: column.data,
+                    type: column.type,
+                    source: column.source || []
+                  } as iHotTableColumnSetting;
+                  if (column.column === "charge") {
+                    columnConfig.validator = (value, callback) => {
+                      const isValid =
+                        value !== null && value !== undefined && value !== "";
+                      callback(isValid);
+                    };
+                    columnConfig.allowInvalid = false;
+                  }
+
+                  if (column.type === "numeric") {
+                    columnConfig.validator = (value, callback) => {
+                      // 驗證是否為正整數
+                      const isValid = !isNaN(value) && Number(value) >= 0;
+                      callback(isValid);
+                    };
+                    columnConfig.allowInvalid = false;
+                  }
+                  return columnConfig;
+                }),
                 autoWrapRow: true,
                 autoWrapCol: true,
                 allowInsertColumn: true,
@@ -882,7 +960,16 @@ const handleLocalChargeResult = (
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite,
                 afterPaste: handleExportLocalChargePasteSave,
-                afterAutofill: handleExportLocalChargeAutofillSave
+                afterAutofill: handleExportLocalChargeAutofillSave,
+                afterValidate: (isValid, value, row, prop) => {
+                  if (!isValid) {
+                    ElNotification({
+                      title: "Error",
+                      message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                      type: "error"
+                    });
+                  }
+                }
               },
               weightBreakHotTableSetting: {
                 data: localCharge?.weightBreakSettings?.detail || [],
@@ -890,14 +977,33 @@ const handleLocalChargeResult = (
                 rowHeaders: false,
                 dropdownMenu: true,
                 width: "100%",
-                height: "auto",
+                height: "250",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
                 columns: localCharge?.weightBreakSettings?.columns?.map(
-                  column => ({
-                    data: column.data,
-                    type: column.type,
-                    source: column.source || []
-                  })
+                  column => {
+                    const columnConfig = {
+                      data: column.data,
+                      type: column.type,
+                      source: column.source || []
+                    } as iHotTableColumnSetting;
+                    if (column.column === "charge") {
+                      columnConfig.validator = (value, callback) => {
+                        const isValid =
+                          value !== null && value !== undefined && value !== "";
+                        callback(isValid);
+                      };
+                      columnConfig.allowInvalid = false;
+                    }
+
+                    if (column.type === "numeric") {
+                      columnConfig.validator = (value, callback) => {
+                        const isValid = !isNaN(value) && Number(value) >= 0;
+                        callback(isValid);
+                      };
+                      columnConfig.allowInvalid = false; // 禁止無效值
+                    }
+                    return columnConfig;
+                  }
                 ),
                 autoWrapRow: true,
                 autoWrapCol: true,
@@ -911,7 +1017,16 @@ const handleLocalChargeResult = (
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite,
                 afterPaste: handleExportLocalChargePasteSave,
-                afterAutofill: handleExportLocalChargeAutofillSave
+                afterAutofill: handleExportLocalChargeAutofillSave,
+                afterValidate: (isValid, value, row, prop) => {
+                  if (!isValid) {
+                    ElNotification({
+                      title: "Error",
+                      message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                      type: "error"
+                    });
+                  }
+                }
               },
               localChargePackageList: res,
               localChargePackageSelector: []
@@ -928,11 +1043,30 @@ const handleLocalChargeResult = (
                 width: "100%",
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                columns: localCharge?.generalSettings?.columns?.map(column => ({
-                  data: column.data,
-                  type: column.type,
-                  source: column.source || []
-                })),
+                columns: localCharge?.generalSettings?.columns?.map(column => {
+                  const columnConfig = {
+                    data: column.data,
+                    type: column.type,
+                    source: column.source || []
+                  } as iHotTableColumnSetting;
+                  if (column.column === "charge") {
+                    columnConfig.validator = (value, callback) => {
+                      const isValid =
+                        value !== null && value !== undefined && value !== "";
+                      callback(isValid);
+                    };
+                    columnConfig.allowInvalid = false;
+                  }
+
+                  if (column.type === "numeric") {
+                    columnConfig.validator = (value, callback) => {
+                      const isValid = !isNaN(value) && Number(value) >= 0;
+                      callback(isValid);
+                    };
+                    columnConfig.allowInvalid = false; // 禁止無效值
+                  }
+                  return columnConfig;
+                }),
                 autoWrapRow: true,
                 autoWrapCol: true,
                 allowInsertColumn: true,
@@ -945,7 +1079,16 @@ const handleLocalChargeResult = (
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite,
                 afterPaste: handleImportLocalChargePasteSave,
-                afterAutofill: handleImportLocalChargeAutofillSave
+                afterAutofill: handleImportLocalChargeAutofillSave,
+                afterValidate: (isValid, value, row, prop) => {
+                  if (!isValid) {
+                    ElNotification({
+                      title: "Error",
+                      message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                      type: "error"
+                    });
+                  }
+                }
               },
               weightBreakHotTableSetting: {
                 data: localCharge?.weightBreakSettings?.detail || [],
@@ -956,11 +1099,30 @@ const handleLocalChargeResult = (
                 height: "auto",
                 colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
                 columns: localCharge?.weightBreakSettings?.columns?.map(
-                  column => ({
-                    data: column.data,
-                    type: column.type,
-                    source: column.source || []
-                  })
+                  column => {
+                    const columnConfig = {
+                      data: column.data,
+                      type: column.type,
+                      source: column.source || []
+                    } as iHotTableColumnSetting;
+                    if (column.column === "charge") {
+                      columnConfig.validator = (value, callback) => {
+                        const isValid =
+                          value !== null && value !== undefined && value !== "";
+                        callback(isValid);
+                      };
+                      columnConfig.allowInvalid = false;
+                    }
+
+                    if (column.type === "numeric") {
+                      columnConfig.validator = (value, callback) => {
+                        const isValid = !isNaN(value) && Number(value) >= 0;
+                        callback(isValid);
+                      };
+                      columnConfig.allowInvalid = false; // 禁止無效值
+                    }
+                    return columnConfig;
+                  }
                 ),
                 autoWrapRow: true,
                 autoWrapCol: true,
@@ -974,12 +1136,26 @@ const handleLocalChargeResult = (
                 afterRemoveRow: handleRemoveRow,
                 readOnly: !customerProductLineAccessRight.value.isWrite,
                 afterPaste: handleImportLocalChargePasteSave,
-                afterAutofill: handleImportLocalChargeAutofillSave
+                afterAutofill: handleImportLocalChargeAutofillSave,
+                afterValidate: (isValid, value, row, prop) => {
+                  if (!isValid) {
+                    ElNotification({
+                      title: "Error",
+                      message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                      type: "error"
+                    });
+                  }
+                }
               },
               localChargePackageList: res,
               localChargePackageSelector: []
             });
           }
+
+          LocationResult.value = LocationResult.value
+            .slice()
+            .sort((a, b) => a.city.localeCompare(b.city));
+          console.log(LocationResult);
         }
       });
     });
@@ -1043,7 +1219,16 @@ const handleAfterChange = (changes, source) => {
         );
       });
     }
-
+    const pReceiptData =
+      hotTableRef.value.hotInstance.getDataAtProp("pReceipt");
+    exportLocationResult.value = exportLocationResult.value.filter(item =>
+      pReceiptData.includes(item.city)
+    );
+    const pDeliveryData =
+      hotTableRef.value.hotInstance.getDataAtProp("pDelivery");
+    importLocationResult.value = importLocationResult.value.filter(item =>
+      pDeliveryData.includes(item.city)
+    );
     changes.forEach(([row, prop, oldValue, newValue]) => {
       if (prop === "pReceipt") {
         const cityExists = exportLocationResult.value.some(
@@ -1063,111 +1248,151 @@ const handleAfterChange = (changes, source) => {
                   true,
                   localCharge.cityID
                 ).then(res => {
-                  exportLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    generalHotTableSetting: {
-                      data: localCharge?.generalSettings?.detail || [],
-                      colHeaders: localCharge?.generalSettings?.colHeader || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.generalSettings?.columns?.map(
-                        column => {
-                          const columnConfig = {
-                            data: column.data,
-                            type: column.type,
-                            source: column.source || []
-                          } as iHotTableColumnSetting;
+                  if (localCharge.cityID > 0) {
+                    exportLocationResult.value.push({
+                      cityID: localCharge.cityID,
+                      city: localCharge.city,
+                      detail: [],
+                      generalHotTableSetting: {
+                        data: localCharge?.generalSettings?.detail || [],
+                        colHeaders:
+                          localCharge?.generalSettings?.colHeader || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                        columns: localCharge?.generalSettings?.columns?.map(
+                          column => {
+                            const columnConfig = {
+                              data: column.data,
+                              type: column.type,
+                              source: column.source || []
+                            } as iHotTableColumnSetting;
+                            if (column.column === "charge") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  value !== null &&
+                                  value !== undefined &&
+                                  value !== "";
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false;
+                            }
 
-                          if (column.type === "numeric") {
-                            columnConfig.validator = (value, callback) => {
-                              // 驗證是否為正整數
-                              const isValid =
-                                Number.isInteger(Number(value)) &&
-                                Number(value) > 0;
-                              callback(isValid);
-                            };
-                            columnConfig.allowInvalid = false; // 禁止無效值
+                            if (column.type === "numeric") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  !isNaN(value) && Number(value) >= 0;
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false; // 禁止無效值
+                            }
+
+                            return columnConfig;
                           }
+                        ),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true,
+                        afterChange: handleExportLocalChargeChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow,
+                        readOnly: !customerProductLineAccessRight.value.isWrite,
+                        afterValidate: (isValid, value, row, prop) => {
+                          if (
+                            localChargeNumberColumns.includes(prop) &&
+                            !isValid
+                          ) {
+                            ElNotification({
+                              title: "Error",
+                              message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                              type: "error"
+                            });
+                          }
+                        },
+                        afterPaste: handleExportLocalChargePasteSave,
+                        afterAutofill: handleExportLocalChargeAutofillSave
+                      },
+                      weightBreakHotTableSetting: {
+                        data: localCharge?.weightBreakSettings?.detail || [],
+                        colHeaders:
+                          localCharge?.weightBreakSettings?.colHeader || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                        columns: localCharge?.weightBreakSettings?.columns?.map(
+                          column => {
+                            const columnConfig = {
+                              data: column.data,
+                              type: column.type,
+                              source: column.source || []
+                            } as iHotTableColumnSetting;
+                            if (column.column === "charge") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  value !== null &&
+                                  value !== undefined &&
+                                  value !== "";
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false;
+                            }
 
-                          return columnConfig;
-                        }
-                      ),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleExportLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite,
-                      afterValidate: (isValid, value, row, prop) => {
-                        if (
-                          localChargeNumberColumns.includes(prop) &&
-                          !isValid
-                        ) {
-                          ElNotification({
-                            title: "Error",
-                            message: `Negative quotes are not allowed. Value: ${value}`,
-                            type: "error"
-                          });
-                        }
+                            if (column.type === "numeric") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  !isNaN(value) && Number(value) >= 0;
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false; // 禁止無效值
+                            }
+
+                            return columnConfig;
+                          }
+                        ),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true,
+                        afterChange: handleExportLocalChargeChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow,
+                        readOnly: !customerProductLineAccessRight.value.isWrite,
+                        afterValidate: (isValid, value, row, prop) => {
+                          if (
+                            localChargeNumberColumns.includes(prop) &&
+                            !isValid
+                          ) {
+                            ElNotification({
+                              title: "Error",
+                              message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                              type: "error"
+                            });
+                          }
+                        },
+                        afterPaste: handleExportLocalChargePasteSave,
+                        afterAutofill: handleExportLocalChargeAutofillSave
                       },
-                      afterPaste: handleExportLocalChargePasteSave,
-                      afterAutofill: handleExportLocalChargeAutofillSave
-                    },
-                    weightBreakHotTableSetting: {
-                      data: localCharge?.weightBreakSettings?.detail || [],
-                      colHeaders:
-                        localCharge?.weightBreakSettings?.colHeader || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.weightBreakSettings?.columns?.map(
-                        column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })
-                      ),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleExportLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite,
-                      afterValidate: (isValid, value, row, prop) => {
-                        if (
-                          localChargeNumberColumns.includes(prop) &&
-                          !isValid
-                        ) {
-                          ElNotification({
-                            title: "Error",
-                            message: `Negative quotes are not allowed. Value: ${value}`,
-                            type: "error"
-                          });
-                        }
-                      },
-                      afterPaste: handleExportLocalChargePasteSave,
-                      afterAutofill: handleExportLocalChargeAutofillSave
-                    },
-                    localChargePackageList: res,
-                    localChargePackageSelector: []
-                  });
+                      localChargePackageList: res,
+                      localChargePackageSelector: []
+                    });
+                    // exportLocationResult.value =
+                    //   exportLocationResult.value.sort(
+                    //     (a, b) =>
+                    //       pReceiptData.indexOf(a.city) -
+                    //       pReceiptData.indexOf(b.city)
+                    //   ); // 依照 pReceiptData 順序排序
+                  }
                 });
               });
             }
@@ -1179,10 +1404,6 @@ const handleAfterChange = (changes, source) => {
           item => item.city === newValue
         );
         if (!cityExists) {
-          console.debug(
-            `City ${newValue} 不存在於 exportLocationResult.value 中，執行相應操作`
-          );
-
           getLocalChargeResult(
             0,
             quotationDetailResult.value.pid,
@@ -1196,96 +1417,151 @@ const handleAfterChange = (changes, source) => {
                   true,
                   localCharge.cityID
                 ).then(res => {
-                  importLocationResult.value.push({
-                    cityID: localCharge.cityID,
-                    city: localCharge.city,
-                    detail: [],
-                    generalHotTableSetting: {
-                      data: localCharge?.generalSettings?.detail || [],
-                      colHeaders: localCharge?.generalSettings?.colHeader || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.generalSettings?.columns?.map(
-                        column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })
-                      ),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleImportLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite,
-                      afterValidate: (isValid, value, row, prop) => {
-                        if (
-                          localChargeNumberColumns.includes(prop) &&
-                          !isValid
-                        ) {
-                          ElNotification({
-                            title: "Error",
-                            message: `Negative quotes are not allowed. Value: ${value}`,
-                            type: "error"
-                          });
-                        }
+                  if (localCharge.cityID > 0) {
+                    importLocationResult.value.push({
+                      cityID: localCharge.cityID,
+                      city: localCharge.city,
+                      detail: [],
+                      generalHotTableSetting: {
+                        data: localCharge?.generalSettings?.detail || [],
+                        colHeaders:
+                          localCharge?.generalSettings?.colHeader || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                        columns: localCharge?.generalSettings?.columns?.map(
+                          column => {
+                            const columnConfig = {
+                              data: column.data,
+                              type: column.type,
+                              source: column.source || []
+                            } as iHotTableColumnSetting;
+                            if (column.column === "charge") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  value !== null &&
+                                  value !== undefined &&
+                                  value !== "";
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false;
+                            }
+
+                            if (column.type === "numeric") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  !isNaN(value) && Number(value) >= 0;
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false; // 禁止無效值
+                            }
+
+                            return columnConfig;
+                          }
+                        ),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true,
+                        afterChange: handleImportLocalChargeChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow,
+                        readOnly: !customerProductLineAccessRight.value.isWrite,
+                        afterValidate: (isValid, value, row, prop) => {
+                          if (
+                            localChargeNumberColumns.includes(prop) &&
+                            !isValid
+                          ) {
+                            ElNotification({
+                              title: "Error",
+                              message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                              type: "error"
+                            });
+                          }
+                        },
+                        afterPaste: handleImportLocalChargePasteSave,
+                        afterAutofill: handleImportLocalChargeAutofillSave
                       },
-                      afterPaste: handleImportLocalChargePasteSave,
-                      afterAutofill: handleImportLocalChargeAutofillSave
-                    },
-                    weightBreakHotTableSetting: {
-                      data: localCharge?.weightBreakSettings?.detail || [],
-                      colHeaders:
-                        localCharge?.weightBreakSettings?.colHeader || [],
-                      rowHeaders: false,
-                      dropdownMenu: true,
-                      width: "100%",
-                      height: "auto",
-                      colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
-                      columns: localCharge?.weightBreakSettings?.columns?.map(
-                        column => ({
-                          data: column.data,
-                          type: column.type,
-                          source: column.source || []
-                        })
-                      ),
-                      autoWrapRow: true,
-                      autoWrapCol: true,
-                      allowInsertColumn: true,
-                      allowInsertRow: true,
-                      allowInvalid: true,
-                      licenseKey: "524eb-e5423-11952-44a09-e7a22",
-                      contextMenu: true,
-                      afterChange: handleImportLocalChargeChange,
-                      afterSelection: handleAfterSelection,
-                      afterRemoveRow: handleRemoveRow,
-                      readOnly: !customerProductLineAccessRight.value.isWrite,
-                      afterValidate: (isValid, value, row, prop) => {
-                        if (
-                          localChargeNumberColumns.includes(prop) &&
-                          !isValid
-                        ) {
-                          ElNotification({
-                            title: "Error",
-                            message: `Negative quotes are not allowed. Value: ${value}`,
-                            type: "error"
-                          });
-                        }
+                      weightBreakHotTableSetting: {
+                        data: localCharge?.weightBreakSettings?.detail || [],
+                        colHeaders:
+                          localCharge?.weightBreakSettings?.colHeader || [],
+                        rowHeaders: false,
+                        dropdownMenu: true,
+                        width: "100%",
+                        height: "auto",
+                        colWidths: [500, 300, 80, 80, 80, 80, 80, 80, 180],
+                        columns: localCharge?.weightBreakSettings?.columns?.map(
+                          column => {
+                            const columnConfig = {
+                              data: column.data,
+                              type: column.type,
+                              source: column.source || []
+                            } as iHotTableColumnSetting;
+                            if (column.column === "charge") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  value !== null &&
+                                  value !== undefined &&
+                                  value !== "";
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false;
+                            }
+
+                            if (column.type === "numeric") {
+                              columnConfig.validator = (value, callback) => {
+                                const isValid =
+                                  !isNaN(value) && Number(value) >= 0;
+                                callback(isValid);
+                              };
+                              columnConfig.allowInvalid = false; // 禁止無效值
+                            }
+
+                            return columnConfig;
+                          }
+                        ),
+                        autoWrapRow: true,
+                        autoWrapCol: true,
+                        allowInsertColumn: true,
+                        allowInsertRow: true,
+                        allowInvalid: true,
+                        licenseKey: "524eb-e5423-11952-44a09-e7a22",
+                        contextMenu: true,
+                        afterChange: handleImportLocalChargeChange,
+                        afterSelection: handleAfterSelection,
+                        afterRemoveRow: handleRemoveRow,
+                        readOnly: !customerProductLineAccessRight.value.isWrite,
+                        afterValidate: (isValid, value, row, prop) => {
+                          if (
+                            localChargeNumberColumns.includes(prop) &&
+                            !isValid
+                          ) {
+                            ElNotification({
+                              title: "Error",
+                              message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
+                              type: "error"
+                            });
+                          }
+                        },
+                        afterPaste: handleImportLocalChargePasteSave,
+                        afterAutofill: handleImportLocalChargeAutofillSave
                       },
-                      afterPaste: handleImportLocalChargePasteSave,
-                      afterAutofill: handleImportLocalChargeAutofillSave
-                    },
-                    localChargePackageList: res,
-                    localChargePackageSelector: []
-                  });
+                      localChargePackageList: res,
+                      localChargePackageSelector: []
+                    });
+                    // importLocationResult.value =
+                    //   importLocationResult.value.sort(
+                    //     (a, b) =>
+                    //       pDeliveryData.indexOf(a.city) -
+                    //       pDeliveryData.indexOf(b.city)
+                    //   );
+                  }
                 });
               });
             }
@@ -1294,14 +1570,17 @@ const handleAfterChange = (changes, source) => {
       }
     });
     nextTick(() => {
-      const hotInstance = hotTableRef.value.hotInstance;
-      const rowHeight = 20; // 每列的高度
-      const minHeight = 180; // 最小高度，防止過小
-      const rowCount = hotInstance.getData().length; // 取得目前行數
-      const newHeight = `${minHeight + rowCount * rowHeight}`; // 計算新高度
-      hotInstance.updateSettings({ height: newHeight });
+      adjustExcelContentHeight();
     });
   }
+};
+const adjustExcelContentHeight = () => {
+  const hotInstance = hotTableRef.value.hotInstance;
+  const rowHeight = 18; // 每列的高度
+  const minHeight = 220; // 最小高度，防止過小
+  const rowCount = hotInstance.getData().length; // 取得目前行數
+  const newHeight = `${minHeight + rowCount * rowHeight}`; // 計算新高度
+  hotInstance.updateSettings({ height: newHeight });
 };
 const transformData = (
   LocationResult: any[],
@@ -1433,7 +1712,36 @@ const handleImportLocalChargeChange = (changes, source) => {
       quotationDetailResult.value.pid as number,
       false
     );
-    saveLocalChargeResult(transformedData);
+    saveLocalChargeResult(transformedData).then(_ => {
+      getLocalChargeResult(
+        quotationDetailResult.value.quoteid as number,
+        quotationDetailResult.value.pid,
+        false,
+        ""
+      ).then(() => {
+        localChargeResult.value.forEach(f => {
+          const targetCity = importLocationResult.value.find(
+            item => item.cityID === f.cityID
+          );
+
+          if (targetCity) {
+            targetCity.generalHotTableSetting.data = [
+              ...f.generalSettings.detail
+            ];
+            hotTableRefs.value[`${f.cityID}general`].loadData(
+              f.generalSettings.detail
+            );
+
+            targetCity.weightBreakHotTableSetting.data = [
+              ...f.weightBreakSettings.detail
+            ];
+            hotTableRefs.value[`${f.cityID}weightbreak`].loadData(
+              f.weightBreakSettings.detail
+            );
+          }
+        });
+      });
+    });
   }
 };
 const handleAfterSelection = (row, column, row2, column2) => {
@@ -1612,7 +1920,7 @@ const freightChargeSettings = ref({
   rowHeaders: false,
   dropdownMenu: true,
   width: "100%",
-  height: "auto",
+  height: "180",
   columns: [],
   colWidths: [],
   autoWrapRow: true,
@@ -1633,7 +1941,7 @@ const freightChargeSettings = ref({
       if (!isValid) {
         ElNotification({
           title: "Error",
-          message: `Negative quotes are not allowed. Value: ${value}`,
+          message: `Incorrect number was entered (negative, non-numeric). Value: ${value}`,
           type: "error"
         });
       }
@@ -1650,7 +1958,6 @@ const freightChargeSettings = ref({
       const newHeight = `${minHeight + rowCount * rowHeight}`; // 計算新高度
       // 確保新增的行有空白數據
       const emptyRow = this.getSourceData()[index];
-      console.log(emptyRow);
       if (
         !emptyRow ||
         Object.values(emptyRow).every(value => value === null || value === "")
@@ -1661,6 +1968,29 @@ const freightChargeSettings = ref({
     });
   }
 });
+
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+function adjustPeriodWithoutTimezone(period) {
+  if (!Array.isArray(period) || period.length < 2) return period;
+
+  // 解析日期，不帶時區
+  const start = new Date(period[0]);
+  start.setHours(0, 0, 0, 0); // 設為當天 00:00:00
+
+  const end = new Date(period[1]);
+  end.setHours(23, 59, 59, 999); // 設為當天 23:59:59
+
+  return [formatLocalDate(start), formatLocalDate(end)];
+}
+
 const saveData = () => {
   saveLoading.value = "default";
   quotationForm.value.formInstance
@@ -1673,6 +2003,10 @@ const saveData = () => {
       quotationDetailResult.value.attentionToId =
         quotationDetailResult.value.attentionTo;
       quotationDetailResult.value.refID = quotationDetailResult.value.reference;
+      quotationDetailResult.value.period = adjustPeriodWithoutTimezone(
+        quotationDetailResult.value.period
+      );
+      console.log(quotationDetailResult.value);
       const detailStatus = saveQuoteDetailResult(
         quotationDetailResult.value
       ).then(res => {
@@ -1733,12 +2067,11 @@ const saveData = () => {
 };
 const validateLocalCharge = (instance, type) => {
   let hasInvalid = false;
-
   // 定義檢查邏輯
   const validationRules = {
     general: {
       requiredWhenChargeHasValue: ["uom", "currency", "flat"], // charge 有值時檢查的欄位
-      mustBePositive: ["flat", "flatCost", "min", "minCost"] // 這些欄位必須是正數
+      mustBePositive: ["flatCost", "min", "minCost"] // 這些欄位必須是正數
     },
     weightbreak: {
       requiredWhenChargeHasValue: [
@@ -1754,7 +2087,6 @@ const validateLocalCharge = (instance, type) => {
 
   // 根據類型獲取規則
   const rules = validationRules[type];
-
   if (!rules) {
     console.error(`無效的表格類型: ${type}`);
     return false;
@@ -1770,10 +2102,10 @@ const validateLocalCharge = (instance, type) => {
       rules.requiredWhenChargeHasValue.forEach(field => {
         const colIndex = instance.propToCol(field); // 獲取欄位對應的索引
         const fieldValue = rowData[colIndex]; // 獲取欄位值
-
         if (
           !fieldValue ||
-          (typeof fieldValue === "string" && fieldValue.trim() === "")
+          (typeof fieldValue === "string" && fieldValue.trim() === "") ||
+          (field === "flat" && !isNumber(colIndex))
         ) {
           hasInvalid = true;
           instance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記為無效
@@ -1823,44 +2155,51 @@ const sendApproval = () => {
     "sellingRate7"
   ];
   hotInstance.getData().forEach((rowData, rowIndex) => {
+    const hasOtherFieldsFilled = Object.keys(rowData).some(key => {
+      return (
+        !requiredFields.includes(key) &&
+        rowData[key] &&
+        rowData[key].toString().trim() !== ""
+      );
+    });
     requiredFields.forEach(field => {
       const colIndex = hotInstance.propToCol(field); // 取得欄位索引
       const fieldValue = rowData[colIndex]; // 取得欄位值
+      if (hasOtherFieldsFilled) {
+        if (!fieldValue || fieldValue.trim() === "") {
+          hasInvalid = true;
+          // 標記該單元格為無效
+          hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
+        } else {
+          // 清除無效標記（如果之前標記過無效）
+          hotInstance.setCellMeta(rowIndex, colIndex, "valid", true);
+        }
+        const sellingRatesFilled = sellingRateFields.some(field => {
+          const colIndex = hotInstance.propToCol(field); // 取得欄位索引
+          const fieldValue = rowData[colIndex]; // 取得欄位值
+          return (
+            fieldValue &&
+            (typeof fieldValue === "string" ? fieldValue.trim() !== "" : true)
+          ); // 檢查是否有填寫
+        });
 
-      if (!fieldValue || fieldValue.trim() === "") {
-        hasInvalid = true;
-        // 標記該單元格為無效
-        hotInstance.setCellMeta(rowIndex, colIndex, "valid", false);
-      } else {
-        // 清除無效標記（如果之前標記過無效）
-        hotInstance.setCellMeta(rowIndex, colIndex, "valid", true);
+        if (!sellingRatesFilled) {
+          hasInvalid = true;
+          invalidMsg = "";
+          sellingRateFields.forEach(field => {
+            const colIndex = hotInstance.propToCol(field);
+            if (isNumber(colIndex))
+              hotInstance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記所有 sellingRate 欄位為無效
+          });
+        } else {
+          sellingRateFields.forEach(field => {
+            const colIndex = hotInstance.propToCol(field);
+            if (isNumber(colIndex))
+              hotInstance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記所有 sellingRate 欄位為有效
+          });
+        }
       }
     });
-
-    const sellingRatesFilled = sellingRateFields.some(field => {
-      const colIndex = hotInstance.propToCol(field); // 取得欄位索引
-      const fieldValue = rowData[colIndex]; // 取得欄位值
-      return (
-        fieldValue &&
-        (typeof fieldValue === "string" ? fieldValue.trim() !== "" : true)
-      ); // 檢查是否有填寫
-    });
-
-    if (!sellingRatesFilled) {
-      hasInvalid = true;
-      invalidMsg = "";
-      sellingRateFields.forEach(field => {
-        const colIndex = hotInstance.propToCol(field);
-        if (isNumber(colIndex))
-          hotInstance.setCellMeta(rowIndex, colIndex, "valid", false); // 標記所有 sellingRate 欄位為無效
-      });
-    } else {
-      sellingRateFields.forEach(field => {
-        const colIndex = hotInstance.propToCol(field);
-        if (isNumber(colIndex))
-          hotInstance.setCellMeta(rowIndex, colIndex, "valid", true); // 標記所有 sellingRate 欄位為有效
-      });
-    }
   });
 
   if (hasInvalid) {
@@ -2004,11 +2343,6 @@ const viewHistory = () => {
   getHistoryResult(Quotation, quotationDetailResult.value.quoteid).then(res => {
     historyLoading.value = false;
   });
-};
-const handleProductLineChange = () => {
-  freightChargeSettings.value.colHeaders = ChargeCodeSettingResult.map(
-    item => item.headerName
-  );
 };
 const handleOpen = (ChargeType: string) => {
   if (ChargeType === "FREIGHT") {
@@ -2168,10 +2502,37 @@ const amsCostAdjust = item => {
 const handleHandsonTableAutoSave = category => {
   return false;
 };
+
+const SubmitAccept = isReject => {
+  saveLoading.value = "loading";
+  acceptModel.value.IsAccept = !isReject;
+  if (acceptModel.value.acceptedDate instanceof Date) {
+    const localDate = acceptModel.value.acceptedDate;
+    const formattedDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, "0")}-${String(localDate.getDate()).padStart(2, "0")}`;
+    acceptModel.value.acceptedDate = formattedDate;
+  }
+  sendAcceptResult(acceptModel.value).then(res => {
+    if (res && res.isSuccess) {
+      ElNotification({
+        title: "successfully",
+        message: "Submit Successfully!",
+        type: "success"
+      });
+      acceptDataReadOnly.value = true;
+    } else {
+      ElNotification({
+        title: "Submit Failed",
+        message: res.errorMessage,
+        type: "error"
+      });
+    }
+    saveLoading.value = "disabled";
+  });
+};
+
 watchEffect(() => {
   if (ChargeCodeSettingResult.length > 0) {
     const sourceData = [];
-    console.log(ChargeCodeSettingResult);
     ChargeCodeSettingResult.forEach(item => {
       if (item.selected) {
         let apiRequestType = 0;
@@ -2226,28 +2587,25 @@ watchEffect(() => {
         item["strict"] = true;
       }
     });
-    console.log("freightChargeSettings.value", freightChargeSettings.value);
     freightChargeSettings.value.colWidths = sourceData.map(
       item => item.columnWidth
     );
+    if (allowNext.value) {
+      setTimeout(() => {
+        hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
+        if (hotTableRef.value) {
+          adjustExcelContentHeight();
+        }
+      }, 500);
+    }
   }
   if (historyResult.value.length > 0) {
     historyLoading.value = false;
   }
   const _qid = quotationDetailResult.value.quoteid ?? pageParams.value.id;
-  if (
-    quotationDetailResult.value.customerHQID != null &&
-    pageParams.value.pagemode === "copy" &&
-    customerResult.value.customers.length > 0
-  ) {
-    const isLegalCustomer = customerResult.value.customers.some(
-      c => c.value === _qid
-    );
-    if (!isLegalCustomer) {
-      // quotationDetailResult.value.customerName = null;
-    }
+  if ((_qid as number) > 0) {
+    ShowNextContent.value = true;
   }
-
   if (
     pageParams.value.id != "0" &&
     quotationDetailResult.value.status != "Draft" &&
@@ -2255,7 +2613,19 @@ watchEffect(() => {
   ) {
     customerProductLineAccessRight.value.isWrite = false;
   }
+  showHeaderColumn();
 });
+watch(
+  acceptModel,
+  newVal => {
+    if (newVal.acceptedBy > 0 && newVal.acceptedDate && newVal.quoteID > 0) {
+      canSendAccept.value = true;
+    } else {
+      canSendAccept.value = false;
+    }
+  },
+  { deep: true }
+);
 const userAuth = ref({});
 onMounted(() => {
   if (!props.PropsParam) {
@@ -2296,13 +2666,12 @@ onMounted(() => {
       deleteBtnVisible.value = true;
       previewBtnVisible.value = true;
       nextTick(() => {
-        quotationDetailResult.value.period[0] = formatToLocalTime(
-          quotationDetailResult.value.period[0]
-        );
-        quotationDetailResult.value.period[1] = formatToLocalTime(
-          quotationDetailResult.value.period[1]
-        );
-
+        // quotationDetailResult.value.period[0] = formatToLocalTime(
+        //   quotationDetailResult.value.period[0]
+        // );
+        // quotationDetailResult.value.period[1] = formatToLocalTime(
+        //   quotationDetailResult.value.period[1]
+        // );
         const selectedItem = {
           text: quotationDetailResult.value.customerName,
           value: quotationDetailResult.value.customerHQID
@@ -2312,7 +2681,6 @@ onMounted(() => {
         } else {
           console.warn("onSelect is not defined for Company Name.");
         }
-
         const productLineCodeColumn = quoteDetailColumns.find(
           col => col.prop === "productLineCode"
         ) as any;
@@ -2329,7 +2697,6 @@ onMounted(() => {
             quotationDetailResult.value.shippingTerm
           );
         }
-
         const typeCode = [
           "QAT3",
           "QST3",
@@ -2344,6 +2711,16 @@ onMounted(() => {
         )
           ? false
           : true;
+        allowNext.value = true;
+        acceptModel.value.quoteID = quotationDetailResult.value
+          .quoteid as number;
+        acceptModel.value.acceptedBy = quotationDetailResult.value.acceptBy;
+        acceptModel.value.acceptedDate = quotationDetailResult.value
+          .acceptDate as Date;
+        if ((quotationDetailResult.value.acceptByID as number) > 0) {
+          canSendAccept.value = false;
+          acceptDataReadOnly.value = true;
+        }
       });
       UserAccessRightByCustomerProductLine(
         quotationDetailResult.value.customerHQID,
@@ -2403,19 +2780,10 @@ onMounted(() => {
       }
     }
   });
-  getTradeTermResult().then(itme => {
-    console.log("getTradeTermResult", tradeTermResult);
-  });
+  getTradeTermResult();
   getShippingTermResult();
   getCBMTransferUOMRsult();
   getQuoteDimensionFactorResult();
-  hotTableRef.value.hotInstance.loadData(freightChargeResult.value);
-
-  console.log(
-    "onMounted quotationDetailResult.value",
-    quotationDetailResult.value
-  );
-  console.log("onMounted props.PropsParam", props.PropsParam);
 });
 onBeforeUnmount(() => {
   const editor = editorRef.value;
@@ -2473,11 +2841,63 @@ const handleNumberInput = value => {
       : numericValue;
   quotationDetailResult.value.cbmToWT = validValue;
 };
+const checkAllowNext = () => {
+  const hasProductLine =
+    quotationDetailResult.value.productLineCode != null ||
+    (quotationDetailResult.value.pid as number) > 0;
+
+  const hasPeriod = quotationDetailResult.value.period?.length === 2;
+  const hasTradeTerm =
+    quotationDetailResult.value.tradeTermCode != null ||
+    (quotationDetailResult.value.tradeTermId as number) > 0;
+  const hasShippingTerm = quotationDetailResult.value.shippingTerm != null;
+  const hasCreditTerm =
+    quotationDetailResult.value.creditTermCode != null ||
+    (quotationDetailResult.value.creditTermId as number) > 0;
+  const hasAttentionTo =
+    quotationDetailResult.value.attentionTo != null ||
+    (quotationDetailResult.value.attentionToId as number) > 0;
+  const hasDimensionFactor =
+    quotationDetailResult.value.pid === 6
+      ? true
+      : quotationDetailResult.value.dimensionFactor != null;
+  const hasQuoteType =
+    quotationDetailResult.value.typeCode != null ||
+    quotationDetailResult.value.type != null;
+  const hasCBMRate =
+    quotationDetailResult.value.pid === 2
+      ? true
+      : (quotationDetailResult.value.cbmToWT as number) > 0 ||
+        (quotationDetailResult.value.cbmToWTUOMID as number) > 0 ||
+        quotationDetailResult.value.cbmToWTUOM != null;
+  if (
+    hasProductLine &&
+    hasPeriod &&
+    hasTradeTerm &&
+    hasShippingTerm &&
+    hasCreditTerm &&
+    hasAttentionTo &&
+    hasDimensionFactor &&
+    hasQuoteType &&
+    hasCBMRate
+  ) {
+    allowNext.value = true;
+  }
+};
 </script>
 
 <template>
   <div>
-    <el-card shadow="never" class="relative h-96 overflow-hidden">
+    <el-card
+      v-if="
+        noProductLinePermission &&
+        (quotationDetailResult?.quoteid === null ||
+          quotationDetailResult?.quoteid === 0)
+      "
+    >
+      You currently do not have permission to create an Air/Ocean Quotation
+    </el-card>
+    <el-card v-else shadow="never" class="relative h-96 overflow-hidden">
       <div
         class="flex justify-between items-center sticky top-0 bg-white z-10 p-2"
       >
@@ -2527,23 +2947,7 @@ const handleNumberInput = value => {
               customerProductLineAccessRight.isWrite &&
               (quotationDetailResult.status === 'Draft' ||
                 quotationDetailResult.status === 'Rejected') &&
-              qid === 0
-            "
-            type="primary"
-            plain
-            :size="dynamicSize"
-            :loading-icon="useRenderIcon('ep:eleme')"
-            :loading="saveLoading !== 'disabled'"
-            :icon="useRenderIcon('fa-solid:sync-alt')"
-            @click="saveData"
-          >
-            {{ saveLoading === "disabled" ? "Save" : "Processing" }}
-          </el-button>
-          <el-button
-            v-if="
-              customerProductLineAccessRight.isWrite &&
-              (quotationDetailResult.status === 'Draft' ||
-                quotationDetailResult.status === 'Rejected')
+              qid != 0
             "
             type="primary"
             plain
@@ -2610,6 +3014,60 @@ const handleNumberInput = value => {
               <template #title>
                 <span class="text-orange-500">QUOTE DETAIL</span>
               </template>
+              <div
+                v-if="
+                  quotationDetailResult.statusCode === 'Q3' ||
+                  quotationDetailResult.statusCode === 'Q5'
+                "
+                class="flex flex-1 justify-begin items-center gap-4"
+              >
+                <strong>Accept By:</strong
+                ><el-select
+                  v-model="acceptModel.acceptedBy"
+                  placeholder="Select"
+                  style="width: 180px"
+                  :disabled="acceptDataReadOnly"
+                >
+                  <el-option
+                    v-for="item in attentionToResult"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+                <el-date-picker
+                  v-model="acceptModel.acceptedDate"
+                  type="date"
+                  placeholder="Pick a day"
+                  style="width: 120px"
+                  :disabled="acceptDataReadOnly"
+                />
+                <el-button
+                  v-if="canSendAccept && !acceptDataReadOnly"
+                  :loading-icon="useRenderIcon('ep:eleme')"
+                  :loading="saveLoading !== 'disabled'"
+                  @click="SubmitAccept(true)"
+                  >{{
+                    saveLoading === "disabled" ? "Reject" : "Processing"
+                  }}</el-button
+                >
+                <el-button
+                  v-if="canSendAccept && !acceptDataReadOnly"
+                  :loading-icon="useRenderIcon('ep:eleme')"
+                  :loading="saveLoading !== 'disabled'"
+                  style="margin-left: 0"
+                  @click="SubmitAccept(false)"
+                >
+                  {{ saveLoading === "disabled" ? "Accept" : "Processing" }}
+                </el-button>
+              </div>
+              <ElDivider
+                v-if="
+                  quotationDetailResult.statusCode === 'Q3' ||
+                  quotationDetailResult.statusCode === 'Q5'
+                "
+                style="margin: 2px"
+              />
               <PlusForm
                 ref="quotationForm"
                 v-model="quotationDetailResult"
@@ -2620,9 +3078,8 @@ const handleNumberInput = value => {
                 :hasFooter="false"
                 style="margin-bottom: 10px"
               />
-
               <div
-                v-if="showCBMTransfer"
+                v-if="showCBMTransfer && selectdProductLine"
                 class="el-form-item asterisk-left el-form-item--label-left plus-form-item"
               >
                 <div class="el-form-item__label-wrap" style="width: 138px">
@@ -2668,8 +3125,21 @@ const handleNumberInput = value => {
                   }}
                 </div>
               </div>
+              <el-button
+                v-if="customerProductLineAccessRight.isWrite && qid < 1"
+                :disabled="!allowNext"
+                type="primary"
+                plain
+                :size="dynamicSize"
+                :loading-icon="useRenderIcon('ep:eleme')"
+                :loading="saveLoading !== 'disabled'"
+                :icon="useRenderIcon('fa-solid:arrow-circle-down')"
+                @click="saveData"
+              >
+                {{ saveLoading === "disabled" ? "Next" : "Processing" }}
+              </el-button>
             </el-collapse-item>
-            <el-collapse-item title="GREETINGS" name="2">
+            <el-collapse-item v-if="ShowNextContent" title="GREETINGS" name="2">
               <template #title>
                 <span class="text-orange-500">GREETINGS</span>
               </template>
@@ -2693,7 +3163,11 @@ const handleNumberInput = value => {
               </div>
               <div v-else v-html="quotationDetailResult.greeting" />
             </el-collapse-item>
-            <el-collapse-item title="FREIGHT CHARGE" name="3">
+            <el-collapse-item
+              v-if="ShowNextContent"
+              title="FREIGHT CHARGE"
+              name="3"
+            >
               <template #title>
                 <span class="text-orange-500">FREIGHT CHARGE</span>
               </template>
@@ -2725,7 +3199,11 @@ const handleNumberInput = value => {
                 </div>
               </div>
             </el-collapse-item>
-            <el-collapse-item title="LOCAL CHARGE(Export)" name="4">
+            <el-collapse-item
+              v-if="ShowNextContent"
+              title="LOCAL CHARGE(Export)"
+              name="4"
+            >
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Export)</span>
               </template>
@@ -2768,7 +3246,11 @@ const handleNumberInput = value => {
                 </el-tab-pane>
               </el-tabs>
             </el-collapse-item>
-            <el-collapse-item title="LOCAL CHARGE(Import)" name="5">
+            <el-collapse-item
+              v-if="ShowNextContent"
+              title="LOCAL CHARGE(Import)"
+              name="5"
+            >
               <template #title>
                 <span class="text-orange-500">LOCAL CHARGE(Import)</span>
               </template>
@@ -2812,6 +3294,7 @@ const handleNumberInput = value => {
               </el-tabs>
             </el-collapse-item>
             <el-collapse-item
+              v-if="ShowNextContent"
               title="TERMS & CONDITIONS"
               name="6"
               class="collapse-item"
@@ -2819,25 +3302,32 @@ const handleNumberInput = value => {
               <template #title>
                 <span class="text-orange-500">TERMS & CONDITIONS</span>
               </template>
-              <ol class="term-list">
+              <!-- <ol class="term-list">
                 <li
                   v-for="term in quotationDetailResult.terms"
                   :key="term.termOrder"
                   class="term-item"
                 >
-                  <div class="checkbox-wrapper">
-                    <el-checkbox
-                      v-model="term.isSelected"
-                      :disabled="!customerProductLineAccessRight.isWrite"
-                      class="checkbox-content"
-                      @change="handleTermAndCondition"
-                    />
-                    <span class="checkbox-label">{{ term.contents }}</span>
-                  </div>
+                 
                 </li>
-              </ol>
+              </ol> -->
+              <div class="checkbox-wrapper">
+                <el-checkbox
+                  v-for="item in quotationDetailResult.terms"
+                  :key="item.termOrder"
+                  v-model="item.isSelected"
+                  :disabled="
+                    !customerProductLineAccessRight.isWrite ||
+                    item.isOption === false
+                  "
+                  class="checkbox-content"
+                  :label="item.contents"
+                  @change="handleTermAndCondition"
+                />
+                <!-- <span class="checkbox-label">{{ term.contents }}</span> -->
+              </div>
             </el-collapse-item>
-            <el-collapse-item title="REMARK " name="7">
+            <el-collapse-item v-if="ShowNextContent" title="REMARK " name="7">
               <template #title>
                 <span class="text-orange-500">REMARK</span>
               </template>
@@ -2859,7 +3349,11 @@ const handleNumberInput = value => {
                 "
               />
             </el-collapse-item>
-            <el-collapse-item title="SALES INFO" name="8">
+            <el-collapse-item
+              v-if="(quotationDetailResult.qid as number) > 0"
+              title="SALES INFO"
+              name="8"
+            >
               <template #title>
                 <span class="text-orange-500">SALES INFO</span>
               </template>
@@ -2912,7 +3406,11 @@ const handleNumberInput = value => {
                 </div>
               </div>
             </el-collapse-item>
-            <el-collapse-item title="DOCUMENT CLOUD" name="9">
+            <el-collapse-item
+              v-if="ShowNextContent"
+              title="DOCUMENT CLOUD"
+              name="9"
+            >
               <template #title>
                 <span class="text-orange-500">DOCUMENT CLOUD</span>
               </template>
@@ -3050,7 +3548,8 @@ const handleNumberInput = value => {
 /* 包裝 checkbox 和文字的容器 */
 .checkbox-wrapper {
   display: flex;
-  align-items: flex-start; /* 頂部對齊 */
+  flex-direction: column; /* 讓子元素垂直排列 */
+  gap: 8px; /* 設定間距，可依需求調整 */
 }
 
 /* 調整 checkbox 的位置靠左上 */

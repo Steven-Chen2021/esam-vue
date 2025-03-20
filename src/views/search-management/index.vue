@@ -532,7 +532,7 @@ const resetAdvancedFilterForm = (formEl: FormInstance | undefined) => {
 const submitAdvancedFilterForm = () => {
   const advancedFilterParam = reactive({
     GridColumnSettings: advancedFilterForm.filters,
-    APIRequestType: 3
+    APIRequestType: ColumnSettingParam.value
   });
   CustomerQuickFilterService.updateAdvancedFilter(advancedFilterParam)
     .then(data => {

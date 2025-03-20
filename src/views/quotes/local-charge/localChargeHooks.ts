@@ -102,22 +102,6 @@ export function LocalChargeHooks() {
     }
   }
 
-  async function handleSaveLocalCharge(
-    QuoteID: number,
-    PID: any,
-    IsExport: boolean
-  ) {
-    try {
-      if (IsExport) {
-        console.log("exportLocationResult", exportLocationResult);
-      } else {
-        console.log("importLocationResult", importLocationResult);
-      }
-    } catch (error) {
-      console.error("getQuotationDetailResult Error:", error);
-    }
-  }
-
   async function getLocalChargePackageResult(PLCode, IsExport, cityID) {
     try {
       const response = await quoteDetailService.getQuoteLCPResult(
@@ -177,7 +161,6 @@ export function LocalChargeHooks() {
     importLocationResult,
     getLocalChargeResult,
     localChargeResult,
-    handleSaveLocalCharge,
     getLocalChargePackageResult,
     getLocalChargePackageDetailResult,
     saveLocalChargeResult
