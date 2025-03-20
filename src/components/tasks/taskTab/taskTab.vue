@@ -1027,7 +1027,7 @@ watch(
         </div>
       </template>
     </el-drawer>
-    <el-tour
+    <!-- <el-tour
       v-model="showTour"
       :current="tourStep"
       @finish="handlefinishTour"
@@ -1049,10 +1049,7 @@ watch(
         :title="t('customer.tour.tourBF1Title')"
         :description="t('customer.tour.tourBF1ext')"
       />
-      <!-- <template #indicators="{ current, total }">
-      <span>{{ current + 1 }} / {{ total }}</span>
-    </template> -->
-    </el-tour>
+    </el-tour> -->
     <el-dialog
       v-model="dialogVisible"
       :title="t('customer.list.quickFilter.warnTitle')"
