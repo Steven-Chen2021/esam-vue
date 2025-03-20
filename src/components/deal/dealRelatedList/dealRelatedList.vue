@@ -392,12 +392,13 @@ const plList = ref([]);
 const selectable = row =>
   props.Type !== "quoteSearch" || plList.value.includes(row.productLineName);
 const updateSelectable = list => {
-  plList.value = [];
-  if (list.includes("AMS")) {
-    plList.value.push("Air");
-  } else if (list.includes("OMS")) {
-    plList.value.push("Ocean");
-  }
+  // plList.value = [];
+  // if (list.includes("AMS")) {
+  //   plList.value.push("Air");
+  // } else if (list.includes("OMS")) {
+  //   plList.value.push("Ocean");
+  // }
+  plList.value = [...list];
   console.log("updateSelectable", plList.value);
 };
 defineExpose({ updateSelectable });
