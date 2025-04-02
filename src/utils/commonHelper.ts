@@ -49,7 +49,8 @@ export function CommonHelper() {
     columnName,
     needHours?,
     needMinutes?,
-    needSeconds?
+    needSeconds?,
+    isAutoSaveDate?
   ) {
     if (typeof dateString === "object" && Array.isArray(dateString)) {
       return dateString
@@ -95,13 +96,25 @@ export function CommonHelper() {
     const seconds = date.getSeconds().toString().padStart(2, "0");
     let returnDate = `${month} ${day}, ${year}`;
     if (needHours) {
-      returnDate = `${month} ${day}, ${year} ${hours}`;
+      if (isAutoSaveDate) {
+        returnDate = `${year}-${month}-${day} ${hours}`;
+      } else {
+        returnDate = `${month} ${day}, ${year} ${hours}`;
+      }
     }
     if (needMinutes) {
-      returnDate = `${month} ${day}, ${year} ${hours}:${minutes}`;
+      if (isAutoSaveDate) {
+        returnDate = `${year}-${month}-${day} ${hours}:${minutes}`;
+      } else {
+        returnDate = `${month} ${day}, ${year} ${hours}:${minutes}`;
+      }
     }
     if (needSeconds) {
-      returnDate = `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`;
+      if (isAutoSaveDate) {
+        returnDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      } else {
+        returnDate = `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`;
+      }
     }
     return returnDate;
   }
