@@ -330,7 +330,8 @@ const dataPermissionExtension = () => {
               if (
                 element.visibilityLevel === 2 &&
                 customerProductLineAccessRight.value.isReadAdvanceColumn ===
-                  false
+                  false &&
+                pageParams.value.pagemode != "copy"
               ) {
                 quotationDetailResult.value.typeCode = "permission denied";
               } else if (
