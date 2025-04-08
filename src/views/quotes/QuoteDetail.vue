@@ -619,12 +619,18 @@ let quoteDetailColumns: PlusColumn[] = [
             quotationDetailResult.value.customerHQID,
             _pid
           ).then(res => {
-            customerProductLineAccessRight.value = res.returnValue;
+            if (res == null || res?.returnValue == null) {
+              customerProductLineAccessRight.value = {
+                isWrite: false,
+                isReadAdvanceColumn: false
+              };
+            } else {
+              customerProductLineAccessRight.value = res.returnValue;
+            }
             customerProductLineAccessRight.value.isWrite =
               pageParams.value.pagemode === "view"
                 ? false
                 : customerProductLineAccessRight.value.isWrite;
-            console.log(624);
             const dcParams = { KeyValue: qid.value, DCType: "NRA" };
             DocumentCloudResult(dcParams).then(res => {
               if (res && res.isSuccess) {
@@ -2750,15 +2756,25 @@ onMounted(() => {
         quotationDetailResult.value.customerHQID,
         _pid
       ).then(res => {
-        userAuth.value = { ...res.returnValue };
-        customerProductLineAccessRight.value = res.returnValue;
-        customerProductLineAccessRight.value.isWrite =
-          pageParams.value.pagemode === "view"
-            ? false
-            : pageParams.value.pagemode === "copy"
-              ? true
-              : customerProductLineAccessRight.value.isWrite;
-        console.log(2761);
+        if (res === null || res.returnValue === null) {
+          userAuth.value = {
+            isWrite: false,
+            isReadAdvanceColumn: false
+          };
+          customerProductLineAccessRight.value = {
+            isWrite: false,
+            isReadAdvanceColumn: false
+          };
+        } else {
+          userAuth.value = { ...res.returnValue };
+          customerProductLineAccessRight.value = res.returnValue;
+          customerProductLineAccessRight.value.isWrite =
+            pageParams.value.pagemode === "view"
+              ? false
+              : pageParams.value.pagemode === "copy"
+                ? true
+                : customerProductLineAccessRight.value.isWrite;
+        }
         dataPermissionExtension();
         if (pageParams.value.pagemode === "copy") {
           const dcParams = { KeyValue: qid.value, DCType: "NRA" };
