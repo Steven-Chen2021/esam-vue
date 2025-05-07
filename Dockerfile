@@ -44,9 +44,9 @@ ENV VITE_PORT=${VITE_PORT}
 # 執行建構（build）指令
 RUN pnpm build --mode ${BUILD_ENV}
 
+# nginx setting
 FROM nginx:stable-alpine AS production-stage
 
-# 將 build 階段產生的檔案複製到 nginx 的目錄中
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

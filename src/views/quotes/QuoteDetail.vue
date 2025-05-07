@@ -69,8 +69,12 @@ const { columns, historyResult, getHistoryResult } = useHistoryColumns();
 
 const { t } = useI18n();
 const { toPreView } = usePreView();
-const { GetColumnSettingResult, columnSettingResult, DocumentCloudResult } =
-  CommonHelper();
+const {
+  GetColumnSettingResult,
+  columnSettingResult,
+  DocumentCloudResult,
+  formatDate
+} = CommonHelper();
 
 const { ReconstructDCURL } = UrlHelper();
 // #region customer profile tab
@@ -326,7 +330,8 @@ const dataPermissionExtension = () => {
               if (
                 element.visibilityLevel === 2 &&
                 customerProductLineAccessRight.value.isReadAdvanceColumn ===
-                  false
+                  false &&
+                pageParams.value.pagemode != "copy"
               ) {
                 quotationDetailResult.value.typeCode = "permission denied";
               } else if (
@@ -357,7 +362,8 @@ const dataPermissionExtension = () => {
               ctl = quoteDetailColumns.find(f => f.prop === "period");
               if (customerProductLineAccessRight.value.isWrite === false) {
                 quotationDetailResult.value.period = formatDate(
-                  quotationDetailResult.value.period
+                  quotationDetailResult.value.period,
+                  "period"
                 );
               }
               break;
@@ -605,6 +611,7 @@ let quoteDetailColumns: PlusColumn[] = [
               pageParams.value.pagemode === "view"
                 ? false
                 : customerProductLineAccessRight.value.isWrite;
+            console.log(613);
           });
         }
         if (pageParams.value.pagemode != "copy") {
@@ -612,7 +619,14 @@ let quoteDetailColumns: PlusColumn[] = [
             quotationDetailResult.value.customerHQID,
             _pid
           ).then(res => {
-            customerProductLineAccessRight.value = res.returnValue;
+            if (res == null || res?.returnValue == null) {
+              customerProductLineAccessRight.value = {
+                isWrite: false,
+                isReadAdvanceColumn: false
+              };
+            } else {
+              customerProductLineAccessRight.value = res.returnValue;
+            }
             customerProductLineAccessRight.value.isWrite =
               pageParams.value.pagemode === "view"
                 ? false
@@ -670,10 +684,25 @@ let quoteDetailColumns: PlusColumn[] = [
       onChange: (value: [string, string]) => {
         if (Array.isArray(value) && value.length === 2) {
           const [effective, expired] = value;
-          const _effective = effective.split(" ")[0] + " 00:00:00"; // 設定當天 00:00:00
-          const _expired = expired.split(" ")[0] + " 23:59:59"; // 設定當天 23:59:59
-          autoSaveTrigger(_effective, "effectiveDate");
-          autoSaveTrigger(_expired, "expiredDate");
+          const effectiveDate = new Date(effective);
+          effectiveDate.setHours(0, 0, 0, 0);
+          const expiredDate = new Date(expired);
+          expiredDate.setHours(23, 59, 59, 999);
+          console.log(
+            formatDate(effectiveDate, "effectiveDate", true, true, true, true)
+          );
+          autoSaveTrigger(
+            formatDate(effectiveDate, "effectiveDate", true, true, true, true),
+            "effectiveDate"
+          );
+          autoSaveTrigger(
+            formatDate(expiredDate, "effectiveDate", true, true, true, true),
+            "expiredDate"
+          );
+          // const _effective = effective.split(" ")[0] + " 00:00:00"; // 設定當天 00:00:00
+          // const _expired = expired.split(" ")[0] + " 23:59:59"; // 設定當天 23:59:59
+          // autoSaveTrigger(_effective, "effectiveDate");
+          // autoSaveTrigger(_expired, "expiredDate");
         } else {
           console.error("Invalid value format:", value);
         }
@@ -2269,6 +2298,7 @@ const sendApproval = () => {
             type: "success"
           });
           customerProductLineAccessRight.value.isWrite = false;
+          console.log(2292);
           setTimeout(() => {
             router.replace({
               name: "QuoteDetail",
@@ -2726,14 +2756,25 @@ onMounted(() => {
         quotationDetailResult.value.customerHQID,
         _pid
       ).then(res => {
-        userAuth.value = { ...res.returnValue };
-        customerProductLineAccessRight.value = res.returnValue;
-        customerProductLineAccessRight.value.isWrite =
-          pageParams.value.pagemode === "view"
-            ? false
-            : pageParams.value.pagemode === "copy"
-              ? true
-              : customerProductLineAccessRight.value.isWrite;
+        if (res === null || res.returnValue === null) {
+          userAuth.value = {
+            isWrite: false,
+            isReadAdvanceColumn: false
+          };
+          customerProductLineAccessRight.value = {
+            isWrite: false,
+            isReadAdvanceColumn: false
+          };
+        } else {
+          userAuth.value = { ...res.returnValue };
+          customerProductLineAccessRight.value = res.returnValue;
+          customerProductLineAccessRight.value.isWrite =
+            pageParams.value.pagemode === "view"
+              ? false
+              : pageParams.value.pagemode === "copy"
+                ? true
+                : customerProductLineAccessRight.value.isWrite;
+        }
         dataPermissionExtension();
         if (pageParams.value.pagemode === "copy") {
           const dcParams = { KeyValue: qid.value, DCType: "NRA" };
@@ -2797,40 +2838,40 @@ const formatToLocalTime = utcDateString => {
     .tz(userTimeZone)
     .format("YYYY-MM-DD HH:mm:ss");
 };
-const formatDate = dateInput => {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-  ];
+// const formatDate = dateInput => {
+//   const months = [
+//     "Jan",
+//     "Feb",
+//     "Mar",
+//     "Apr",
+//     "May",
+//     "Jun",
+//     "Jul",
+//     "Aug",
+//     "Sep",
+//     "Oct",
+//     "Nov",
+//     "Dec"
+//   ];
 
-  // 格式化單一日期
-  const formatSingleDate = dateString => {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-    return `${month} ${day}, ${year}`;
-  };
+//   // 格式化單一日期
+//   const formatSingleDate = dateString => {
+//     const date = new Date(dateString);
+//     const day = date.getDate().toString().padStart(2, "0");
+//     const month = months[date.getMonth()];
+//     const year = date.getFullYear();
+//     return `${month} ${day}, ${year}`;
+//   };
 
-  // 如果輸入是一個數組，處理日期範圍
-  if (Array.isArray(dateInput) && dateInput.length === 2) {
-    const [start, end] = dateInput;
-    return `${formatSingleDate(start)} - ${formatSingleDate(end)}`;
-  }
+//   // 如果輸入是一個數組，處理日期範圍
+//   if (Array.isArray(dateInput) && dateInput.length === 2) {
+//     const [start, end] = dateInput;
+//     return `${formatSingleDate(start)} - ${formatSingleDate(end)}`;
+//   }
 
-  // 處理單一日期
-  return formatSingleDate(dateInput);
-};
+//   // 處理單一日期
+//   return formatSingleDate(dateInput);
+// };
 const handleNumberInput = value => {
   // 過濾掉非數字和小數點的輸入，只允許數字和小數點
   const numericValue = value.replace(/[^\d.]/g, "");
@@ -2931,7 +2972,7 @@ const checkAllowNext = () => {
                 <template #default="scope">
                   <div style="display: flex; align-items: center">
                     <span style="margin-left: 10px">{{
-                      formatDate(scope.row.createdDate)
+                      formatDate(scope.row.createdDate, "createdDate")
                     }}</span>
                   </div>
                 </template>
@@ -2960,7 +3001,7 @@ const checkAllowNext = () => {
             {{ saveLoading === "disabled" ? "Send to Approval" : "Processing" }}
           </el-button>
           <el-button
-            v-if="customerProductLineAccessRight.isWrite && previewBtnVisible"
+            v-if="userAuth['isWrite'] && previewBtnVisible"
             type="primary"
             plain
             :size="dynamicSize"
