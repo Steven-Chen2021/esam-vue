@@ -201,12 +201,12 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       DealProfileService.saveDealResult(profileData.value)
         .then(data => {
           console.log("updateTaskProfile data", data);
-          ElMessage({
-            message: t("customer.profile.fullSaveSucAlert"),
-            grouping: true,
-            type: "success"
-          });
           if (data.isSuccess && data.returnValue) {
+            ElMessage({
+              message: t("customer.profile.fullSaveSucAlert"),
+              grouping: true,
+              type: "success"
+            });
             CID = data.returnValue.toString();
             ProfileID.value = CID;
             console.log("ProfileID.value", ProfileID.value);
@@ -221,6 +221,12 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
               "contact",
               "quote"
             ];
+          } else {
+            ElMessage({
+              message: t("customer.profile.fullSaveFailAlert"),
+              grouping: true,
+              type: "warning"
+            });
           }
           formLoading.value = false;
         })

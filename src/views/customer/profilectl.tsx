@@ -232,13 +232,20 @@ export function customerProfileCTL() {
         trigger: "change"
       }
     ],
-    // city: [
-    //   {
-    //     required: true,
-    //     message: t('customer.profile.general.mandatory'),
-    //     trigger: "change"
-    //   }
-    // ],
+    state: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
+    city: [
+      {
+        required: true,
+        message: t("customer.profile.general.mandatory"),
+        trigger: "change"
+      }
+    ],
     zip: [
       {
         required: true,

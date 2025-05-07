@@ -463,12 +463,12 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       TaskProfileService.updateTaskProfile(profileData.value)
         .then(data => {
           console.log("updateTaskProfile data", data);
-          ElMessage({
-            message: t("customer.profile.fullSaveSucAlert"),
-            grouping: true,
-            type: "success"
-          });
           if (data.isSuccess && data.returnValue) {
+            ElMessage({
+              message: t("customer.profile.fullSaveSucAlert"),
+              grouping: true,
+              type: "success"
+            });
             CID = data.returnValue.toString();
             ProfileID.value = CID;
             console.log("ProfileID.value", ProfileID.value);
@@ -476,6 +476,12 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
             fetchProfileData();
             fetchDCUrl();
             activeName.value = ["general", "actionItem", "documents"];
+          } else {
+            ElMessage({
+              message: t("customer.profile.fullSaveFailAlert"),
+              grouping: true,
+              type: "warning"
+            });
           }
           formLoading.value = false;
         })

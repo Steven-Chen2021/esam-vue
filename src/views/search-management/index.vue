@@ -549,7 +549,23 @@ const submitAdvancedFilterForm = () => {
 const collapsePanel = () => {
   activePanelNames.value = [];
 };
+const calShowBasicFilterTopForm = () => {
+  const c = advancedFilterForm.filters.filter(
+    a =>
+      a.enableOnSearchView &&
+      ((a.value && a.value !== "") ||
+        (a.selectValue && a.selectValue !== "") ||
+        (a.ValueBegin && a.ValueBegin !== "") ||
+        (a.ValueEnd && a.ValueEnd !== ""))
+  );
+  if (c && c.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+};
 const searchBtnClick = filterForm => {
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   console.log(filterForm);
   collapsePanel();
   handleConditionalSearch(filterForm);
@@ -558,6 +574,7 @@ const searchBtnClick = filterForm => {
   });
 };
 const handleSearch = filterForm => {
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   handleConditionalSearch(filterForm);
   quickFilterList.value.forEach(a => {
     a.clicked = false;
@@ -566,8 +583,10 @@ const handleSearch = filterForm => {
 const handleResetSearch = () => {
   handleResetConditionalSearch();
   handleAdvancedReset();
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
 };
 const handleFilterBtnClick = item => {
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   handleBasicFilterBtnClick(item);
   handleConditionalSearch(advancedFilterForm);
 };

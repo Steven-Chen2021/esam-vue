@@ -607,18 +607,24 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       CustomerProfileService.updateCustomerProfile(profileData.value)
         .then(data => {
           console.log("updateCustomerProfile data", data);
-          ElMessage({
-            message: t("customer.profile.fullSaveSucAlert"),
-            grouping: true,
-            type: "success"
-          });
           if (data.isSuccess && data.returnValue) {
+            ElMessage({
+              message: t("customer.profile.fullSaveSucAlert"),
+              grouping: true,
+              type: "success"
+            });
             router.replace({
               name: "CustomerDetail",
               params: {
                 id: data.returnValue,
                 qname: profileData.value["customerName"]
               }
+            });
+          } else {
+            ElMessage({
+              message: t("customer.profile.fullSaveFailAlert"),
+              grouping: true,
+              type: "warning"
             });
           }
         })
@@ -1038,7 +1044,7 @@ const cancelForm = () => {
                             "
                             >{{ profileData[filterItem.filterKey] }}</el-text
                           >
-                          <div
+                          <!-- <div
                             v-else-if="
                               filterOptions[filterItem.filterKey] &&
                               filterItem.filterType === 'cascadingdropdown' &&
@@ -1101,6 +1107,77 @@ const cancelForm = () => {
                                 )
                               "
                             />
+                          </div> -->
+                          <div
+                            v-else-if="
+                              filterOptions[filterItem.filterKey] &&
+                              filterItem.filterType === 'cascadingdropdown' &&
+                              filterItem.filterSourceType === 'api' &&
+                              filterItem.filterKey === 'city'
+                            "
+                          >
+                            <el-form-item prop="city">
+                              <el-select
+                                ref="refCity"
+                                v-model="profileData[filterItem.filterKey]"
+                                :disabled="disableStatus(filterItem)"
+                                :placeholder="
+                                  t(
+                                    'customer.list.quickFilter.holderSelectText'
+                                  )
+                                "
+                                style="width: 240px"
+                                filterable
+                                @change="
+                                  v =>
+                                    handleDropDownChange(
+                                      profileFormRef,
+                                      v,
+                                      filterItem,
+                                      null
+                                    )
+                                "
+                              >
+                                <el-option
+                                  v-for="option in filterOptions[
+                                    filterItem.filterKey
+                                  ].list"
+                                  :key="option.value"
+                                  :label="option.text"
+                                  :value="option.value"
+                                />
+                              </el-select>
+                            </el-form-item>
+                            <el-form-item
+                              v-if="
+                                profileData['city'] === '' ||
+                                profileData['city'] === null
+                              "
+                              label=""
+                              style="margin-top: 18px"
+                              prop="cityText"
+                              ><el-input
+                                v-if="
+                                  profileData['city'] === '' ||
+                                  profileData['city'] === null
+                                "
+                                v-model="profileData['cityText']"
+                                maxlength="20"
+                                show-word-limit
+                                :disabled="disableStatus(filterItem)"
+                                :placeholder="
+                                  t('customer.list.quickFilter.holderKeyinText')
+                                "
+                                style="width: 240px"
+                                @blur="
+                                  autoSaveForm(
+                                    profileFormRef,
+                                    { filterKey: 'cityText' },
+                                    profileData['cityText']
+                                  )
+                                "
+                              />
+                            </el-form-item>
                           </div>
                           <el-select
                             v-else-if="

@@ -597,7 +597,7 @@ quote:
   share:
     copyToolTip: Click to copy pdf link
     copySuc: Link copied
-    attachAlert: "The quotation attachment will be automatically added when sending email."
+    attachAlert: "The quotation attachment and mail signature will be automatically added when sending email."
 message:
   required:
     companyName: Company Name Is Required.
