@@ -739,20 +739,12 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
       ContactProfileService.updateContactProfile(profileData.value)
         .then(data => {
           console.log("updateContactProfile data", data);
-          ElMessage({
-            message: t("customer.profile.fullSaveSucAlert"),
-            grouping: true,
-            type: "success"
-          });
           if (data.isSuccess && data.returnValue) {
-            // router.replace({
-            //   name: "ContactDetail",
-            //   params: {
-            //     id: data.returnValue,
-            //     lid: LID,
-            //     qname: profileData.value["fullName"]
-            //   }
-            // });
+            ElMessage({
+              message: t("customer.profile.fullSaveSucAlert"),
+              grouping: true,
+              type: "success"
+            });
             CID = data.returnValue.toString();
             ProfileID.value = CID;
             console.log("ProfileID.value", ProfileID.value);
@@ -760,6 +752,12 @@ const submitForm = async (formEl: FormInstance | undefined, disable) => {
             fetchProfileData();
             fetchDCUrl();
             activeName.value = ["general", "documents"];
+          } else {
+            ElMessage({
+              message: t("customer.profile.fullSaveFailAlert"),
+              grouping: true,
+              type: "warning"
+            });
           }
         })
         .catch(err => {
