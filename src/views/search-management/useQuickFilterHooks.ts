@@ -574,6 +574,22 @@ export function quickFilterCTL() {
     { deep: true } // 深度监听 filters 的变化
   );
   const activePanelNames = ref(["BasicFilterForm"]);
+  const calShowBasicFilterTopForm = () => {
+    const c = advancedFilterForm.filters.filter(
+      a =>
+        a.enableOnSearchView &&
+        ((a.value && a.value !== "") ||
+          (a.selectValue && a.selectValue !== "") ||
+          (a.ValueBegin && a.ValueBegin !== "") ||
+          (a.ValueEnd && a.ValueEnd !== ""))
+    );
+    console.log("c.length", c.length);
+    if (c && c.length > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  };
   return {
     getOptions,
     convertDropDownValue,
@@ -603,6 +619,7 @@ export function quickFilterCTL() {
     monthDatePickerList,
     QuickFilterColumnListParam,
     CustomizeQuickFilterSettingParam,
-    ColumnSettingParam
+    ColumnSettingParam,
+    calShowBasicFilterTopForm
   };
 }
