@@ -710,21 +710,22 @@ export function quickFilterCTL() {
           (a.ValueEnd && a.ValueEnd !== ""))
     );
   });
-  const showBasicFilterTopForm = computed(() => {
-    const c = advancedFilterForm.filters.filter(
-      a =>
-        a.enableOnSearchView &&
-        ((a.value && a.value !== "") ||
-          (a.selectValue && a.selectValue !== "") ||
-          (a.ValueBegin && a.ValueBegin !== "") ||
-          (a.ValueEnd && a.ValueEnd !== ""))
-    );
-    if (c && c.length > 0) {
-      return true;
-    } else {
-      return false;
-    }
-  });
+  const showBasicFilterTopForm = ref(false);
+  // const showBasicFilterTopForm = computed(() => {
+  //   const c = advancedFilterForm.filters.filter(
+  //     a =>
+  //       a.enableOnSearchView &&
+  //       ((a.value && a.value !== "") ||
+  //         (a.selectValue && a.selectValue !== "") ||
+  //         (a.ValueBegin && a.ValueBegin !== "") ||
+  //         (a.ValueEnd && a.ValueEnd !== ""))
+  //   );
+  //   if (c && c.length > 0) {
+  //     return true;
+  //   } else {
+  //     return false;
+  //   }
+  // });
   const showBasicFilterForm = ref(true);
   watch(showBasicFilterTopForm, newVal => {
     const f = quickFilterList.value.filter(c => c.clicked);
@@ -734,6 +735,22 @@ export function quickFilterCTL() {
     }
   });
   const activePanelNames = ref(["BasicFilterForm"]);
+  const calShowBasicFilterTopForm = () => {
+    const c = advancedFilterForm.filters.filter(
+      a =>
+        a.enableOnSearchView &&
+        ((a.value && a.value !== "") ||
+          (a.selectValue && a.selectValue !== "") ||
+          (a.ValueBegin && a.ValueBegin !== "") ||
+          (a.ValueEnd && a.ValueEnd !== ""))
+    );
+    console.log("c.length", c.length);
+    if (c && c.length > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  };
   return {
     getOptions,
     convertDropDownValue,
@@ -760,6 +777,7 @@ export function quickFilterCTL() {
     handleBasicFilterBtnClick,
     activePanelNames,
     filterRequestType,
-    monthDatePickerList
+    monthDatePickerList,
+    calShowBasicFilterTopForm
   };
 }

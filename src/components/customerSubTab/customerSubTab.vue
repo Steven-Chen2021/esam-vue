@@ -131,7 +131,8 @@ const {
   filterRequestType,
   QuickFilterColumnListParam,
   CustomizeQuickFilterSettingParam,
-  ColumnSettingParam
+  ColumnSettingParam,
+  calShowBasicFilterTopForm
 } = quickFilterCTL();
 const {
   fetchListData,
@@ -307,8 +308,10 @@ const handleCopyQuote = (quoteID, PID) => {
 const handleResetSearch = () => {
   handleResetConditionalSearch();
   handleAdvancedReset();
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
 };
 const handleSearch = filterForm => {
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   console.log("handleSearch", filterForm);
   activePanelNames.value = [];
   handleConditionalSearch(filterForm);
@@ -318,6 +321,7 @@ const handleSearch = filterForm => {
 };
 const handleFilterBtnClick = item => {
   handleBasicFilterBtnClick(item);
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   handleConditionalSearch(advancedFilterForm);
 };
 const getTitle = () => {
@@ -765,7 +769,7 @@ onMounted(async () => {
                 icon="solar:copy-line-duotone"
                 width="18px"
                 height="18px"
-                style=" margin-left: 12px;color: var(--el-color-primary)"
+                style="margin-left: 12px; color: var(--el-color-primary)"
                 class="icon-link"
                 @click="
                   handleCopyQuote(

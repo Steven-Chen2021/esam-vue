@@ -93,7 +93,8 @@ const {
   filterRequestType,
   QuickFilterColumnListParam,
   CustomizeQuickFilterSettingParam,
-  ColumnSettingParam
+  ColumnSettingParam,
+  calShowBasicFilterTopForm
 } = quickFilterCTL();
 const {
   fetchListData,
@@ -269,6 +270,7 @@ const handleFilterClick = filter => {
   );
   handleConditionalSearch({ filters: filters });
   handleQuickFilterClick(filter);
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   activePanelNames.value = [];
 };
 const quickFilterRules = reactive<FormRules<QuickFilter>>({
@@ -549,21 +551,22 @@ const submitAdvancedFilterForm = () => {
 const collapsePanel = () => {
   activePanelNames.value = [];
 };
-const calShowBasicFilterTopForm = () => {
-  const c = advancedFilterForm.filters.filter(
-    a =>
-      a.enableOnSearchView &&
-      ((a.value && a.value !== "") ||
-        (a.selectValue && a.selectValue !== "") ||
-        (a.ValueBegin && a.ValueBegin !== "") ||
-        (a.ValueEnd && a.ValueEnd !== ""))
-  );
-  if (c && c.length > 0) {
-    return true;
-  } else {
-    return false;
-  }
-};
+// const calShowBasicFilterTopForm = () => {
+//   const c = advancedFilterForm.filters.filter(
+//     a =>
+//       a.enableOnSearchView &&
+//       ((a.value && a.value !== "") ||
+//         (a.selectValue && a.selectValue !== "") ||
+//         (a.ValueBegin && a.ValueBegin !== "") ||
+//         (a.ValueEnd && a.ValueEnd !== ""))
+//   );
+//   console.log("c.length", c.length);
+//   if (c && c.length > 0) {
+//     return true;
+//   } else {
+//     return false;
+//   }
+// };
 const searchBtnClick = filterForm => {
   showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   console.log(filterForm);
@@ -586,8 +589,8 @@ const handleResetSearch = () => {
   showBasicFilterTopForm.value = calShowBasicFilterTopForm();
 };
 const handleFilterBtnClick = item => {
-  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   handleBasicFilterBtnClick(item);
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   handleConditionalSearch(advancedFilterForm);
 };
 // #endregion

@@ -60,7 +60,8 @@ const {
   handleBasicFilterBtnClick,
   activePanelNames,
   filterRequestType,
-  monthDatePickerList
+  monthDatePickerList,
+  calShowBasicFilterTopForm
 } = quickFilterCTL();
 const {
   fetchListData,
@@ -381,6 +382,7 @@ const submitAdvancedFilterForm = () => {
     });
 };
 const handleSearch = filterForm => {
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   activePanelNames.value = [];
   handleConditionalSearch(filterForm);
   quickFilterList.value.forEach(a => {
@@ -390,9 +392,11 @@ const handleSearch = filterForm => {
 const handleResetSearch = () => {
   handleResetConditionalSearch();
   handleAdvancedReset();
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
 };
 const handleFilterBtnClick = item => {
   handleBasicFilterBtnClick(item);
+  showBasicFilterTopForm.value = calShowBasicFilterTopForm();
   handleConditionalSearch(advancedFilterForm);
 };
 // #endregion
