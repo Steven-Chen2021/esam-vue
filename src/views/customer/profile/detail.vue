@@ -1707,7 +1707,7 @@ const cancelForm = () => {
                         </el-form-item>
                         <el-form-item
                           v-if="LID === '0'"
-                          :style="{ width: '390px' }"
+                          :style="{ width: '100%' }"
                           label="Product Line"
                           prop="PlList"
                         >
