@@ -497,6 +497,7 @@ customer:
       currency: Currency
       agentRO: Agent RO
       createdFor: Created For
+      productLineRequired: At least one setting is required
     pl:
       title: Product Line
       leadOwner: Lead Owner

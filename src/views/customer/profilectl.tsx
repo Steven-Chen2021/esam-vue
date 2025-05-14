@@ -287,6 +287,20 @@ export function customerProfileCTL() {
         message: t("customer.profile.general.mandatory"),
         trigger: "change"
       }
+    ],
+    PlList: [
+      {
+        validator: (rule, value, callback) => {
+          if (!Array.isArray(value) || value.length === 0) {
+            callback(
+              new Error(t("customer.profile.general.productLineRequired"))
+            );
+          } else {
+            callback();
+          }
+        },
+        trigger: "change"
+      }
     ]
   };
   // const getFormItemProp = key => {

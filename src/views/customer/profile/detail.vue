@@ -1705,9 +1705,30 @@ const cancelForm = () => {
                             />
                           </el-select>
                         </el-form-item>
+                        <el-form-item
+                          v-if="LID === '0'"
+                          :style="{ width: '390px' }"
+                          label="Product Line"
+                          prop="PlList"
+                        >
+                          <el-checkbox-group
+                            v-if="LID === '0'"
+                            v-model="checkedPL"
+                            @change="handleCheckedPLChange"
+                          >
+                            <el-checkbox
+                              v-for="PLItem in tabsPLList"
+                              :key="PLItem.smhqid"
+                              :label="PLItem.plName"
+                              :value="PLItem.smhqid"
+                            >
+                              {{ PLItem.plName }}
+                            </el-checkbox>
+                          </el-checkbox-group>
+                        </el-form-item>
                       </div>
                     </el-form>
-                    <el-checkbox-group
+                    <!-- <el-checkbox-group
                       v-if="LID === '0'"
                       v-model="checkedPL"
                       @change="handleCheckedPLChange"
@@ -1720,7 +1741,7 @@ const cancelForm = () => {
                       >
                         {{ PLItem.plName }}
                       </el-checkbox>
-                    </el-checkbox-group>
+                    </el-checkbox-group> -->
                   </div>
                 </el-collapse-item>
                 <el-collapse-item
