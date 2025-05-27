@@ -186,7 +186,7 @@ menus:
   dimercoQuotes: 报价工具
   dimercoTask: 任务管理
   dimercoCredit: 信用管理
-  dimercoReport: 报表  
+  dimercoReport: 报表
   dimercoCustomer: 客戶管理
   dimercoDeal: 交易管理
 status:
@@ -265,6 +265,15 @@ customer:
     ownerSales: Owner Sales
     combatTeamPL: Combat Team PL
     productLineName: Product Line
+    actCapital: Actual Capital Amount
+    legalName: Legal Company Name
+    currentStatus: Legal Company Status
+    taxAddress: Registered Address
+    legalPersonName: Legal Representative Name
+    companyAddress: Office Address
+    staffNumber: Number of Employees
+    contactEmail: Contact Email
+    telphone: Telephone Number
   list:
     quickFilter:
       addFilterbtn: Add Quick Filter
@@ -296,35 +305,35 @@ customer:
       showFilterBtn: Show Filters
       hideFilterBtn: Hide Filters
       basicFilterTitle: Basic Filters
-quote:     
+quote:
   quickfilter:
-      productLineName: PL
-      quoteNo: Quote#
-      attentionTo: Attention To
-      effectiveDate: Effective Date
-      expiredDate: Expired Date
-      issueDate: Issue Date
-      issueBy: Issue By
-      status: Status
-      tradeTerm: Trade Term
-      shippingTerm: Shipping Term
-      creditTerm: Credit Term
-      reference: Reference
-      laneSegment: Lane Segment
-      carrier: Carrier
-      serviceLevel: Service Level
-      sellingRate: Selling Rate
-      natureOfGoods: Nature Of Goods
-      estimatedTonnage: Est. Tonnage
-      estimatedRevenue: Est. Revenus
-      estimatedGP: Est. dGP
-      shipmentQualityType: Shipment Quality Type
-      shipper: Shipper
-      consignee: Consignee
-      remark: Remark
-      newQuoteBtn: Create Quote
-      hqid: HQID
-      customerName: Customer
+    productLineName: PL
+    quoteNo: Quote#
+    attentionTo: Attention To
+    effectiveDate: Effective Date
+    expiredDate: Expired Date
+    issueDate: Issue Date
+    issueBy: Issue By
+    status: Status
+    tradeTerm: Trade Term
+    shippingTerm: Shipping Term
+    creditTerm: Credit Term
+    reference: Reference
+    laneSegment: Lane Segment
+    carrier: Carrier
+    serviceLevel: Service Level
+    sellingRate: Selling Rate
+    natureOfGoods: Nature Of Goods
+    estimatedTonnage: Est. Tonnage
+    estimatedRevenue: Est. Revenus
+    estimatedGP: Est. dGP
+    shipmentQualityType: Shipment Quality Type
+    shipper: Shipper
+    consignee: Consignee
+    remark: Remark
+    newQuoteBtn: Create Quote
+    hqid: HQID
+    customerName: Customer
   quotedetail:
     cbm: CBM 轉換率
     WeightBreak: 重量區間
@@ -344,7 +353,7 @@ message:
 approval:
   list: 簽核管理
   quickfilter:
-    ownerStationCode: 所属站点   
+    ownerStationCode: 所属站点
     customerName: 客户名称
     approvalNum: 申请单号
     status: 状态
@@ -402,4 +411,3 @@ approval:
     creditcurrency: Credit Currency
     creditlimit: Credit Limit
     custmerAppliedCreditTerm: Custmer Applied Credit Term
-
