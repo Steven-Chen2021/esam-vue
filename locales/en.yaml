@@ -18,7 +18,7 @@ buttons:
   pureClose: Close
   pureBackTop: BackTop
   pureOpenText: Open
-  pureCloseText: Close  
+  pureCloseText: Close
   pureHistoryLog: Data Reversion
   pureAdd: Add
 search:
@@ -191,7 +191,7 @@ menus:
   dimercoDeal: Deal
   dimercoMembers: Members
   dimercoDashboard: Dashboard
-  
+
 status:
   pureLoad: Loading...
   pureMessage: Message
@@ -424,13 +424,22 @@ customer:
     leadSourceDetail: Lead Source Detail
     industryGroup: Industry Group
     agent: Agent RO
+    actCapital: Actual Capital Amount
+    legalName: Legal Company Name
+    currentStatus: Legal Company Status
+    taxAddress: Registered Address
+    legalPersonName: Legal Representative Name
+    companyAddress: Office Address
+    staffNumber: Number of Employees
+    contactEmail: Contact Email
+    telphone: Telephone Number
   tour:
-      tourQF1Title: Quick Filter
-      tourQF1Text: Click to create a quick query and boost your work efficiency.
-      tourQF2Title: Quick Filter
-      tourQF2ext: Click to try.
-      tourBF1Title: Advance Filter
-      tourBF1ext: Click to set filter criteria and customize the content displayed in the results.
+    tourQF1Title: Quick Filter
+    tourQF1Text: Click to create a quick query and boost your work efficiency.
+    tourQF2Title: Quick Filter
+    tourQF2ext: Click to try.
+    tourBF1Title: Advance Filter
+    tourBF1ext: Click to set filter criteria and customize the content displayed in the results.
   list:
     quickFilter:
       addFilterbtn: Add Quick Filter
@@ -488,7 +497,7 @@ customer:
     disQualifyFailAlert: DisQualify Failed.
     fullSaveFailAlert: Save Failed.
     fullSaveSucAlert: Save Successfully.
-    general: 
+    general:
       title: General Information
       unauthorized: No permission to view
       ext: Ext
@@ -518,7 +527,7 @@ customer:
       historyTitle: History
       unassigned: UnAssigned
       coodinateAlert: You could apply to Station Coordinator to take the role of Lead Owner.
-      returnAlert: There is no longer a Lead Owner assigned, so no further action is needed. 
+      returnAlert: There is no longer a Lead Owner assigned, so no further action is needed.
       returnSuc: Return successfully.
       assignSuc: Assign successfully.
       assignFail: Assign failed.
@@ -562,35 +571,35 @@ customer:
   setting:
     title: Setting
 quote:
-  tabTitle: Quote Search  
+  tabTitle: Quote Search
   quickfilter:
-      productLineName: Product Line
-      quoteNo: Quote#
-      attentionTo: Attention To
-      effectiveDate: Effective Date
-      expiredDate: Expired Date
-      issueDate: Issue Date
-      issueBy: Issue By
-      status: Status
-      tradeTerm: Trade Term
-      shippingTerm: Shipping Term
-      creditTerm: Credit Term
-      reference: Reference
-      laneSegment: Lane Segment
-      carrier: Carrier
-      serviceLevel: Service Level
-      sellingRate: Selling Rate
-      natureOfGoods: Nature Of Goods
-      estimatedTonnage: Est. Tonnage
-      estimatedRevenue: Est. Revenue
-      estimatedGP: Est. GP
-      shipmentQualityType: Shipment Quality Type
-      shipper: Shipper
-      consignee: Consignee
-      remark: Remark
-      newQuoteBtn: Create Quote
-      hqid: HQID
-      customerName: Customer
+    productLineName: Product Line
+    quoteNo: Quote#
+    attentionTo: Attention To
+    effectiveDate: Effective Date
+    expiredDate: Expired Date
+    issueDate: Issue Date
+    issueBy: Issue By
+    status: Status
+    tradeTerm: Trade Term
+    shippingTerm: Shipping Term
+    creditTerm: Credit Term
+    reference: Reference
+    laneSegment: Lane Segment
+    carrier: Carrier
+    serviceLevel: Service Level
+    sellingRate: Selling Rate
+    natureOfGoods: Nature Of Goods
+    estimatedTonnage: Est. Tonnage
+    estimatedRevenue: Est. Revenue
+    estimatedGP: Est. GP
+    shipmentQualityType: Shipment Quality Type
+    shipper: Shipper
+    consignee: Consignee
+    remark: Remark
+    newQuoteBtn: Create Quote
+    hqid: HQID
+    customerName: Customer
   quotedetail:
     cbm: CBM Rate
     WeightBreak: Weight Break
@@ -672,18 +681,3 @@ approval:
     creditcurrency: Credit Currency
     creditlimit: Credit Limit
     custmerAppliedCreditTerm: Custmer Applied Credit Term
-
-
-
-
-
-
-
-
-
-
-
-      
-    
-      
-  
