@@ -13,11 +13,12 @@ export default {
     {
       path: "/quotes/index",
       name: "quoteSearch",
-      component: () => import("@/views/search-management/index.vue"),
+      component: () =>
+        import("@/views/search-management/wrappers/QuoteSearch.vue"),
       meta: {
         title: $t("menus.dimercoQuotes"),
         keepAlive: true,
-        componentName: "searchManagement"
+        componentName: "QuoteSearchPage"
       }
     },
     {
