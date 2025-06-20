@@ -15,7 +15,8 @@ export default {
       name: "TaskList",
       component: () => import("@/views/search-management/index.vue"),
       meta: {
-        title: $t("menus.dimercoTask")
+        title: $t("menus.dimercoTask"),
+        keepAlive: true
       }
     },
     {
