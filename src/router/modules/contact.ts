@@ -15,7 +15,8 @@ export default {
       name: "ContactList",
       component: () => import("@/views/search-management/index.vue"),
       meta: {
-        title: $t("menus.dimercoContact")
+        title: $t("menus.dimercoContact"),
+        keepAlive: true
       }
     },
     {

@@ -15,7 +15,8 @@ export default {
       name: "CustomerList",
       component: () => import("@/views/search-management/index.vue"),
       meta: {
-        title: $t("menus.dimercoCustomer")
+        title: $t("menus.dimercoCustomer"),
+        keepAlive: true
       }
     },
     {
