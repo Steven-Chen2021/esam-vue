@@ -16,7 +16,8 @@ export default {
       component: () => import("@/views/search-management/index.vue"),
       meta: {
         title: $t("menus.dimercoCustomer"),
-        keepAlive: true
+        keepAlive: true,
+        componentName: "searchManagement"
       }
     },
     {
