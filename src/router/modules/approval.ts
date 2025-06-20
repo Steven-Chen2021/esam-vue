@@ -15,7 +15,8 @@ export default {
       name: "ApprovalList",
       component: () => import("@/views/search-management/index.vue"),
       meta: {
-        title: $t("approval.list")
+        title: $t("approval.list"),
+        keepAlive: true
       }
     },
     {
