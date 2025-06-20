@@ -13,11 +13,12 @@ export default {
     {
       path: "/approval/index",
       name: "ApprovalList",
-      component: () => import("@/views/search-management/index.vue"),
+      component: () =>
+        import("@/views/search-management/wrappers/ApprovalList.vue"),
       meta: {
         title: $t("approval.list"),
         keepAlive: true,
-        componentName: "searchManagement"
+        componentName: "ApprovalListPage"
       }
     },
     {

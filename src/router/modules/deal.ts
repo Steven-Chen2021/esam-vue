@@ -15,11 +15,12 @@ export default {
     {
       path: "/deal/index",
       name: "dealSearch",
-      component: () => import("@/views/search-management/index.vue"),
+      component: () =>
+        import("@/views/search-management/wrappers/DealSearch.vue"),
       meta: {
         title: $t("menus.dimercoDeal"),
         keepAlive: true,
-        componentName: "searchManagement"
+        componentName: "DealSearchPage"
       }
     },
     {

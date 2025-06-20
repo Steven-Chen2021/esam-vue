@@ -13,11 +13,12 @@ export default {
     {
       path: "/contact/index",
       name: "ContactList",
-      component: () => import("@/views/search-management/index.vue"),
+      component: () =>
+        import("@/views/search-management/wrappers/ContactList.vue"),
       meta: {
         title: $t("menus.dimercoContact"),
         keepAlive: true,
-        componentName: "searchManagement"
+        componentName: "ContactListPage"
       }
     },
     {
