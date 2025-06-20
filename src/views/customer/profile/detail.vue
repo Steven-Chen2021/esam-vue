@@ -2080,12 +2080,14 @@ const cancelForm = () => {
           </el-drawer></el-tab-pane
         >
         <el-tab-pane v-if="LID !== '0'" :label="t('customer.deal.title')">
-          <customerSubTab
-            v-if="searchingDeal"
-            :SearchLeadID="LID"
-            SearchType="dealSearch"
-            @handleTabEditEvent="handleTabEditEventDeal"
-          />
+          <keep-alive>
+            <customerSubTab
+              v-if="searchingDeal"
+              :SearchLeadID="LID"
+              SearchType="dealSearch"
+              @handleTabEditEvent="handleTabEditEventDeal"
+            />
+          </keep-alive>
           <dealDetailTab
             v-else
             :ParentID="LID"
@@ -2095,11 +2097,13 @@ const cancelForm = () => {
           />
         </el-tab-pane>
         <el-tab-pane v-if="LID !== '0'" :label="t('customer.contact.title')">
-          <contactTab
-            v-if="searchingContact"
-            :SearchLeadID="LID"
-            @handleTabEditEvent="handleTabEditEvent"
-          />
+          <keep-alive>
+            <contactTab
+              v-if="searchingContact"
+              :SearchLeadID="LID"
+              @handleTabEditEvent="handleTabEditEvent"
+            />
+          </keep-alive>
           <contactDetailTab
             v-else
             :ParentID="LID"
@@ -2131,12 +2135,14 @@ const cancelForm = () => {
           </div></el-tab-pane
         >
         <el-tab-pane v-if="LID !== '0'" :label="t('customer.quotation.title')">
-          <customerSubTab
-            v-if="searchingQuote"
-            :SearchLeadID="LID"
-            SearchType="quoteSearch"
-            @handleTabEditEvent="handleTabEditEventQuote"
-          />
+          <keep-alive>
+            <customerSubTab
+              v-if="searchingQuote"
+              :SearchLeadID="LID"
+              SearchType="quoteSearch"
+              @handleTabEditEvent="handleTabEditEventQuote"
+            />
+          </keep-alive>
           <quoteDetailTab
             v-else
             :ParentID="LID"
@@ -2191,11 +2197,13 @@ const cancelForm = () => {
           </div></el-tab-pane
         >
         <el-tab-pane v-if="LID !== '0'" :label="t('customer.task.title')">
-          <taskTab
-            v-if="searchingTask"
-            :SearchLeadID="LID"
-            @handleTabEditEvent="handleTabEditEventTask"
-          />
+          <keep-alive>
+            <taskTab
+              v-if="searchingTask"
+              :SearchLeadID="LID"
+              @handleTabEditEvent="handleTabEditEventTask"
+            />
+          </keep-alive>
           <taskDetailTab
             v-else
             :ParentID="LID"
