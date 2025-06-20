@@ -264,36 +264,22 @@ function formatTwoStageRoutes(routesList: RouteRecordRaw[]) {
 }
 
 /** 处理缓存路由（添加、删除、刷新） */
-function handleAliveRoute({ name }: ToRouteType, mode?: string) {
+function handleAliveRoute(route: ToRouteType, mode?: string) {
+  const name = (route.meta && route.meta.componentName) || route.name;
   switch (mode) {
     case "add":
-      usePermissionStoreHook().cacheOperate({
-        mode: "add",
-        name
-      });
+      usePermissionStoreHook().cacheOperate({ mode: "add", name });
       break;
     case "delete":
-      usePermissionStoreHook().cacheOperate({
-        mode: "delete",
-        name
-      });
+      usePermissionStoreHook().cacheOperate({ mode: "delete", name });
       break;
     case "refresh":
-      usePermissionStoreHook().cacheOperate({
-        mode: "refresh",
-        name
-      });
+      usePermissionStoreHook().cacheOperate({ mode: "refresh", name });
       break;
     default:
-      usePermissionStoreHook().cacheOperate({
-        mode: "delete",
-        name
-      });
+      usePermissionStoreHook().cacheOperate({ mode: "delete", name });
       useTimeoutFn(() => {
-        usePermissionStoreHook().cacheOperate({
-          mode: "add",
-          name
-        });
+        usePermissionStoreHook().cacheOperate({ mode: "add", name });
       }, 100);
   }
 }
